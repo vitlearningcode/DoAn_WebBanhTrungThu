@@ -1,13 +1,24 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using System.Text.Json.Serialization;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Middlewares;
+using WebBanhTrungThu.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Đăng ký MVC Controllers và Views
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
+
+// Đăng ký các Service nghiệp vụ dùng chung toàn hệ thống (Đặt ngay dưới AddDbContext):
+builder.Services.AddScoped<DichVuHinhAnh>();
+builder.Services.AddScoped<DichVuGioHang>();
 
 // 2. Đăng ký DbContext kết nối tới SQL Server (25 bảng)
 builder.Services.AddDbContext<CSDLBanhTrungThuContext>(options =>
