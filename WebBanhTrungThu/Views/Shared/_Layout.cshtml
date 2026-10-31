@@ -45,11 +45,34 @@
                     </li>
                 </ul>
 
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
                     <!-- Nút Tra cứu đơn dành cho cả Guest & Member -->
                     <button class="btn btn-sm btn-vien-vang rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalTraCuuDon">
                         <i class="bi bi-search me-1"></i>Tra Đơn Guest
                     </button>
+
+                    <!-- Nút Đăng Nhập / Gộp Giỏ hoặc Thông tin Thành Viên -->
+                    @if (User.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        string hangTv = User.FindFirst("HangTV")?.Value ?? "Đồng";
+                        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-dark border border-warning">
+                            <span class="small text-light fw-semibold">
+                                <i class="bi bi-person-check-fill chu-vang-kim me-1"></i>@User.Identity.Name
+                            </span>
+                            <span class="badge badge-thuong-hang rounded-pill">Hạng @hangTv</span>
+                            <form asp-controller="TaiKhoan" asp-action="DangXuat" method="post" class="d-inline m-0">
+                                <button type="submit" class="btn btn-sm btn-link text-danger text-decoration-none p-0 ms-1 small fw-bold" title="Đăng xuất">
+                                    [Đăng xuất]
+                                </button>
+                            </form>
+                        </div>
+                    }
+                    else
+                    {
+                        <button class="btn btn-sm btn-vien-vang rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalTaiKhoan">
+                            👤 Đăng Nhập / Gộp Giỏ
+                        </button>
+                    }
 
                     <!-- Nút mở Ngăn kéo Giỏ hàng Kép -->
                     <button class="btn btn-sm btn-vang-kim rounded-pill px-3 position-relative" data-bs-toggle="offcanvas" data-bs-target="#nganKeoGioHang">
@@ -72,6 +95,98 @@
     <button class="floating-quiz-btn" data-bs-toggle="modal" data-bs-target="#modalTroLyChonBanh">
         <i class="bi bi-stars me-1"></i> Trợ Lý Chọn Bánh 30s
     </button>
+
+    <!-- MODAL ĐĂNG NHẬP / ĐĂNG KÝ & TỰ ĐỘNG HỢP NHẤT GIỎ HÀNG (GUEST -> MEMBER) -->
+    <div class="modal fade" id="modalTaiKhoan" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content card-hoang-gia text-light p-2">
+                <div class="modal-header border-secondary pb-2">
+                    <div>
+                        <h5 class="modal-title font-co-phong fs-3 chu-vang-kim">
+                            <i class="bi bi-shield-lock-fill me-2"></i>Tài Khoản & Hợp Nhất Giỏ Quà
+                        </h5>
+                        <small class="text-secondary">Mọi hộp bánh tự phối ở chế độ Guest sẽ tự động gộp vào tài khoản của bạn</small>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Thanh chuyển Tab Đăng Nhập / Đăng Ký -->
+                    <ul class="nav nav-pills nav-fill mb-3 p-1 rounded bg-dark border border-secondary" id="tabTaiKhoan" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active rounded-pill fw-semibold text-warning" id="btn-tab-dangnhap"
+                                    data-bs-toggle="pill" data-bs-target="#pane-dangnhap" type="button" role="tab">
+                                Đăng Nhập
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link rounded-pill fw-semibold text-light" id="btn-tab-dangky"
+                                    data-bs-toggle="pill" data-bs-target="#pane-dangky" type="button" role="tab">
+                                Đăng Ký Thành Viên Mới (+50 Điểm)
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content">
+                        <!-- TAB 1: ĐĂNG NHẬP -->
+                        <div class="tab-pane fade show active" id="pane-dangnhap" role="tabpanel">
+                            <div class="p-2 mb-3 rounded bg-dark border border-warning">
+                                <small class="text-warning fw-bold d-block mb-2">🎯 Nút điền nhanh 1-Click (Demo Bảo Vệ Đồ Án):</small>
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-warning text-start"
+                                            onclick="dienNhanhTaiKhoanDemo('0909123456', '123456')">
+                                        ⚡ Demo Khách VIP (Minh Châu - SĐT: 0909123456 / MK: 123456)
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-info text-start"
+                                            onclick="dienNhanhTaiKhoanDemo('0814585526', '123456')">
+                                        👑 Demo Quản Trị Viên (Lê Minh Đức - SĐT: 0814585526 / MK: 123456)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label small text-warning">Số điện thoại hoặc Email</label>
+                                <input type="text" id="txtDangNhapTaiKhoan" class="form-control bg-dark text-light border-secondary" placeholder="Nhập SĐT hoặc Email..." />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-warning">Mật khẩu</label>
+                                <input type="password" id="txtDangNhapMatKhau" class="form-control bg-dark text-light border-secondary" placeholder="Nhập mật khẩu..." />
+                            </div>
+                            <div id="thongBaoLoiDangNhap" class="alert alert-danger py-2 small d-none"></div>
+                            <button type="button" id="btnSubmitDangNhap" class="btn btn-vang-kim w-100 py-2 rounded-pill" onclick="thucHienDangNhapAjax()">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Đăng Nhập & Gộp Giỏ Hàng Ngay
+                            </button>
+                        </div>
+
+                        <!-- TAB 2: ĐĂNG KÝ THÀNH VIÊN MỚI -->
+                        <div class="tab-pane fade" id="pane-dangky" role="tabpanel">
+                            <div class="mb-2">
+                                <label class="form-label small text-warning">Họ và tên</label>
+                                <input type="text" id="txtDangKyHoTen" class="form-control bg-dark text-light border-secondary" placeholder="VD: Nguyễn Ngọc Ánh" />
+                            </div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-6">
+                                    <label class="form-label small text-warning">Số điện thoại</label>
+                                    <input type="text" id="txtDangKySdt" class="form-control bg-dark text-light border-secondary" placeholder="09xx..." />
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small text-warning">Email</label>
+                                    <input type="email" id="txtDangKyEmail" class="form-control bg-dark text-light border-secondary" placeholder="email@domain.com" />
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small text-warning">Mật khẩu khởi tạo</label>
+                                <input type="password" id="txtDangKyMatKhau" class="form-control bg-dark text-light border-secondary" placeholder="Tối thiểu 6 ký tự..." />
+                            </div>
+                            <div id="thongBaoLoiDangKy" class="alert alert-danger py-2 small d-none"></div>
+                            <button type="button" id="btnSubmitDangKy" class="btn btn-vang-kim w-100 py-2 rounded-pill" onclick="thucHienDangKyAjax()">
+                                <i class="bi bi-person-plus-fill me-1"></i>Đăng Ký (+50 Điểm) & Gộp Giỏ Hàng
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL TRA CỨU ĐƠN HÀNG NHANH CHO KHÁCH VÃNG LAI -->
     <div class="modal fade" id="modalTraCuuDon" tabindex="-1">

@@ -23,5 +23,24 @@ namespace WebBanhTrungThu.ViewModels
         public int MaCtgh { get; set; }
         public int SoLuongMoi { get; set; }
     }
+
+    public class ApDungVoucherRequest
+    {
+        public string CodeKm { get; set; } = string.Empty;
+    }
+
+    public class DangNhapAjaxRequest
+    {
+        public string TenDangNhap { get; set; } = string.Empty;
+        public string MatKhau { get; set; } = string.Empty;
+    }
+
+    public class DangKyAjaxRequest
+    {
+        public string HoTen { get; set; } = string.Empty;
+        public string Sdt { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string MatKhau { get; set; } = string.Empty;
+    }
 }
 

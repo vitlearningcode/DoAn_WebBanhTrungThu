@@ -11,6 +11,15 @@ let cauHinhHop = {
     cacO: [null, null, null, null] // Chứa object bánh tại từng vị trí ô
 };
 
+// Xử lý toàn cục khi ảnh bị lỗi tải (ví dụ link Google Drive giả lập bị lỗi) -> tự động thay bằng ảnh fallback-lava.png
+window.addEventListener('error', function (e) {
+    if (e.target && e.target.tagName === 'IMG') {
+        if (!e.target.src.includes('/images/banh/fallback-lava.png')) {
+            e.target.src = '/images/banh/fallback-lava.png';
+        }
+    }
+}, true);
+
 document.addEventListener("DOMContentLoaded", function () {
     renderKhayHop();
     khoiChayDongHoDemNguoc();
@@ -270,6 +279,30 @@ async function taiLaiGioHangOffcanvas() {
             lblTamTinh.innerText = `${Math.round(data.tongTamTinh).toLocaleString("vi-VN")} đ`;
         }
 
+        const lblTienGiam = document.getElementById("lblTienGiamVoucherOffcanvas");
+        if (lblTienGiam) {
+            const tienGiam = Math.round(data.tienGiamVoucher || 0);
+            lblTienGiam.innerText = `-${tienGiam.toLocaleString("vi-VN")} đ`;
+        }
+
+        const lblSauGiam = document.getElementById("lblTongThanhToanSauGiam");
+        if (lblSauGiam) {
+            const sauGiam = Math.round(data.tongThanhToanSauGiam !== undefined ? data.tongThanhToanSauGiam : data.tongTamTinh);
+            lblSauGiam.innerText = `${sauGiam.toLocaleString("vi-VN")} đ`;
+        }
+
+        const txtVoucher = document.getElementById("txtMaVoucherGioHang");
+        const lblThongBaoVoucher = document.getElementById("lblThongBaoVoucher");
+        if (data.codeKmDangDung) {
+            if (txtVoucher) txtVoucher.value = data.codeKmDangDung;
+            if (lblThongBaoVoucher) {
+                lblThongBaoVoucher.className = "d-block mt-1 text-success";
+                lblThongBaoVoucher.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Đang áp mã <strong>${data.codeKmDangDung}</strong> (-${Math.round(data.tienGiamVoucher).toLocaleString("vi-VN")} đ)`;
+            }
+        } else if (lblThongBaoVoucher) {
+            lblThongBaoVoucher.innerHTML = "";
+        }
+
         const khungDanhSach = document.getElementById("danhSachMonTrongGio");
         if (!khungDanhSach) return;
 
@@ -329,6 +362,140 @@ function moNganKeoGioHang() {
     if (elOffcanvas && typeof bootstrap !== "undefined") {
         const bsOffcanvas = bootstrap.Offcanvas.getOrCreateInstance(elOffcanvas);
         bsOffcanvas.show();
+    }
+}
+
+function chonNhanhVoucher(maCode) {
+    const txtVoucher = document.getElementById("txtMaVoucherGioHang");
+    if (txtVoucher) {
+        txtVoucher.value = maCode;
+        apDungVoucherGioHang();
+    }
+}
+
+async function apDungVoucherGioHang() {
+    const txtVoucher = document.getElementById("txtMaVoucherGioHang");
+    const lblThongBaoVoucher = document.getElementById("lblThongBaoVoucher");
+    const codeKm = txtVoucher ? txtVoucher.value.trim() : "";
+
+    try {
+        const res = await fetch(`/GioHang/ApDungVoucher?codeKm=${encodeURIComponent(codeKm)}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ codeKm: codeKm })
+        });
+
+        const data = await res.json();
+        if (data.thanhCong) {
+            hienThiThongBaoGioHang(data.thongBao, true);
+            await taiLaiGioHangOffcanvas();
+        } else {
+            if (lblThongBaoVoucher) {
+                lblThongBaoVoucher.className = "d-block mt-1 text-danger";
+                lblThongBaoVoucher.innerHTML = `<i class="bi bi-exclamation-circle-fill me-1"></i>${data.thongBao}`;
+            }
+            hienThiThongBaoGioHang(data.thongBao, false);
+            await taiLaiGioHangOffcanvas();
+        }
+    } catch (err) {
+        hienThiThongBaoGioHang("Lỗi kết nối máy chủ khi áp dụng mã giảm giá!", false);
+    }
+}
+
+// =========================================================================
+// 1C. ĐĂNG NHẬP, ĐĂNG KÝ COOKIE AUTH & TỰ ĐỘNG HỢP NHẤT GIỎ HÀNG GUEST -> MEMBER
+// =========================================================================
+function dienNhanhTaiKhoanDemo(taiKhoan, matKhau) {
+    const txtTk = document.getElementById("txtDangNhapTaiKhoan");
+    const txtMk = document.getElementById("txtDangNhapMatKhau");
+    if (txtTk) txtTk.value = taiKhoan;
+    if (txtMk) txtMk.value = matKhau;
+    thucHienDangNhapAjax();
+}
+
+async function thucHienDangNhapAjax() {
+    const taiKhoan = document.getElementById("txtDangNhapTaiKhoan")?.value.trim() || "";
+    const matKhau = document.getElementById("txtDangNhapMatKhau")?.value.trim() || "";
+    const boxLoi = document.getElementById("thongBaoLoiDangNhap");
+    const btn = document.getElementById("btnSubmitDangNhap");
+
+    if (boxLoi) boxLoi.classList.add("d-none");
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch("/TaiKhoan/DangNhapAjax", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                tenDangNhap: taiKhoan,
+                matKhau: matKhau
+            })
+        });
+
+        const data = await res.json();
+        if (data.thanhCong) {
+            hienThiThongBaoGioHang(`${data.thongBao} Xin chào ${data.hoTen} (Hạng ${data.hangTv} • ${data.diem} điểm)!`, true);
+            setTimeout(() => {
+                window.location.reload();
+            }, 900);
+        } else {
+            if (boxLoi) {
+                boxLoi.innerText = data.thongBao || "Đăng nhập không thành công!";
+                boxLoi.classList.remove("d-none");
+            }
+        }
+    } catch (err) {
+        if (boxLoi) {
+            boxLoi.innerText = "Lỗi kết nối máy chủ khi đăng nhập!";
+            boxLoi.classList.remove("d-none");
+        }
+    } finally {
+        if (btn) btn.disabled = false;
+    }
+}
+
+async function thucHienDangKyAjax() {
+    const hoTen = document.getElementById("txtDangKyHoTen")?.value.trim() || "";
+    const sdt = document.getElementById("txtDangKySdt")?.value.trim() || "";
+    const email = document.getElementById("txtDangKyEmail")?.value.trim() || "";
+    const matKhau = document.getElementById("txtDangKyMatKhau")?.value.trim() || "";
+    const boxLoi = document.getElementById("thongBaoLoiDangKy");
+    const btn = document.getElementById("btnSubmitDangKy");
+
+    if (boxLoi) boxLoi.classList.add("d-none");
+    if (btn) btn.disabled = true;
+
+    try {
+        const res = await fetch("/TaiKhoan/DangKyAjax", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                hoTen: hoTen,
+                sdt: sdt,
+                email: email,
+                matKhau: matKhau
+            })
+        });
+
+        const data = await res.json();
+        if (data.thanhCong) {
+            hienThiThongBaoGioHang(data.thongBao, true);
+            setTimeout(() => {
+                window.location.reload();
+            }, 900);
+        } else {
+            if (boxLoi) {
+                boxLoi.innerText = data.thongBao || "Đăng ký không thành công!";
+                boxLoi.classList.remove("d-none");
+            }
+        }
+    } catch (err) {
+        if (boxLoi) {
+            boxLoi.innerText = "Lỗi kết nối máy chủ khi đăng ký tài khoản!";
+            boxLoi.classList.remove("d-none");
+        }
+    } finally {
+        if (btn) btn.disabled = false;
     }
 }
 

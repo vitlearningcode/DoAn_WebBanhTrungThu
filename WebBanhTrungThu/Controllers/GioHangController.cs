@@ -412,7 +412,105 @@ namespace WebBanhTrungThu.Controllers
         }
 
         // =========================================================================
-        // 4. API LẤY THÔNG TIN GIỎ HÀNG JSON (ĐỒNG BỘ OFFCANVAS & BADGE REALTIME)
+        // 4. API ÁP DỤNG MÃ KHUYẾN MÃI (VOUCHER) CHO GUEST & MEMBER
+        // =========================================================================
+        [HttpPost]
+        public async Task<IActionResult> ApDungVoucher([FromBody] ApDungVoucherRequest? req, [FromQuery] string? codeKm)
+        {
+            string maNhap = (req?.CodeKm ?? codeKm ?? string.Empty).Trim().ToUpper();
+            var gioHang = await LayHoacTaoGioHangAsync();
+
+            if (string.IsNullOrWhiteSpace(maNhap))
+            {
+                gioHang.CodeKmdangApDung = null;
+                gioHang.NgayCapNhat = DateTime.Now;
+                await _db.SaveChangesAsync();
+                return Json(new { thanhCong = false, thongBao = "Vui lòng nhập mã khuyến mãi hợp lệ!" });
+            }
+
+            if (!gioHang.ChiTietGioHangs.Any())
+            {
+                return Json(new { thanhCong = false, thongBao = "Giỏ quà đang trống, vui lòng chọn bánh trước khi áp mã!" });
+            }
+
+            var km = await _db.MaKhuyenMais.FirstOrDefaultAsync(k => k.CodeKm == maNhap);
+            if (km == null)
+            {
+                return Json(new { thanhCong = false, thongBao = $"Mã giảm giá '{maNhap}' không tồn tại trong hệ thống!" });
+            }
+
+            if (km.NgayKetThuc < DateTime.Now)
+            {
+                return Json(new { thanhCong = false, thongBao = $"Mã giảm giá '{maNhap}' đã hết hạn sử dụng!" });
+            }
+
+            if (km.SldaDung >= km.SltoiDa)
+            {
+                return Json(new { thanhCong = false, thongBao = $"Mã giảm giá '{maNhap}' đã hết lượt sử dụng!" });
+            }
+
+            int? maNd = ThongTinPhienHelper.LayMaNguoiDung(HttpContext);
+            if (!maNd.HasValue && !km.ChoPhepKhachVangLai)
+            {
+                return Json(new
+                {
+                    thanhCong = false,
+                    thongBao = $"Mã '{maNhap}' chỉ dành riêng cho Thành Viên. Vui lòng Đăng nhập để sử dụng!"
+                });
+            }
+
+            decimal tongTamTinh = gioHang.ChiTietGioHangs.Sum(ct => ct.SoLuong * ct.DonGiaTamTinh);
+            if (tongTamTinh < km.DonToiThieu)
+            {
+                return Json(new
+                {
+                    thanhCong = false,
+                    thongBao = $"Mã '{maNhap}' yêu cầu đơn hàng tối thiểu {km.DonToiThieu:N0} đ (Hiện tại: {tongTamTinh:N0} đ)!"
+                });
+            }
+
+            decimal tienGiam = TinhTienGiamVoucher(km, tongTamTinh);
+            gioHang.CodeKmdangApDung = km.CodeKm;
+            gioHang.NgayCapNhat = DateTime.Now;
+            await _db.SaveChangesAsync();
+
+            return Json(new
+            {
+                thanhCong = true,
+                thongBao = $"Áp dụng mã '{km.CodeKm}' ({km.TenChuongTrinh}) thành công! Giảm {tienGiam:N0} đ.",
+                codeKmDangDung = km.CodeKm,
+                tienGiamVoucher = tienGiam,
+                tongThanhToanSauGiam = Math.Max(0, tongTamTinh - tienGiam)
+            });
+        }
+
+        private static decimal TinhTienGiamVoucher(MaKhuyenMai km, decimal tongTamTinh)
+        {
+            if (tongTamTinh < km.DonToiThieu) return 0m;
+
+            decimal tienGiam = 0m;
+            if (km.LoaiGiam == "PHAN_TRAM")
+            {
+                tienGiam = Math.Round(tongTamTinh * (km.GiaTriGiam / 100m), 0);
+                if (km.GiamToiDa > 0 && tienGiam > km.GiamToiDa)
+                {
+                    tienGiam = km.GiamToiDa;
+                }
+            }
+            else
+            {
+                tienGiam = km.GiaTriGiam;
+                if (km.GiamToiDa > 0 && tienGiam > km.GiamToiDa)
+                {
+                    tienGiam = km.GiamToiDa;
+                }
+            }
+
+            return Math.Min(tienGiam, tongTamTinh);
+        }
+
+        // =========================================================================
+        // 5. API LẤY THÔNG TIN GIỎ HÀNG JSON (ĐỒNG BỘ OFFCANVAS & BADGE REALTIME)
         // =========================================================================
         [HttpGet]
         public async Task<IActionResult> LayThongTinGioHangJson()
@@ -460,6 +558,9 @@ namespace WebBanhTrungThu.Controllers
                     thanhCong = true,
                     tongSoLuong = 0,
                     tongTamTinh = 0m,
+                    codeKmDangDung = (string?)null,
+                    tienGiamVoucher = 0m,
+                    tongThanhToanSauGiam = 0m,
                     danhSachMon = new List<object>()
                 });
             }
@@ -511,11 +612,35 @@ namespace WebBanhTrungThu.Controllers
             int tongSoLuong = danhSachMon.Sum(x => x.soLuong);
             decimal tongTamTinh = danhSachMon.Sum(x => x.thanhTien);
 
+            string? codeKmDangDung = gioHang.CodeKmdangApDung;
+            decimal tienGiamVoucher = 0m;
+
+            if (!string.IsNullOrWhiteSpace(codeKmDangDung))
+            {
+                var km = await _db.MaKhuyenMais
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(k => k.CodeKm == codeKmDangDung && k.NgayKetThuc >= DateTime.Now && k.SldaDung < k.SltoiDa);
+
+                if (km != null && (maNd.HasValue || km.ChoPhepKhachVangLai) && tongTamTinh >= km.DonToiThieu)
+                {
+                    tienGiamVoucher = TinhTienGiamVoucher(km, tongTamTinh);
+                }
+                else
+                {
+                    codeKmDangDung = null;
+                }
+            }
+
+            decimal tongThanhToanSauGiam = Math.Max(0m, tongTamTinh - tienGiamVoucher);
+
             return Json(new
             {
                 thanhCong = true,
                 tongSoLuong = tongSoLuong,
                 tongTamTinh = tongTamTinh,
+                codeKmDangDung = codeKmDangDung,
+                tienGiamVoucher = tienGiamVoucher,
+                tongThanhToanSauGiam = tongThanhToanSauGiam,
                 danhSachMon = danhSachMon
             });
         }

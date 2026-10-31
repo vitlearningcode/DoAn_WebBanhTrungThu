@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 
@@ -102,6 +102,15 @@ namespace WebBanhTrungThu.Services
                         gioHangMember.CodeKmdangApDung = gioHangGuest.CodeKmdangApDung;
                     }
                     gioHangMember.NgayCapNhat = DateTime.Now;
+
+                    var danhSachHopConLai = await _db.HopQuaTuChons
+                        .Where(h => h.MaPhienKvl == maPhienKVL)
+                        .ToListAsync();
+                    foreach (var hop in danhSachHopConLai)
+                    {
+                        hop.MaNd = maND;
+                        hop.MaPhienKvl = null;
+                    }
 
                     _db.GioHangs.Remove(gioHangGuest);
                 }
