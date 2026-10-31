@@ -1,0 +1,192 @@
+@model WebBanhTrungThu.ViewModels.DonHangThanhCongViewModel
+@{
+    ViewData["Title"] = $"Đặt Hàng Thành Công #{Model.DonHang.MaTraCuuDh}";
+}
+
+<section class="py-5">
+    <div class="container">
+        <!-- KHỐI CHÚC MỪNG & MÃ TRA CỨU ĐƠN HÀNG -->
+        <div class="card-hoang-gia p-4 p-lg-5 text-center mb-4">
+            <div class="mb-3">
+                <span class="badge badge-thuong-hang px-4 py-2 rounded-pill fs-6">
+                    🌕 ĐẶT HÀNG & KHỞI TẠO THIỆP QR 3D THÀNH CÔNG
+                </span>
+            </div>
+            <h1 class="font-co-phong display-5 fw-bold chu-vang-kim mb-2">
+                Cảm Ơn Quý Khách @Model.DonHang.HoTenNguoiMua!
+            </h1>
+            <p class="text-light opacity-75 mb-4">
+                Tuyệt tác lễ hộp Trung Thu của Quý khách đã được chuyển xuống xưởng nghệ nhân Nguyệt Cát để chuẩn bị đóng gói và niêm phong thiệp QR 3D.
+            </p>
+
+            <div class="row g-3 justify-content-center mb-4">
+                <div class="col-md-3">
+                    <div class="p-3 rounded bg-dark border border-warning h-100">
+                        <small class="text-secondary d-block">Mã Tra Cứu Đơn Hàng</small>
+                        <strong class="fs-4 chu-vang-kim">@Model.DonHang.MaTraCuuDh</strong>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 rounded bg-dark border border-secondary h-100">
+                        <small class="text-secondary d-block">Số Điện Thoại Đặt Mua</small>
+                        <strong class="fs-5 text-light">@Model.DonHang.SdtnguoiMua</strong>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="p-3 rounded bg-dark border border-secondary h-100">
+                        <small class="text-secondary d-block">Tổng Thanh Toán (@Model.DonHang.PhuongThucTt)</small>
+                        <strong class="fs-4 text-warning">@Model.DonHang.TongThanhToanCuoi.ToString("N0") đ</strong>
+                    </div>
+                </div>
+                @if (Model.DiemCongThem > 0)
+                {
+                    <div class="col-md-3">
+                        <div class="p-3 rounded bg-dark border border-success h-100">
+                            <small class="text-secondary d-block">Điểm Thưởng Tích Lũy</small>
+                            <strong class="fs-4 text-success">+@Model.DiemCongThem Điểm</strong>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="d-flex justify-content-center flex-wrap gap-3">
+                <a asp-controller="Home" asp-action="Index" class="btn btn-vien-vang rounded-pill px-4">
+                    <i class="bi bi-house-heart-fill me-1"></i>Về Trang Chủ Nguyệt Cát
+                </a>
+            </div>
+        </div>
+
+        <!-- DANH SÁCH CÁC ĐIỂM GIAO QUÀ & MÃ QR THIỆP CHÚC MỪNG 3D (QRCODER) -->
+        <div class="mb-4">
+            <div class="text-center mb-4">
+                <span class="text-uppercase small chu-vang-kim fw-bold">Trải Nghiệm Quà Tặng Số Hóa Độc Bản</span>
+                <h2 class="font-co-phong display-6 fw-bold chu-vang-kim">
+                    Mã QR Thiệp Chúc Mừng 3D Cho Từng Điểm Nhận (@Model.DanhSachDotGiaoQr.Count Điểm Giao)
+                </h2>
+                <p class="text-secondary small">
+                    Mỗi mã QR dưới đây sẽ được in ánh kim đính kèm trên nắp hộp quà tương ứng. Người nhận dùng điện thoại quét mã hoặc bạn có thể bấm nút bên dưới để mở xem thử ngay!
+                </p>
+            </div>
+
+            <div class="row g-4 justify-content-center">
+                @for (int i = 0; i < Model.DanhSachDotGiaoQr.Count; i++)
+                {
+                    var item = Model.DanhSachDotGiaoQr[i];
+                    var dot = item.DotGiao;
+                    <div class="col-md-6 col-lg-5">
+                        <div class="card-hoang-gia p-4 h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-2 mb-3">
+                                    <strong class="chu-vang-kim fs-5">
+                                        <i class="bi bi-gift-fill me-1"></i>Điểm Nhận #@(i + 1): @dot.TenNguoiNhan
+                                    </strong>
+                                    <span class="badge bg-info text-dark">@dot.TrangThaiGiao</span>
+                                </div>
+
+                                <div class="small text-light mb-3">
+                                    <div class="mb-1"><i class="bi bi-telephone-fill text-warning me-2"></i>SĐT người nhận: <strong>@dot.SdtnguoiNhan</strong></div>
+                                    <div class="mb-1"><i class="bi bi-geo-alt-fill text-warning me-2"></i>Địa chỉ: @dot.DiaChiGiaoChiTiet</div>
+                                    <div class="mb-1"><i class="bi bi-calendar-heart-fill text-warning me-2"></i>Hẹn giao: <strong>@dot.NgayHenGiao.ToString("dd/MM/yyyy") (@dot.KhungGioGiao)</strong></div>
+                                </div>
+                            </div>
+
+                            @if (dot.CoKemThiepQr && !string.IsNullOrEmpty(item.AnhQrBase64))
+                            {
+                                <div class="text-center p-3 rounded bg-dark border border-warning">
+                                    <span class="badge badge-thuong-hang mb-2">Mã Token: @dot.MaTokenThiepQr</span>
+                                    <div class="bg-white d-inline-block p-2 rounded my-2 shadow">
+                                        <img src="@item.AnhQrBase64" width="175" height="175" alt="QR Code Thiệp 3D @dot.TenNguoiNhan" />
+                                    </div>
+                                    <p class="small text-warning fst-italic mb-3">
+                                        "@dot.LoiChucThiep"
+                                    </p>
+                                    <a href="/Thiep3D/Xem/@dot.MaTokenThiepQr" target="_blank" class="btn btn-vang-kim w-100 rounded-pill py-2">
+                                        ✨ Mở Xem Thử Thiệp 3D Ngay
+                                    </a>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="text-center text-secondary p-3 rounded bg-dark border border-secondary">
+                                    Điểm giao này không đính kèm thiệp QR 3D.
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- CHI TIẾT CÁC MÓN TRONG ĐƠN HÀNG -->
+        <div class="card-hoang-gia p-4">
+            <h4 class="font-co-phong fs-3 chu-vang-kim border-bottom border-secondary pb-2 mb-3">
+                <i class="bi bi-receipt-cutoff me-2"></i>Chi Tiết Sản Phẩm Đã Đặt & Tổng Kết Thanh Toán
+            </h4>
+            <div class="table-responsive">
+                <table class="table table-dark table-hover align-middle mb-0">
+                    <thead>
+                        <tr class="chu-vang-kim">
+                            <th>Sản Phẩm / Cấu Hình Hộp Quà</th>
+                            <th class="text-center">Số Lượng</th>
+                            <th class="text-end">Đơn Giá</th>
+                            <th class="text-end">Thành Tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var ct in Model.DonHang.ChiTietDonHangs)
+                        {
+                            <tr>
+                                <td>
+                                    <strong class="text-light">@ct.TenSanPhamLuuCung</strong>
+                                    @if (!string.IsNullOrEmpty(ct.CauHinhHopJson))
+                                    {
+                                        <small class="text-info d-block">Cấu hình lưu cứng JSON: @ct.CauHinhHopJson</small>
+                                    }
+                                </td>
+                                <td class="text-center"><span class="badge bg-secondary">x @ct.SoLuong</span></td>
+                                <td class="text-end">@ct.DonGiaLucMua.ToString("N0") đ</td>
+                                <td class="text-end fw-bold text-warning">@ct.ThanhTien.ToString("N0") đ</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="border-top border-secondary">
+                        <tr>
+                            <td colspan="3" class="text-end text-secondary">Tổng tiền hàng:</td>
+                            <td class="text-end">@Model.DonHang.TongTienHang.ToString("N0") đ</td>
+                        </tr>
+                        @if (Model.DonHang.TienChietKhauB2b > 0)
+                        {
+                            <tr>
+                                <td colspan="3" class="text-end text-warning">Chiết khấu sỉ B2B (@Model.DonHang.PhanTramCkB2b%):</td>
+                                <td class="text-end text-warning">-@Model.DonHang.TienChietKhauB2b.ToString("N0") đ</td>
+                            </tr>
+                        }
+                        @if (Model.DonHang.TienGiamVoucher > 0)
+                        {
+                            <tr>
+                                <td colspan="3" class="text-end text-success">Giảm giá Voucher:</td>
+                                <td class="text-end text-success">-@Model.DonHang.TienGiamVoucher.ToString("N0") đ</td>
+                            </tr>
+                        }
+                        @if (Model.DonHang.PhiInLogo > 0)
+                        {
+                            <tr>
+                                <td colspan="3" class="text-end text-info">Phí khuôn ép kim Logo B2B:</td>
+                                <td class="text-end text-info">+@Model.DonHang.PhiInLogo.ToString("N0") đ</td>
+                            </tr>
+                        }
+                        <tr>
+                            <td colspan="3" class="text-end text-secondary">Phí vận chuyển (@Model.DonHang.DotGiaoHangDaDiems.Count điểm giao):</td>
+                            <td class="text-end">+@Model.DonHang.TongPhiVanChuyen.ToString("N0") đ</td>
+                        </tr>
+                        <tr class="fs-5 fw-bold">
+                            <td colspan="3" class="text-end chu-vang-kim">TỔNG THANH TOÁN CUỐI:</td>
+                            <td class="text-end chu-vang-kim">@Model.DonHang.TongThanhToanCuoi.ToString("N0") đ</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+

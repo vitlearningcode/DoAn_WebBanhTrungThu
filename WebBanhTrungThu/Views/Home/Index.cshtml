@@ -404,8 +404,11 @@
             <span class="badge badge-thuong-hang mb-2">Bản Xem Trước Thiệp Điện Tử Cổ Phong</span>
             <h4 class="font-co-phong fs-2 chu-vang-kim">"Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên & An Khang"</h4>
             <p class="small text-light opacity-75 fst-italic mb-3">— Người gửi: Lê Minh Đức (Quét mã QR trên nắp hộp để mở hiệu ứng lật thiệp 3D) —</p>
-            <div class="d-flex justify-content-center gap-3">
+            <div class="d-flex justify-content-center flex-wrap gap-3">
                 <a href="#tang-tu-chon-hop" class="btn btn-vang-kim rounded-pill px-4">Tạo Hộp Quà Kèm Thiệp QR Ngay</a>
+                <a href="/Thiep3D/Xem/QR-DEMO2026" target="_blank" class="btn btn-vien-vang rounded-pill px-4">
+                    ✨ Mở Xem Thử Thiệp 3D Mẫu
+                </a>
             </div>
         </div>
     </div>
@@ -518,9 +521,11 @@
                 <span>Tổng thanh toán:</span>
                 <span id="lblTongThanhToanSauGiam" class="chu-vang-kim">@Model.TongTamTinhGioHang.ToString("N0") đ</span>
             </div>
-            <button class="btn btn-vang-kim w-100 py-2 rounded-pill">
-                Tiến Hành Thanh Toán (Guest / Member)
-            </button>
+            <a href="/ThanhToan/Index" id="btnTienHanhThanhToanOffcanvas"
+               class="btn btn-vang-kim w-100 py-2 rounded-pill text-decoration-none d-block text-center"
+               onclick="return chuyenDenTrangThanhToan(event)">
+                <i class="bi bi-shield-check me-1"></i>Tiến Hành Thanh Toán (Guest / Member)
+            </a>
         </div>
     </div>
 </div>

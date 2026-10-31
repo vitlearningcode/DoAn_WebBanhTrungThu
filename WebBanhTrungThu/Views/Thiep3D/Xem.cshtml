@@ -1,0 +1,205 @@
+@model WebBanhTrungThu.Models.Entities.DotGiaoHangDaDiem
+@{
+    ViewData["Title"] = $"Thiệp Chúc Mừng QR 3D - Kính Gửi {Model.TenNguoiNhan}";
+    string tenNguoiGui = Model.MaDhNavigation?.HoTenNguoiMua ?? "Quý Khách Nguyệt Cát";
+    string maDonHang = Model.MaDhNavigation?.MaTraCuuDh ?? "TT2026";
+    string tenMauGiaoDien = Model.MauGiaoDienThiep == "TRANG_RAM_HIEN_DAI"
+        ? "Trăng Rằm Hiện Đại"
+        : Model.MauGiaoDienThiep == "SUM_VAY_AM_AP"
+            ? "Sum Vầy Ấm Áp"
+            : "Cổ Phong Hoàng Gia";
+}
+
+<style>
+    .san-khau-thiep-3d {
+        perspective: 1600px;
+        max-width: 720px;
+        margin: 0 auto;
+        min-height: 500px;
+        position: relative;
+    }
+
+    .khung-thiep-lat-3d {
+        width: 100%;
+        min-height: 480px;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 1.15s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    .khung-thiep-lat-3d.da-mo-thiep {
+        transform: rotateY(-180deg);
+    }
+
+    .mat-ngoai-thiep,
+    .mat-trong-thiep {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        min-height: 480px;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        border-radius: 22px;
+        padding: 36px 28px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 22px 50px rgba(0, 0, 0, 0.75);
+    }
+
+    .mat-ngoai-thiep {
+        background: radial-gradient(circle at center, #5C0606 0%, #2B0202 85%);
+        border: 3px solid var(--mau-vang-anh-kim);
+        z-index: 2;
+    }
+
+    .mat-trong-thiep {
+        background: radial-gradient(circle at top, #1C2541 0%, #0B132B 90%);
+        border: 3px solid var(--mau-vang-anh-kim);
+        transform: rotateY(180deg);
+    }
+
+    .con-dau-sap-vang {
+        width: 112px;
+        height: 112px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #FFD700 0%, #D4AF37 60%, #8A6608 100%);
+        border: 3px double #FFF;
+        box-shadow: 0 0 30px rgba(212, 175, 55, 0.75), inset 0 0 12px rgba(139, 0, 0, 0.6);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #2B0202;
+        font-weight: 800;
+        cursor: pointer;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .con-dau-sap-vang:hover {
+        transform: scale(1.08) rotate(5deg);
+        box-shadow: 0 0 42px rgba(255, 215, 0, 0.95);
+    }
+
+    .vanh-trang-ram {
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #FFFDE7 10%, #FFD54F 65%, rgba(255, 213, 79, 0) 100%);
+        box-shadow: 0 0 45px #FFD54F, 0 0 85px rgba(212, 175, 55, 0.65);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+</style>
+
+<section class="py-5">
+    <div class="container text-center">
+        <div class="mb-4">
+            <span class="badge badge-thuong-hang px-3 py-2 rounded-pill mb-2">
+                ✨ THIỆP ĐIỆN TỬ QR 3D • GIAO DIỆN: @tenMauGiaoDien.ToUpper()
+            </span>
+            <h1 class="font-co-phong display-5 fw-bold chu-vang-kim">Tuyệt Tác Tâm Giao Mùa Trăng Rằm</h1>
+            <p class="small text-secondary mb-0">
+                Mã Token: <strong class="text-warning">@Model.MaTokenThiepQr</strong> •
+                Đơn hàng: <strong class="text-light">#@maDonHang</strong> •
+                Đã mở xem: <strong id="lblSoLanMo" class="text-info">@Model.SoLanMoThiep lần</strong>
+            </p>
+        </div>
+
+        <!-- SÂN KHẤU LẬT THIỆP 3D -->
+        <div class="san-khau-thiep-3d my-4">
+            <div id="khungThiep3D" class="khung-thiep-lat-3d">
+                <!-- MẶT NGOÀI: PHONG BÌ KHÉP KÍN & CON DẤU SÁP VÀNG KIM -->
+                <div class="mat-ngoai-thiep">
+                    <div class="w-100 border-bottom border-warning pb-2">
+                        <small class="text-uppercase chu-vang-kim fw-bold" style="letter-spacing: 2px;">
+                            🌕 NGUYỆT CÁT NGHỆ THUẬT TRUNG THU 2026
+                        </small>
+                    </div>
+
+                    <div class="my-3">
+                        <div class="con-dau-sap-vang mx-auto mb-3" onclick="latMoThiep3D()" title="Chạm để mở niêm phong thiệp">
+                            <span class="fs-3">🌕</span>
+                            <small style="font-size: 0.65rem; letter-spacing: 1px;">NIÊM PHONG</small>
+                        </div>
+
+                        <h2 class="font-co-phong fs-1 fw-bold chu-vang-kim mb-2">
+                            Nguyệt Cát Đoàn Viên - Kính gửi: @Model.TenNguoiNhan
+                        </h2>
+                        <p class="text-light opacity-75 mb-0">
+                            Một món quà Trung Thu cùng tấm thiệp chúc mừng 3D từ <strong>@tenNguoiGui</strong> đang chờ bạn mở niêm phong!
+                        </p>
+                    </div>
+
+                    <div class="w-100">
+                        <button type="button" class="btn btn-vang-kim btn-lg rounded-pill px-5 py-2 shadow" onclick="latMoThiep3D()">
+                            🌕 Chạm Để Mở Thiệp Chúc Mừng
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MẶT TRONG: ÁNH TRĂNG RẰM, LỜI CHÚC TÂM GIAO & THÔNG TIN HẸN GIAO -->
+                <div class="mat-trong-thiep">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="vanh-trang-ram">🌕</div>
+                        <span class="small text-uppercase chu-vang-kim fw-bold" style="letter-spacing: 2px;">
+                            THƯ CHÚC TẾT TRUNG THU ĐOÀN VIÊN
+                        </span>
+                        <h3 class="font-co-phong fs-2 chu-vang-kim mt-1 mb-0">
+                            Kính gửi: @Model.TenNguoiNhan
+                        </h3>
+                    </div>
+
+                    <div class="p-4 my-3 rounded border border-warning w-100" style="background: rgba(11, 19, 43, 0.72);">
+                        <p class="font-co-phong fs-2 fst-italic text-light mb-2">
+                            "@(string.IsNullOrWhiteSpace(Model.LoiChucThiep) ? "Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên, Viên Mãn & An Khang!" : Model.LoiChucThiep)"
+                        </p>
+                        <div class="text-end chu-vang-kim fw-bold">
+                            — Người gửi: @tenNguoiGui —
+                        </div>
+                    </div>
+
+                    <div class="w-100">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center small text-secondary border-top border-secondary pt-3 mb-3">
+                            <span><i class="bi bi-calendar-check text-warning me-1"></i>Ngày hẹn giao quà: <strong class="text-light">@Model.NgayHenGiao.ToString("dd/MM/yyyy") (@Model.KhungGioGiao)</strong></span>
+                            <span><i class="bi bi-eye-fill text-info me-1"></i>Lượt mở thiệp: <strong class="text-info">@Model.SoLanMoThiep lần</strong></span>
+                        </div>
+
+                        <div class="d-flex justify-content-center gap-3">
+                            <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-4" onclick="dongThiep3D()">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>Khép Lại Phong Bì
+                            </button>
+                            <a asp-controller="Home" asp-action="Index" class="btn btn-sm btn-vang-kim rounded-pill px-4">
+                                <i class="bi bi-gift-fill me-1"></i>Khám Phá Bộ Sưu Tập Nguyệt Cát
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        function latMoThiep3D() {
+            const el = document.getElementById("khungThiep3D");
+            if (el) {
+                el.classList.add("da-mo-thiep");
+            }
+        }
+
+        function dongThiep3D() {
+            const el = document.getElementById("khungThiep3D");
+            if (el) {
+                el.classList.remove("da-mo-thiep");
+            }
+        }
+    </script>
+}
+

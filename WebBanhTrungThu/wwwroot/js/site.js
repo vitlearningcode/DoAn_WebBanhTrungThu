@@ -365,6 +365,18 @@ function moNganKeoGioHang() {
     }
 }
 
+function chuyenDenTrangThanhToan(e) {
+    const badge = document.getElementById("badgeSoLuongGio");
+    const soLuong = badge ? parseInt(badge.innerText || "0") : 0;
+    if (soLuong <= 0) {
+        if (e) e.preventDefault();
+        hienThiThongBaoGioHang("Giỏ quà đang trống! Hãy chọn bánh lẻ hoặc tự phối hộp quà trước khi thanh toán.", false);
+        return false;
+    }
+    window.location.href = "/ThanhToan/Index";
+    return true;
+}
+
 function chonNhanhVoucher(maCode) {
     const txtVoucher = document.getElementById("txtMaVoucherGioHang");
     if (txtVoucher) {
@@ -621,6 +633,9 @@ async function traCuuDonHangGuest() {
                 <strong class="chu-vang-kim d-block mb-1">Đơn hàng: ${data.maDon} (${data.trangThai})</strong>
                 <div>Người đặt: ${data.nguoiMua} • Ngày đặt: ${data.ngayDat}</div>
                 <div>Tổng thanh toán: <strong class="text-warning">${data.tongTien}</strong> (${data.soDiemGiao} điểm giao)</div>
+                <a href="/ThanhToan/ThanhCong?maDon=${encodeURIComponent(data.maDon)}" class="btn btn-sm btn-vang-kim rounded-pill mt-2 w-100">
+                    <i class="bi bi-qr-code-scan me-1"></i>Xem Chi Tiết Đơn & Mã QR Thiệp 3D
+                </a>
             </div>
         `;
     }
