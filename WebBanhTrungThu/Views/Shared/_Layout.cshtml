@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -54,7 +54,7 @@
                     <!-- Nút mở Ngăn kéo Giỏ hàng Kép -->
                     <button class="btn btn-sm btn-vang-kim rounded-pill px-3 position-relative" data-bs-toggle="offcanvas" data-bs-target="#nganKeoGioHang">
                         <i class="bi bi-bag-heart-fill me-1"></i>Giỏ Quà
-                        <span id="badgeSoLuongGio" class="badge bg-danger rounded-pill ms-1">2</span>
+                        <span id="badgeSoLuongGio" class="badge bg-danger rounded-pill ms-1">0</span>
                     </button>
                 </div>
             </div>
@@ -64,6 +64,9 @@
     <main role="main">
         @RenderBody()
     </main>
+
+    <!-- VÙNG HIỂN THỊ THÔNG BÁO TOAST HOÀNG GIA -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090; margin-top: 68px;" id="khungThongBaoToast"></div>
 
     <!-- NÚT NỔI KÍCH HOẠT TRỢ LÝ CHỌN QUÀ 30 GIÂY -->
     <button class="floating-quiz-btn" data-bs-toggle="modal" data-bs-target="#modalTroLyChonBanh">

@@ -1,4 +1,4 @@
-﻿@model WebBanhTrungThu.ViewModels.LandingPageViewModel
+@model WebBanhTrungThu.ViewModels.LandingPageViewModel
 @using WebBanhTrungThu.Services
 @{
     ViewData["Title"] = "Tuyệt Tác Trăng Rằm";
@@ -286,12 +286,18 @@
                                 <div class="border-start border-secondary ps-2"><strong class="text-success d-block">@gi</strong><span class="text-muted" style="font-size:0.7rem;">Chỉ số GI</span></div>
                             </div>
 
-                            <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <span class="fs-5 fw-bold chu-vang-kim">@b.DonGiaLe.ToString("N0") đ</span>
-                                <a href="#tang-tu-chon-hop" class="btn btn-sm btn-vang-kim rounded-pill px-3"
-                                   onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @b.DonGiaLe, @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhBanh', '@(b.ThongSoDinhDuong?.CanhBaoDiUng)')">
-                                    Đưa vào hộp ↑
-                                </a>
+                                <div class="d-flex gap-1">
+                                    <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-2"
+                                            onclick="themBanhLeVaoGio(@b.MaBanh, 1)" title="Mua lẻ bánh này">
+                                        🛒 Mua lẻ
+                                    </button>
+                                    <a href="#tang-tu-chon-hop" class="btn btn-sm btn-vang-kim rounded-pill px-2"
+                                       onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @b.DonGiaLe, @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhBanh', '@(b.ThongSoDinhDuong?.CanhBaoDiUng)')">
+                                        Đưa vào hộp ↑
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -417,25 +423,49 @@
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
     </div>
     <div class="offcanvas-body d-flex flex-column justify-content-between">
-        <div id="danhSachMonTrongGio">
+        <div id="danhSachMonTrongGio" class="overflow-auto pe-1" style="max-height: 62vh;">
             @if (Model.GioHangHienTai != null && Model.GioHangHienTai.ChiTietGioHangs.Any())
             {
-                foreach (var item in Model.GioHangHienTai.ChiTietGioHangs)
+                foreach (var item in Model.GioHangHienTai.ChiTietGioHangs.OrderByDescending(c => c.NgayThem))
                 {
                     string tenMon = item.LoaiSanPham == 3
                         ? (item.MaHopTcNavigation?.TenHopKhachDat ?? "Hộp Tự Phối")
-                        : (item.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu");
+                        : item.LoaiSanPham == 2
+                            ? (item.MaCbNavigation?.TenCombo ?? "Combo Trung Thu")
+                            : (item.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu");
 
                     <div class="p-3 mb-2 rounded card-hoang-gia">
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
                             <strong class="chu-vang-kim">@tenMon</strong>
-                            <span class="badge bg-secondary">x @item.SoLuong</span>
+                            <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2"
+                                    onclick="xoaMonKhoiGio(@item.MaCtgh)" title="Xóa món này">
+                                🗑️
+                            </button>
                         </div>
                         @if (item.LoaiSanPham == 3 && item.MaHopTcNavigation != null)
                         {
-                            <small class="text-info d-block">Mã cấu hình: @item.MaHopTcNavigation.MaBamCauHinh (@item.MaHopTcNavigation.TongCaloHop Kcal)</small>
+                            <small class="text-info d-block mt-1">Mã cấu hình: @item.MaHopTcNavigation.MaBamCauHinh (@item.MaHopTcNavigation.TongCaloHop Kcal)</small>
+                            if (item.MaHopTcNavigation.ChiTietHopTuChons != null && item.MaHopTcNavigation.ChiTietHopTuChons.Any())
+                            {
+                                <div class="small text-secondary mt-1" style="font-size: 0.75rem;">
+                                    @string.Join(" • ", item.MaHopTcNavigation.ChiTietHopTuChons.OrderBy(x => x.ViTriOtrongHop).Select(x => $"Ô {x.ViTriOtrongHop}: {x.MaBanhNavigation?.TenBanh}"))
+                                </div>
+                            }
                         }
-                        <div class="text-end fw-bold mt-1">@((item.SoLuong * item.DonGiaTamTinh).ToString("N0")) đ</div>
+                        <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-secondary">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-warning px-2 py-0"
+                                        onclick="capNhatSoLuongMon(@item.MaCtgh, @(item.SoLuong - 1))">
+                                    -
+                                </button>
+                                <span class="btn btn-dark border-warning text-light px-3 py-0 disabled">@item.SoLuong</span>
+                                <button type="button" class="btn btn-outline-warning px-2 py-0"
+                                        onclick="capNhatSoLuongMon(@item.MaCtgh, @(item.SoLuong + 1))">
+                                    +
+                                </button>
+                            </div>
+                            <div class="fw-bold text-warning">@((item.SoLuong * item.DonGiaTamTinh).ToString("N0")) đ</div>
+                        </div>
                     </div>
                 }
             }

@@ -1,4 +1,4 @@
-﻿// =========================================================================
+// =========================================================================
 // 1. BIẾN TRẠNG THÁI CHO TRÌNH DỰNG HỘP QUÀ TỰ CHỌN (TẦNG 3)
 // =========================================================================
 let cauHinhHop = {
@@ -14,6 +14,7 @@ let cauHinhHop = {
 document.addEventListener("DOMContentLoaded", function () {
     renderKhayHop();
     khoiChayDongHoDemNguoc();
+    taiLaiGioHangOffcanvas();
 });
 
 function doiMauVoHop(radio) {
@@ -127,9 +128,240 @@ function renderKhayHop() {
     }
 }
 
-function xacNhanThemHopTuChon() {
-    const tenHop = document.getElementById("txtTenHopTuDat").value;
-    alert(`Đã ghi nhận "${tenHop}" với cấu hình ${document.getElementById("lblMaBamCauHinh").innerText}!\n(Sang Giai đoạn 3 chúng ta sẽ nối nút này lưu thẳng vào bảng HopQuaTuChon & ChiTietGioHang).`);
+async function xacNhanThemHopTuChon() {
+    const tenHopInput = document.getElementById("txtTenHopTuDat");
+    const tenHop = tenHopInput && tenHopInput.value.trim() !== ""
+        ? tenHopInput.value.trim()
+        : "Hộp Quà Đoàn Viên Tự Phối";
+
+    const danhSachMaBanh = cauHinhHop.cacO
+        .filter(o => o !== null)
+        .map(o => o.maBanh);
+
+    if (danhSachMaBanh.length < cauHinhHop.sucChua) {
+        hienThiThongBaoGioHang("Vui lòng xếp đủ bánh vào các ô trống trên khay trước khi đóng hộp!", false);
+        return;
+    }
+
+    const btnThem = document.getElementById("btnThemHopVaoGio");
+    const noiDungCu = btnThem ? btnThem.innerHTML : "";
+    if (btnThem) {
+        btnThem.disabled = true;
+        btnThem.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu cấu hình hộp quà...`;
+    }
+
+    try {
+        const res = await fetch("/GioHang/ThemHopTuChon", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                maVh: cauHinhHop.maVH,
+                tenHopKhachDat: tenHop,
+                danhSachMaBanh: danhSachMaBanh,
+                soLuongHop: 1
+            })
+        });
+
+        const data = await res.json();
+        if (data.thanhCong) {
+            hienThiThongBaoGioHang(data.thongBao, true);
+            await taiLaiGioHangOffcanvas();
+            moNganKeoGioHang();
+        } else {
+            hienThiThongBaoGioHang(data.thongBao || "Không thể thêm hộp quà tự chọn!", false);
+        }
+    } catch (err) {
+        hienThiThongBaoGioHang("Lỗi kết nối máy chủ khi lưu hộp quà tự chọn!", false);
+    } finally {
+        if (btnThem) {
+            btnThem.disabled = false;
+            btnThem.innerHTML = noiDungCu;
+            renderKhayHop();
+        }
+    }
+}
+
+// =========================================================================
+// 1B. CÁC HÀM AJAX GIỎ HÀNG KÉP (GUEST & MEMBER) & OFFCANVAS REALTIME
+// =========================================================================
+async function themBanhLeVaoGio(maBanh, soLuong = 1) {
+    try {
+        const res = await fetch("/GioHang/ThemBanhHoacCombo", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                loaiSanPham: 1,
+                maSanPham: maBanh,
+                soLuong: soLuong
+            })
+        });
+
+        const data = await res.json();
+        if (data.thanhCong) {
+            hienThiThongBaoGioHang(data.thongBao, true);
+            await taiLaiGioHangOffcanvas();
+            moNganKeoGioHang();
+        } else {
+            hienThiThongBaoGioHang(data.thongBao || "Không thể thêm bánh vào giỏ!", false);
+        }
+    } catch (err) {
+        hienThiThongBaoGioHang("Lỗi kết nối khi thêm bánh lẻ vào giỏ hàng!", false);
+    }
+}
+
+async function capNhatSoLuongMon(maCtgh, soLuongMoi) {
+    try {
+        const res = await fetch("/GioHang/CapNhatSoLuong", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                maCtgh: maCtgh,
+                soLuongMoi: soLuongMoi
+            })
+        });
+
+        const data = await res.json();
+        if (data.thanhCong) {
+            await taiLaiGioHangOffcanvas();
+        } else {
+            hienThiThongBaoGioHang(data.thongBao || "Không thể cập nhật số lượng!", false);
+        }
+    } catch (err) {
+        hienThiThongBaoGioHang("Lỗi kết nối khi cập nhật số lượng!", false);
+    }
+}
+
+async function xoaMonKhoiGio(maCtgh) {
+    try {
+        const res = await fetch("/GioHang/XoaMon", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                maCtgh: maCtgh,
+                soLuongMoi: 0
+            })
+        });
+
+        const data = await res.json();
+        if (data.thanhCong) {
+            hienThiThongBaoGioHang(data.thongBao, true);
+            await taiLaiGioHangOffcanvas();
+        } else {
+            hienThiThongBaoGioHang(data.thongBao || "Không thể xóa món quà!", false);
+        }
+    } catch (err) {
+        hienThiThongBaoGioHang("Lỗi kết nối khi xóa món khỏi giỏ hàng!", false);
+    }
+}
+
+async function taiLaiGioHangOffcanvas() {
+    try {
+        const res = await fetch("/GioHang/LayThongTinGioHangJson");
+        const data = await res.json();
+        if (!data || !data.thanhCong) return;
+
+        const badge = document.getElementById("badgeSoLuongGio");
+        if (badge) {
+            badge.innerText = data.tongSoLuong;
+        }
+
+        const lblTamTinh = document.getElementById("lblTamTinhOffcanvas");
+        if (lblTamTinh) {
+            lblTamTinh.innerText = `${Math.round(data.tongTamTinh).toLocaleString("vi-VN")} đ`;
+        }
+
+        const khungDanhSach = document.getElementById("danhSachMonTrongGio");
+        if (!khungDanhSach) return;
+
+        if (!data.danhSachMon || data.danhSachMon.length === 0) {
+            khungDanhSach.innerHTML = `<div class="text-center text-secondary py-5">Giỏ quà đang trống. Hãy tự phối hộp bánh ở Tầng 3!</div>`;
+            return;
+        }
+
+        let html = "";
+        data.danhSachMon.forEach(item => {
+            let thongTinPhu = "";
+            if (item.loaiSanPham === 3) {
+                thongTinPhu += `<small class="text-info d-block mt-1">Mã cấu hình: ${item.maBamCauHinh} (${item.tongCalo.toLocaleString("vi-VN")} Kcal)</small>`;
+                if (item.danhSachViBanh && item.danhSachViBanh.length > 0) {
+                    thongTinPhu += `<div class="small text-secondary mt-1" style="font-size: 0.75rem;">${item.danhSachViBanh.join(" • ")}</div>`;
+                }
+            } else if (item.loaiSanPham === 1 && item.tongCalo > 0) {
+                thongTinPhu += `<small class="text-secondary d-block mt-1">Bánh lẻ • ${item.tongCalo} Kcal / bánh</small>`;
+            }
+
+            html += `
+                <div class="p-3 mb-2 rounded card-hoang-gia">
+                    <div class="d-flex justify-content-between align-items-start gap-2">
+                        <strong class="chu-vang-kim">${item.tenMon}</strong>
+                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2"
+                                onclick="xoaMonKhoiGio(${item.maCtgh})" title="Xóa món này">
+                            🗑️
+                        </button>
+                    </div>
+                    ${thongTinPhu}
+                    <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-secondary">
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-warning px-2 py-0"
+                                    onclick="capNhatSoLuongMon(${item.maCtgh}, ${item.soLuong - 1})">
+                                -
+                            </button>
+                            <span class="btn btn-dark border-warning text-light px-3 py-0 disabled">${item.soLuong}</span>
+                            <button type="button" class="btn btn-outline-warning px-2 py-0"
+                                    onclick="capNhatSoLuongMon(${item.maCtgh}, ${item.soLuong + 1})">
+                                +
+                            </button>
+                        </div>
+                        <div class="fw-bold text-warning">${Math.round(item.thanhTien).toLocaleString("vi-VN")} đ</div>
+                    </div>
+                </div>
+            `;
+        });
+
+        khungDanhSach.innerHTML = html;
+    } catch (err) {
+        console.error("Không thể đồng bộ giỏ hàng:", err);
+    }
+}
+
+function moNganKeoGioHang() {
+    const elOffcanvas = document.getElementById("nganKeoGioHang");
+    if (elOffcanvas && typeof bootstrap !== "undefined") {
+        const bsOffcanvas = bootstrap.Offcanvas.getOrCreateInstance(elOffcanvas);
+        bsOffcanvas.show();
+    }
+}
+
+function hienThiThongBaoGioHang(noiDung, thanhCong = true) {
+    let container = document.getElementById("khungThongBaoToast");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "khungThongBaoToast";
+        container.className = "toast-container position-fixed top-0 end-0 p-3";
+        container.style.zIndex = "1090";
+        container.style.marginTop = "68px";
+        document.body.appendChild(container);
+    }
+
+    const toastEl = document.createElement("div");
+    toastEl.className = `toast align-items-center text-light bg-dark border ${thanhCong ? "border-warning" : "border-danger"} show mb-2`;
+    toastEl.setAttribute("role", "alert");
+    toastEl.style.boxShadow = "0 8px 24px rgba(0,0,0,0.65)";
+    toastEl.innerHTML = `
+        <div class="d-flex">
+            <div class="toast-body">
+                <i class="bi ${thanhCong ? "bi-check-circle-fill chu-vang-kim" : "bi-exclamation-triangle-fill text-danger"} me-2"></i>
+                <span>${noiDung}</span>
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    `;
+
+    container.appendChild(toastEl);
+    setTimeout(() => {
+        toastEl.classList.remove("show");
+        setTimeout(() => toastEl.remove(), 300);
+    }, 3500);
 }
 
 // =========================================================================

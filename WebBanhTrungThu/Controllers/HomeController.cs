@@ -74,6 +74,7 @@ namespace WebBanhTrungThu.Controllers
                     .Include(g => g.ChiTietGioHangs).ThenInclude(ct => ct.MaBanhNavigation)
                     .Include(g => g.ChiTietGioHangs).ThenInclude(ct => ct.MaCbNavigation)
                     .Include(g => g.ChiTietGioHangs).ThenInclude(ct => ct.MaHopTcNavigation)
+                        .ThenInclude(h => h!.ChiTietHopTuChons).ThenInclude(cth => cth.MaBanhNavigation)
                     .FirstOrDefaultAsync(g => g.MaNd == maND.Value);
             }
             else if (!string.IsNullOrEmpty(maPhienKVL))
@@ -82,6 +83,7 @@ namespace WebBanhTrungThu.Controllers
                     .Include(g => g.ChiTietGioHangs).ThenInclude(ct => ct.MaBanhNavigation)
                     .Include(g => g.ChiTietGioHangs).ThenInclude(ct => ct.MaCbNavigation)
                     .Include(g => g.ChiTietGioHangs).ThenInclude(ct => ct.MaHopTcNavigation)
+                        .ThenInclude(h => h!.ChiTietHopTuChons).ThenInclude(cth => cth.MaBanhNavigation)
                     .FirstOrDefaultAsync(g => g.MaPhienKvl == maPhienKVL);
             }
 
