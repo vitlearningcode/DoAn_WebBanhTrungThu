@@ -1,0 +1,145 @@
+@model WebBanhTrungThu.ViewModels.DonHangThanhCongViewModel
+@{
+    ViewData["Title"] = $"Chi Tiết Hóa Đơn #{Model.DonHang.MaTraCuuDh} & Sơ Đồ Đóng Khay Hộp";
+    var dh = Model.DonHang;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="/Admin/DonHangAdmin/Index" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Quay lại Danh sách hóa đơn
+    </a>
+    <div class="d-flex gap-2">
+        <a href="/Admin/DonHangAdmin/InHoaDon/@dh.MaDh" target="_blank" class="btn btn-kv-green btn-sm">
+            🖨️ In Hóa Đơn & Phiếu Đóng Gói
+        </a>
+    </div>
+</div>
+
+<!-- KHỐI 1: THÔNG TIN HÓA ĐƠN & CẬP NHẬT TRẠNG THÁI -->
+<div class="kv-card p-3 mb-3">
+    <div class="row align-items-center g-3">
+        <div class="col-lg-5">
+            <h5 class="fw-bold text-primary mb-1">Hóa đơn #@dh.MaTraCuuDh • Khách mua: @dh.HoTenNguoiMua (@dh.SdtnguoiMua)</h5>
+            <div class="small text-muted">
+                Ngày đặt: @dh.NgayDat.ToString("dd/MM/yyyy HH:mm") •
+                Tổng thanh toán: <strong class="text-danger fs-6">@dh.TongThanhToanCuoi.ToString("N0") đ</strong>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="CapNhatTrangThai" method="post" class="row g-2 align-items-end">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="maDh" value="@dh.MaDh" />
+                <input type="hidden" name="returnUrl" value="/Admin/DonHangAdmin/ChiTiet/@dh.MaDh" />
+
+                <div class="col-md-5">
+                    <label class="form-label small fw-semibold mb-1">Trạng thái xử lý (TrangThaiDh)</label>
+                    <select name="trangThaiDh" class="form-select form-select-sm">
+                        <option value="CHO_XAC_NHAN" selected="@(dh.TrangThaiDh == "CHO_XAC_NHAN")">1. CHO_XAC_NHAN</option>
+                        <option value="DANG_DONG_GOI_HOP" selected="@(dh.TrangThaiDh == "DANG_DONG_GOI_HOP")">2. DANG_DONG_GOI_HOP</option>
+                        <option value="DANG_GIAO" selected="@(dh.TrangThaiDh == "DANG_GIAO")">3. DANG_GIAO</option>
+                        <option value="HOAN_TAT" selected="@(dh.TrangThaiDh == "HOAN_TAT")">4. HOAN_TAT</option>
+                        <option value="DA_HUY" selected="@(dh.TrangThaiDh == "DA_HUY")">5. DA_HUY</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold mb-1">Thanh toán (TrangThaiTt)</label>
+                    <select name="trangThaiTt" class="form-select form-select-sm">
+                        <option value="CHUA_TT" selected="@(dh.TrangThaiTt == "CHUA_TT")">CHUA_TT</option>
+                        <option value="CHO_XAC_MINH_CK" selected="@(dh.TrangThaiTt == "CHO_XAC_MINH_CK")">CHO_XAC_MINH_CK</option>
+                        <option value="DA_TT" selected="@(dh.TrangThaiTt == "DA_TT")">DA_TT</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-kv-green btn-sm w-100 py-2">Lưu trạng thái</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- KHỐI 2: SƠ ĐỒ TỪNG Ô BÁNH TRONG KHAY -->
+<div class="kv-card p-3 mb-3">
+    <h6 class="fw-bold text-uppercase text-primary border-bottom pb-2 mb-3">
+        <i class="bi bi-grid-3x3-gap-fill me-2"></i>SƠ ĐỒ NHẶT BÁNH & ĐÓNG GÓI KHAY HỘP CHO NHÂN VIÊN KHO
+    </h6>
+
+    @foreach (var ct in dh.ChiTietDonHangs)
+    {
+        <div class="p-3 mb-2 rounded border bg-light">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong class="text-dark fs-6">@ct.TenSanPhamLuuCung</strong>
+                <div>
+                    <span class="badge bg-primary me-2">Số lượng: x @ct.SoLuong</span>
+                    <strong class="text-primary">@ct.ThanhTien.ToString("N0") đ</strong>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(ct.CauHinhHopJson))
+            {
+                try
+                {
+                    var mangO = Newtonsoft.Json.Linq.JArray.Parse(ct.CauHinhHopJson);
+                    <div class="row g-2 mt-1">
+                        @foreach (var o in mangO)
+                        {
+                            int viTri = o.Value<int?>("ViTriOTrongHop") ?? 1;
+                            string tenBanh = o.Value<string>("TenBanh") ?? "Bánh Trung Thu";
+                            decimal donGia = o.Value<decimal?>("DonGia") ?? 0m;
+                            <div class="col-md-3">
+                                <div class="p-2 rounded border border-primary bg-white text-center shadow-sm">
+                                    <span class="badge bg-primary mb-1">VỊ TRÍ Ô SỐ @viTri</span>
+                                    <strong class="d-block text-dark small">@tenBanh</strong>
+                                    <small class="text-muted">@donGia.ToString("N0") đ</small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                catch { }
+            }
+        </div>
+    }
+</div>
+
+<!-- KHỐI 3: DANH SÁCH ĐỢT GIAO HÀNG & MÃ QR THIỆP 3D -->
+<div class="kv-card p-3">
+    <h6 class="fw-bold text-uppercase text-success border-bottom pb-2 mb-3">
+        <i class="bi bi-truck me-2"></i>ĐỢT GIAO HÀNG ĐA ĐIỂM NHẬN & TEM QR THIỆP 3D (@Model.DanhSachDotGiaoQr.Count ĐIỂM GIAO)
+    </h6>
+
+    <div class="row g-3">
+        @for (int i = 0; i < Model.DanhSachDotGiaoQr.Count; i++)
+        {
+            var item = Model.DanhSachDotGiaoQr[i];
+            var dot = item.DotGiao;
+            <div class="col-md-6">
+                <div class="p-3 rounded border bg-white d-flex justify-content-between align-items-center gap-3">
+                    <div>
+                        <span class="badge bg-primary mb-1">Điểm giao #@(i + 1) • @dot.TrangThaiGiao</span>
+                        <div class="fw-bold text-dark">Người nhận: @dot.TenNguoiNhan (@dot.SdtnguoiNhan)</div>
+                        <div class="small text-muted">@dot.DiaChiGiaoChiTiet</div>
+                        <div class="small text-primary">Hẹn giao: @dot.NgayHenGiao.ToString("dd/MM/yyyy") (@dot.KhungGioGiao)</div>
+                        @if (dot.CoKemThiepQr)
+                        {
+                            <div class="small fst-italic text-success mt-1">"@dot.LoiChucThiep"</div>
+                            <a href="/Thiep3D/Xem/@dot.MaTokenThiepQr" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
+                                ✨ Mở Xem Thiệp 3D (@dot.SoLanMoThiep lượt mở)
+                            </a>
+                        }
+                    </div>
+
+                    @if (dot.CoKemThiepQr && !string.IsNullOrEmpty(item.AnhQrBase64))
+                    {
+                        <div class="text-center border rounded p-2 bg-light">
+                            <img src="@item.AnhQrBase64" width="95" height="95" alt="QR" />
+                            <small class="d-block fw-bold text-dark mt-1" style="font-size: 10px;">@dot.MaTokenThiepQr</small>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>

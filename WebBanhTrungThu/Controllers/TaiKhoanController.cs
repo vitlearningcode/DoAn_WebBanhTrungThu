@@ -134,8 +134,20 @@ namespace WebBanhTrungThu.Controllers
         }
 
         // =========================================================================
-        // 3. ĐĂNG XUẤT KHỎI HỆ THỐNG
+        // 3. ĐĂNG XUẤT KHỎI HỆ THỐNG & REDIRECT KHI CHƯA PHÂN QUYỀN
         // =========================================================================
+        [HttpGet]
+        public IActionResult DangNhap()
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
+        [HttpGet]
+        public IActionResult TuChoiTruyCap()
+        {
+            return RedirectToAction("Index", "Home");
+        }
+
         [HttpPost]
         public async Task<IActionResult> DangXuat()
         {

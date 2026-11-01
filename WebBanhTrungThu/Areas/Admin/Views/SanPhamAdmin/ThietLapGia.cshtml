@@ -1,0 +1,167 @@
+@model WebBanhTrungThu.ViewModels.ThietLapGiaAdminViewModel
+@{
+    ViewData["Title"] = "Thiết lập giá - KiotViet";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h5 class="fw-bold mb-0 text-dark">Thiết lập bảng giá Vỏ hộp, Combo & Chiết khấu B2B</h5>
+        <small class="text-muted">Chỉnh sửa trực tiếp giá vỏ hộp, điều kiện bánh VIP tối thiểu và bậc thang chiết khấu doanh nghiệp</small>
+    </div>
+    <a href="/Admin/SanPhamAdmin/Index" class="btn-kv-outline text-decoration-none">
+        <i class="bi bi-arrow-left me-1"></i> Danh mục hàng hóa
+    </a>
+</div>
+
+<!-- 1. BẢNG GIÁ MẪU VỎ HỘP (MAUVOHOP) -->
+<div class="kv-card p-3 mb-3">
+    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+        1. Bảng giá Mẫu vỏ hộp quà (MauVoHop)
+    </h6>
+    <div class="table-responsive">
+        <table class="kv-table">
+            <thead>
+                <tr>
+                    <th>Mã vỏ</th>
+                    <th>Tên mẫu vỏ hộp</th>
+                    <th class="text-center">Sức chứa</th>
+                    <th>Kiểu lưới 3D</th>
+                    <th>Cập nhật Giá vỏ riêng • Tồn kho • Yêu cầu Bánh VIP</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var vh in Model.DanhSachVoHop)
+                {
+                    <tr class="border-bottom">
+                        <td class="fw-medium text-primary">@vh.MaCodeVh</td>
+                        <td>
+                            <div class="fw-medium text-dark">@vh.TenVoHop</div>
+                            <small class="text-muted">@vh.MoTaChatLieu</small>
+                        </td>
+                        <td class="text-center">@vh.SucChuaBanh bánh</td>
+                        <td><span class="text-muted">@vh.KieuBoCucLuoi</span></td>
+                        <td>
+                            <form asp-area="Admin" asp-controller="SanPhamAdmin" asp-action="CapNhatGiaVoHop" method="post" class="row g-2 align-items-center">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="maVh" value="@vh.MaVh" />
+                                <div class="col-md-4">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light">Giá vỏ:</span>
+                                        <input type="number" step="1000" name="giaVoHopRieng" value="@Math.Round(vh.GiaVoHopRieng, 0)" class="form-control fw-semibold text-end" />
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light">Tồn:</span>
+                                        <input type="number" name="slTonKhoVo" value="@vh.SltonKhoVo" class="form-control text-end" />
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light">Min VIP:</span>
+                                        <input type="number" name="slBanhVipToiThieu" value="@vh.SlbanhThuongHangToiThieu" class="form-control text-end" />
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn-kv-blue w-100 py-1">Lưu</button>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 2. BẢNG ĐỊNH MỨC CHIẾT KHẤU SỈ DOANH NGHIỆP B2B (BANGCHIETKHAUSIB2B) -->
+<div class="kv-card p-3 mb-3">
+    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+        2. Bảng định mức chiết khấu sỉ B2B & Phí khuôn ép kim Logo
+    </h6>
+    <div class="table-responsive">
+        <table class="kv-table">
+            <thead>
+                <tr>
+                    <th>Tên hạng mức sỉ B2B</th>
+                    <th class="text-center">Số lượng hộp áp dụng</th>
+                    <th>Cấu hình % Chiết khấu • Phí khuôn Logo • Miễn phí in Logo</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var moc in Model.BangChietKhauB2B)
+                {
+                    <tr class="border-bottom">
+                        <td class="fw-medium text-dark">@moc.TenMocB2b</td>
+                        <td class="text-center">
+                            Từ @moc.SlhopToiThieu đến @moc.SlhopToiDa hộp
+                        </td>
+                        <td>
+                            <form asp-area="Admin" asp-controller="SanPhamAdmin" asp-action="CapNhatMocB2B" method="post" class="row g-2 align-items-center">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="maMocCk" value="@moc.MaMocCk" />
+                                <div class="col-md-3">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light">CK:</span>
+                                        <input type="number" step="1" name="phanTramChietKhau" value="@Math.Round(moc.PhanTramChietKhau, 0)" class="form-control fw-semibold text-end" />
+                                        <span class="input-group-text bg-light">%</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-light">Phí Logo:</span>
+                                        <input type="number" step="50000" name="phiKhuonInLogo" value="@Math.Round(moc.PhiKhuonInLogo, 0)" class="form-control text-end" />
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check m-0">
+                                        <input class="form-check-input" type="checkbox" name="mienPhiInLogo" value="true" id="mp_@moc.MaMocCk" @(moc.MienPhiInLogo ? "checked" : "") />
+                                        <label class="form-check-label small" for="mp_@moc.MaMocCk">Miễn phí in Logo</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn-kv-blue w-100 py-1">Lưu</button>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- 3. DANH SÁCH COMBO LỄ HỘP MẪU CÓ SẴN -->
+<div class="kv-card p-3">
+    <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+        3. Bảng giá Combo - đóng gói có sẵn (ComboMauCoSan)
+    </h6>
+    <div class="table-responsive">
+        <table class="kv-table">
+            <thead>
+                <tr>
+                    <th>Mã Combo</th>
+                    <th>Tên bộ lễ hộp</th>
+                    <th>Vỏ hộp sử dụng</th>
+                    <th class="text-end">Giá niêm yết</th>
+                    <th class="text-end">Giá bán ưu đãi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var cb in Model.DanhSachCombo)
+                {
+                    <tr class="border-bottom">
+                        <td class="fw-medium text-primary">@cb.MaCodeCb</td>
+                        <td>
+                            <div class="fw-medium text-dark">@cb.TenCombo</div>
+                            <small class="text-muted">@cb.ThongDiepYngia</small>
+                        </td>
+                        <td>@(cb.MaVhNavigation?.TenVoHop ?? "Vỏ hộp")</td>
+                        <td class="text-end text-muted">@cb.GiaNiemYet.ToString("N0")</td>
+                        <td class="text-end fw-semibold text-primary">@cb.GiaUuDaiCombo.ToString("N0")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

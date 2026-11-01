@@ -378,7 +378,10 @@ namespace WebBanhTrungThu.Controllers
                             })
                             .ToList();
 
-                        cauHinhJson = JsonSerializer.Serialize(dsBanhTrongHop);
+                        cauHinhJson = JsonSerializer.Serialize(dsBanhTrongHop, new JsonSerializerOptions
+                        {
+                            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                        });
 
                         foreach (var ctHop in hopTc.ChiTietHopTuChons)
                         {

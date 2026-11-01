@@ -1,0 +1,1676 @@
+@model WebBanhTrungThu.ViewModels.SanPhamAdminViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Danh mục Hàng hóa - KiotViet";
+    var jsonOptions = new JsonSerializerOptions
+    {
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+    string dsBanhLeJson = JsonSerializer.Serialize(
+        Model.DanhSachBanh.Select(b => new
+        {
+            maBanh = b.MaBanh,
+            maHang = b.MaSku,
+            tenHang = b.TenBanh,
+            giaVon = Math.Round(b.GiaVon, 0),
+            giaBan = Math.Round(b.DonGiaLe, 0)
+        }),
+        jsonOptions);
+}
+
+<style>
+    /* BỘ LỌC CỘT TRÁI CHUẨN KIOTVIET 250PX */
+    .kv-page-heading {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 14px 0;
+        line-height: 1.3;
+    }
+
+    .kv-filter-card {
+        background: #FFFFFF;
+        border: 1px solid #E5E7EB;
+        border-radius: 6px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+    }
+
+    .kv-filter-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 600;
+        font-size: 13px;
+        color: #111827;
+        margin-bottom: 8px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .kv-link-create {
+        color: #0070F4;
+        font-weight: 500;
+        font-size: 12.5px;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .kv-link-create:hover {
+        text-decoration: underline;
+    }
+
+    .kv-select, .kv-input {
+        width: 100%;
+        height: 34px;
+        border: 1px solid #D1D5DA;
+        border-radius: 6px;
+        padding: 0 10px;
+        font-size: 13px;
+        color: #1F2937;
+        background-color: #FFFFFF;
+        outline: none;
+    }
+
+    .kv-select:focus, .kv-input:focus {
+        border-color: #0070F4;
+        box-shadow: 0 0 0 2px rgba(0, 112, 244, 0.12);
+    }
+
+    .kv-pill-group {
+        display: inline-flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .kv-pill-btn {
+        border: 1px solid #D1D5DA;
+        background: #FFFFFF;
+        color: #374151;
+        border-radius: 16px;
+        padding: 4px 12px;
+        font-size: 12.5px;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .kv-pill-btn:hover {
+        border-color: #0070F4;
+        color: #0070F4;
+    }
+
+    .kv-pill-btn.active {
+        background: #0070F4;
+        color: #FFFFFF;
+        border-color: #0070F4;
+    }
+
+    /* THANH CÔNG CỤ TRÊN BẢNG */
+    .kv-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .kv-search-box {
+        position: relative;
+        width: 340px;
+        max-width: 100%;
+    }
+
+    .kv-search-box i {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6B7280;
+        font-size: 14px;
+    }
+
+    .kv-search-box input {
+        width: 100%;
+        height: 36px;
+        padding: 0 12px 0 34px;
+        border: 1px solid #D1D5DA;
+        border-radius: 6px;
+        background: #FFFFFF;
+        font-size: 13.5px;
+        color: #1F2937;
+        outline: none;
+    }
+
+    .kv-search-box input:focus {
+        border-color: #0070F4;
+    }
+
+    .kv-toolbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .kv-btn-tool {
+        height: 36px;
+        padding: 0 12px;
+        border-radius: 6px;
+        border: 1px solid #D1D5DA;
+        background: #FFFFFF;
+        color: #1F2937;
+        font-size: 13px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .kv-btn-tool:hover {
+        background: #F9FAFB;
+        border-color: #9CA3AF;
+        color: #111827;
+    }
+
+    .kv-btn-primary {
+        height: 36px;
+        padding: 0 14px;
+        border-radius: 6px;
+        border: 1px solid #0070F4;
+        background: #0070F4;
+        color: #FFFFFF;
+        font-size: 13px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+    }
+
+    .kv-btn-primary:hover {
+        background: #005AC3;
+        color: #FFFFFF;
+    }
+
+    .kv-btn-icon-sq {
+        width: 36px;
+        height: 36px;
+        border-radius: 6px;
+        border: 1px solid #D1D5DA;
+        background: #FFFFFF;
+        color: #4B5563;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .kv-btn-icon-sq:hover {
+        background: #F3F4F6;
+        color: #111827;
+    }
+
+    .kv-thumb-36 {
+        width: 36px;
+        height: 36px;
+        border-radius: 4px;
+        object-fit: cover;
+        border: 1px solid #E5E7EB;
+        background: #F9FAFB;
+        display: block;
+    }
+
+    .kv-star-icon {
+        color: #D1D5DB;
+        font-size: 14px;
+        cursor: pointer;
+    }
+
+    .kv-star-icon.starred {
+        color: #F59E0B;
+    }
+
+    /* MODAL SỬA HÀNG HÓA / SỬA COMBO - ĐÓNG GÓI CHUẨN KIOTVIET (950PX) */
+    .kv-modal-dialog {
+        max-width: 950px;
+    }
+
+    .kv-modal-content {
+        border-radius: 16px;
+        border: none;
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.18);
+        overflow: hidden;
+        background: #FFFFFF;
+    }
+
+    .kv-modal-header {
+        padding: 18px 24px 0 24px;
+        border-bottom: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .kv-modal-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0;
+    }
+
+    .kv-modal-tabs {
+        display: flex;
+        gap: 24px;
+        padding: 0 24px;
+        border-bottom: 1px solid #E5E7EB;
+        margin-top: 10px;
+    }
+
+    .kv-modal-tab {
+        padding: 10px 2px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #6B7280;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        background: none;
+        border-top: none;
+        border-left: none;
+        border-right: none;
+    }
+
+    .kv-modal-tab.active {
+        color: #0070F4;
+        border-bottom-color: #0070F4;
+    }
+
+    .kv-modal-body {
+        padding: 20px 24px;
+        max-height: 74vh;
+        overflow-y: auto;
+        background: #FFFFFF;
+    }
+
+    .kv-field-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1F2937;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .kv-info-i {
+        color: #9CA3AF;
+        font-size: 12px;
+        margin-left: 4px;
+        cursor: help;
+    }
+
+    .kv-form-control {
+        width: 100%;
+        height: 36px;
+        border: 1px solid #D1D5DA;
+        border-radius: 8px;
+        padding: 0 12px;
+        font-size: 13.5px;
+        color: #111827;
+        background: #FFFFFF;
+        outline: none;
+    }
+
+    .kv-form-control:focus {
+        border-color: #0070F4;
+        box-shadow: 0 0 0 2px rgba(0, 112, 244, 0.12);
+    }
+
+    /* KHUNG UPLOAD ẢNH BÊN PHẢI MODAL */
+    .kv-image-uploader-wrap {
+        display: flex;
+        gap: 10px;
+        height: 190px;
+    }
+
+    .kv-image-main-box {
+        flex: 1;
+        border: 1px dashed #9CA3AF;
+        border-radius: 10px;
+        background: #F9FAFB;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+        position: relative;
+        overflow: hidden;
+        text-align: center;
+    }
+
+    .kv-image-main-box img {
+        max-width: 100%;
+        max-height: 115px;
+        object-fit: contain;
+        border-radius: 6px;
+        margin-bottom: 6px;
+    }
+
+    .kv-image-thumbs-col {
+        width: 44px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 6px;
+    }
+
+    .kv-image-thumb-slot {
+        width: 44px;
+        height: 42px;
+        border: 1px dashed #D1D5DA;
+        border-radius: 6px;
+        background: #F9FAFB;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        color: #9CA3AF;
+        font-size: 12px;
+    }
+
+    .kv-image-thumb-slot img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* KHỐI ACCORDION TRONG MODAL KIOTVIET */
+    .kv-accordion-box {
+        border: 1px solid #E5E7EB;
+        border-radius: 10px;
+        margin-top: 14px;
+        overflow: hidden;
+        background: #FFFFFF;
+    }
+
+    .kv-accordion-header {
+        background: #F9FAFB;
+        padding: 11px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .kv-accordion-title {
+        font-weight: 600;
+        font-size: 13.5px;
+        color: #111827;
+    }
+
+    .kv-accordion-sub {
+        font-size: 12px;
+        color: #6B7280;
+        margin-left: 8px;
+        font-weight: 400;
+    }
+
+    .kv-accordion-body {
+        padding: 14px 16px;
+        border-top: 1px solid #E5E7EB;
+    }
+
+    .kv-comp-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .kv-comp-table th {
+        background: #F3F4F6;
+        color: #374151;
+        font-weight: 600;
+        padding: 8px 10px;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .kv-comp-table td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #F3F4F6;
+        vertical-align: middle;
+    }
+
+    .kv-modal-footer {
+        padding: 14px 24px;
+        border-top: 1px solid #E5E7EB;
+        background: #FFFFFF;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+</style>
+
+<div class="kv-layout-2col">
+    <!-- ========================================================================= -->
+    <!-- CỘT TRÁI (250PX): TIÊU ĐỀ "HÀNG HÓA" + 9 KHỐI LỌC CLIENT-SIDE TỨC THÌ      -->
+    <!-- ========================================================================= -->
+    <aside class="kv-sidebar-filter">
+        <h1 class="kv-page-heading">Hàng hóa</h1>
+
+        <div id="boxLocClientKiotViet">
+            <input type="hidden" id="fltBanTrucTiep" value="ALL" />
+
+            <!-- 1. Nhóm hàng (kèm nút Tạo mới màu xanh) -->
+            <div class="kv-filter-card">
+                <div class="kv-filter-header">
+                    <span>Nhóm hàng</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="javascript:void(0)" class="kv-link-create" data-bs-toggle="modal" data-bs-target="#modalTaoNhomHang">Tạo mới</a>
+                        <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                    </div>
+                </div>
+                <select id="fltMaDm" class="kv-select" onchange="locBangHangHoaClient()">
+                    <option value="ALL">Chọn nhóm hàng (Tất cả)</option>
+                    @foreach (var dm in Model.DanhSachDanhMuc)
+                    {
+                        <option value="@dm.MaDm">@dm.TenDm</option>
+                    }
+                </select>
+            </div>
+
+            <!-- 2. Tồn kho -->
+            <div class="kv-filter-card">
+                <div class="kv-filter-header">
+                    <span>Tồn kho</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+                <select id="fltTonKho" class="kv-select" onchange="locBangHangHoaClient()">
+                    <option value="ALL">Tất cả</option>
+                    <option value="DUOI_DINH_MUC">Dưới định mức tồn (&le; 30)</option>
+                    <option value="VUOT_DINH_MUC">Vượt định mức tồn (&gt; 100)</option>
+                    <option value="CON_HANG">Còn hàng trong kho</option>
+                    <option value="HET_HANG">Hết hàng trong kho</option>
+                </select>
+            </div>
+
+            <!-- 3. Dự kiến hết hàng -->
+            <div class="kv-filter-card">
+                <div class="kv-filter-header">
+                    <span>Dự kiến hết hàng</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+                <div class="d-flex flex-column gap-1">
+                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                        <input type="radio" name="duKienHetHang" value="ALL" checked onchange="locBangHangHoaClient()" />
+                        <span>Toàn thời gian</span>
+                    </label>
+                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                        <input type="radio" name="duKienHetHang" value="TUY_CHINH" onchange="locBangHangHoaClient()" />
+                        <span>Tùy chỉnh</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 4. Thời gian tạo -->
+            <div class="kv-filter-card">
+                <div class="kv-filter-header">
+                    <span>Thời gian tạo</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+                <div class="d-flex flex-column gap-1">
+                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                        <input type="radio" name="thoiGianTao" value="ALL" checked onchange="locBangHangHoaClient()" />
+                        <span>Toàn thời gian</span>
+                    </label>
+                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                        <input type="radio" name="thoiGianTao" value="TUY_CHINH" onchange="locBangHangHoaClient()" />
+                        <span>Tùy chỉnh</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 5. Nhà cung cấp -->
+            <div class="kv-filter-card">
+                <div class="kv-filter-header">
+                    <span>Nhà cung cấp</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+                <select id="fltNhaCungCap" class="kv-select" onchange="locBangHangHoaClient()">
+                    <option value="ALL">Chọn nhà cung cấp</option>
+                    @foreach (var ncc in Model.DanhSachNhaCungCap)
+                    {
+                        <option value="@ncc">@ncc</option>
+                    }
+                </select>
+            </div>
+
+            <!-- 6. Thương hiệu -->
+            <div class="kv-filter-card">
+                <div class="kv-filter-header">
+                    <span>Thương hiệu</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="javascript:void(0)" class="kv-link-create" data-bs-toggle="modal" data-bs-target="#modalTaoThuongHieu">Tạo mới</a>
+                        <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                    </div>
+                </div>
+                <select id="fltThuongHieu" class="kv-select" onchange="locBangHangHoaClient()">
+                    <option value="ALL">Chọn thương hiệu</option>
+                    @foreach (var th in Model.DanhSachThuongHieu)
+                    {
+                        <option value="@th">@th</option>
+                    }
+                </select>
+            </div>
+
+            <!-- 7. Vị trí -->
+            <div class="kv-filter-card">
+                <div class="kv-filter-header">
+                    <span>Vị trí</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="javascript:void(0)" class="kv-link-create" data-bs-toggle="modal" data-bs-target="#modalTaoViTri">Tạo mới</a>
+                        <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                    </div>
+                </div>
+                <select id="fltViTriKho" class="kv-select" onchange="locBangHangHoaClient()">
+                    <option value="ALL">Chọn vị trí</option>
+                    @foreach (var vt in Model.DanhSachViTriKho)
+                    {
+                        <option value="@vt">@vt</option>
+                    }
+                </select>
+            </div>
+
+            <!-- 8. Loại hàng -->
+            <div class="kv-filter-card">
+                <div class="kv-filter-header">
+                    <span>Loại hàng</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+                <select id="fltLoaiHang" class="kv-select" onchange="locBangHangHoaClient()">
+                    <option value="ALL">Tất cả loại hàng</option>
+                    <option value="BANH_LE">Hàng hóa thường (Bánh lẻ)</option>
+                    <option value="COMBO">Combo - đóng gói</option>
+                </select>
+            </div>
+
+            <!-- 9. Bán trực tiếp (3 nút pill nhỏ ngang nhau) -->
+            <div class="kv-filter-card">
+                <div class="kv-filter-header">
+                    <span>Bán trực tiếp</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+                <div class="kv-pill-group" id="pillGroupBanTrucTiep">
+                    <button type="button" class="kv-pill-btn active" data-val="ALL" onclick="chonBanTrucTiep(this, 'ALL')">Tất cả</button>
+                    <button type="button" class="kv-pill-btn" data-val="CO" onclick="chonBanTrucTiep(this, 'CO')">Có</button>
+                    <button type="button" class="kv-pill-btn" data-val="KHONG" onclick="chonBanTrucTiep(this, 'KHONG')">Không</button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ========================================================================= -->
+    <!-- CỘT PHẢI: THANH CÔNG CỤ KIOTVIET & BẢNG DANH SÁCH HÀNG HÓA                -->
+    <!-- ========================================================================= -->
+    <div class="kv-main-table-area">
+        <!-- Thanh công cụ phía trên bảng -->
+        <div class="kv-toolbar">
+            <!-- Bên trái: Ô tìm kiếm có kính lúp (Lọc tức thì không reload trang) -->
+            <div class="kv-search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="txtTimKiemHangHoa" value="@Model.TuKhoa"
+                       placeholder="Theo mã, tên hàng"
+                       oninput="locBangHangHoaClient()" />
+            </div>
+
+            <!-- Bên phải: Cụm nút bấm chuẩn KiotViet -->
+            <div class="kv-toolbar-actions">
+                <div class="dropdown">
+                    <button class="kv-btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-plus-lg"></i> Tạo mới
+                    </button>
+                    <ul class="dropdown-menu shadow-sm border" style="font-size: 13.5px; min-width: 230px;">
+                        <li>
+                            <a class="dropdown-item py-2" href="javascript:void(0)" onclick="moModalTaoMoi(false)">
+                                <i class="bi bi-box me-2 text-primary"></i>+ Thêm hàng hóa (Bánh lẻ)
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2" href="javascript:void(0)" onclick="moModalTaoMoi(true)">
+                                <i class="bi bi-boxes me-2 text-success"></i>+ Thêm combo - đóng gói
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <button type="button" class="kv-btn-tool" onclick="alert('Tính năng Import file Excel (.xlsx) chuẩn KiotViet sẵn sàng!');">
+                    <i class="bi bi-upload"></i> Import file
+                </button>
+                <button type="button" class="kv-btn-tool" onclick="window.print();">
+                    <i class="bi bi-download"></i> Xuất file
+                </button>
+
+                <button type="button" class="kv-btn-icon-sq" title="Hiển thị cột">
+                    <i class="bi bi-list"></i>
+                </button>
+                <a href="/Admin/SanPhamAdmin/ThietLapGia" class="kv-btn-icon-sq" title="Thiết lập giá">
+                    <i class="bi bi-gear"></i>
+                </a>
+                <a href="/Admin/KhoAnhAdmin/Index" class="kv-btn-icon-sq" title="Kho ảnh đa nguồn">
+                    <i class="bi bi-question-circle"></i>
+                </a>
+            </div>
+        </div>
+
+        <!-- BẢNG DANH SÁCH HÀNG HÓA & COMBO CHUNG -->
+        <div class="kv-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="kv-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 34px;" class="text-center">
+                                <input type="checkbox" class="form-check-input" onclick="event.stopPropagation(); document.querySelectorAll('.chk-row-kv').forEach(c => c.checked = this.checked)" />
+                            </th>
+                            <th style="width: 32px;" class="text-center"><i class="bi bi-star text-muted"></i></th>
+                            <th style="width: 52px;"></th>
+                            <th>Mã hàng</th>
+                            <th>Tên hàng</th>
+                            <th>Nhóm hàng</th>
+                            <th>Thương hiệu</th>
+                            <th class="text-end">Giá bán</th>
+                            <th class="text-end">Giá vốn</th>
+                            <th class="text-end">Tồn kho</th>
+                            <th>Dự kiến hết hàng</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyDanhSachHangHoa">
+                        @for (int i = 0; i < Model.DanhSachHangHoa.Count; i++)
+                        {
+                            var item = Model.DanhSachHangHoa[i];
+                            string itemJson = JsonSerializer.Serialize(new
+                            {
+                                idGoc = item.IdGoc,
+                                laCombo = item.LaCombo,
+                                maHang = item.MaHang,
+                                maVach = item.MaVach,
+                                tenHang = item.TenHang,
+                                maDm = item.MaDm,
+                                tenNhomHang = item.TenNhomHang,
+                                thuongHieu = item.ThuongHieu,
+                                nhaCungCap = item.NhaCungCap,
+                                viTriKho = item.ViTriKho,
+                                donViTinh = item.DonViTinh,
+                                giaBan = Math.Round(item.GiaBan, 0),
+                                giaVon = Math.Round(item.GiaVon, 0),
+                                tonKho = item.TonKho,
+                                trongLuongGram = item.TrongLuongGram,
+                                banTrucTiep = item.BanTrucTiep,
+                                laBanhChay = item.LaBanhChay,
+                                laBanhThuongHang = item.LaBanhThuongHang,
+                                mucDoNgot = item.MucDoNgot,
+                                moTaNgan = item.MoTaNgan ?? "",
+                                cauChuyenBanh = item.CauChuyenBanh ?? "",
+                                maVhCombo = item.MaVhCombo ?? 1,
+                                nangLuongCalo = item.NangLuongCalo,
+                                luongDuongGram = Math.Round(item.LuongDuongGram, 0),
+                                chiSoDuongHuyetGi = item.ChiSoDuongHuyetGi,
+                                canhBaoDiUng = item.CanhBaoDiUng,
+                                urlAnhChinh = item.UrlAnhChinh,
+                                danhSachAnh = item.DanhSachAnh,
+                                hangThanhPhans = item.HangThanhPhans.Select(tp => new
+                                {
+                                    maBanh = tp.MaBanh,
+                                    maHang = tp.MaHang,
+                                    tenHang = tp.TenHang,
+                                    soLuong = tp.SoLuong,
+                                    giaVon = Math.Round(tp.GiaVon, 0),
+                                    giaBan = Math.Round(tp.GiaBan, 0)
+                                })
+                            }, jsonOptions);
+
+                            string searchKey = $"{item.MaHang} {item.TenHang} {item.MaVach} {item.ThuongHieu} {item.TenNhomHang}".ToLowerInvariant();
+
+                            <!-- DÒNG MASTER -->
+                            <tr class="kv-master-row"
+                                data-detail-id="detail-@item.KeyId"
+                                data-search="@searchKey"
+                                data-madm="@item.MaDm"
+                                data-tonkho="@item.TonKho"
+                                data-ncc="@item.NhaCungCap"
+                                data-thuonghieu="@item.ThuongHieu"
+                                data-vitri="@item.ViTriKho"
+                                data-loaihang="@(item.LaCombo ? "COMBO" : "BANH_LE")"
+                                data-bantructiep="@(item.BanTrucTiep ? "CO" : "KHONG")"
+                                onclick="toggleKvDetailRow('detail-@item.KeyId', this)">
+                                <td class="text-center" onclick="event.stopPropagation();">
+                                    <input type="checkbox" class="form-check-input chk-row-kv" />
+                                </td>
+                                <td class="text-center" onclick="event.stopPropagation(); this.querySelector('i').classList.toggle('starred'); this.querySelector('i').classList.toggle('bi-star'); this.querySelector('i').classList.toggle('bi-star-fill');">
+                                    <i class="bi @(item.LaBanhThuongHang || item.LaCombo ? "bi-star-fill starred" : "bi-star") kv-star-icon"></i>
+                                </td>
+                                <td>
+                                    <img src="@item.UrlAnhChinh" alt="@item.TenHang" class="kv-thumb-36"
+                                         onerror="window.kvImgFallback(this)" />
+                                </td>
+                                <td class="fw-medium text-primary">@item.MaHang</td>
+                                <td>
+                                    <span class="fw-medium text-dark">@item.TenHang</span>
+                                    @if (item.LaCombo)
+                                    {
+                                        <span class="text-muted ms-1" style="font-size: 12px;">(Combo)</span>
+                                    }
+                                </td>
+                                <td>@item.TenNhomHang</td>
+                                <td>@item.ThuongHieu</td>
+                                <td class="text-end fw-medium">@item.GiaBan.ToString("N0")</td>
+                                <td class="text-end text-muted">@item.GiaVon.ToString("N0")</td>
+                                <td class="text-end fw-medium @(item.TonKho <= 15 ? "text-danger" : "")">@item.TonKho.ToString("N0")</td>
+                                <td class="text-muted">@item.DuKienHetHang</td>
+                            </tr>
+
+                            <!-- DÒNG CHI TIẾT XỔ XUỐNG KIOTVIET -->
+                            <tr id="detail-@item.KeyId" class="kv-detail-row" onclick="event.stopPropagation();">
+                                <td colspan="11" class="p-0">
+                                    <div class="kv-detail-box">
+                                        <div class="row g-3 align-items-start">
+                                            <!-- Ảnh lớn bên trái -->
+                                            <div class="col-md-2 text-center">
+                                                <img src="@item.UrlAnhChinh" alt="@item.TenHang"
+                                                     class="img-fluid rounded border p-1 bg-white"
+                                                     style="max-height: 125px; object-fit: contain;"
+                                                     onerror="window.kvImgFallback(this)" />
+                                            </div>
+
+                                            <!-- Thông tin chi tiết giữa -->
+                                            <div class="col-md-6">
+                                                <h6 class="fw-bold text-dark mb-2">@item.TenHang</h6>
+                                                <div class="row g-2" style="font-size: 13px;">
+                                                    <div class="col-6">
+                                                        <div class="py-1 border-bottom d-flex justify-content-between">
+                                                            <span class="text-muted">Mã hàng:</span>
+                                                            <strong class="text-dark">@item.MaHang</strong>
+                                                        </div>
+                                                        <div class="py-1 border-bottom d-flex justify-content-between">
+                                                            <span class="text-muted">Mã vạch:</span>
+                                                            <strong class="text-dark">@item.MaVach</strong>
+                                                        </div>
+                                                        <div class="py-1 border-bottom d-flex justify-content-between">
+                                                            <span class="text-muted">Nhóm hàng:</span>
+                                                            <strong class="text-dark">@item.TenNhomHang</strong>
+                                                        </div>
+                                                        <div class="py-1 border-bottom d-flex justify-content-between">
+                                                            <span class="text-muted">Loại hàng:</span>
+                                                            <strong class="text-dark">@(item.LaCombo ? "Combo - đóng gói" : "Hàng hóa thường")</strong>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="py-1 border-bottom d-flex justify-content-between">
+                                                            <span class="text-muted">Thương hiệu:</span>
+                                                            <strong class="text-primary">@item.ThuongHieu</strong>
+                                                        </div>
+                                                        <div class="py-1 border-bottom d-flex justify-content-between">
+                                                            <span class="text-muted">Nhà cung cấp:</span>
+                                                            <strong class="text-dark">@item.NhaCungCap</strong>
+                                                        </div>
+                                                        <div class="py-1 border-bottom d-flex justify-content-between">
+                                                            <span class="text-muted">Vị trí kho:</span>
+                                                            <strong class="text-dark">@item.ViTriKho</strong>
+                                                        </div>
+                                                        <div class="py-1 border-bottom d-flex justify-content-between">
+                                                            <span class="text-muted">Đơn vị tính / Trọng lượng:</span>
+                                                            <strong class="text-dark">@item.DonViTinh (@item.TrongLuongGram.ToString("N0") g)</strong>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Cột phải: Thành phần Combo hoặc Lô hạn dùng -->
+                                            <div class="col-md-4">
+                                                @if (item.LaCombo && item.HangThanhPhans.Count > 0)
+                                                {
+                                                    <div class="small fw-semibold text-dark mb-1">Hàng thành phần trong Combo:</div>
+                                                    <div class="border rounded bg-light p-2" style="font-size: 12.5px;">
+                                                        @foreach (var tp in item.HangThanhPhans)
+                                                        {
+                                                            <div class="d-flex justify-content-between py-1 border-bottom">
+                                                                <span>• [@tp.MaHang] @tp.TenHang</span>
+                                                                <strong>x@(tp.SoLuong) (@tp.TongGiaBan.ToString("N0"))</strong>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                                else if (item.DanhSachLo.Count > 0)
+                                                {
+                                                    <div class="small fw-semibold text-dark mb-1">Lô hạn sử dụng (FEFO):</div>
+                                                    <div class="border rounded bg-light p-2" style="font-size: 12.5px;">
+                                                        @foreach (var lo in item.DanhSachLo)
+                                                        {
+                                                            <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                                                                <span>Lô <strong>@lo.MaLoCode</strong> (HSD: @lo.HanSuDung.ToString("dd/MM/yyyy"))</span>
+                                                                <span>Tồn: <strong>@lo.SlconLai.ToString("N0")</strong></span>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="small text-muted">Mô tả: @item.MoTaNgan</div>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <!-- Thanh nút tác vụ góc dưới bên phải khung chi tiết -->
+                                        <div class="d-flex justify-content-end align-items-center gap-2 mt-3 pt-2 border-top">
+                                            <button type="button" class="btn-kv-green"
+                                                    data-item="@itemJson"
+                                                    onclick="event.stopPropagation(); moModalSuaTuButton(this)">
+                                                <i class="bi bi-check2-square me-1"></i> Cập nhật
+                                            </button>
+
+                                            <button type="button" class="btn-kv-outline"
+                                                    onclick="event.stopPropagation(); window.print();">
+                                                <i class="bi bi-upc-scan me-1"></i> In tem mã
+                                            </button>
+
+                                            <form asp-area="Admin" asp-controller="SanPhamAdmin" asp-action="XoaHangHoa" method="post" class="d-inline"
+                                                  onsubmit="event.stopPropagation(); return confirm('Xác nhận ngừng kinh doanh / xóa mặt hàng [@item.MaHang] @item.TenHang?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="idGoc" value="@item.IdGoc" />
+                                                <input type="hidden" name="laCombo" value="@item.LaCombo.ToString().ToLower()" />
+                                                <button type="submit" class="btn btn-outline-danger btn-sm px-3" style="font-size: 13px;">
+                                                    <i class="bi bi-trash me-1"></i> Xóa
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =================================================================================== -->
+<!-- MODAL CHUẨN KIOTVIET: SỬA HÀNG HÓA / SỬA COMBO - ĐÓNG GÓI (MAX-WIDTH: 950PX)       -->
+<!-- =================================================================================== -->
+<div class="modal fade" id="modalHangHoaKiot" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog kv-modal-dialog modal-dialog-centered">
+        <div class="modal-content kv-modal-content">
+            <form asp-area="Admin" asp-controller="SanPhamAdmin" asp-action="LuuHangHoaKiot" method="post" enctype="multipart/form-data" id="formLuuHangHoaKiot">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="IdGoc" id="kv_IdGoc" value="0" />
+                <input type="hidden" name="LaCombo" id="kv_LaCombo" value="false" />
+                <input type="hidden" name="HangThanhPhanJson" id="kv_HangThanhPhanJson" value="[]" />
+
+                <!-- HEADER MODAL -->
+                <div class="kv-modal-header">
+                    <h5 class="kv-modal-title" id="kv_ModalTitle">Sửa combo - đóng gói</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <!-- THANH TAB PHỤ: THÔNG TIN | MÔ TẢ -->
+                <div class="kv-modal-tabs">
+                    <button type="button" class="kv-modal-tab active" id="btnTabThongTin" onclick="chuyenTabModalKiot('THONG_TIN')">
+                        Thông tin
+                    </button>
+                    <button type="button" class="kv-modal-tab" id="btnTabMoTa" onclick="chuyenTabModalKiot('MO_TA')">
+                        Mô tả
+                    </button>
+                </div>
+
+                <!-- BODY MODAL -->
+                <div class="kv-modal-body">
+                    <!-- TAB 1: THÔNG TIN -->
+                    <div id="paneTabThongTin">
+                        <!-- PHẦN TRÊN: CHIA 2 CỘT TRÁI 70% - PHẢI 30% -->
+                        <div class="row g-3">
+                            <!-- Cột Trái (70% -> col-md-8) -->
+                            <div class="col-md-8">
+                                <!-- Hàng 1: Mã hàng | Mã vạch -->
+                                <div class="row g-3 mb-3">
+                                    <div class="col-sm-6">
+                                        <label class="kv-field-label">
+                                            <span>Mã hàng <i class="bi bi-info-circle kv-info-i" title="Mã hàng tự động hoặc nhập tay"></i></span>
+                                        </label>
+                                        <input type="text" name="MaHang" id="kv_MaHang" class="kv-form-control" placeholder="Mã hàng tự động" />
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="kv-field-label">
+                                            <span>Mã vạch <i class="bi bi-info-circle kv-info-i" title="Mã vạch Barcode quét tít tít"></i></span>
+                                        </label>
+                                        <input type="text" name="MaVach" id="kv_MaVach" class="kv-form-control" placeholder="Nhập mã vạch" />
+                                    </div>
+                                </div>
+
+                                <!-- Hàng 2: Tên hàng -->
+                                <div class="mb-3">
+                                    <label class="kv-field-label">
+                                        <span>Tên hàng</span>
+                                    </label>
+                                    <input type="text" name="TenHang" id="kv_TenHang" class="kv-form-control" required
+                                           placeholder="VD: BÁNH TRUNG THU ĐỒNG KHÁNH 2 TRỨNG" />
+                                </div>
+
+                                <!-- Hàng 3: Nhóm hàng (kèm Tạo mới) | Thương hiệu (kèm Tạo mới) -->
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <label class="kv-field-label">
+                                            <span>Nhóm hàng</span>
+                                            <a href="javascript:void(0)" class="kv-link-create" onclick="themNhanhOptionSelect('kv_MaDm', 'Nhập tên nhóm hàng mới:')">Tạo mới</a>
+                                        </label>
+                                        <select name="MaDm" id="kv_MaDm" class="kv-form-control">
+                                            @foreach (var dm in Model.DanhSachDanhMuc)
+                                            {
+                                                <option value="@dm.MaDm">@dm.TenDm</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="kv-field-label">
+                                            <span>Thương hiệu</span>
+                                            <a href="javascript:void(0)" class="kv-link-create" onclick="themNhanhOptionSelect('kv_ThuongHieu', 'Nhập tên Thương hiệu mới (VD: Kinh Đô, Đồng Khánh, Như Lan):')">Tạo mới</a>
+                                        </label>
+                                        <select name="ThuongHieu" id="kv_ThuongHieu" class="kv-form-control">
+                                            @foreach (var th in Model.DanhSachThuongHieu)
+                                            {
+                                                <option value="@th">@th</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cột Phải (30% -> col-md-4): Khu vực Hình ảnh sản phẩm chuẩn KiotViet -->
+                            <div class="col-md-4">
+                                <div class="kv-image-uploader-wrap">
+                                    <div class="kv-image-main-box">
+                                        <img id="kv_PreviewAnhChinh" src="/images/default/banh-mac-dinh.png" alt="Ảnh hàng hóa"
+                                             onerror="window.kvImgFallback(this)" />
+                                        <label for="kv_FileAnhTaiLen" class="btn btn-sm btn-outline-secondary py-1 px-2" style="font-size: 12px; cursor: pointer;">
+                                            + Thêm ảnh
+                                        </label>
+                                        <input type="file" name="FileAnhTaiLen" id="kv_FileAnhTaiLen" class="d-none" accept="image/*"
+                                               onchange="xemTruocAnhKiot(this)" />
+                                        <div class="text-muted mt-1" style="font-size: 11px;">Mỗi ảnh không quá 2 MB</div>
+                                    </div>
+
+                                    <!-- 4 ô vuông nhỏ xếp dọc bên phải -->
+                                    <div class="kv-image-thumbs-col">
+                                        <div class="kv-image-thumb-slot">
+                                            <img id="kv_Thumb1" src="/images/default/banh-mac-dinh.png" alt="" onerror="window.kvImgFallback(this)" />
+                                        </div>
+                                        <div class="kv-image-thumb-slot"><i class="bi bi-image"></i></div>
+                                        <div class="kv-image-thumb-slot"><i class="bi bi-image"></i></div>
+                                        <div class="kv-image-thumb-slot"><i class="bi bi-image"></i></div>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <input type="text" name="UrlAnhNhapTay" id="kv_UrlAnhNhapTay" class="kv-form-control"
+                                           style="height: 30px; font-size: 12px;"
+                                           placeholder="Hoặc dán link /kho-anh-may/... hoặc Drive"
+                                           oninput="if(this.value) { const p = document.getElementById('kv_PreviewAnhChinh'); delete p.dataset.fallbackApplied; p.src = this.value; }" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ================================================================= -->
+                        <!-- KHỐI ACCORDION 1: HÀNG THÀNH PHẦN                                 -->
+                        <!-- ================================================================= -->
+                        <div class="kv-accordion-box" id="boxAccordionHangThanhPhan">
+                            <div class="kv-accordion-header" onclick="toggleAccordionBody('bodyHangThanhPhan')">
+                                <div>
+                                    <span class="kv-accordion-title">Hàng thành phần</span>
+                                    <span class="kv-accordion-sub">Hàng hóa cấu thành từ nhiều hàng hóa khác</span>
+                                </div>
+                                <i class="bi bi-chevron-up text-muted"></i>
+                            </div>
+                            <div class="kv-accordion-body" id="bodyHangThanhPhan">
+                                <!-- Ô tìm kiếm thêm hàng thành phần -->
+                                <div class="row g-2 mb-3 align-items-center">
+                                    <div class="col-md-8">
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                                            <select id="selThemHangThanhPhan" class="form-select" onchange="themHangThanhPhanTuSelect(this)">
+                                                <option value="">Thêm hàng thành phần (Chọn bánh lẻ cấu thành)...</option>
+                                                @foreach (var b in Model.DanhSachBanh)
+                                                {
+                                                    <option value="@b.MaBanh"
+                                                            data-mahang="@b.MaSku"
+                                                            data-tenhang="@b.TenBanh"
+                                                            data-giavon="@Math.Round(b.GiaVon, 0)"
+                                                            data-giaban="@Math.Round(b.DonGiaLe, 0)">
+                                                        [@b.MaSku] @b.TenBanh - Giá bán: @b.DonGiaLe.ToString("N0")
+                                                    </option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <select name="MaVhCombo" id="kv_MaVhCombo" class="kv-form-control" style="height: 32px; font-size: 12.5px;">
+                                            @foreach (var vh in Model.DanhSachVoHop)
+                                            {
+                                                <option value="@vh.MaVh">Vỏ hộp: @vh.TenVoHop (@vh.SucChuaBanh bánh)</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Bảng Hàng thành phần chuẩn KiotViet -->
+                                <div class="table-responsive">
+                                    <table class="kv-comp-table">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 45px;">STT</th>
+                                                <th style="width: 110px;">Mã hàng</th>
+                                                <th>Tên hàng thành phần</th>
+                                                <th style="width: 95px;" class="text-center">Số lượng</th>
+                                                <th style="width: 110px;" class="text-end">Giá vốn</th>
+                                                <th style="width: 120px;" class="text-end">Tổng giá vốn</th>
+                                                <th style="width: 110px;" class="text-end">Giá bán</th>
+                                                <th style="width: 120px;" class="text-end">Tổng giá bán</th>
+                                                <th style="width: 40px;"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tbodyHangThanhPhan">
+                                            <!-- Render động bằng JS -->
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="fw-bold bg-light">
+                                                <td colspan="5" class="text-end">Tổng cộng thành phần:</td>
+                                                <td class="text-end text-dark" id="lblTongGiaVonThanhPhan">0</td>
+                                                <td></td>
+                                                <td class="text-end text-primary" id="lblTongGiaBanThanhPhan">0</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ================================================================= -->
+                        <!-- KHỐI ACCORDION 2: GIÁ BÁN & TỒN KHO                               -->
+                        <!-- ================================================================= -->
+                        <div class="kv-accordion-box">
+                            <div class="kv-accordion-header" onclick="toggleAccordionBody('bodyGiaBanTonKho')">
+                                <div>
+                                    <span class="kv-accordion-title">Giá bán, giá vốn & tồn kho</span>
+                                    <span class="kv-accordion-sub">Thiết lập giá bán lẻ, giá vốn nhập hàng và định mức tồn</span>
+                                </div>
+                                <i class="bi bi-chevron-up text-muted"></i>
+                            </div>
+                            <div class="kv-accordion-body" id="bodyGiaBanTonKho">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="kv-field-label">
+                                            <span>Giá bán</span>
+                                            <a href="/Admin/SanPhamAdmin/ThietLapGia" class="kv-link-create">
+                                                <i class="bi bi-tags"></i> Thiết lập giá
+                                            </a>
+                                        </label>
+                                        <input type="number" step="1" name="GiaBan" id="kv_GiaBan" class="kv-form-control text-end fw-semibold" value="20000" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="kv-field-label">
+                                            <span>Giá vốn <i class="bi bi-info-circle kv-info-i"></i></span>
+                                        </label>
+                                        <input type="number" step="1" name="GiaVon" id="kv_GiaVon" class="kv-form-control text-end" value="12000" />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="kv-field-label">
+                                            <span>Tồn kho <i class="bi bi-info-circle kv-info-i"></i></span>
+                                        </label>
+                                        <input type="number" step="1" name="TonKho" id="kv_TonKho" class="kv-form-control text-end" value="50" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ================================================================= -->
+                        <!-- KHỐI ACCORDION 3: VỊ TRÍ, TRỌNG LƯỢNG                             -->
+                        <!-- ================================================================= -->
+                        <div class="kv-accordion-box">
+                            <div class="kv-accordion-header" onclick="toggleAccordionBody('bodyViTriTrongLuong')">
+                                <div>
+                                    <span class="kv-accordion-title">Vị trí, trọng lượng</span>
+                                    <span class="kv-accordion-sub">Quản lý việc sắp xếp kho, đóng gói giao hàng</span>
+                                </div>
+                                <i class="bi bi-chevron-up text-muted"></i>
+                            </div>
+                            <div class="kv-accordion-body" id="bodyViTriTrongLuong">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="kv-field-label">
+                                            <span>Vị trí <i class="bi bi-info-circle kv-info-i"></i></span>
+                                            <a href="javascript:void(0)" class="kv-link-create" onclick="themNhanhOptionSelect('kv_ViTriKho', 'Nhập Vị trí kệ kho mới (VD: Kệ A3, Tủ Mát C2):')">Tạo mới</a>
+                                        </label>
+                                        <select name="ViTriKho" id="kv_ViTriKho" class="kv-form-control">
+                                            @foreach (var vt in Model.DanhSachViTriKho)
+                                            {
+                                                <option value="@vt">@vt</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="kv-field-label">
+                                            <span>Trọng lượng <i class="bi bi-info-circle kv-info-i"></i></span>
+                                        </label>
+                                        <div class="d-flex gap-2">
+                                            <input type="number" step="1" name="TrongLuong" id="kv_TrongLuong" class="kv-form-control text-end" value="150" />
+                                            <select name="DonViTrongLuong" id="kv_DonViTrongLuong" class="kv-form-control" style="width: 85px;">
+                                                <option value="g">g</option>
+                                                <option value="kg">kg</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ================================================================= -->
+                        <!-- KHỐI ACCORDION 4: QUẢN LÝ THEO ĐƠN VỊ TÍNH VÀ THUỘC TÍNH           -->
+                        <!-- ================================================================= -->
+                        <div class="kv-accordion-box">
+                            <div class="kv-accordion-header" onclick="toggleAccordionBody('bodyDonViTinh')">
+                                <div>
+                                    <span class="kv-accordion-title">Quản lý theo đơn vị tính và thuộc tính</span>
+                                    <span class="kv-accordion-sub">Hàng hóa có nhiều đơn vị tính (Cái, Hộp, Lốc) hoặc nhà phân phối</span>
+                                </div>
+                                <i class="bi bi-chevron-up text-muted"></i>
+                            </div>
+                            <div class="kv-accordion-body" id="bodyDonViTinh">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="kv-field-label"><span>Đơn vị tính cơ bản</span></label>
+                                        <select name="DonViTinh" id="kv_DonViTinh" class="kv-form-control">
+                                            @foreach (var dvt in Model.DanhSachDonViTinh)
+                                            {
+                                                <option value="@dvt">@dvt</option>
+                                            }
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="kv-field-label"><span>Nhà cung cấp / Lò bánh phân phối</span></label>
+                                        <select name="NhaCungCap" id="kv_NhaCungCap" class="kv-form-control">
+                                            @foreach (var ncc in Model.DanhSachNhaCungCap)
+                                            {
+                                                <option value="@ncc">@ncc</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: MÔ TẢ & HỒ SƠ DINH DƯỠNG -->
+                    <div id="paneTabMoTa" style="display: none;">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="kv-field-label"><span>Mô tả ngắn / Thông điệp lễ hộp</span></label>
+                                <textarea name="MoTaNgan" id="kv_MoTaNgan" rows="3" class="form-control" style="font-size: 13.5px;"></textarea>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="kv-field-label"><span>Câu chuyện sản phẩm / Ghi chú đại lý</span></label>
+                                <textarea name="CauChuyenBanh" id="kv_CauChuyenBanh" rows="3" class="form-control" style="font-size: 13.5px;"></textarea>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="kv-field-label"><span>Năng lượng (Kcal)</span></label>
+                                <input type="number" step="1" name="NangLuongCalo" id="kv_NangLuongCalo" class="kv-form-control" value="380" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="kv-field-label"><span>Lượng đường (g)</span></label>
+                                <input type="number" step="1" name="LuongDuongGram" id="kv_LuongDuongGram" class="kv-form-control" value="14" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="kv-field-label"><span>Chỉ số đường huyết GI</span></label>
+                                <input type="number" step="1" name="ChiSoDuongHuyetGi" id="kv_ChiSoDuongHuyetGi" class="kv-form-control" value="52" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="kv-field-label"><span>Mức độ ngọt</span></label>
+                                <select name="MucDoNgot" id="kv_MucDoNgot" class="kv-form-control">
+                                    <option value="BINH_THUONG">Ngọt truyền thống</option>
+                                    <option value="IT_NGOT">Ít ngọt (Giảm 40% đường)</option>
+                                    <option value="ISOMALT_TIEUDUONG">Đường ăn kiêng Isomalt</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="kv-field-label"><span>Cảnh báo dị ứng</span></label>
+                                <input type="text" name="CanhBaoDiUng" id="kv_CanhBaoDiUng" class="kv-form-control" value="Không" />
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end gap-4 pb-1">
+                                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                                    <input type="checkbox" name="LaBanhChay" id="kv_LaBanhChay" value="true" class="form-check-input" />
+                                    <span>🌱 Bánh Thuần Chay</span>
+                                </label>
+                                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                                    <input type="checkbox" name="LaBanhThuongHang" id="kv_LaBanhThuongHang" value="true" class="form-check-input" />
+                                    <span>👑 Nhân Thượng Hạng VIP</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FOOTER CỐ ĐỊNH Ở ĐÁY MODAL -->
+                <div class="kv-modal-footer">
+                    <label class="d-flex align-items-center gap-2 mb-0" style="cursor: pointer; font-weight: 500; color: #1F2937;">
+                        <input type="checkbox" name="BanTrucTiep" id="kv_BanTrucTiep" value="true" checked class="form-check-input" style="width: 17px; height: 17px;" />
+                        <span>Bán trực tiếp <i class="bi bi-info-circle kv-info-i" title="Hiển thị bán trực tiếp trên màn hình POS và Web"></i></span>
+                    </label>
+
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn-kv-outline px-4" data-bs-dismiss="modal">Bỏ qua</button>
+                        <button type="submit" class="btn-kv-blue px-4">Lưu</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL NHỎ: TẠO NHÓM HÀNG NHANH -->
+<div class="modal fade" id="modalTaoNhomHang" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px;">
+            <form asp-area="Admin" asp-controller="SanPhamAdmin" asp-action="TaoNhomHangNhanh" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header py-2 px-3">
+                    <h6 class="modal-title fw-bold">Thêm nhóm hàng</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <label class="kv-field-label">Tên nhóm hàng</label>
+                    <input type="text" name="tenNhomHang" class="kv-form-control mb-2" required placeholder="VD: ĐỒNG GIÁ 20K, Bánh Kinh Đô..." />
+                    <label class="kv-field-label">Mô tả</label>
+                    <input type="text" name="moTa" class="kv-form-control" placeholder="Mô tả ngắn..." />
+                </div>
+                <div class="modal-footer py-2 px-3">
+                    <button type="button" class="btn-kv-outline btn-sm" data-bs-dismiss="modal">Bỏ qua</button>
+                    <button type="submit" class="btn-kv-blue btn-sm">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL NHỎ: TẠO THƯƠNG HIỆU NHANH -->
+<div class="modal fade" id="modalTaoThuongHieu" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px;">
+            <form asp-area="Admin" asp-controller="SanPhamAdmin" asp-action="TaoThuongHieuNhanh" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header py-2 px-3">
+                    <h6 class="modal-title fw-bold">Thêm thương hiệu phân phối</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <label class="kv-field-label">Tên thương hiệu</label>
+                    <input type="text" name="tenThuongHieu" class="kv-form-control mb-2" required placeholder="VD: Kinh Đô, Đồng Khánh, Như Lan..." />
+                    <label class="kv-field-label">Nhà cung cấp (tùy chọn)</label>
+                    <input type="text" name="tenNhaCungCap" class="kv-form-control" placeholder="VD: NPP Kinh Đô Miền Nam..." />
+                </div>
+                <div class="modal-footer py-2 px-3">
+                    <button type="button" class="btn-kv-outline btn-sm" data-bs-dismiss="modal">Bỏ qua</button>
+                    <button type="submit" class="btn-kv-blue btn-sm">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL NHỎ: TẠO VỊ TRÍ KHO NHANH -->
+<div class="modal fade" id="modalTaoViTri" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 12px;">
+            <form asp-area="Admin" asp-controller="SanPhamAdmin" asp-action="TaoViTriNhanh" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header py-2 px-3">
+                    <h6 class="modal-title fw-bold">Thêm vị trí lưu kho</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <label class="kv-field-label">Tên vị trí kệ / tủ</label>
+                    <input type="text" name="tenViTri" class="kv-form-control" required placeholder="VD: Kệ A3, Tủ Mát C2..." />
+                </div>
+                <div class="modal-footer py-2 px-3">
+                    <button type="button" class="btn-kv-outline btn-sm" data-bs-dismiss="modal">Bỏ qua</button>
+                    <button type="submit" class="btn-kv-blue btn-sm">Lưu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const dsBanhLeGoc = @Html.Raw(dsBanhLeJson);
+        let mangHangThanhPhan = [];
+
+        // =========================================================================
+        // BỘ LỌC CLIENT-SIDE TỨC THÌ (0MS, KHÔNG RELOAD TRANG, KHÔNG VÒNG LẶP)
+        // =========================================================================
+        function chonBanTrucTiep(btn, val) {
+            document.getElementById('fltBanTrucTiep').value = val;
+            document.querySelectorAll('#pillGroupBanTrucTiep .kv-pill-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            locBangHangHoaClient();
+        }
+
+        function locBangHangHoaClient() {
+            const tuKhoa = (document.getElementById('txtTimKiemHangHoa')?.value || '').trim().toLowerCase();
+            const maDm = document.getElementById('fltMaDm')?.value || 'ALL';
+            const tonKho = document.getElementById('fltTonKho')?.value || 'ALL';
+            const ncc = document.getElementById('fltNhaCungCap')?.value || 'ALL';
+            const thuongHieu = document.getElementById('fltThuongHieu')?.value || 'ALL';
+            const viTri = document.getElementById('fltViTriKho')?.value || 'ALL';
+            const loaiHang = document.getElementById('fltLoaiHang')?.value || 'ALL';
+            const banTrucTiep = document.getElementById('fltBanTrucTiep')?.value || 'ALL';
+
+            const masterRows = document.querySelectorAll('#tbodyDanhSachHangHoa tr.kv-master-row');
+            masterRows.forEach(tr => {
+                let hien = true;
+
+                if (tuKhoa !== '') {
+                    const searchStr = tr.getAttribute('data-search') || '';
+                    if (!searchStr.includes(tuKhoa)) hien = false;
+                }
+
+                if (hien && maDm !== 'ALL' && maDm !== '') {
+                    if (tr.getAttribute('data-madm') !== maDm) hien = false;
+                }
+
+                if (hien && tonKho !== 'ALL') {
+                    const slTon = parseInt(tr.getAttribute('data-tonkho') || '0', 10);
+                    if (tonKho === 'DUOI_DINH_MUC' && !(slTon > 0 && slTon <= 30)) hien = false;
+                    else if (tonKho === 'VUOT_DINH_MUC' && !(slTon > 100)) hien = false;
+                    else if (tonKho === 'CON_HANG' && !(slTon > 0)) hien = false;
+                    else if (tonKho === 'HET_HANG' && !(slTon <= 0)) hien = false;
+                }
+
+                if (hien && ncc !== 'ALL') {
+                    if (tr.getAttribute('data-ncc') !== ncc) hien = false;
+                }
+
+                if (hien && thuongHieu !== 'ALL') {
+                    if (tr.getAttribute('data-thuonghieu') !== thuongHieu) hien = false;
+                }
+
+                if (hien && viTri !== 'ALL') {
+                    if (tr.getAttribute('data-vitri') !== viTri) hien = false;
+                }
+
+                if (hien && loaiHang !== 'ALL') {
+                    if (tr.getAttribute('data-loaihang') !== loaiHang) hien = false;
+                }
+
+                if (hien && banTrucTiep !== 'ALL') {
+                    if (tr.getAttribute('data-bantructiep') !== banTrucTiep) hien = false;
+                }
+
+                tr.style.display = hien ? '' : 'none';
+                if (!hien) {
+                    tr.classList.remove('active-row');
+                    const detailId = tr.getAttribute('data-detail-id');
+                    if (detailId) {
+                        const detailRow = document.getElementById(detailId);
+                        if (detailRow) detailRow.classList.remove('open');
+                    }
+                }
+            });
+        }
+
+        function chuyenTabModalKiot(tab) {
+            const isInfo = (tab === 'THONG_TIN');
+            document.getElementById('paneTabThongTin').style.display = isInfo ? 'block' : 'none';
+            document.getElementById('paneTabMoTa').style.display = isInfo ? 'none' : 'block';
+            document.getElementById('btnTabThongTin').classList.toggle('active', isInfo);
+            document.getElementById('btnTabMoTa').classList.toggle('active', !isInfo);
+        }
+
+        function toggleAccordionBody(id) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.style.display = (el.style.display === 'none') ? 'block' : 'none';
+        }
+
+        function dinhDangSoN0(n) {
+            const num = Math.round(Number(n) || 0);
+            return num.toLocaleString('en-US');
+        }
+
+        function renderBangHangThanhPhan() {
+            const tbody = document.getElementById('tbodyHangThanhPhan');
+            tbody.innerHTML = '';
+            let tongVon = 0;
+            let tongBan = 0;
+
+            if (mangHangThanhPhan.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted py-3">Chưa có hàng thành phần. Hãy chọn bánh ở ô tìm kiếm phía trên.</td></tr>`;
+            } else {
+                mangHangThanhPhan.forEach((tp, idx) => {
+                    const sl = Math.max(1, parseInt(tp.soLuong) || 1);
+                    const gv = Math.round(Number(tp.giaVon) || 0);
+                    const gb = Math.round(Number(tp.giaBan) || 0);
+                    const tVon = gv * sl;
+                    const tBan = gb * sl;
+                    tongVon += tVon;
+                    tongBan += tBan;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${idx + 1}</td>
+                        <td class="text-primary fw-medium">${tp.maHang}</td>
+                        <td class="fw-medium">${tp.tenHang}</td>
+                        <td class="text-center">
+                            <input type="number" min="1" value="${sl}" class="form-control form-control-sm text-center mx-auto" style="width: 72px;"
+                                   onchange="capNhatSlThanhPhan(${idx}, this.value)" />
+                        </td>
+                        <td class="text-end">${dinhDangSoN0(gv)}</td>
+                        <td class="text-end fw-medium">${dinhDangSoN0(tVon)}</td>
+                        <td class="text-end">${dinhDangSoN0(gb)}</td>
+                        <td class="text-end fw-medium text-primary">${dinhDangSoN0(tBan)}</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm text-danger p-0" onclick="xoaHangThanhPhan(${idx})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+
+            document.getElementById('lblTongGiaVonThanhPhan').innerText = dinhDangSoN0(tongVon);
+            document.getElementById('lblTongGiaBanThanhPhan').innerText = dinhDangSoN0(tongBan);
+            document.getElementById('kv_HangThanhPhanJson').value = JSON.stringify(mangHangThanhPhan);
+
+            if (document.getElementById('kv_LaCombo').value === 'true' && tongVon > 0) {
+                document.getElementById('kv_GiaVon').value = Math.round(tongVon);
+            }
+        }
+
+        function capNhatSlThanhPhan(idx, val) {
+            if (mangHangThanhPhan[idx]) {
+                mangHangThanhPhan[idx].soLuong = Math.max(1, parseInt(val) || 1);
+                renderBangHangThanhPhan();
+            }
+        }
+
+        function xoaHangThanhPhan(idx) {
+            mangHangThanhPhan.splice(idx, 1);
+            renderBangHangThanhPhan();
+        }
+
+        function themHangThanhPhanTuSelect(sel) {
+            const maBanh = parseInt(sel.value);
+            if (!maBanh) return;
+            const opt = sel.options[sel.selectedIndex];
+            const existing = mangHangThanhPhan.find(x => x.maBanh === maBanh);
+            if (existing) {
+                existing.soLuong += 1;
+            } else {
+                mangHangThanhPhan.push({
+                    maBanh: maBanh,
+                    maHang: opt.getAttribute('data-mahang'),
+                    tenHang: opt.getAttribute('data-tenhang'),
+                    soLuong: 1,
+                    giaVon: Math.round(Number(opt.getAttribute('data-giavon')) || 0),
+                    giaBan: Math.round(Number(opt.getAttribute('data-giaban')) || 0)
+                });
+            }
+            sel.value = '';
+            renderBangHangThanhPhan();
+        }
+
+        function ganAnhModalAnToan(urlAnh) {
+            const imgMain = document.getElementById('kv_PreviewAnhChinh');
+            const imgThumb = document.getElementById('kv_Thumb1');
+            const safeUrl = urlAnh || window.KV_FALLBACK_SVG;
+            if (imgMain) {
+                delete imgMain.dataset.fallbackApplied;
+                imgMain.src = safeUrl;
+            }
+            if (imgThumb) {
+                delete imgThumb.dataset.fallbackApplied;
+                imgThumb.src = safeUrl;
+            }
+        }
+
+        function moModalTaoMoi(laCombo) {
+            chuyenTabModalKiot('THONG_TIN');
+            document.getElementById('kv_IdGoc').value = '0';
+            document.getElementById('kv_LaCombo').value = laCombo ? 'true' : 'false';
+            document.getElementById('kv_ModalTitle').innerText = laCombo ? 'Thêm combo - đóng gói' : 'Thêm hàng hóa';
+            document.getElementById('kv_MaHang').value = laCombo ? 'CB00000' + Math.floor(Math.random() * 9 + 1) : 'SP00010' + Math.floor(Math.random() * 9 + 1);
+            document.getElementById('kv_MaVach').value = '89346800' + Math.floor(1000 + Math.random() * 8999);
+            document.getElementById('kv_TenHang').value = laCombo ? 'BÁNH TRUNG THU ĐỒNG KHÁNH 2 TRỨNG' : '';
+            document.getElementById('kv_GiaBan').value = laCombo ? 20000 : 120000;
+            document.getElementById('kv_GiaVon').value = laCombo ? 12000 : 65000;
+            document.getElementById('kv_TonKho').value = 50;
+            document.getElementById('kv_TrongLuong').value = laCombo ? 600 : 150;
+            document.getElementById('kv_DonViTrongLuong').value = 'g';
+            document.getElementById('kv_DonViTinh').value = laCombo ? 'Hộp' : 'Cái';
+            document.getElementById('kv_BanTrucTiep').checked = true;
+            document.getElementById('kv_UrlAnhNhapTay').value = '';
+            ganAnhModalAnToan('/images/default/banh-mac-dinh.png');
+
+            mangHangThanhPhan = [];
+            if (laCombo && dsBanhLeGoc.length > 0) {
+                mangHangThanhPhan.push({
+                    maBanh: dsBanhLeGoc[0].maBanh,
+                    maHang: dsBanhLeGoc[0].maHang,
+                    tenHang: dsBanhLeGoc[0].tenHang,
+                    soLuong: 2,
+                    giaVon: dsBanhLeGoc[0].giaVon,
+                    giaBan: dsBanhLeGoc[0].giaBan
+                });
+            }
+            renderBangHangThanhPhan();
+
+            const modal = new bootstrap.Modal(document.getElementById('modalHangHoaKiot'));
+            modal.show();
+        }
+
+        function moModalSuaTuButton(btn) {
+            const raw = btn.getAttribute('data-item');
+            if (!raw) return;
+            const item = JSON.parse(raw);
+
+            chuyenTabModalKiot('THONG_TIN');
+            document.getElementById('kv_IdGoc').value = item.idGoc;
+            document.getElementById('kv_LaCombo').value = item.laCombo ? 'true' : 'false';
+            document.getElementById('kv_ModalTitle').innerText = item.laCombo ? 'Sửa combo - đóng gói' : 'Sửa hàng hóa';
+
+            document.getElementById('kv_MaHang').value = item.maHang || '';
+            document.getElementById('kv_MaVach').value = item.maVach || '';
+            document.getElementById('kv_TenHang').value = item.tenHang || '';
+
+            const selDm = document.getElementById('kv_MaDm');
+            if (item.maDm) selDm.value = item.maDm;
+
+            chonHoacThemOptionSelect('kv_ThuongHieu', item.thuongHieu || 'Đồng Khánh');
+            chonHoacThemOptionSelect('kv_ViTriKho', item.viTriKho || 'Kệ A1');
+            chonHoacThemOptionSelect('kv_DonViTinh', item.donViTinh || (item.laCombo ? 'Hộp' : 'Cái'));
+            chonHoacThemOptionSelect('kv_NhaCungCap', item.nhaCungCap || 'Lò Bánh Đồng Khánh Chính Gốc');
+
+            document.getElementById('kv_GiaBan').value = Math.round(Number(item.giaBan) || 0);
+            document.getElementById('kv_GiaVon').value = Math.round(Number(item.giaVon) || 0);
+            document.getElementById('kv_TonKho').value = Math.round(Number(item.tonKho) || 0);
+            document.getElementById('kv_TrongLuong').value = Math.round(Number(item.trongLuongGram) || 150);
+            document.getElementById('kv_DonViTrongLuong').value = 'g';
+            document.getElementById('kv_BanTrucTiep').checked = !!item.banTrucTiep;
+
+            document.getElementById('kv_MoTaNgan').value = item.moTaNgan || '';
+            document.getElementById('kv_CauChuyenBanh').value = item.cauChuyenBanh || '';
+            document.getElementById('kv_NangLuongCalo').value = item.nangLuongCalo || 380;
+            document.getElementById('kv_LuongDuongGram').value = Math.round(Number(item.luongDuongGram) || 14);
+            document.getElementById('kv_ChiSoDuongHuyetGi').value = item.chiSoDuongHuyetGi || 52;
+            document.getElementById('kv_CanhBaoDiUng').value = item.canhBaoDiUng || 'Không';
+            document.getElementById('kv_MucDoNgot').value = item.mucDoNgot || 'BINH_THUONG';
+            document.getElementById('kv_LaBanhChay').checked = !!item.laBanhChay;
+            document.getElementById('kv_LaBanhThuongHang').checked = !!item.laBanhThuongHang;
+
+            if (item.maVhCombo) {
+                document.getElementById('kv_MaVhCombo').value = item.maVhCombo;
+            }
+
+            ganAnhModalAnToan(item.urlAnhChinh || '/images/default/banh-mac-dinh.png');
+            document.getElementById('kv_UrlAnhNhapTay').value = '';
+
+            mangHangThanhPhan = Array.isArray(item.hangThanhPhans)
+                ? item.hangThanhPhans.map(x => ({ ...x }))
+                : [];
+            renderBangHangThanhPhan();
+
+            const modal = new bootstrap.Modal(document.getElementById('modalHangHoaKiot'));
+            modal.show();
+        }
+
+        function chonHoacThemOptionSelect(selectId, val) {
+            if (!val) return;
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+            let found = false;
+            for (let i = 0; i < sel.options.length; i++) {
+                if (sel.options[i].value === val) {
+                    sel.selectedIndex = i;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.text = val;
+                opt.selected = true;
+                sel.appendChild(opt);
+            }
+        }
+
+        function themNhanhOptionSelect(selectId, msg) {
+            const val = prompt(msg);
+            if (val && val.trim() !== '') {
+                chonHoacThemOptionSelect(selectId, val.trim());
+            }
+        }
+
+        function xemTruocAnhKiot(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    ganAnhModalAnToan(e.target.result);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+    </script>
+}

@@ -1,0 +1,181 @@
+@model WebBanhTrungThu.ViewModels.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Tổng quan - KiotViet";
+}
+
+<!-- HÀNG 1: KẾT QUẢ BÁN HÀNG HÔM NAY -->
+<div class="kv-card p-3 mb-3">
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+        <span class="fw-bold text-dark" style="font-size: 14px;">
+            KẾT QUẢ BÁN HÀNG HÔM NAY
+        </span>
+        <span class="text-muted small">Dữ liệu thời gian thực từ SQL Server</span>
+    </div>
+
+    <div class="row g-3">
+        <!-- Chỉ số 1: Doanh thu thuần -->
+        <div class="col-md-6 col-xl-3 border-end">
+            <div class="d-flex align-items-center gap-3 px-2">
+                <div class="kv-kpi-icon" style="background: #EBF5FF; color: #0070F4;">
+                    <i class="bi bi-currency-dollar"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">@Model.TongSoDonHang Hóa đơn</div>
+                    <div class="fs-5 fw-bold text-primary">@Model.TongDoanhThuThucTe.ToString("N0")</div>
+                    <small class="text-muted">Doanh thu thuần (@Model.SoDonB2B đơn B2B)</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chỉ số 2: Đơn hàng Member vs Guest -->
+        <div class="col-md-6 col-xl-3 border-end">
+            <div class="d-flex align-items-center gap-3 px-2">
+                <div class="kv-kpi-icon" style="background: #ECFDF5; color: #00B63E;">
+                    <i class="bi bi-receipt"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Phân loại khách đặt</div>
+                    <div class="fs-5 fw-bold text-dark">@Model.SoDonMember Member / @Model.SoDonGuest Guest</div>
+                    <small class="text-muted">Đơn hàng kép B2C & B2B</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chỉ số 3: Hộp tự chọn & Thiệp QR -->
+        <div class="col-md-6 col-xl-3 border-end">
+            <div class="d-flex align-items-center gap-3 px-2">
+                <div class="kv-kpi-icon" style="background: #FEF3C7; color: #D97706;">
+                    <i class="bi bi-box2-heart"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Hộp quà tự chọn & Thiệp QR</div>
+                    <div class="fs-5 fw-bold text-dark">@Model.TongSoHopTuChonDaTao Hộp</div>
+                    <small class="text-muted">Lượt quét Thiệp 3D: @Model.TongLuotMoThiepQr3D lần</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chỉ số 4: Cảnh báo lô cận Date -->
+        <div class="col-md-6 col-xl-3">
+            <div class="d-flex align-items-center gap-3 px-2">
+                <div class="kv-kpi-icon" style="background: #FEF2F2; color: #DC2626;">
+                    <i class="bi bi-exclamation-circle"></i>
+                </div>
+                <div>
+                    <div class="text-muted small">Lô hạn sử dụng (FEFO)</div>
+                    <div class="fs-5 fw-bold text-danger">@Model.SoLoSapHetHan Lô cận Date</div>
+                    <small>
+                        <a href="/Admin/SanPhamAdmin/Index" class="text-decoration-none" style="color: #0070F4;">
+                            Kiểm tra hàng hóa →
+                        </a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PHẦN GIỮA: CHIA 2 CỘT 8 - 4 CHUẨN KIOTVIET -->
+<div class="row g-3">
+    <div class="col-lg-8">
+        <!-- TOP HÀNG HÓA BÁN CHẠY -->
+        <div class="kv-card p-3 mb-3">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                <span class="fw-bold text-dark" style="font-size: 14px;">
+                    TOP HÀNG HÓA BÁN CHẠY
+                </span>
+                <a href="/Admin/SanPhamAdmin/Index" class="text-decoration-none small" style="color: #0070F4;">Xem danh mục hàng hóa →</a>
+            </div>
+
+            <div class="p-1">
+                @foreach (var top in Model.TopBanhBanChay)
+                {
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-dark fw-medium">
+                                @top.TenBanh <span class="text-muted small">(SL: @top.SoLuongBan.ToString("N0"))</span>
+                            </span>
+                            <span class="fw-semibold text-primary">@top.DoanhThu.ToString("N0")</span>
+                        </div>
+                        <div class="progress" style="height: 10px; background-color: #F3F4F6; border-radius: 4px;">
+                            <div class="progress-bar" role="progressbar"
+                                 style="width: @(Math.Max(10, top.PhanTram))%; background-color: #0070F4;"
+                                 aria-valuenow="@top.PhanTram" aria-valuemin="0" aria-valuemax="100">
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- THEO DÕI LÔ SẢN XUẤT -->
+        <div class="kv-card p-3">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                <span class="fw-bold text-dark" style="font-size: 14px;">
+                    LÔ SẢN XUẤT & HẠN SỬ DỤNG (FEFO)
+                </span>
+                <a href="/Admin/DonHangAdmin/Index" class="text-decoration-none small" style="color: #0070F4;">Danh sách hóa đơn →</a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="kv-table">
+                    <thead>
+                        <tr>
+                            <th>Mã lô</th>
+                            <th>Tên hàng hóa</th>
+                            <th>Hạn sử dụng</th>
+                            <th class="text-end">Tồn lô</th>
+                            <th class="text-end">Giảm cận Date</th>
+                            <th>Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var lo in Model.DanhSachLoCanDate)
+                        {
+                            <tr class="border-bottom">
+                                <td class="text-primary fw-medium">@lo.MaLoCode</td>
+                                <td class="fw-medium">@(lo.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu")</td>
+                                <td>@lo.HanSuDung.ToString("dd/MM/yyyy")</td>
+                                <td class="text-end">@lo.SlconLai.ToString("N0") / @lo.SlnhapBanDau.ToString("N0")</td>
+                                <td class="text-end">@lo.PhanTramGiamCanDate.ToString("N0")%</td>
+                                <td>
+                                    <span class="text-muted small">@lo.TrangThaiLo</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- CỘT 4: CÁC HOẠT ĐỘNG GẦN ĐÂY -->
+    <div class="col-lg-4">
+        <div class="kv-card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                <span class="fw-bold text-dark" style="font-size: 14px;">
+                    CÁC HOẠT ĐỘNG GẦN ĐÂY
+                </span>
+            </div>
+
+            <div class="d-flex flex-column gap-3">
+                @foreach (var hd in Model.DanhSachHoatDong)
+                {
+                    <div class="d-flex gap-2 align-items-start pb-2 border-bottom">
+                        <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center flex-shrink-0"
+                             style="width: 32px; height: 32px; font-size: 14px;">
+                            @hd.BieuTuong
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-medium text-dark" style="font-size: 13px;">@hd.TieuDe</div>
+                            <div class="text-muted" style="font-size: 12.5px;">@hd.MoTaChiTiet</div>
+                            <div class="text-muted mt-1" style="font-size: 11.5px;">
+                                @hd.ThoiGian
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

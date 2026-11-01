@@ -19,6 +19,7 @@ builder.Services.AddControllersWithViews()
 // Đăng ký các Service nghiệp vụ dùng chung toàn hệ thống (Đặt ngay dưới AddDbContext):
 builder.Services.AddScoped<DichVuHinhAnh>();
 builder.Services.AddScoped<DichVuGioHang>();
+builder.Services.AddSingleton<DichVuKiotVietMetadata>();
 
 // 2. Đăng ký DbContext kết nối tới SQL Server (25 bảng)
 builder.Services.AddDbContext<CSDLBanhTrungThuContext>(options =>

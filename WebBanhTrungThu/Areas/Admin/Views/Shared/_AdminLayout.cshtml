@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - KiotViet Quản Lý</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <script>
+        // Chặn đứng 100% vòng lặp vô tận onerror trên mọi thẻ <img> trong phân khu Admin bằng SVG Data URI nội tuyến
+        window.KV_FALLBACK_SVG = "data:image/svg+xml;utf8," + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 80 80">' +
+            '<rect width="80" height="80" rx="6" fill="#F3F4F6"/>' +
+            '<circle cx="40" cy="36" r="16" fill="#0070F4" opacity="0.18"/>' +
+            '<text x="40" y="64" font-family="sans-serif" font-size="9" fill="#6B7280" text-anchor="middle">KiotViet</text>' +
+            '</svg>'
+        );
+
+        window.kvImgFallback = function (img) {
+            if (!img) return;
+            if (img.dataset.fallbackApplied === "true") {
+                if (!img.src.startsWith("data:image/svg+xml")) {
+                    img.src = window.KV_FALLBACK_SVG;
+                }
+                return;
+            }
+            img.dataset.fallbackApplied = "true";
+            img.src = window.KV_FALLBACK_SVG;
+        };
+
+        window.addEventListener('error', function (e) {
+            if (e.target && e.target.tagName === 'IMG') {
+                window.kvImgFallback(e.target);
+            }
+        }, true);
+    </script>
+
+    <style>
+        :root {
+            --kv-blue: #0070F4;
+            --kv-blue-dark: #005AC3;
+            --kv-blue-soft: #F2F8FE;
+            --kv-green: #00B63E;
+            --kv-green-hover: #009A34;
+            --kv-bg: #F0F2F5;
+            --kv-text: #1F2937;
+            --kv-muted: #6B7280;
+            --kv-border: #E5E7EB;
+            --kv-header-border: #E8EAED;
+        }
+
+        html, body {
+            overflow-y: scroll;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--kv-bg);
+            color: var(--kv-text);
+            font-size: 13.5px;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* TẦNG 1: TOP HEADER TRẮNG 48PX */
+        .kv-top-header {
+            background: #FFFFFF;
+            height: 48px;
+            border-bottom: 1px solid var(--kv-header-border);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .kv-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .kv-brand-circle {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--kv-blue);
+            color: #FFFFFF;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .kv-brand-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: #005AC3;
+            letter-spacing: -0.3px;
+        }
+
+        .kv-top-links {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            font-size: 13px;
+            color: #374151;
+        }
+
+        .kv-top-link {
+            color: #374151;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 400;
+        }
+
+        .kv-top-link:hover {
+            color: var(--kv-blue);
+        }
+
+        .kv-icon-btn {
+            color: #4B5563;
+            background: transparent;
+            border: none;
+            padding: 4px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        .kv-icon-btn:hover {
+            background: #F3F4F6;
+            color: var(--kv-blue);
+        }
+
+        /* TẦNG 2: MAIN MENU BAR XANH #0070F4 44PX */
+        .kv-navbar {
+            background-color: var(--kv-blue);
+            height: 44px;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+        }
+
+        .kv-nav-list {
+            display: flex;
+            align-items: center;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            gap: 2px;
+        }
+
+        .kv-nav-item {
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
+
+        .kv-nav-link {
+            color: #FFFFFF !important;
+            text-decoration: none;
+            padding: 0 14px;
+            height: 34px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 13.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+
+        .kv-nav-link:hover,
+        .kv-nav-item:hover > .kv-nav-link,
+        .kv-nav-link.active {
+            background-color: var(--kv-blue-dark);
+        }
+
+        /* DROPDOWN MENU TRẮNG PHẲNG */
+        .kv-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 42px;
+            left: 0;
+            min-width: 210px;
+            background: #FFFFFF;
+            border-radius: 6px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+            border: 1px solid var(--kv-border);
+            padding: 6px 0;
+            z-index: 1050;
+        }
+
+        .kv-nav-item:hover .kv-dropdown-menu {
+            display: block;
+        }
+
+        .kv-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            color: var(--kv-text);
+            text-decoration: none;
+            font-weight: 400;
+            font-size: 13.5px;
+        }
+
+        .kv-dropdown-item:hover {
+            background-color: var(--kv-blue-soft);
+            color: var(--kv-blue);
+        }
+
+        /* NÚT BÁN HÀNG BÊN PHẢI THANH XANH */
+        .btn-kv-pos {
+            background-color: var(--kv-blue-dark);
+            color: #FFFFFF !important;
+            font-weight: 500;
+            font-size: 13.5px;
+            padding: 6px 14px;
+            border-radius: 6px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: none;
+        }
+
+        .btn-kv-pos:hover {
+            background-color: #00479E;
+        }
+
+        /* BỐ CỤC CHUNG CÁC TRANG TRONG ADMIN */
+        .kv-page-container {
+            padding: 16px 20px 36px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .kv-layout-2col {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .kv-sidebar-filter {
+            width: 250px;
+            flex-shrink: 0;
+        }
+
+        .kv-main-table-area {
+            flex-grow: 1;
+            min-width: 0;
+        }
+
+        .kv-card {
+            background: #FFFFFF;
+            border-radius: 6px;
+            border: 1px solid var(--kv-border);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        .kv-filter-box {
+            background: #FFFFFF;
+            border-radius: 6px;
+            border: 1px solid var(--kv-border);
+            padding: 12px 14px;
+            margin-bottom: 10px;
+        }
+
+        .kv-filter-title {
+            font-weight: 600;
+            font-size: 13px;
+            color: #111827;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* BẢNG DỮ LIỆU KIOTVIET TỐI GIẢN (KHÔNG DÙNG TRANSFORM/TRANSITION TRÊN TR GÂY GIẬT) */
+        .kv-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #FFFFFF;
+        }
+
+        .kv-table thead th {
+            background-color: #F4F6F8;
+            color: #1F2937;
+            font-weight: 600;
+            font-size: 13px;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--kv-border);
+            white-space: nowrap;
+        }
+
+        .kv-table tbody tr.kv-master-row {
+            border-bottom: 1px solid #F0F2F5;
+            cursor: pointer;
+        }
+
+        .kv-table tbody tr.kv-master-row:hover {
+            background-color: #F8FAFC;
+        }
+
+        .kv-table tbody tr.kv-master-row.active-row {
+            background-color: #EBF5FF;
+        }
+
+        .kv-table tbody td {
+            padding: 9px 12px;
+            vertical-align: middle;
+            font-size: 13.5px;
+            color: #1F2937;
+        }
+
+        .kv-detail-row {
+            display: none;
+            background-color: var(--kv-blue-soft);
+        }
+
+        .kv-detail-row.open {
+            display: table-row;
+        }
+
+        .kv-detail-box {
+            border: 1px solid var(--kv-blue);
+            border-top: 2px solid var(--kv-blue);
+            background: #FFFFFF;
+            border-radius: 0 0 6px 6px;
+            padding: 16px 20px;
+            margin: 0;
+        }
+
+        .btn-kv-blue {
+            background-color: var(--kv-blue);
+            color: #FFFFFF;
+            border: 1px solid var(--kv-blue);
+            font-weight: 500;
+            font-size: 13px;
+            border-radius: 5px;
+            padding: 6px 12px;
+        }
+
+        .btn-kv-blue:hover {
+            background-color: var(--kv-blue-dark);
+            color: #FFFFFF;
+        }
+
+        .btn-kv-green {
+            background-color: var(--kv-green);
+            color: #FFFFFF;
+            border: 1px solid var(--kv-green);
+            font-weight: 500;
+            font-size: 13px;
+            border-radius: 5px;
+            padding: 6px 12px;
+        }
+
+        .btn-kv-green:hover {
+            background-color: var(--kv-green-hover);
+            color: #FFFFFF;
+        }
+
+        .btn-kv-outline {
+            background-color: #FFFFFF;
+            color: #374151;
+            border: 1px solid #D1D5DA;
+            font-weight: 500;
+            font-size: 13px;
+            border-radius: 5px;
+            padding: 6px 12px;
+        }
+
+        .btn-kv-outline:hover {
+            background-color: #F9FAFB;
+            color: #111827;
+            border-color: #9CA3AF;
+        }
+
+        .kv-kpi-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        @@media (max-width: 992px) {
+            .kv-layout-2col {
+                flex-direction: column;
+            }
+            .kv-sidebar-filter {
+                width: 100%;
+            }
+            .kv-top-links .hide-mobile {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    @{
+        var ctrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    }
+
+    <!-- TẦNG 1: TOP HEADER TRẮNG 48PX -->
+    <header class="kv-top-header">
+        <a href="/Admin/Dashboard/Index" class="kv-brand">
+            <span class="kv-brand-circle">K</span>
+            <span class="kv-brand-text">KiotViet</span>
+        </a>
+
+        <div class="kv-top-links">
+            <a href="/Admin/DonHangAdmin/Index" class="kv-top-link hide-mobile">
+                <i class="bi bi-truck"></i> Giao hàng
+            </a>
+            <a href="/Admin/SoQuyAdmin/Index" class="kv-top-link hide-mobile">
+                <i class="bi bi-cash-coin"></i> Vay vốn
+            </a>
+            <a href="/Admin/KhoAnhAdmin/Index" class="kv-top-link hide-mobile">
+                <i class="bi bi-images"></i> Kho ảnh
+            </a>
+            <a href="/TraCuuDonHang" target="_blank" class="kv-top-link hide-mobile">
+                <i class="bi bi-question-circle"></i> Trợ giúp
+            </a>
+            <a href="/" target="_blank" class="kv-top-link hide-mobile">
+                <i class="bi bi-chat-left-text"></i> Góp ý
+            </a>
+
+            <!-- Nút Khôi phục CSDL mẫu gọn nhẹ -->
+            <form asp-area="Admin" asp-controller="Dashboard" asp-action="KhoiPhucDuLieuGoc" method="post" class="d-inline"
+                  onsubmit="return confirm('Khôi phục dữ liệu mẫu gốc từ sp_KhoiPhucDuLieuGoc?');">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="kv-icon-btn" title="Khôi phục dữ liệu mẫu SQL">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </form>
+
+            <a href="/Admin/DonHangAdmin/Index" class="kv-icon-btn" title="Thông báo đơn hàng">
+                <i class="bi bi-bell"></i>
+            </a>
+            <a href="/Admin/SanPhamAdmin/ThietLapGia" class="kv-icon-btn" title="Cài đặt bảng giá">
+                <i class="bi bi-gear"></i>
+            </a>
+
+            <div class="d-flex align-items-center gap-2 ps-2 border-start">
+                <span class="fw-medium text-dark">@(User.Identity?.Name ?? "Admin")</span>
+                <form asp-area="" asp-controller="TaiKhoan" asp-action="DangXuat" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="kv-icon-btn text-danger" title="Đăng xuất">
+                        <i class="bi bi-box-arrow-right"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    <!-- TẦNG 2: THANH MENU XANH #0070F4 44PX -->
+    <nav class="kv-navbar">
+        <ul class="kv-nav-list">
+            <!-- 1. Tổng quan -->
+            <li class="kv-nav-item">
+                <a href="/Admin/Dashboard/Index" class="kv-nav-link @(ctrl == "Dashboard" ? "active" : "")">
+                    <i class="bi bi-eye"></i> Tổng quan
+                </a>
+            </li>
+
+            <!-- 2. Hàng hóa -->
+            <li class="kv-nav-item">
+                <a href="/Admin/SanPhamAdmin/Index" class="kv-nav-link @(ctrl == "SanPhamAdmin" || ctrl == "KhoAnhAdmin" ? "active" : "")">
+                    <i class="bi bi-box-seam"></i> Hàng hóa <i class="bi bi-chevron-down" style="font-size: 10px;"></i>
+                </a>
+                <div class="kv-dropdown-menu">
+                    <a href="/Admin/SanPhamAdmin/Index" class="kv-dropdown-item">
+                        <i class="bi bi-grid"></i> Danh mục hàng hóa
+                    </a>
+                    <a href="/Admin/SanPhamAdmin/ThietLapGia" class="kv-dropdown-item">
+                        <i class="bi bi-tags"></i> Thiết lập giá
+                    </a>
+                    <a href="/Admin/SanPhamAdmin/Index?locTonKho=SAP_HET" class="kv-dropdown-item">
+                        <i class="bi bi-clipboard-check"></i> Kiểm kho / Lô hạn dùng
+                    </a>
+                </div>
+            </li>
+
+            <!-- 3. Đơn hàng -->
+            <li class="kv-nav-item">
+                <a href="/Admin/DonHangAdmin/Index" class="kv-nav-link @(ctrl == "DonHangAdmin" ? "active" : "")">
+                    <i class="bi bi-receipt"></i> Đơn hàng <i class="bi bi-chevron-down" style="font-size: 10px;"></i>
+                </a>
+                <div class="kv-dropdown-menu">
+                    <a href="/Admin/DonHangAdmin/Index?locTrangThai=CHO_XAC_NHAN" class="kv-dropdown-item">
+                        <i class="bi bi-file-earmark-check"></i> Đặt hàng
+                    </a>
+                    <a href="/Admin/DonHangAdmin/Index" class="kv-dropdown-item">
+                        <i class="bi bi-receipt-cutoff"></i> Hóa đơn
+                    </a>
+                    <a href="/Admin/DonHangAdmin/Index?locTrangThai=DA_HUY" class="kv-dropdown-item">
+                        <i class="bi bi-arrow-return-left"></i> Trả hàng
+                    </a>
+                </div>
+            </li>
+
+            <!-- 4. Khách hàng -->
+            <li class="kv-nav-item">
+                <a href="/Admin/KhachHangAdmin/Index" class="kv-nav-link @(ctrl == "KhachHangAdmin" ? "active" : "")">
+                    <i class="bi bi-people"></i> Khách hàng <i class="bi bi-chevron-down" style="font-size: 10px;"></i>
+                </a>
+                <div class="kv-dropdown-menu">
+                    <a href="/Admin/KhachHangAdmin/Index" class="kv-dropdown-item">
+                        <i class="bi bi-person-vcard"></i> Khách hàng
+                    </a>
+                    <a href="/Admin/KhachHangAdmin/KhuyenMai" class="kv-dropdown-item">
+                        <i class="bi bi-ticket-perforated"></i> Khuyến mãi
+                    </a>
+                </div>
+            </li>
+
+            <!-- 5. Sổ quỹ -->
+            <li class="kv-nav-item">
+                <a href="/Admin/SoQuyAdmin/Index" class="kv-nav-link @(ctrl == "SoQuyAdmin" ? "active" : "")">
+                    <i class="bi bi-wallet2"></i> Sổ quỹ
+                </a>
+            </li>
+        </ul>
+
+        <!-- Góc phải thanh xanh: Nút Bán hàng -->
+        <a href="/" target="_blank" class="btn-kv-pos">
+            <i class="bi bi-basket2-fill"></i> Bán hàng
+        </a>
+    </nav>
+
+    <!-- NỘI DUNG CHÍNH -->
+    <main class="kv-page-container">
+        @if (TempData["ThongBaoAdmin"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show py-2 px-3 mb-3 border-0 shadow-sm d-flex align-items-center justify-content-between"
+                 style="background: #ECFDF5; color: #065F46; border-left: 4px solid #10B981 !important; font-size: 13.5px;">
+                <div>
+                    <i class="bi bi-check-circle-fill me-2 text-success"></i>@TempData["ThongBaoAdmin"]
+                </div>
+                <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        @RenderBody()
+    </main>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleKvDetailRow(rowId, masterTr) {
+            const detailRow = document.getElementById(rowId);
+            if (!detailRow) return;
+            const isOpen = detailRow.classList.contains('open');
+
+            document.querySelectorAll('.kv-detail-row.open').forEach(r => r.classList.remove('open'));
+            document.querySelectorAll('.kv-master-row.active-row').forEach(r => r.classList.remove('active-row'));
+
+            if (!isOpen) {
+                detailRow.classList.add('open');
+                if (masterTr) masterTr.classList.add('active-row');
+            }
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

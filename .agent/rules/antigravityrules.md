@@ -23,7 +23,7 @@
 - **No Lazy Coding:** Không bao giờ viết comment kiểu `// ... phần code còn lại giữ nguyên` hoặc `// TODO: implement later` khi được yêu cầu viết code hoàn chỉnh cho một hàm/component.
 - **Database Safety:** Trước khi thay đổi các class Entity trong `Models`, luôn kiểm tra sự ảnh hưởng đến `DbContext` và nhắc nhở tạo Migration mới nếu cần.
 - **Preserve Existing Logic:** Chỉ sửa đúng phạm vi file/chức năng được yêu cầu. Không tự ý đổi tên biến, đổi cấu trúc thư mục hoặc xóa tính năng cũ khi chưa hỏi ý kiến.
-- **Vietnamese UI, English Code:** Toàn bộ tên biến, hàm, class, database viết bằng tiếng Anh chuẩn PascalCase/camelCase. Toàn bộ nhãn hiển thị trên giao diện (UI text, thông báo lỗi cho người dùng) viết bằng tiếng Việt tự nhiên, chuyên nghiệp.
+- **Vietnamese Abbreviated Code & Natural Vietnamese UI:** Tuân thủ nghiêm ngặt quy ước đặt tên Tiếng Việt không dấu viết tắt chuẩn PascalCase/camelCase đã thiết kế cho 25 bảng CSDL và Entities (VD: SanPhamBanh, HopQuaTuChon, MaPhienKvl, DotGiaoHangDaDiem). Toàn bộ văn bản hiển thị trên giao diện (UI text) viết bằng tiếng Việt tự nhiên, sang trọng.
 
 # Skill: Domain-Specific Context (Mooncake E-Commerce & Brand Landing Page)
 - **Color Palette & Vibe:** Phối màu sang trọng, ấm cúng mang hơi hướng lễ hội Trung Thu hiện đại (Đỏ rượu vang / Crimson `#8B0000`, Vàng kim / Gold `#D4AF37`, Nền kem ấm `#FDFBF7` hoặc Xanh đêm rằm `#0F172A`).

@@ -137,10 +137,28 @@
                         {
                             <tr>
                                 <td>
-                                    <strong class="text-light">@ct.TenSanPhamLuuCung</strong>
-                                    @if (!string.IsNullOrEmpty(ct.CauHinhHopJson))
+                                    <strong class="text-light d-block">@ct.TenSanPhamLuuCung</strong>
+                                    @if (!string.IsNullOrWhiteSpace(ct.CauHinhHopJson))
                                     {
-                                        <small class="text-info d-block">Cấu hình lưu cứng JSON: @ct.CauHinhHopJson</small>
+                                        try
+                                        {
+                                            var mangO = Newtonsoft.Json.Linq.JArray.Parse(ct.CauHinhHopJson);
+                                            <div class="d-flex flex-wrap gap-1 mt-2">
+                                                @foreach (var o in mangO)
+                                                {
+                                                    int viTri = o.Value<int?>("ViTriOTrongHop") ?? 1;
+                                                    string tenBanh = o.Value<string>("TenBanh") ?? "Bánh Trung Thu";
+                                                    decimal donGia = o.Value<decimal?>("DonGia") ?? 0m;
+                                                    <span class="badge bg-dark border border-warning text-warning fw-normal px-2 py-1">
+                                                        [Ô @viTri: @tenBanh (@donGia.ToString("N0") đ)]
+                                                    </span>
+                                                }
+                                            </div>
+                                        }
+                                        catch
+                                        {
+                                            <small class="text-info d-block">Hộp quà tự chọn Nguyệt Cát</small>
+                                        }
                                     }
                                 </td>
                                 <td class="text-center"><span class="badge bg-secondary">x @ct.SoLuong</span></td>

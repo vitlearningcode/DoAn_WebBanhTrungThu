@@ -1,0 +1,186 @@
+@model WebBanhTrungThu.ViewModels.KhachHangAdminViewModel
+@{
+    ViewData["Title"] = "Khách Hàng - Thành Viên (Member) & Phiên Khách Vãng Lai (Guest KVL)";
+}
+
+<div class="kv-layout-2col">
+    <!-- CỘT TRÁI (260PX): BỘ LỌC KHÁCH HÀNG -->
+    <aside class="kv-sidebar-filter">
+        <form method="get" action="/Admin/KhachHangAdmin/Index">
+            <div class="kv-filter-box mb-3">
+                <div class="kv-filter-title">
+                    <span>🔍 Tìm kiếm khách hàng</span>
+                </div>
+                <input type="text" name="tuKhoa" value="@Model.TuKhoa" class="form-control form-control-sm mb-2"
+                       placeholder="Tên, SĐT, Email..." />
+                <button type="submit" class="btn btn-kv-blue btn-sm w-100">Lọc khách hàng</button>
+            </div>
+
+            <div class="kv-filter-box">
+                <div class="kv-filter-title">
+                    <span>👑 Hạng thành viên</span>
+                </div>
+                <div class="d-flex flex-column gap-1">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="locHangTv" value="ALL" id="htv_all"
+                               @(Model.LocHangTv == "ALL" ? "checked" : "") onchange="this.form.submit()">
+                        <label class="form-check-label" for="htv_all">Tất cả hạng</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="locHangTv" value="Kim Cương" id="htv_kc"
+                               @(Model.LocHangTv == "Kim Cương" ? "checked" : "") onchange="this.form.submit()">
+                        <label class="form-check-label" for="htv_kc">💎 Hạng Kim Cương</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="locHangTv" value="Vàng" id="htv_vang"
+                               @(Model.LocHangTv == "Vàng" ? "checked" : "") onchange="this.form.submit()">
+                        <label class="form-check-label" for="htv_vang">🥇 Hạng Vàng</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="locHangTv" value="Bạc" id="htv_bac"
+                               @(Model.LocHangTv == "Bạc" ? "checked" : "") onchange="this.form.submit()">
+                        <label class="form-check-label" for="htv_bac">🥈 Hạng Bạc</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="locHangTv" value="Đồng" id="htv_dong"
+                               @(Model.LocHangTv == "Đồng" ? "checked" : "") onchange="this.form.submit()">
+                        <label class="form-check-label" for="htv_dong">🥉 Hạng Đồng</label>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </aside>
+
+    <!-- CỘT PHẢI: DANH SÁCH THÀNH VIÊN & PHIÊN KHÁCH VÃNG LAI -->
+    <div class="kv-main-table-area">
+        <!-- BẢNG 1: KHÁCH HÀNG THÀNH VIÊN (NGUOIDUNG) -->
+        <div class="kv-card p-3 mb-4">
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                <div>
+                    <h6 class="fw-bold text-uppercase text-primary mb-0">
+                        <i class="bi bi-people-fill me-2"></i>1. DANH SÁCH KHÁCH HÀNG THÀNH VIÊN (@Model.DanhSachThanhVien.Count TÀI KHOẢN)
+                    </h6>
+                </div>
+                <a href="/Admin/KhachHangAdmin/KhuyenMai" class="btn btn-kv-green btn-sm">
+                    <i class="bi bi-ticket-perforated me-1"></i>Quản lý Mã Khuyến Mãi / Voucher
+                </a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="kv-table">
+                    <thead>
+                        <tr>
+                            <th>Mã KH</th>
+                            <th>Họ và tên</th>
+                            <th>Số điện thoại / Email</th>
+                            <th>Vai trò</th>
+                            <th class="text-center">Hạng TV</th>
+                            <th class="text-center">Điểm tích lũy</th>
+                            <th class="text-end">Tổng chi tiêu</th>
+                            <th class="text-center">Sổ địa chỉ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.DanhSachThanhVien.Count; i++)
+                        {
+                            var nd = Model.DanhSachThanhVien[i];
+                            decimal tongChiTieu = nd.DonHangs.Where(d => d.TrangThaiDh != "DA_HUY").Sum(d => d.TongThanhToanCuoi);
+                            <tr class="kv-master-row" onclick="toggleKvDetailRow('detail-nd-@nd.MaNd', this)">
+                                <td><span class="fw-bold text-primary">KH@(nd.MaNd.ToString("D4"))</span></td>
+                                <td class="fw-semibold text-dark">@nd.HoTen</td>
+                                <td>
+                                    <div>@nd.Sdt</div>
+                                    <small class="text-muted">@nd.Email</small>
+                                </td>
+                                <td><span class="badge bg-secondary">@nd.MaVt</span></td>
+                                <td class="text-center">
+                                    <span class="badge @(nd.HangTv == "Kim Cương" || nd.HangTv == "Vàng" ? "bg-warning text-dark" : "bg-info text-dark")">
+                                        @nd.HangTv
+                                    </span>
+                                </td>
+                                <td class="text-center fw-bold text-success">@nd.DiemTichLuy điểm</td>
+                                <td class="text-end fw-bold text-primary">@tongChiTieu.ToString("N0") đ</td>
+                                <td class="text-center">@nd.SoDiaChis.Count địa chỉ</td>
+                            </tr>
+                            <tr id="detail-nd-@nd.MaNd" class="kv-detail-row">
+                                <td colspan="8">
+                                    <div class="kv-detail-box">
+                                        <strong class="text-primary d-block mb-2">Sổ địa chỉ biếu tặng đã lưu của @nd.HoTen:</strong>
+                                        @if (nd.SoDiaChis.Any())
+                                        {
+                                            <div class="row g-2">
+                                                @foreach (var dc in nd.SoDiaChis)
+                                                {
+                                                    <div class="col-md-6">
+                                                        <div class="p-2 rounded border bg-light small">
+                                                            <strong>📍 @(dc.NhanDiaChi ?? "Địa chỉ"): @dc.TenNguoiNhan (@dc.SdtnguoiNhan)</strong>
+                                                            <div class="text-muted">@dc.DiaChiCuThe, @dc.PhuongXa, @dc.QuanHuyen, @dc.TinhThanh</div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <small class="text-muted">Chưa lưu sổ địa chỉ.</small>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- BẢNG 2: THỐNG KÊ PHIÊN KHÁCH VÃNG LAI (PHIENKHACHVANGLAI & TRẠNG THÁI GỘP GIỎ) -->
+        <div class="kv-card p-3">
+            <h6 class="fw-bold text-uppercase text-success border-bottom pb-2 mb-3">
+                <i class="bi bi-incognito me-2"></i>2. GIÁM SÁT PHIÊN KHÁCH VÃNG LAI (GUEST SESSION & HỢP NHẤT GIỎ HÀNG GOPGIOHANGASYNC)
+            </h6>
+
+            <div class="table-responsive">
+                <table class="kv-table">
+                    <thead>
+                        <tr>
+                            <th>Mã Phiên Guest (Cookie 14 Ngày)</th>
+                            <th>Địa Chỉ IP / Trình Duyệt</th>
+                            <th>Thời Gian Tạo</th>
+                            <th class="text-center">Số Đơn Guest</th>
+                            <th>Trạng Thái Hợp Nhất Giỏ Hàng (GopGioHangAsync)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var p in Model.DanhSachPhienGuest)
+                        {
+                            <tr class="border-bottom">
+                                <td><code class="fw-bold text-primary">@p.MaPhienKvl</code></td>
+                                <td>
+                                    <div>@p.DiaChiIp</div>
+                                    <small class="text-muted text-truncate d-block" style="max-width: 240px;">@p.ThongTinTrinhDuyet</small>
+                                </td>
+                                <td>@p.NgayTao.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-center"><span class="badge bg-secondary">@p.DonHangs.Count đơn</span></td>
+                                <td>
+                                    @if (p.DaGopGioHang)
+                                    {
+                                        <span class="badge bg-success">
+                                            ✅ Đã gộp vào Member: @(p.MaNdDaGopNavigation?.HoTen ?? $"#{p.MaNdDaGop}")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-info text-dark">
+                                            🕵️ Đang hoạt động độc lập (Guest)
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+

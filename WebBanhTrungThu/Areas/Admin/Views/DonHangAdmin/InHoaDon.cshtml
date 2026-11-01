@@ -1,0 +1,170 @@
+@model WebBanhTrungThu.ViewModels.DonHangThanhCongViewModel
+@{
+    Layout = null;
+    var dh = Model.DonHang;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <title>In Hóa Đơn & Phiếu Đóng Gói #@dh.MaTraCuuDh</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        body {
+            background: #F3F4F6;
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: #111827;
+            font-size: 13px;
+        }
+        .invoice-sheet {
+            max-width: 820px;
+            margin: 20px auto;
+            background: #FFFFFF;
+            padding: 32px;
+            border: 1px solid #D1D5DB;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        @@media print {
+            body { background: #FFF; }
+            .invoice-sheet { margin: 0; border: none; box-shadow: none; max-width: 100%; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="text-center py-3 no-print bg-dark text-white">
+        <button onclick="window.print()" class="btn btn-success fw-bold px-4 me-2">🖨️ Bấm Để In Hóa Đơn Ngay</button>
+        <button onclick="window.close()" class="btn btn-outline-light">Đóng cửa sổ</button>
+    </div>
+
+    <div class="invoice-sheet">
+        <div class="d-flex justify-content-between align-items-start border-bottom pb-3 mb-3">
+            <div>
+                <h4 class="fw-bold mb-1">🌕 THƯƠNG HIỆU BÁNH TRUNG THU NGUYỆT CÁT</h4>
+                <div>Hệ thống KiotAdmin POS • Lễ Hộp Tự Phối 3D & Thiệp Điện Tử QR</div>
+                <div>Hotline: 1900 2026 • Website: nguyetcatmooncake.vn</div>
+            </div>
+            <div class="text-end">
+                <h5 class="fw-bold text-primary mb-1">HÓA ĐƠN & PHIẾU ĐÓNG GÓI KHAY HỘP</h5>
+                <div>Mã đơn: <strong>#@dh.MaTraCuuDh</strong></div>
+                <div>Ngày đặt: @dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-6">
+                <strong>Khách đặt mua:</strong> @dh.HoTenNguoiMua (@dh.SdtnguoiMua)<br />
+                <strong>Phân loại:</strong> @(dh.MaNd.HasValue ? $"Thành viên #{dh.MaNd}" : $"Khách vãng lai ({dh.MaPhienKvl})")
+            </div>
+            <div class="col-6 text-end">
+                <strong> Thanh toán:</strong> @dh.PhuongThucTt (@dh.TrangThaiTt)<br />
+                @if (dh.LaDonDoanhNghiepB2b)
+                {
+                    <strong>Doanh nghiệp B2B:</strong> @dh.TenCongTy <span>(MST: @dh.MaSoThue)</span>
+                }
+            </div>
+        </div>
+
+        <h6 class="fw-bold text-uppercase border-bottom pb-1 mb-2">1. Bảng Kê Hàng Hóa & Sơ Đồ Nhặt Bánh Từng Ô</h6>
+        <table class="table table-bordered align-middle mb-3">
+            <thead class="table-light">
+                <tr>
+                    <th>Tên hàng hóa & Sơ đồ vị trí từng ô bánh</th>
+                    <th class="text-center" style="width: 75px;">SL</th>
+                    <th class="text-end" style="width: 115px;">Đơn giá</th>
+                    <th class="text-end" style="width: 125px;">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ct in dh.ChiTietDonHangs)
+                {
+                    <tr>
+                        <td>
+                            <strong>@ct.TenSanPhamLuuCung</strong>
+                            @if (!string.IsNullOrWhiteSpace(ct.CauHinhHopJson))
+                            {
+                                try
+                                {
+                                    var mangO = Newtonsoft.Json.Linq.JArray.Parse(ct.CauHinhHopJson);
+                                    <div class="mt-1 small">
+                                        @foreach (var o in mangO)
+                                        {
+                                            int viTri = o.Value<int?>("ViTriOTrongHop") ?? 1;
+                                            string tenBanh = o.Value<string>("TenBanh") ?? "Bánh Trung Thu";
+                                            decimal donGia = o.Value<decimal?>("DonGia") ?? 0m;
+                                            <span class="d-inline-block border rounded px-2 py-1 me-1 mb-1 bg-light">
+                                                <strong>Ô @viTri:</strong> @tenBanh (@donGia.ToString("N0") đ)
+                                            </span>
+                                        }
+                                    </div>
+                                }
+                                catch { }
+                            }
+                        </td>
+                        <td class="text-center fw-bold">@ct.SoLuong</td>
+                        <td class="text-end">@ct.DonGiaLucMua.ToString("N0") đ</td>
+                        <td class="text-end fw-bold">@ct.ThanhTien.ToString("N0") đ</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" class="text-end">Tổng tiền hàng:</td>
+                    <td class="text-end">@dh.TongTienHang.ToString("N0") đ</td>
+                </tr>
+                @if (dh.TienChietKhauB2b > 0)
+                {
+                    <tr>
+                        <td colspan="3" class="text-end">Chiết khấu sỉ B2B (@dh.PhanTramCkB2b%):</td>
+                        <td class="text-end">-@dh.TienChietKhauB2b.ToString("N0") đ</td>
+                    </tr>
+                }
+                @if (dh.TienGiamVoucher > 0)
+                {
+                    <tr>
+                        <td colspan="3" class="text-end">Giảm giá Voucher:</td>
+                        <td class="text-end">-@dh.TienGiamVoucher.ToString("N0") đ</td>
+                    </tr>
+                }
+                <tr>
+                    <td colspan="3" class="text-end">Phí giao hàng (@dh.DotGiaoHangDaDiems.Count điểm nhận):</td>
+                    <td class="text-end">+@dh.TongPhiVanChuyen.ToString("N0") đ</td>
+                </tr>
+                <tr class="fs-6 fw-bold">
+                    <td colspan="3" class="text-end">KHÁCH CẦN TRẢ:</td>
+                    <td class="text-end">@dh.TongThanhToanCuoi.ToString("N0") đ</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <h6 class="fw-bold text-uppercase border-bottom pb-1 mb-2">2. Tem QR Thiệp Chúc Mừng 3D Đính Kèm Từng Điểm Giao</h6>
+        <div class="row g-2">
+            @foreach (var item in Model.DanhSachDotGiaoQr)
+            {
+                var dot = item.DotGiao;
+                <div class="col-6">
+                    <div class="border rounded p-2 d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Người nhận: @dot.TenNguoiNhan (@dot.SdtnguoiNhan)</strong>
+                            <div class="small">@dot.DiaChiGiaoChiTiet</div>
+                            <div class="small">Hẹn giao: @dot.NgayHenGiao.ToString("dd/MM/yyyy") (@dot.KhungGioGiao)</div>
+                            @if (dot.CoKemThiepQr)
+                            {
+                                <div class="small fst-italic mt-1">"@dot.LoiChucThiep"</div>
+                            }
+                        </div>
+                        @if (dot.CoKemThiepQr && !string.IsNullOrEmpty(item.AnhQrBase64))
+                        {
+                            <div class="text-center ms-2">
+                                <img src="@item.AnhQrBase64" width="82" height="82" alt="QR" />
+                                <div style="font-size: 10px; font-weight: bold;">@dot.MaTokenThiepQr</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</body>
+</html>
+

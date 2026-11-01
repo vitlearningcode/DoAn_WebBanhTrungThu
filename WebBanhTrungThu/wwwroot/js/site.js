@@ -11,12 +11,20 @@ let cauHinhHop = {
     cacO: [null, null, null, null] // Chứa object bánh tại từng vị trí ô
 };
 
-// Xử lý toàn cục khi ảnh bị lỗi tải (ví dụ link Google Drive giả lập bị lỗi) -> tự động thay bằng ảnh fallback-lava.png
+// Xử lý toàn cục khi ảnh bị lỗi tải -> chặn đứng vòng lặp vô tận bằng dataset.fallbackApplied và SVG nội tuyến
+const INLINE_FALLBACK_SVG = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" rx="12" fill="#F3F4F6"/><circle cx="60" cy="54" r="24" fill="#F59E0B" opacity="0.25"/><text x="60" y="96" font-family="sans-serif" font-size="11" fill="#6B7280" text-anchor="middle">Bánh Trung Thu</text></svg>');
+
 window.addEventListener('error', function (e) {
     if (e.target && e.target.tagName === 'IMG') {
-        if (!e.target.src.includes('/images/banh/fallback-lava.png')) {
-            e.target.src = '/images/banh/fallback-lava.png';
+        const img = e.target;
+        if (img.dataset.fallbackApplied) {
+            if (!img.src.startsWith('data:image/svg+xml')) {
+                img.src = INLINE_FALLBACK_SVG;
+            }
+            return;
         }
+        img.dataset.fallbackApplied = "true";
+        img.src = '/images/default/banh-mac-dinh.png';
     }
 }, true);
 
@@ -642,10 +650,11 @@ async function traCuuDonHangGuest() {
 }
 
 function khoiChayDongHoDemNguoc() {
+    const el = document.getElementById("cd-giay");
+    if (!el) return;
     let giay = 30;
     setInterval(() => {
         giay = giay > 0 ? giay - 1 : 59;
-        const el = document.getElementById("cd-giay");
-        if (el) el.innerText = giay.toString().padStart(2, '0');
+        el.innerText = giay.toString().padStart(2, '0');
     }, 1000);
 }
