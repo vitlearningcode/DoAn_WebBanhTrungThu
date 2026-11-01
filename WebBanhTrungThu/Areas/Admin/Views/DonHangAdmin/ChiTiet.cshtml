@@ -36,7 +36,7 @@
                     <label class="form-label small fw-semibold mb-1">Trạng thái xử lý (TrangThaiDh)</label>
                     <select name="trangThaiDh" class="form-select form-select-sm">
                         <option value="CHO_XAC_NHAN" selected="@(dh.TrangThaiDh == "CHO_XAC_NHAN")">1. CHO_XAC_NHAN</option>
-                        <option value="DANG_DONG_GOI_HOP" selected="@(dh.TrangThaiDh == "DANG_DONG_GOI_HOP")">2. DANG_DONG_GOI_HOP</option>
+                        <option value="CHO_LAY_HANG" selected="@(dh.TrangThaiDh == "CHO_LAY_HANG" || dh.TrangThaiDh == "DANG_DONG_GOI_HOP")">2. CHO_LAY_HANG (Chờ lấy hàng)</option>
                         <option value="DANG_GIAO" selected="@(dh.TrangThaiDh == "DANG_GIAO")">3. DANG_GIAO</option>
                         <option value="HOAN_TAT" selected="@(dh.TrangThaiDh == "HOAN_TAT")">4. HOAN_TAT</option>
                         <option value="DA_HUY" selected="@(dh.TrangThaiDh == "DA_HUY")">5. DA_HUY</option>
@@ -49,6 +49,7 @@
                         <option value="CHUA_TT" selected="@(dh.TrangThaiTt == "CHUA_TT")">CHUA_TT</option>
                         <option value="CHO_XAC_MINH_CK" selected="@(dh.TrangThaiTt == "CHO_XAC_MINH_CK")">CHO_XAC_MINH_CK</option>
                         <option value="DA_TT" selected="@(dh.TrangThaiTt == "DA_TT")">DA_TT</option>
+                        <option value="DA_HOAN_TIEN" selected="@(dh.TrangThaiTt == "DA_HOAN_TIEN")">DA_HOAN_TIEN</option>
                     </select>
                 </div>
 
