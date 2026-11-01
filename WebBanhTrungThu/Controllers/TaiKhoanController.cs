@@ -36,6 +36,9 @@ namespace WebBanhTrungThu.Controllers
                 return Json(new { thanhCong = false, thongBao = "Vui lòng nhập đầy đủ Email/Số điện thoại và Mật khẩu!" });
             }
 
+            // Đảm bảo bảng VaiTro và tài khoản Demo vận hành (QUAN_TRI, THU_NGAN, GIAO_HANG) luôn sẵn sàng
+            await DamBaoVaiTroVaTaiKhoanDemoAsync();
+
             var nd = await _db.NguoiDungs
                 .FirstOrDefaultAsync(u => (u.Email == taiKhoan || u.Sdt == taiKhoan) && u.TrangThai);
 
@@ -71,10 +74,47 @@ namespace WebBanhTrungThu.Controllers
             {
                 thanhCong = true,
                 hoTen = nd.HoTen,
+                maVt = nd.MaVt,
                 hangTv = nd.HangTv,
                 diem = nd.DiemTichLuy,
-                thongBao = "Đăng nhập & Hợp nhất giỏ hàng thành công!"
+                thongBao = $"Đăng nhập thành công ({nd.HoTen} - Vai trò: {nd.MaVt})!"
             });
+        }
+
+        // =========================================================================
+        // 1B. CHUYỂN NHANH VAI TRÒ VẬN HÀNH (THU_NGAN / GIAO_HANG / QUAN_TRI) ĐỂ DEMO
+        // =========================================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChuyenNhanhVaiTroDemo(string maVt, string? returnUrl)
+        {
+            await DamBaoVaiTroVaTaiKhoanDemoAsync();
+
+            string sdtMucTieu = maVt switch
+            {
+                "THU_NGAN" => "0908111222",
+                "GIAO_HANG" => "0908333444",
+                _ => "0814585526"
+            };
+
+            var nd = await _db.NguoiDungs.FirstOrDefaultAsync(u => u.Sdt == sdtMucTieu);
+            if (nd == null)
+            {
+                nd = await _db.NguoiDungs.FirstOrDefaultAsync(u => u.MaVt == maVt);
+            }
+
+            if (nd != null)
+            {
+                await ThucHienDangNhapVaGopGioAsync(nd);
+                TempData["ThongBaoAdmin"] = $"Đã chuyển nhanh sang phiên làm việc: {nd.HoTen} (Quyền: {nd.MaVt})!";
+            }
+
+            if (!string.IsNullOrWhiteSpace(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            return Redirect("/Admin/DonHangAdmin/Index");
         }
 
         // =========================================================================
@@ -127,6 +167,7 @@ namespace WebBanhTrungThu.Controllers
             {
                 thanhCong = true,
                 hoTen = ndMoi.HoTen,
+                maVt = ndMoi.MaVt,
                 hangTv = ndMoi.HangTv,
                 diem = ndMoi.DiemTichLuy,
                 thongBao = "Đăng ký thành công (Tặng +50 điểm) & Đã hợp nhất giỏ hàng vào tài khoản!"
@@ -153,6 +194,73 @@ namespace WebBanhTrungThu.Controllers
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Index", "Home");
+        }
+
+        private async Task DamBaoVaiTroVaTaiKhoanDemoAsync()
+        {
+            var danhSachVaiTro = new (string MaVt, string TenVt, string MoTa)[]
+            {
+                ("QUAN_TRI", "Quản trị viên", "Toàn quyền quản trị hệ thống & Admin Override"),
+                ("NHAN_VIEN", "Nhân viên bán hàng", "Nhân viên Order - Bán hàng & Thu ngân"),
+                ("THU_NGAN", "Thu ngân & Bán hàng", "Xác nhận thanh toán QR, chuẩn bị hàng CHO_LAY_HANG, xử lý hoàn tiền"),
+                ("GIAO_HANG", "Nhân viên giao hàng", "Nhận đơn từ CHO_LAY_HANG -> DANG_GIAO -> xác nhận HOAN_TAT"),
+                ("KHACH_TV", "Khách thành viên", "Khách hàng thành viên tích điểm")
+            };
+
+            bool coThayDoiVt = false;
+            foreach (var vt in danhSachVaiTro)
+            {
+                if (!await _db.VaiTros.AnyAsync(v => v.MaVt == vt.MaVt))
+                {
+                    _db.VaiTros.Add(new VaiTro
+                    {
+                        MaVt = vt.MaVt,
+                        TenVt = vt.TenVt,
+                        MoTa = vt.MoTa
+                    });
+                    coThayDoiVt = true;
+                }
+            }
+
+            if (coThayDoiVt)
+            {
+                await _db.SaveChangesAsync();
+            }
+
+            string mkSha = ThongTinPhienHelper.BamMatKhauSHA256("123456");
+
+            var taiKhoanMau = new (string Sdt, string Email, string HoTen, string MaVt, string HangTv)[]
+            {
+                ("0908111222", "thungan@nguyetcat.vn", "Trần Thu Ngân (Order & Thu ngân)", "THU_NGAN", "Vàng"),
+                ("0908333444", "giaohang@nguyetcat.vn", "Nguyễn Văn Giao (Giao vận)", "GIAO_HANG", "Bạc"),
+                ("0814585526", "admin@nguyetcat.vn", "Lê Minh Đức (Quản trị viên)", "QUAN_TRI", "Kim Cương")
+            };
+
+            bool coThayDoiNd = false;
+            foreach (var tk in taiKhoanMau)
+            {
+                if (!await _db.NguoiDungs.AnyAsync(u => u.Sdt == tk.Sdt || u.Email == tk.Email))
+                {
+                    _db.NguoiDungs.Add(new NguoiDung
+                    {
+                        MaVt = tk.MaVt,
+                        HoTen = tk.HoTen,
+                        Sdt = tk.Sdt,
+                        Email = tk.Email,
+                        MatKhauHash = mkSha,
+                        DiemTichLuy = 500,
+                        HangTv = tk.HangTv,
+                        TrangThai = true,
+                        NgayTao = DateTime.Now
+                    });
+                    coThayDoiNd = true;
+                }
+            }
+
+            if (coThayDoiNd)
+            {
+                await _db.SaveChangesAsync();
+            }
         }
 
         private async Task ThucHienDangNhapVaGopGioAsync(NguoiDung nd)
@@ -188,4 +296,3 @@ namespace WebBanhTrungThu.Controllers
         }
     }
 }
-

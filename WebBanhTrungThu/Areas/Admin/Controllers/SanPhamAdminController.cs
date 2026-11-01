@@ -10,7 +10,7 @@ using WebBanhTrungThu.ViewModels;
 namespace WebBanhTrungThu.Areas.Admin.Controllers
 {
     [Area("Admin")]
-    [Authorize(Roles = "QUAN_TRI,NHAN_VIEN")]
+    [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN,GIAO_HANG")]
     public class SanPhamAdminController : Controller
     {
         private readonly CSDLBanhTrungThuContext _db;

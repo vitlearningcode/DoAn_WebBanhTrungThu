@@ -6,6 +6,8 @@
     string locLoaiDon = ViewBag.LocLoaiDon as string ?? "ALL";
     string locPhuongThuc = ViewBag.LocPhuongThuc as string ?? "ALL";
     string locThoiGian = ViewBag.LocThoiGian as string ?? "ALL";
+    bool laQuanTriVien = User.IsInRole("QUAN_TRI");
+    string vaiTroHienTai = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "QUAN_TRI";
 }
 
 <style>
@@ -118,6 +120,95 @@
         color: #B45309;
         border-color: #FDE68A;
     }
+
+    .btn-kv-danger-outline {
+        background-color: #FEF2F2;
+        color: #DC2626;
+        border: 1px solid #FECACA;
+        font-weight: 500;
+        font-size: 13px;
+        border-radius: 5px;
+        padding: 6px 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-kv-danger-outline:hover {
+        background-color: #FEE2E2;
+        color: #B91C1C;
+        border-color: #FCA5A5;
+    }
+
+    /* Thanh Stepper Tiến Trình Trạng Thái trong Modal */
+    .kv-stepper {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        margin: 8px 0 18px 0;
+        padding: 12px 14px;
+        background: #F8FAFC;
+        border-radius: 8px;
+        border: 1px solid #E5E7EB;
+    }
+
+    .kv-step-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        flex: 1;
+        position: relative;
+        z-index: 2;
+        text-align: center;
+    }
+
+    .kv-step-circle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #E5E7EB;
+        color: #6B7280;
+        font-weight: 700;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid #FFFFFF;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    }
+
+    .kv-step-item.done .kv-step-circle {
+        background: #00B63E;
+        color: #FFFFFF;
+    }
+
+    .kv-step-item.current .kv-step-circle {
+        background: #0070F4;
+        color: #FFFFFF;
+        box-shadow: 0 0 0 3px rgba(0, 112, 244, 0.2);
+    }
+
+    .kv-step-label {
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #6B7280;
+    }
+
+    .kv-step-item.done .kv-step-label {
+        color: #00B63E;
+    }
+
+    .kv-step-item.current .kv-step-label {
+        color: #0070F4;
+    }
+
+    .kv-step-arrow {
+        color: #9CA3AF;
+        font-size: 14px;
+        padding: 0 4px;
+    }
 </style>
 
 <div class="kv-layout-2col">
@@ -170,8 +261,8 @@
                 <select id="fltDhTrangThai" class="kv-select" onchange="locHoaDonClient()">
                     <option value="ALL" selected="@(locTrangThai == "ALL")">Tất cả</option>
                     <option value="CHO_XAC_NHAN" selected="@(locTrangThai == "CHO_XAC_NHAN")">Chờ xác nhận</option>
-                    <option value="DANG_DONG_GOI_HOP" selected="@(locTrangThai == "DANG_DONG_GOI_HOP")">Đang đóng gói hộp</option>
-                    <option value="DANG_GIAO" selected="@(locTrangThai == "DANG_GIAO")">Đang giao</option>
+                    <option value="CHO_LAY_HANG" selected="@(locTrangThai == "CHO_LAY_HANG" || locTrangThai == "DANG_DONG_GOI_HOP")">Chờ lấy hàng (Đã đóng gói)</option>
+                    <option value="DANG_GIAO" selected="@(locTrangThai == "DANG_GIAO")">Đang giao hàng</option>
                     <option value="HOAN_TAT" selected="@(locTrangThai == "HOAN_TAT")">Hoàn tất</option>
                     <option value="DA_HUY" selected="@(locTrangThai == "DA_HUY")">Đã hủy</option>
                 </select>
@@ -264,12 +355,15 @@
                             string searchKey = $"{dh.MaTraCuuDh} {dh.HoTenNguoiMua} {dh.SdtnguoiMua} {dh.TenCongTy}".ToLowerInvariant();
                             bool laHomNay = dh.NgayDat.Date == DateTime.Today;
                             bool laThangNay = dh.NgayDat.Year == DateTime.Now.Year && dh.NgayDat.Month == DateTime.Now.Month;
+                            string trangThaiChuan = dh.TrangThaiDh == "DANG_DONG_GOI_HOP" ? "CHO_LAY_HANG" : dh.TrangThaiDh;
+                            int soThiepQr = dh.DotGiaoHangDaDiems.Count(g => g.CoKemThiepQr && !string.IsNullOrEmpty(g.MaTokenThiepQr));
+                            int tongSoMon = dh.ChiTietDonHangs.Sum(c => c.SoLuong);
 
                             <!-- DÒNG MASTER HÓA ĐƠN -->
                             <tr class="kv-master-row @(moMacDinh ? "active-row" : "")"
                                 data-detail-id="detail-dh-@dh.MaDh"
                                 data-search="@searchKey"
-                                data-trangthai="@dh.TrangThaiDh"
+                                data-trangthai="@trangThaiChuan"
                                 data-b2b="@(dh.LaDonDoanhNghiepB2b ? "B2B" : "B2C")"
                                 data-khach="@(dh.MaNd.HasValue ? "MEMBER" : "GUEST")"
                                 data-phuongthuc="@dh.PhuongThucTt"
@@ -312,9 +406,14 @@
                                 <td class="text-end text-muted">@(tongGiam > 0 ? tongGiam.ToString("N0") : "0")</td>
                                 <td class="text-end fw-semibold" style="color: #0070F4;">@dh.TongThanhToanCuoi.ToString("N0")</td>
                                 <td>
-                                    <span class="fw-medium @(dh.TrangThaiDh == "HOAN_TAT" ? "text-success" : dh.TrangThaiDh == "DA_HUY" ? "text-danger" : "text-primary")">
-                                        @dh.TrangThaiDh
+                                    <span class="fw-medium @(trangThaiChuan == "HOAN_TAT" ? "text-success" : trangThaiChuan == "DA_HUY" ? "text-danger" : trangThaiChuan == "CHO_LAY_HANG" ? "text-warning" : "text-primary")">
+                                        @dh.TenTrangThaiDhHienThi
                                     </span>
+                                    <div>
+                                        <small class="@(dh.TrangThaiTt == "DA_TT" ? "text-success" : dh.TrangThaiTt == "DA_HOAN_TIEN" ? "text-danger" : "text-muted")">
+                                            @dh.PhuongThucTt • @dh.TenTrangThaiTtHienThi
+                                        </small>
+                                    </div>
                                 </td>
                             </tr>
 
@@ -362,7 +461,7 @@
                                                 <div class="col-md-4">
                                                     <div class="py-1 border-bottom d-flex justify-content-between">
                                                         <span class="text-muted">Phương thức thanh toán:</span>
-                                                        <strong>@dh.PhuongThucTt (@dh.TrangThaiTt)</strong>
+                                                        <strong>@dh.PhuongThucTt (@dh.TenTrangThaiTtHienThi)</strong>
                                                     </div>
                                                     <div class="py-1 border-bottom d-flex justify-content-between">
                                                         <span class="text-muted">Khách cần trả:</span>
@@ -370,6 +469,27 @@
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            @if (dh.TrangThaiTt == "DA_HOAN_TIEN" || !string.IsNullOrWhiteSpace(dh.SoTaiKhoanHoan))
+                                            {
+                                                <div class="p-2 mb-3 rounded border" style="background: #FEF2F2; border-color: #FECACA !important; font-size: 12.5px; color: #991B1B;">
+                                                    <i class="bi bi-arrow-return-left me-1"></i>
+                                                    <strong>Thông tin hoàn tiền khách hàng:</strong>
+                                                    Ngân hàng <strong>@(dh.MaNganHangHoan ?? "VietQR")</strong> • STK: <strong>@(dh.SoTaiKhoanHoan ?? "---")</strong> • Chủ TK: <strong>@(dh.TenChuTkHoan ?? "---")</strong>
+                                                    @if (!string.IsNullOrWhiteSpace(dh.LyDoHuyHoan))
+                                                    {
+                                                        <span>• Lý do: <em>@dh.LyDoHuyHoan</em></span>
+                                                    }
+                                                </div>
+                                            }
+                                            else if (!string.IsNullOrWhiteSpace(dh.GhiChuDieuChinhAdmin))
+                                            {
+                                                <div class="p-2 mb-3 rounded border" style="background: #F8FAFC; font-size: 12.5px; color: #334155;">
+                                                    <i class="bi bi-tools me-1 text-primary"></i>
+                                                    <strong>Ghi chú điều chỉnh Quản trị:</strong> @dh.GhiChuDieuChinhAdmin
+                                                    <span class="text-muted ms-2">(@dh.NguoiCapNhatCuoi - @dh.ThoiGianCapNhatCuoi)</span>
+                                                </div>
+                                            }
 
                                             <!-- Bảng mặt hàng & sơ đồ từng ô bánh -->
                                             <div class="table-responsive mb-2">
@@ -453,44 +573,38 @@
                                             </div>
                                         </div>
 
-                                        <!-- FOOTER KHUNG MỞ RỘNG: CẬP NHẬT TRẠNG THÁI & IN HÓA ĐƠN -->
+                                        <!-- ========================================================================= -->
+                                        <!-- THANH TÁC VỤ DƯỚI KHUNG CHI TIẾT CHUẨN KIOTVIET:                           -->
+                                        <!-- Góc trái: [🗑️ Hủy phiếu] | Góc phải: [✏️ Cập nhật trạng thái] [🖨️ In HĐ] -->
+                                        <!-- ========================================================================= -->
                                         <div class="d-flex flex-wrap justify-content-between align-items-center pt-3 mt-2 border-top gap-2">
-                                            <div class="d-flex flex-wrap gap-2">
-                                                <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="CapNhatTrangThai" method="post" class="d-inline">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="maDh" value="@dh.MaDh" />
-                                                    <input type="hidden" name="trangThaiDh" value="DANG_DONG_GOI_HOP" />
-                                                    <button type="submit" class="btn-kv-outline">Xác nhận đóng gói</button>
-                                                </form>
-
-                                                <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="CapNhatTrangThai" method="post" class="d-inline">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="maDh" value="@dh.MaDh" />
-                                                    <input type="hidden" name="trangThaiDh" value="DANG_GIAO" />
-                                                    <button type="submit" class="btn-kv-outline">Giao hàng</button>
-                                                </form>
-
-                                                <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="CapNhatTrangThai" method="post" class="d-inline">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="maDh" value="@dh.MaDh" />
-                                                    <input type="hidden" name="trangThaiDh" value="HOAN_TAT" />
-                                                    <input type="hidden" name="trangThaiTt" value="DA_TT" />
-                                                    <button type="submit" class="btn-kv-green">Hoàn tất</button>
-                                                </form>
-
-                                                <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="CapNhatTrangThai" method="post" class="d-inline"
-                                                      onsubmit="return confirm('Xác nhận hủy bỏ hóa đơn #@dh.MaTraCuuDh?');">
-                                                    @Html.AntiForgeryToken()
-                                                    <input type="hidden" name="maDh" value="@dh.MaDh" />
-                                                    <input type="hidden" name="trangThaiDh" value="DA_HUY" />
-                                                    <button type="submit" class="btn btn-outline-danger btn-sm px-3" style="font-size: 13px;">Hủy bỏ</button>
-                                                </form>
+                                            <!-- GÓC DƯỚI BÊN TRÁI: DUY NHẤT NÚT HỦY PHIẾU -->
+                                            <div>
+                                                @if (dh.TrangThaiDh != "DA_HUY")
+                                                {
+                                                    <button type="button" class="btn-kv-danger-outline"
+                                                            onclick="moModalHuyDon(@dh.MaDh, '@dh.MaTraCuuDh', '@Html.Raw(dh.HoTenNguoiMua.Replace("'", "\\'"))', '@dh.SdtnguoiMua', @dh.TongThanhToanCuoi, '@dh.PhuongThucTt', '@dh.TrangThaiTt', @dh.DotGiaoHangDaDiems.Count, @soThiepQr, @tongSoMon)">
+                                                        <i class="bi bi-trash3"></i> Hủy phiếu
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2" style="font-size: 12.5px;">
+                                                        <i class="bi bi-x-octagon-fill me-1"></i> Phiếu đã hủy (@dh.TenTrangThaiTtHienThi)
+                                                    </span>
+                                                }
                                             </div>
 
-                                            <div class="d-flex gap-2">
-                                                <button type="button" class="btn-kv-blue"
+                                            <!-- GÓC DƯỚI BÊN PHẢI: CỤM 2 NÚT [✏️ CẬP NHẬT TRẠNG THÁI] + [🖨️ IN HÓA ĐƠN] -->
+                                            <div class="d-flex align-items-center gap-2">
+                                                <button type="button" class="btn-kv-green d-inline-flex align-items-center gap-1"
+                                                        onclick="moModalCapNhatTrangThai(@dh.MaDh, '@dh.MaTraCuuDh', '@Html.Raw(dh.HoTenNguoiMua.Replace("'", "\\'"))', @dh.TongThanhToanCuoi, '@dh.PhuongThucTt', '@trangThaiChuan', '@dh.TrangThaiTt', @dh.DotGiaoHangDaDiems.Count)">
+                                                    <i class="bi bi-pencil-square"></i> Cập nhật trạng thái
+                                                </button>
+
+                                                <button type="button" class="btn-kv-blue d-inline-flex align-items-center gap-1"
                                                         onclick="window.open('/Admin/DonHangAdmin/InHoaDon/@dh.MaDh', 'InHoaDonKiot', 'width=920,height=760');">
-                                                    🖨️ In hóa đơn
+                                                    <i class="bi bi-printer"></i> In hóa đơn
                                                 </button>
                                             </div>
                                         </div>
@@ -505,8 +619,350 @@
     </div>
 </div>
 
+<!-- ========================================================================= -->
+<!-- MODAL 1: ✏️ ĐIỀU PHỐI & CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG                      -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalCapNhatTrangThaiDon" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header py-2 px-3" style="background: #F4F6F8; border-bottom: 1px solid #E5E7EB;">
+                <h6 class="modal-title fw-bold text-dark mb-0">
+                    <i class="bi bi-pencil-square text-primary me-1"></i>
+                    Điều Phối & Cập Nhật Trạng Thái Đơn Hàng <span id="lblMdCnMaDon" class="text-primary">#---</span>
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-3">
+                <!-- Thông tin tóm tắt hóa đơn -->
+                <div class="d-flex flex-wrap justify-content-between align-items-center p-2 mb-2 rounded border bg-white" style="font-size: 13px;">
+                    <div>
+                        Khách hàng: <strong id="lblMdCnKhachHang">---</strong> •
+                        Số đợt giao: <strong id="lblMdCnSoDotGiao">1</strong> điểm nhận
+                    </div>
+                    <div>
+                        Phương thức: <strong id="lblMdCnPhuongThuc" class="text-primary">---</strong> •
+                        Cần thu: <strong id="lblMdCnTongTien" class="text-danger">0 đ</strong>
+                    </div>
+                </div>
+
+                <!-- 1. THANH TIẾN TRÌNH TRẠNG THÁI (STEPPER) -->
+                <div class="kv-stepper">
+                    <div class="kv-step-item" id="stepItem_CHO_XAC_NHAN">
+                        <div class="kv-step-circle">1</div>
+                        <div class="kv-step-label">Chờ xác nhận</div>
+                        <small class="text-muted" style="font-size:10px;">CHO_XAC_NHAN</small>
+                    </div>
+                    <div class="kv-step-arrow"><i class="bi bi-arrow-right"></i></div>
+                    <div class="kv-step-item" id="stepItem_CHO_LAY_HANG">
+                        <div class="kv-step-circle">2</div>
+                        <div class="kv-step-label">Chờ lấy hàng</div>
+                        <small class="text-muted" style="font-size:10px;">CHO_LAY_HANG</small>
+                    </div>
+                    <div class="kv-step-arrow"><i class="bi bi-arrow-right"></i></div>
+                    <div class="kv-step-item" id="stepItem_DANG_GIAO">
+                        <div class="kv-step-circle">3</div>
+                        <div class="kv-step-label">Đang giao hàng</div>
+                        <small class="text-muted" style="font-size:10px;">DANG_GIAO</small>
+                    </div>
+                    <div class="kv-step-arrow"><i class="bi bi-arrow-right"></i></div>
+                    <div class="kv-step-item" id="stepItem_HOAN_TAT">
+                        <div class="kv-step-circle">4</div>
+                        <div class="kv-step-label">Hoàn tất</div>
+                        <small class="text-muted" style="font-size:10px;">HOAN_TAT</small>
+                    </div>
+                </div>
+
+                <!-- 2. KHU VỰC 1: XÁC NHẬN THANH TOÁN CHUYỂN KHOẢN QR (DÀNH CHO THU NGÂN / API) -->
+                <div id="boxXacNhanQrThuNgan" class="p-3 mb-3 rounded border" style="background: #ECFDF5; border-color: #A7F3D0 !important; display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong style="color: #065F46; font-size: 13.5px;">
+                            <i class="bi bi-qr-code-scan me-1"></i> Khu vực 1 - Xác nhận Thanh toán Chuyển khoản QR (Thu ngân / Webhook API)
+                        </strong>
+                        <span class="badge bg-warning text-dark">Đang chờ thanh toán (CHUA_TT)</span>
+                    </div>
+                    <p class="small text-muted mb-2">
+                        Khi khách hàng quét mã chuyển khoản thành công, bấm nút dưới đây để ghi nhận <code>DA_TT</code> vào Sổ Quỹ và tự động chuyển đơn sang trạng thái <strong>Chờ lấy hàng (<code>CHO_LAY_HANG</code>)</strong> cho bộ phận giao vận.
+                    </p>
+                    <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="XacNhanChuyenKhoanQr" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="maDh" id="inpQrMaDh" value="0" />
+                        <button type="submit" class="btn-kv-green w-100 py-2 fw-semibold">
+                            ⚡ Xác nhận đã nhận chuyển khoản QR -> Chuyển sang Chờ lấy hàng
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 3. KHU VỰC 2: NÚT CHUYỂN BƯỚC TIẾP THEO DÀNH CHO NHÂN VIÊN BÁN HÀNG / GIAO HÀNG -->
+                <div class="p-3 mb-3 rounded border" style="background: #F2F8FE; border-color: #BFDBFE !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong style="color: #005AC3; font-size: 13.5px;">
+                            <i class="bi bi-diagram-3-fill me-1"></i> Khu vực 2 - Tác vụ Chuyển Bước Tiếp Theo (Nhân viên Bán hàng / Giao hàng)
+                        </strong>
+                        <span class="kv-tag-mini member">Quyền hiện tại: @vaiTroHienTai</span>
+                    </div>
+
+                    <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="CapNhatTrangThai" method="post" id="formChuyenBuocTiepTheo">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="maDh" id="inpNextStepMaDh" value="0" />
+                        <input type="hidden" name="trangThaiDh" id="inpNextStepTrangThaiDh" value="" />
+                        <input type="hidden" name="trangThaiTt" id="inpNextStepTrangThaiTt" value="" />
+
+                        <!-- Bước 1 -> 2: CHO_XAC_NHAN -> CHO_LAY_HANG -->
+                        <div id="btnWrapStep_CHO_XAC_NHAN" style="display: none;">
+                            <p class="small text-muted mb-2">Đơn hàng đang ở bước <strong>Chờ xác nhận</strong>. Nhân viên Order/Thu ngân kiểm tra hộp bánh và xác nhận đóng gói để chuyển sang Chờ lấy hàng:</p>
+                            <button type="submit" class="btn-kv-blue w-100 py-2 fw-semibold"
+                                    onclick="document.getElementById('inpNextStepTrangThaiDh').value='CHO_LAY_HANG'; document.getElementById('inpNextStepTrangThaiTt').value='';">
+                                📦 Xác nhận đơn & Chuyển sang Chờ lấy hàng
+                            </button>
+                        </div>
+
+                        <!-- Bước 2 -> 3: CHO_LAY_HANG -> DANG_GIAO -->
+                        <div id="btnWrapStep_CHO_LAY_HANG" style="display: none;">
+                            <p class="small text-muted mb-2">Hộp quà đã đóng gói sẵn sàng tại quầy (<strong>Chờ lấy hàng</strong>). Nhân viên giao vận nhận kiện hàng để bắt đầu lộ trình giao:</p>
+                            <button type="submit" class="btn-kv-blue w-100 py-2 fw-semibold"
+                                    onclick="document.getElementById('inpNextStepTrangThaiDh').value='DANG_GIAO'; document.getElementById('inpNextStepTrangThaiTt').value='';">
+                                🚚 Nhân viên nhận hàng & Bắt đầu đi giao (Đang giao)
+                            </button>
+                        </div>
+
+                        <!-- Bước 3 -> 4: DANG_GIAO -> HOAN_TAT -->
+                        <div id="btnWrapStep_DANG_GIAO" style="display: none;">
+                            <p class="small text-muted mb-2">Đơn hàng đang trên đường giao (<strong>Đang giao</strong>). Sau khi giao tận tay người nhận (và thu tiền nếu COD), xác nhận hoàn tất:</p>
+                            <button type="submit" class="btn-kv-green w-100 py-2 fw-semibold"
+                                    onclick="document.getElementById('inpNextStepTrangThaiDh').value='HOAN_TAT'; document.getElementById('inpNextStepTrangThaiTt').value='DA_TT';">
+                                ✅ Xác nhận đã giao thành công (Hoàn tất & Ghi nhận doanh thu)
+                            </button>
+                        </div>
+
+                        <!-- Đã HOAN_TAT -->
+                        <div id="btnWrapStep_HOAN_TAT" style="display: none;">
+                            <div class="p-2 rounded bg-white border text-success fw-medium text-center">
+                                <i class="bi bi-check-circle-fill me-1"></i> Đơn hàng này đã giao thành công (HOAN_TAT) và đã ghi nhận doanh thu vào Sổ Quỹ.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 4. KHU VỰC 3: QUYỀN ĐIỀU CHỈNH TRỰC TIẾP CỦA QUẢN TRỊ VIÊN (ADMIN OVERRIDE) -->
+                <div class="p-3 rounded border" style="background: #F9FAFB; border-color: #D1D5DB !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong class="text-dark" style="font-size: 13px;">
+                            🛠️ Quyền Quản Trị Viên: Điều chỉnh trạng thái thủ công (Dùng khi mất kết nối mạng / lỗi thiết bị để khớp doanh thu)
+                        </strong>
+                        @if (laQuanTriVien)
+                        {
+                            <span class="badge bg-primary">QUAN_TRI Đang kích hoạt</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Chỉ dành cho QUAN_TRI</span>
+                        }
+                    </div>
+
+                    <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="CapNhatTrangThai" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="maDh" id="inpOverrideMaDh" value="0" />
+                        <input type="hidden" name="laAdminOverride" value="true" />
+
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Trạng thái đơn hàng</label>
+                                <select name="trangThaiDh" id="selOverrideTrangThaiDh" class="kv-select" @(laQuanTriVien ? "" : "disabled")>
+                                    <option value="CHO_XAC_NHAN">CHO_XAC_NHAN - Chờ xác nhận</option>
+                                    <option value="CHO_LAY_HANG">CHO_LAY_HANG - Chờ lấy hàng</option>
+                                    <option value="DANG_GIAO">DANG_GIAO - Đang giao hàng</option>
+                                    <option value="HOAN_TAT">HOAN_TAT - Hoàn tất</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Trạng thái thanh toán</label>
+                                <select name="trangThaiTt" id="selOverrideTrangThaiTt" class="kv-select" @(laQuanTriVien ? "" : "disabled")>
+                                    <option value="CHUA_TT">CHUA_TT - Chưa thanh toán</option>
+                                    <option value="DA_TT">DA_TT - Đã thanh toán</option>
+                                    <option value="DA_HOAN_TIEN">DA_HOAN_TIEN - Đã hoàn tiền</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Lý do điều chỉnh Quản trị</label>
+                                <input type="text" name="ghiChuDieuChinh" class="kv-input"
+                                       placeholder="VD: Shipper báo giao xong khi mất sóng..."
+                                       @(laQuanTriVien ? "" : "disabled") />
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                            @if (!laQuanTriVien)
+                            {
+                                <small class="text-danger">
+                                    * Bạn đang đăng nhập quyền <strong>@vaiTroHienTai</strong>. Hãy chọn <strong>"👑 Quyền: Quản trị viên"</strong> ở góc trên cùng bên phải nếu muốn test Admin Override.
+                                </small>
+                            }
+                            else
+                            {
+                                <small class="text-muted">Cho phép chuyển thẳng tới bất kỳ trạng thái nào để đồng bộ Sổ Quỹ cuối ngày.</small>
+                            }
+                            <button type="submit" class="btn-kv-outline fw-semibold" @(laQuanTriVien ? "" : "disabled")>
+                                <i class="bi bi-shield-check text-primary me-1"></i> Lưu điều chỉnh Quản trị
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL 2: 🗑️ KIỂM TRA PHIẾU LIÊN QUAN & HOÀN TIỀN NGÂN HÀNG (VIETQR REFUND)-->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalHuyDonVaHoanTien" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header py-2 px-3" style="background: #FEF2F2; border-bottom: 1px solid #FECACA;">
+                <h6 class="modal-title fw-bold mb-0" style="color: #DC2626;">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    Kiểm Tra Phiếu Liên Quan & Xác Nhận Hủy Hóa Đơn <span id="lblMdHuyMaDon">#---</span>
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="HuyDonVaHoanTien" method="post" id="formHuyDonVaHoanTien" onsubmit="return kiemTraTruocKhiSubmitHuy()">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="maDh" id="inpHuyMaDh" value="0" />
+
+                <div class="modal-body p-3">
+                    <!-- 1. THỐNG KÊ CÁC PHIẾU LIÊN QUAN SẼ BỊ HỦY THEO ĐƠN HÀNG NÀY -->
+                    <div class="p-3 mb-3 rounded border bg-light">
+                        <div class="fw-semibold text-dark mb-2" style="font-size: 13.5px;">
+                            📋 1. Danh sách các phiếu & chứng từ liên quan sẽ bị hủy theo hóa đơn này:
+                        </div>
+                        <div class="row g-2" style="font-size: 13px;">
+                            <div class="col-md-6">
+                                <div class="p-2 rounded bg-white border d-flex justify-content-between">
+                                    <span class="text-muted">🚚 Phiếu giao hàng đa điểm:</span>
+                                    <strong class="text-danger"><span id="lblHuySoDotGiao">1</span> phiếu ➔ DA_HUY</strong>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-2 rounded bg-white border d-flex justify-content-between">
+                                    <span class="text-muted">💌 Mã Thiệp điện tử QR 3D:</span>
+                                    <strong class="text-danger"><span id="lblHuySoThiepQr">1</span> thiệp ➔ Vô hiệu hóa</strong>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-2 rounded bg-white border d-flex justify-content-between">
+                                    <span class="text-muted">📦 Hoàn trả tồn kho hàng hóa:</span>
+                                    <strong class="text-success">+<span id="lblHuySoMon">1</span> sản phẩm/hộp về kho</strong>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-2 rounded bg-white border d-flex justify-content-between">
+                                    <span class="text-muted">💰 Trạng thái Phiếu thu Sổ quỹ:</span>
+                                    <strong id="lblHuyTrangThaiTt" class="text-primary">---</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. XỬ LÝ BẮT BUỘC NẾU KHÁCH ĐÃ CHUYỂN KHOẢN / ĐÃ THANH TOÁN (TrangThaiTt == "DA_TT") -->
+                    <div id="boxHoanTienVietQr" style="display: none;">
+                        <div class="p-3 mb-3 rounded border" style="background: #FFFBEB; border-color: #FDE68A !important; color: #92400E;">
+                            <div class="fw-bold mb-1" style="font-size: 13.5px;">
+                                ⚠️ Đơn hàng này khách đã thanh toán (<span id="lblHuySoTienCanHoan">0</span> đ).
+                                Vui lòng liên hệ khách hàng (<span id="lblHuyThongTinKhach">---</span>) lấy thông tin Ngân hàng để hoàn tiền trước khi hủy phiếu!
+                            </div>
+                            <small>Hệ thống sẽ tự động sinh mã <strong>VietQR Hoàn Tiền</strong> chuẩn xác theo Số tài khoản khách cung cấp và tạo <strong>Phiếu Chi Hoàn Tiền</strong> trong Sổ Quỹ.</small>
+                        </div>
+
+                        <div class="row g-3 align-items-center">
+                            <!-- Cột nhập thông tin ngân hàng nhận hoàn tiền -->
+                            <div class="col-md-7">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-semibold text-dark" style="font-size: 13px;">Thông tin tài khoản nhận hoàn tiền của khách:</span>
+                                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 11.5px;"
+                                            onclick="dienNhanhStkKhachDemo()">
+                                        ⚡ Điền mẫu STK khách
+                                    </button>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label small fw-medium mb-1">Ngân hàng nhận hoàn tiền <span class="text-danger">*</span></label>
+                                    <select name="maNganHangHoan" id="selMaNganHangHoan" class="kv-select" onchange="capNhatAnhVietQrHoanTien()">
+                                        <option value="VCB">VCB - Ngân hàng TMCP Ngoại thương (Vietcombank)</option>
+                                        <option value="MB">MB - Ngân hàng TMCP Quân Đội (MBBank)</option>
+                                        <option value="TCB">TCB - Ngân hàng TMCP Kỹ Thương (Techcombank)</option>
+                                        <option value="ACB">ACB - Ngân hàng TMCP Á Châu (ACB)</option>
+                                        <option value="CTG">CTG - Ngân hàng TMCP Công Thương (VietinBank)</option>
+                                        <option value="BIDV">BIDV - Ngân hàng TMCP Đầu tư & Phát triển (BIDV)</option>
+                                        <option value="VPB">VPB - Ngân hàng TMCP Việt Nam Thịnh Vượng (VPBank)</option>
+                                        <option value="TPB">TPB - Ngân hàng TMCP Tiên Phong (TPBank)</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label small fw-medium mb-1">Số tài khoản khách hàng <span class="text-danger">*</span></label>
+                                    <input type="text" name="soTaiKhoanHoan" id="txtSoTaiKhoanHoan" class="kv-input"
+                                           placeholder="Nhập số tài khoản nhận hoàn tiền..."
+                                           oninput="capNhatAnhVietQrHoanTien()" />
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label small fw-medium mb-1">Tên chủ tài khoản (Không dấu) <span class="text-danger">*</span></label>
+                                    <input type="text" name="tenChuTkHoan" id="txtTenChuTkHoan" class="kv-input text-uppercase"
+                                           placeholder="VD: NGUYEN MINH CHAU"
+                                           oninput="capNhatAnhVietQrHoanTien()" />
+                                </div>
+                            </div>
+
+                            <!-- Cột hiển thị mã VietQR Hoàn Tiền tự động -->
+                            <div class="col-md-5 text-center">
+                                <div class="p-2 rounded border bg-white">
+                                    <div class="small fw-semibold text-primary mb-1">
+                                        <i class="bi bi-qr-code me-1"></i> Mã VietQR Quét Hoàn Tiền
+                                    </div>
+                                    <div id="khungChuaVietQrHoan" class="py-2">
+                                        <img id="imgVietQrHoanTien"
+                                             src=""
+                                             alt="VietQR Hoàn Tiền"
+                                             style="max-width: 185px; border-radius: 6px; border: 1px solid #E5E7EB; display: none;" />
+                                        <div id="placeholderVietQrHoan" class="p-3 text-muted small">
+                                            Nhập Số tài khoản khách hàng ở cột trái để tạo mã QR chuyển khoản hoàn tiền tự động.
+                                        </div>
+                                    </div>
+                                    <div class="small text-danger fw-bold" id="lblSoTienQrPreview">0 đ</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ô nhập lý do hủy đơn -->
+                    <div class="mt-2">
+                        <label class="form-label small fw-medium mb-1">Lý do hủy phiếu & ghi chú đối soát</label>
+                        <input type="text" name="lyDoHuy" id="txtLyDoHuyDon" class="kv-input"
+                               placeholder="VD: Khách đổi ý / Nhầm mẫu hộp / Đã chuyển khoản hoàn tiền..."
+                               value="Khách yêu cầu hủy đơn & hoàn kho" />
+                    </div>
+                </div>
+
+                <div class="modal-footer py-2 px-3" style="background: #F9FAFB;">
+                    <button type="button" class="btn-kv-outline" data-bs-dismiss="modal">Đóng lại</button>
+                    <button type="submit" id="btnSubmitXacNhanHuy" class="btn btn-danger btn-sm px-3 py-2 fw-semibold">
+                        🗑️ Xác nhận Hủy Đơn Hàng
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
+        let _huyDonDangDaTt = false;
+        let _huyDonSoTien = 0;
+        let _huyDonMaTraCuu = '';
+        let _huyDonTenKhach = '';
+
         function chuyenTabChiTietDon(maDh, tabIdx) {
             const p1 = document.getElementById('paneTabDh1_' + maDh);
             const p2 = document.getElementById('paneTabDh2_' + maDh);
@@ -518,6 +974,152 @@
             p2.style.display = (tabIdx === 2) ? 'block' : 'none';
             if (b1) b1.classList.toggle('active', tabIdx === 1);
             if (b2) b2.classList.toggle('active', tabIdx === 2);
+        }
+
+        // Mở Modal 1: Điều Phối & Cập Nhật Trạng Thái Đơn Hàng
+        function moModalCapNhatTrangThai(maDh, maTraCuu, hoTen, tongTien, phuongThucTt, trangThaiDh, trangThaiTt, soDotGiao) {
+            document.getElementById('lblMdCnMaDon').textContent = '#' + maTraCuu;
+            document.getElementById('lblMdCnKhachHang').textContent = hoTen;
+            document.getElementById('lblMdCnSoDotGiao').textContent = soDotGiao;
+            document.getElementById('lblMdCnPhuongThuc').textContent = phuongThucTt + ' (' + trangThaiTt + ')';
+            document.getElementById('lblMdCnTongTien').textContent = Number(tongTien).toLocaleString('vi-VN') + ' đ';
+
+            document.getElementById('inpQrMaDh').value = maDh;
+            document.getElementById('inpNextStepMaDh').value = maDh;
+            document.getElementById('inpOverrideMaDh').value = maDh;
+
+            // Chuẩn hóa trạng thái
+            const st = (trangThaiDh === 'DANG_DONG_GOI_HOP') ? 'CHO_LAY_HANG' : trangThaiDh;
+            const thuTu = ['CHO_XAC_NHAN', 'CHO_LAY_HANG', 'DANG_GIAO', 'HOAN_TAT'];
+            const idxHienTai = thuTu.indexOf(st);
+
+            thuTu.forEach((stepKey, idx) => {
+                const el = document.getElementById('stepItem_' + stepKey);
+                if (!el) return;
+                el.classList.remove('done', 'current');
+                if (idx < idxHienTai || st === 'HOAN_TAT') {
+                    el.classList.add('done');
+                } else if (idx === idxHienTai) {
+                    el.classList.add('current');
+                }
+            });
+
+            // Khu vực 1: Nút xác nhận chuyển khoản QR nếu CHUA_TT và chưa hủy/hoàn tất
+            const boxQr = document.getElementById('boxXacNhanQrThuNgan');
+            if (boxQr) {
+                boxQr.style.display = (trangThaiTt === 'CHUA_TT' && st !== 'DA_HUY') ? 'block' : 'none';
+            }
+
+            // Khu vực 2: Nút chuyển bước tiếp theo
+            ['CHO_XAC_NHAN', 'CHO_LAY_HANG', 'DANG_GIAO', 'HOAN_TAT'].forEach(k => {
+                const wrap = document.getElementById('btnWrapStep_' + k);
+                if (wrap) wrap.style.display = (k === st) ? 'block' : 'none';
+            });
+
+            // Khu vực 3: Dropdown Admin Override
+            const selDh = document.getElementById('selOverrideTrangThaiDh');
+            if (selDh && thuTu.includes(st)) selDh.value = st;
+            const selTt = document.getElementById('selOverrideTrangThaiTt');
+            if (selTt) selTt.value = trangThaiTt;
+
+            const modalEl = document.getElementById('modalCapNhatTrangThaiDon');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        }
+
+        // Mở Modal 2: Kiểm tra Phiếu liên quan & Hoàn tiền VietQR khi bấm Hủy phiếu
+        function moModalHuyDon(maDh, maTraCuu, hoTen, sdt, tongTien, phuongThucTt, trangThaiTt, soDotGiao, soThiepQr, tongSoMon) {
+            _huyDonDangDaTt = (trangThaiTt === 'DA_TT');
+            _huyDonSoTien = Math.round(Number(tongTien) || 0);
+            _huyDonMaTraCuu = maTraCuu;
+            _huyDonTenKhach = hoTen;
+
+            document.getElementById('inpHuyMaDh').value = maDh;
+            document.getElementById('lblMdHuyMaDon').textContent = '#' + maTraCuu;
+            document.getElementById('lblHuySoDotGiao').textContent = soDotGiao;
+            document.getElementById('lblHuySoThiepQr').textContent = soThiepQr;
+            document.getElementById('lblHuySoMon').textContent = tongSoMon;
+            document.getElementById('lblHuyTrangThaiTt').textContent =
+                _huyDonDangDaTt
+                    ? ('ĐÃ THANH TOÁN (' + _huyDonSoTien.toLocaleString('vi-VN') + ' đ) ➔ Bắt buộc Hoàn tiền')
+                    : ('CHƯA THANH TOÁN (' + phuongThucTt + ') ➔ Hủy trực tiếp');
+
+            const boxHoanTien = document.getElementById('boxHoanTienVietQr');
+            const btnSubmit = document.getElementById('btnSubmitXacNhanHuy');
+
+            if (_huyDonDangDaTt) {
+                boxHoanTien.style.display = 'block';
+                document.getElementById('lblHuySoTienCanHoan').textContent = _huyDonSoTien.toLocaleString('vi-VN');
+                document.getElementById('lblHuyThongTinKhach').textContent = hoTen + ' - ' + sdt;
+                document.getElementById('lblSoTienQrPreview').textContent = 'Số tiền hoàn: ' + _huyDonSoTien.toLocaleString('vi-VN') + ' đ';
+                btnSubmit.innerHTML = '💸 Xác nhận Đã Hoàn Tiền & Hủy Đơn Hàng';
+
+                // Reset hoặc cập nhật QR
+                document.getElementById('txtSoTaiKhoanHoan').value = '';
+                document.getElementById('txtTenChuTkHoan').value = boDauTiengViet(hoTen).toUpperCase();
+                capNhatAnhVietQrHoanTien();
+            } else {
+                boxHoanTien.style.display = 'none';
+                btnSubmit.innerHTML = '🗑️ Xác nhận Hủy Đơn Hàng & Hoàn Kho';
+            }
+
+            const modalEl = document.getElementById('modalHuyDonVaHoanTien');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            modal.show();
+        }
+
+        function boDauTiengViet(str) {
+            if (!str) return '';
+            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+        }
+
+        function dienNhanhStkKhachDemo() {
+            document.getElementById('selMaNganHangHoan').value = 'VCB';
+            document.getElementById('txtSoTaiKhoanHoan').value = '1029384756';
+            if (!document.getElementById('txtTenChuTkHoan').value) {
+                document.getElementById('txtTenChuTkHoan').value = boDauTiengViet(_huyDonTenKhach || 'NGUYEN MINH CHAU').toUpperCase();
+            }
+            capNhatAnhVietQrHoanTien();
+        }
+
+        // Tự động sinh ảnh VietQR Hoàn Tiền theo đúng công thức yêu cầu
+        function capNhatAnhVietQrHoanTien() {
+            const maNganHang = document.getElementById('selMaNganHangHoan')?.value || 'VCB';
+            const soTaiKhoan = (document.getElementById('txtSoTaiKhoanHoan')?.value || '').trim();
+            const tenChuTK = (document.getElementById('txtTenChuTkHoan')?.value || '').trim().toUpperCase();
+            const soTienHoan = _huyDonSoTien;
+            const maDon = _huyDonMaTraCuu;
+
+            const imgQr = document.getElementById('imgVietQrHoanTien');
+            const placeholder = document.getElementById('placeholderVietQrHoan');
+
+            if (!soTaiKhoan) {
+                if (imgQr) imgQr.style.display = 'none';
+                if (placeholder) placeholder.style.display = 'block';
+                return;
+            }
+
+            const qrUrl = `https://img.vietqr.io/image/${maNganHang}-${soTaiKhoan}-compact2.png?amount=${soTienHoan}&addInfo=${encodeURIComponent('HOAN TIEN DON ' + maDon)}&accountName=${encodeURIComponent(tenChuTK)}`;
+            if (imgQr) {
+                delete imgQr.dataset.fallbackApplied;
+                imgQr.src = qrUrl;
+                imgQr.style.display = 'inline-block';
+            }
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
+        }
+
+        function kiemTraTruocKhiSubmitHuy() {
+            if (_huyDonDangDaTt) {
+                const stk = (document.getElementById('txtSoTaiKhoanHoan')?.value || '').trim();
+                const tenTk = (document.getElementById('txtTenChuTkHoan')?.value || '').trim();
+                if (!stk || !tenTk) {
+                    alert('⚠️ Đơn hàng này khách đã thanh toán! Vui lòng nhập đầy đủ Số tài khoản và Tên chủ tài khoản ngân hàng của khách để hoàn tiền trước khi hủy phiếu.');
+                    return false;
+                }
+            }
+            return true;
         }
 
         function locHoaDonClient() {

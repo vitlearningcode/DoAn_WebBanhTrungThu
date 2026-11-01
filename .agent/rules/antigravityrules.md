@@ -31,3 +31,6 @@
 - **Core E-Commerce & Landing Features:**
   - Khu vực trưng bày "Bộ sưu tập Lễ Hộp Thượng Hạng" (Gift Box Collections) theo dạng Bento Grid hoặc Carousel sang trọng.
   - Tính năng chọn nhân bánh / mix hộp quà tùy chỉnh hoặc bảng giá chiết khấu cho khách hàng doanh nghiệp / khách hàng thân thiết.
+# Skill: Codebase Architecture Graph (Graphify)
+- **Architecture First:** Trước khi trả lời câu hỏi về kiến trúc hoặc viết/sửa code liên quan đến nhiều tầng (Controller, Service, DbContext, ViewModels), LUÔN đọc file `graphify-out/GRAPH_REPORT.md` trước để nắm toàn cảnh các node kết nối trong dự án.
+- **Graph Navigation:** Nếu cần tra cứu sâu hơn mối quan hệ phụ thuộc giữa các file C# và Razor Views, hãy kiểm tra cấu trúc trong `graphify-out/graph.json` thay vì đọc mò từng file thô. Lưu ý: Với cấu hình DI trong Program.cs và giao diện .cshtml, hãy đọc trực tiếp file gốc vì AST của Graphify bỏ qua top-level statements và Razor syntax.

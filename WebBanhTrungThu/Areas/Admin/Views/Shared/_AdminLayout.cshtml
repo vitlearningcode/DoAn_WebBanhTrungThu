@@ -464,7 +464,28 @@
             </a>
 
             <div class="d-flex align-items-center gap-2 ps-2 border-start">
-                <span class="fw-medium text-dark">@(User.Identity?.Name ?? "Admin")</span>
+                @{
+                    string curRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "QUAN_TRI";
+                    string roleLabel = curRole switch
+                    {
+                        "THU_NGAN" => "💼 Thu ngân",
+                        "NHAN_VIEN" => "💼 Bán hàng",
+                        "GIAO_HANG" => "🚚 Giao hàng",
+                        _ => "👑 Quản trị"
+                    };
+                }
+                <form asp-area="" asp-controller="TaiKhoan" asp-action="ChuyenNhanhVaiTroDemo" method="post" class="d-inline-flex align-items-center gap-1 m-0">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                    <select name="maVt" onchange="this.form.submit()" class="form-select form-select-sm py-0 px-2"
+                            style="height: 26px; font-size: 12px; width: auto; border-color: #BFDBFE; background-color: #EBF5FF; color: #005AC3; font-weight: 600;"
+                            title="Chuyển nhanh quyền để kiểm thử phân quyền Thu ngân / Giao hàng / Quản trị">
+                        <option value="QUAN_TRI" selected="@(curRole == "QUAN_TRI")">👑 Quyền: Quản trị viên</option>
+                        <option value="THU_NGAN" selected="@(curRole == "THU_NGAN" || curRole == "NHAN_VIEN")">💼 Quyền: Thu ngân & Order</option>
+                        <option value="GIAO_HANG" selected="@(curRole == "GIAO_HANG")">🚚 Quyền: Nhân viên giao hàng</option>
+                    </select>
+                </form>
+                <span class="fw-medium text-dark hide-mobile">@(User.Identity?.Name ?? "Admin")</span>
                 <form asp-area="" asp-controller="TaiKhoan" asp-action="DangXuat" method="post" class="d-inline">
                     @Html.AntiForgeryToken()
                     <button type="submit" class="kv-icon-btn text-danger" title="Đăng xuất">

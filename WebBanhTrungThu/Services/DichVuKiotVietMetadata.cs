@@ -60,6 +60,19 @@ namespace WebBanhTrungThu.Services
         };
 
         public Dictionary<string, KiotItemMeta> Items { get; set; } = new();
+        public Dictionary<int, KiotDonHangMeta> DonHangs { get; set; } = new();
+    }
+
+    public class KiotDonHangMeta
+    {
+        public int MaDh { get; set; }
+        public string? MaNganHangHoan { get; set; }
+        public string? SoTaiKhoanHoan { get; set; }
+        public string? TenChuTkHoan { get; set; }
+        public string? LyDoHuyHoan { get; set; }
+        public string? GhiChuDieuChinhAdmin { get; set; }
+        public string? ThoiGianCapNhatCuoi { get; set; }
+        public string? NguoiCapNhatCuoi { get; set; }
     }
 
     public class DichVuKiotVietMetadata
@@ -240,6 +253,33 @@ namespace WebBanhTrungThu.Services
                 combo.TongTonKho = 40;
                 combo.TrongLuongGram = 750;
             }
+        }
+
+        public void GanMetadataChoDonHang(DonHang dh, KiotMetadataStore store)
+        {
+            if (store.DonHangs != null && store.DonHangs.TryGetValue(dh.MaDh, out var meta))
+            {
+                dh.MaNganHangHoan = meta.MaNganHangHoan;
+                dh.SoTaiKhoanHoan = meta.SoTaiKhoanHoan;
+                dh.TenChuTkHoan = meta.TenChuTkHoan;
+                dh.LyDoHuyHoan = meta.LyDoHuyHoan;
+                dh.GhiChuDieuChinhAdmin = meta.GhiChuDieuChinhAdmin;
+                dh.ThoiGianCapNhatCuoi = meta.ThoiGianCapNhatCuoi;
+                dh.NguoiCapNhatCuoi = meta.NguoiCapNhatCuoi;
+            }
+        }
+
+        public void CapNhatMetadataDonHang(int maDh, Action<KiotDonHangMeta> capNhat)
+        {
+            var store = DocDuLieu();
+            store.DonHangs ??= new Dictionary<int, KiotDonHangMeta>();
+            if (!store.DonHangs.TryGetValue(maDh, out var meta))
+            {
+                meta = new KiotDonHangMeta { MaDh = maDh };
+                store.DonHangs[maDh] = meta;
+            }
+            capNhat(meta);
+            LuuDuLieu(store);
         }
     }
 }

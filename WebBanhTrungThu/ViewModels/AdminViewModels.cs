@@ -276,8 +276,10 @@ namespace WebBanhTrungThu.ViewModels
         public decimal ThuViMoMo { get; set; }
         public decimal ThuVnPay { get; set; }
         public decimal TongGiaVonUocTinh { get; set; }
+        public decimal TongTienHoanKhach { get; set; }
         public decimal LoiNhuanGop { get; set; }
-        public decimal TonQuyCuoiKy => QuyDauKy + TongThuTrongKy;
+        public decimal TonQuyCuoiKy => QuyDauKy + TongThuTrongKy - TongTienHoanKhach;
         public List<DonHang> DanhSachPhieuThuDonHang { get; set; } = new();
+        public List<DonHang> DanhSachPhieuHoanTien { get; set; } = new();
     }
 }

@@ -1,6 +1,7 @@
 @model WebBanhTrungThu.ViewModels.SoQuyAdminViewModel
 @{
     ViewData["Title"] = "Sổ quỹ - KiotViet";
+    decimal tongChiThucTe = Model.TongGiaVonUocTinh + Model.TongTienHoanKhach;
 }
 
 <style>
@@ -68,12 +69,16 @@
             <div class="fs-5 fw-bold text-dark">@Model.QuyDauKy.ToString("N0")</div>
         </div>
         <div class="col-md-3 border-end pe-4">
-            <div class="text-muted small">Tổng thu</div>
+            <div class="text-muted small">Tổng thu (Đơn đã thanh toán)</div>
             <div class="fs-5 fw-bold" style="color: #0070F4;">+@Model.TongThuTrongKy.ToString("N0")</div>
         </div>
         <div class="col-md-3 border-end pe-4">
-            <div class="text-muted small">Tổng chi (Giá vốn nhập hàng)</div>
-            <div class="fs-5 fw-bold text-danger">-@Model.TongGiaVonUocTinh.ToString("N0")</div>
+            <div class="text-muted small">Tổng chi (Giá vốn & Hoàn tiền)</div>
+            <div class="fs-5 fw-bold text-danger">-@tongChiThucTe.ToString("N0")</div>
+            @if (Model.TongTienHoanKhach > 0)
+            {
+                <small class="text-danger">Hoàn tiền hủy đơn: -@Model.TongTienHoanKhach.ToString("N0")</small>
+            }
         </div>
         <div class="col-md-3 pe-3">
             <div class="text-muted small">Tồn quỹ / Lợi nhuận gộp</div>
@@ -105,6 +110,13 @@
                     <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
                         <input type="radio" name="fltSqLoaiCt" value="PHIEU_THU" onchange="locSoQuyClient()" />
                         <span>Phiếu thu đơn hàng</span>
+                    </label>
+                    <label class="d-flex align-items-center justify-content-between" style="cursor:pointer;">
+                        <span class="d-flex align-items-center gap-2">
+                            <input type="radio" name="fltSqLoaiCt" value="PHIEU_HOAN_TIEN" onchange="locSoQuyClient()" />
+                            <span>Phiếu chi hoàn tiền khách</span>
+                        </span>
+                        <span class="badge bg-danger-subtle text-danger">@Model.DanhSachPhieuHoanTien.Count</span>
                     </label>
                     <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
                         <input type="radio" name="fltSqLoaiCt" value="GIA_VON" onchange="locSoQuyClient()" />
@@ -160,7 +172,7 @@
         <div class="kv-toolbar">
             <div class="kv-search-box">
                 <i class="bi bi-search"></i>
-                <input type="text" id="txtTimSoQuy" placeholder="Theo mã phiếu, mã hóa đơn, người nộp"
+                <input type="text" id="txtTimSoQuy" placeholder="Theo mã phiếu, mã hóa đơn, người nộp / nhận hoàn tiền"
                        oninput="locSoQuyClient()" />
             </div>
 
@@ -180,12 +192,46 @@
                             <th>Thời gian</th>
                             <th>Loại thu chi</th>
                             <th>Người nộp / nhận</th>
-                            <th>Phương thức</th>
+                            <th>Phương thức / Ngân hàng</th>
                             <th>Trạng thái</th>
                             <th class="text-end">Giá trị</th>
                         </tr>
                     </thead>
                     <tbody id="tbodySoQuy">
+                        <!-- 1. CÁC PHIẾU CHI HOÀN TIỀN KHÁCH HÀNG (ĐƠN ĐÃ HỦY & ĐÃ HOÀN TIỀN VIETQR) -->
+                        @foreach (var dhHoan in Model.DanhSachPhieuHoanTien)
+                        {
+                            string searchHoan = $"PCH{dhHoan.MaDh:D5} {dhHoan.MaTraCuuDh} {dhHoan.HoTenNguoiMua} {dhHoan.SdtnguoiMua} {dhHoan.MaNganHangHoan} {dhHoan.SoTaiKhoanHoan}".ToLowerInvariant();
+                            <tr class="border-bottom" style="background-color: #FEF2F2;"
+                                data-loaict="PHIEU_HOAN_TIEN"
+                                data-pt="VIETQR"
+                                data-search="@searchHoan">
+                                <td class="fw-semibold text-danger">PCH@(dhHoan.MaDh.ToString("D5"))</td>
+                                <td>@(dhHoan.ThoiGianCapNhatCuoi ?? dhHoan.NgayDat.ToString("dd/MM/yyyy HH:mm"))</td>
+                                <td>
+                                    <span class="fw-semibold text-danger">Phiếu Chi Hoàn Tiền Khách Hàng</span>
+                                    (<a href="/Admin/DonHangAdmin/Index?tuKhoa=@dhHoan.MaTraCuuDh" class="text-decoration-none fw-medium" style="color: #0070F4;">#@dhHoan.MaTraCuuDh</a>)
+                                    @if (!string.IsNullOrWhiteSpace(dhHoan.LyDoHuyHoan))
+                                    {
+                                        <div class="small text-muted">Lý do: @dhHoan.LyDoHuyHoan</div>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="fw-medium text-dark">@dhHoan.HoTenNguoiMua</div>
+                                    <small class="text-muted">@dhHoan.SdtnguoiMua</small>
+                                </td>
+                                <td>
+                                    <div class="fw-medium text-dark">VietQR (@(dhHoan.MaNganHangHoan ?? "Ngân hàng"))</div>
+                                    <small class="text-danger fw-medium">STK: @(dhHoan.SoTaiKhoanHoan ?? "---") • @(dhHoan.TenChuTkHoan ?? dhHoan.HoTenNguoiMua)</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Đã hoàn tiền (DA_HOAN_TIEN)</span>
+                                </td>
+                                <td class="text-end fw-bold text-danger">-@dhHoan.TongThanhToanCuoi.ToString("N0")</td>
+                            </tr>
+                        }
+
+                        <!-- 2. CÁC PHIẾU THU ĐƠN HÀNG & GIÁ VỐN LÔ BÁNH (ĐƠN HIỆU LỰC) -->
                         @foreach (var dh in Model.DanhSachPhieuThuDonHang)
                         {
                             string searchKey = $"TTH{dh.MaDh:D5} {dh.MaTraCuuDh} {dh.HoTenNguoiMua} {dh.SdtnguoiMua}".ToLowerInvariant();
@@ -208,8 +254,8 @@
                                 </td>
                                 <td>@dh.PhuongThucTt</td>
                                 <td>
-                                    <span class="@(dh.TrangThaiTt == "DA_TT" ? "text-success fw-medium" : "text-muted")">
-                                        @(dh.TrangThaiTt == "DA_TT" ? "Đã thanh toán" : "Chờ thu COD")
+                                    <span class="@(dh.TrangThaiTt == "DA_TT" ? "text-success fw-medium" : "text-warning fw-medium")">
+                                        @(dh.TrangThaiTt == "DA_TT" ? "Đã thanh toán (DA_TT)" : "Chờ thanh toán (CHUA_TT)")
                                     </span>
                                 </td>
                                 <td class="text-end fw-semibold" style="color: #0070F4;">+@dh.TongThanhToanCuoi.ToString("N0")</td>
