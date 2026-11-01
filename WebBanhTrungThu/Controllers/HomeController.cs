@@ -45,6 +45,7 @@ namespace WebBanhTrungThu.Controllers
 
             vm.DanhSachBanh = await _db.SanPhamBanhs
                 .Include(b => b.ThongSoDinhDuong)
+                .Include(b => b.LoSanXuatBanhs)
                 .Include(b => b.MaDmNavigation)
                 .Where(b => b.TrangThaiBan)
                 .ToListAsync();
@@ -123,7 +124,7 @@ namespace WebBanhTrungThu.Controllers
         [HttpGet]
         public async Task<IActionResult> GoiYBanhThongMinh(string doiTuong, string sucKhoe, string huongVi, decimal nganSachMax)
         {
-            var dsBanh = await _db.SanPhamBanhs.Include(b => b.ThongSoDinhDuong).Where(b => b.TrangThaiBan).ToListAsync();
+            var dsBanh = await _db.SanPhamBanhs.Include(b => b.ThongSoDinhDuong).Include(b => b.LoSanXuatBanhs).Where(b => b.TrangThaiBan).ToListAsync();
             var tuDienAnh = await _dichVuHinhAnh.LayTuDienUrlAnhAsync();
 
             var ketQuaChamDiem = new List<object>();
@@ -205,7 +206,7 @@ namespace WebBanhTrungThu.Controllers
                     {
                         maBanh = b.MaBanh,
                         tenBanh = b.TenBanh,
-                        donGia = b.DonGiaLe,
+                        donGia = b.DonGiaThucTe,
                         calo = b.ThongSoDinhDuong?.NangLuongCalo ?? 400,
                         chiSoGI = gi,
                         anhBanh = DichVuHinhAnh.LayUrl(tuDienAnh, "BANH", b.MaBanh, "TACH_NEN_SLOT"),

@@ -198,8 +198,22 @@
                                         {
                                             <span class="badge badge-thuong-hang" style="font-size:0.65rem;">👑 VIP</span>
                                         }
+                                        @if (b.DangXaCanDate)
+                                        {
+                                            <span class="badge bg-danger text-white" style="font-size:0.65rem;">⚡ Cận Date -@b.PhanTramGiamCanDateHieuLuc.ToString("N0")%</span>
+                                        }
                                     </div>
-                                    <div class="small chu-vang-kim fw-semibold">@b.DonGiaLe.ToString("N0") đ</div>
+                                    @if (b.DangXaCanDate)
+                                    {
+                                        <div class="small">
+                                            <del class="text-secondary me-1">@b.DonGiaLe.ToString("N0") đ</del>
+                                            <span class="chu-vang-kim fw-bold">@b.DonGiaThucTe.ToString("N0") đ</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="small chu-vang-kim fw-semibold">@b.DonGiaLe.ToString("N0") đ</div>
+                                    }
                                     <div class="d-flex gap-2 mt-1" style="font-size: 0.72rem;">
                                         <span class="text-info">@calo Kcal</span>
                                         <span class="text-success">• GI: @gi</span>
@@ -210,7 +224,7 @@
                                     </div>
                                 </div>
                                 <button class="btn btn-sm btn-vang-kim rounded-pill px-3"
-                                        onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaLe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhSlot', '@diUng')">
+                                        onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaThucTe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhSlot', '@diUng')">
                                     + Đặt
                                 </button>
                             </div>
@@ -271,20 +285,26 @@
                      data-chay="@(b.LaBanhChay ? "1" : "0")">
                     <div class="card-hoang-gia p-3 h-100 d-flex flex-column justify-content-between">
                         <div>
-                            <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-1 mb-2">
                                 <span class="badge bg-warning text-dark rounded-pill">🏷️ @b.ThuongHieu</span>
-                                @if (b.MucDoNgot == "ISOMALT_TIEUDUONG")
-                                {
-                                    <span class="badge badge-isomalt rounded-pill">🌿 GI Thấp: @gi</span>
-                                }
-                                else if (b.LaBanhThuongHang)
-                                {
-                                    <span class="badge badge-thuong-hang rounded-pill">👑 Thượng Hạng</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary rounded-pill">@b.TrongLuongGram g</span>
-                                }
+                                <div class="d-flex align-items-center gap-1">
+                                    @if (b.DangXaCanDate)
+                                    {
+                                        <span class="badge bg-danger text-white rounded-pill">⚡ Cận Date -@b.PhanTramGiamCanDateHieuLuc.ToString("N0")%</span>
+                                    }
+                                    @if (b.MucDoNgot == "ISOMALT_TIEUDUONG")
+                                    {
+                                        <span class="badge badge-isomalt rounded-pill">🌿 GI Thấp: @gi</span>
+                                    }
+                                    else if (b.LaBanhThuongHang)
+                                    {
+                                        <span class="badge badge-thuong-hang rounded-pill">👑 Thượng Hạng</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary rounded-pill">@b.TrongLuongGram g</span>
+                                    }
+                                </div>
                             </div>
 
                             <div class="text-center my-3">
@@ -303,14 +323,24 @@
                             </div>
 
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <span class="fs-5 fw-bold chu-vang-kim">@b.DonGiaLe.ToString("N0") đ</span>
+                                <div>
+                                    @if (b.DangXaCanDate)
+                                    {
+                                        <del class="text-secondary small d-block lh-1">@b.DonGiaLe.ToString("N0") đ</del>
+                                        <span class="fs-5 fw-bold chu-vang-kim">@b.DonGiaThucTe.ToString("N0") đ</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="fs-5 fw-bold chu-vang-kim">@b.DonGiaLe.ToString("N0") đ</span>
+                                    }
+                                </div>
                                 <div class="d-flex gap-1">
                                     <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-2"
                                             onclick="themBanhLeVaoGio(@b.MaBanh, 1)" title="Mua lẻ bánh này">
                                         🛒 Mua lẻ
                                     </button>
                                     <a href="#tang-tu-chon-hop" class="btn btn-sm btn-vang-kim rounded-pill px-2"
-                                       onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaLe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhBanh', '@(b.ThongSoDinhDuong?.CanhBaoDiUng)')">
+                                       onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaThucTe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhBanh', '@(b.ThongSoDinhDuong?.CanhBaoDiUng)')">
                                         Đưa vào hộp ↑
                                     </a>
                                 </div>

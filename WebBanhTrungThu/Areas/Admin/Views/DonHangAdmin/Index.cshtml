@@ -335,7 +335,6 @@
                             <th style="width: 34px;" class="text-center">
                                 <input type="checkbox" class="form-check-input" onclick="event.stopPropagation(); document.querySelectorAll('.chk-row-dh').forEach(c => c.checked = this.checked)" />
                             </th>
-                            <th style="width: 32px;" class="text-center"><i class="bi bi-star text-muted"></i></th>
                             <th>Mã hóa đơn</th>
                             <th>Thời gian</th>
                             <th>Khách hàng</th>
@@ -372,9 +371,6 @@
                                 onclick="toggleKvDetailRow('detail-dh-@dh.MaDh', this)">
                                 <td class="text-center" onclick="event.stopPropagation();">
                                     <input type="checkbox" class="form-check-input chk-row-dh" />
-                                </td>
-                                <td class="text-center" onclick="event.stopPropagation(); this.querySelector('i').classList.toggle('text-warning'); this.querySelector('i').classList.toggle('bi-star'); this.querySelector('i').classList.toggle('bi-star-fill');">
-                                    <i class="bi @(dh.LaDonDoanhNghiepB2b ? "bi-star-fill text-warning" : "bi-star text-muted")"></i>
                                 </td>
                                 <td class="fw-medium" style="color: #0070F4;">@dh.MaTraCuuDh</td>
                                 <td>@dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</td>
@@ -419,7 +415,7 @@
 
                             <!-- DÒNG CHI TIẾT XỔ RỘNG KIOTVIET (2 TAB) -->
                             <tr id="detail-dh-@dh.MaDh" class="kv-detail-row @(moMacDinh ? "open" : "")" onclick="event.stopPropagation();">
-                                <td colspan="10" class="p-0">
+                                <td colspan="9" class="p-0">
                                     <div class="kv-detail-box">
                                         <!-- Thanh 2 Tab chuẩn KiotViet -->
                                         <div class="kv-detail-tabs">

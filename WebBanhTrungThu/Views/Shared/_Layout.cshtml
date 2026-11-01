@@ -64,7 +64,7 @@
                         string hangTv = User.FindFirst("HangTV")?.Value ?? "Đồng";
                         <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-dark border border-warning">
                             <span class="small text-light fw-semibold">
-                                <i class="bi bi-person-check-fill chu-vang-kim me-1"></i>@User.Identity.Name
+                                <a href="/TaiKhoan/HoSo" class="text-light text-decoration-none" title="Xem Hồ Sơ Thành Viên & Sổ Địa Chỉ"><i class="bi bi-person-check-fill chu-vang-kim me-1"></i>@User.Identity.Name</a>
                             </span>
                             <span class="badge badge-thuong-hang rounded-pill">Hạng @hangTv</span>
                             <form asp-area="" asp-controller="TaiKhoan" asp-action="DangXuat" method="post" class="d-inline m-0">

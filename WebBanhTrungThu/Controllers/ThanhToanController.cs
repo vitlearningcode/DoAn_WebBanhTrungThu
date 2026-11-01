@@ -181,6 +181,74 @@ namespace WebBanhTrungThu.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
+            // Kiểm tra chặt chẽ tồn kho Bánh (TongTonKho) và Vỏ hộp (SltonKhoVo) trước khi tạo đơn (Không để tồn kho bị âm)
+            var nhuCauBanh = new Dictionary<int, (string TenBanh, int SoLuongCan, int TonKhoHienTai)>();
+            var nhuCauVoHop = new Dictionary<int, (string TenVoHop, int SoLuongCan, int TonKhoHienTai)>();
+
+            foreach (var ct in gioHang.ChiTietGioHangs)
+            {
+                if (ct.LoaiSanPham == 1 && ct.MaBanhNavigation != null)
+                {
+                    int idBanh = ct.MaBanhNavigation.MaBanh;
+                    int slCu = nhuCauBanh.ContainsKey(idBanh) ? nhuCauBanh[idBanh].SoLuongCan : 0;
+                    nhuCauBanh[idBanh] = (ct.MaBanhNavigation.TenBanh, slCu + ct.SoLuong, ct.MaBanhNavigation.TongTonKho);
+                }
+                else if (ct.LoaiSanPham == 2 && ct.MaCbNavigation != null)
+                {
+                    if (ct.MaCbNavigation.MaVhNavigation != null)
+                    {
+                        var vh = ct.MaCbNavigation.MaVhNavigation;
+                        int slVoCu = nhuCauVoHop.ContainsKey(vh.MaVh) ? nhuCauVoHop[vh.MaVh].SoLuongCan : 0;
+                        nhuCauVoHop[vh.MaVh] = (vh.TenVoHop, slVoCu + ct.SoLuong, vh.SltonKhoVo);
+                    }
+                    foreach (var ctCb in ct.MaCbNavigation.ChiTietComboMaus)
+                    {
+                        if (ctCb.MaBanhNavigation != null)
+                        {
+                            int idBanh = ctCb.MaBanhNavigation.MaBanh;
+                            int slCu = nhuCauBanh.ContainsKey(idBanh) ? nhuCauBanh[idBanh].SoLuongCan : 0;
+                            nhuCauBanh[idBanh] = (ctCb.MaBanhNavigation.TenBanh, slCu + (ctCb.SoLuong * ct.SoLuong), ctCb.MaBanhNavigation.TongTonKho);
+                        }
+                    }
+                }
+                else if (ct.LoaiSanPham == 3 && ct.MaHopTcNavigation != null)
+                {
+                    if (ct.MaHopTcNavigation.MaVhNavigation != null)
+                    {
+                        var vh = ct.MaHopTcNavigation.MaVhNavigation;
+                        int slVoCu = nhuCauVoHop.ContainsKey(vh.MaVh) ? nhuCauVoHop[vh.MaVh].SoLuongCan : 0;
+                        nhuCauVoHop[vh.MaVh] = (vh.TenVoHop, slVoCu + ct.SoLuong, vh.SltonKhoVo);
+                    }
+                    foreach (var ctHop in ct.MaHopTcNavigation.ChiTietHopTuChons)
+                    {
+                        if (ctHop.MaBanhNavigation != null)
+                        {
+                            int idBanh = ctHop.MaBanhNavigation.MaBanh;
+                            int slCu = nhuCauBanh.ContainsKey(idBanh) ? nhuCauBanh[idBanh].SoLuongCan : 0;
+                            nhuCauBanh[idBanh] = (ctHop.MaBanhNavigation.TenBanh, slCu + ct.SoLuong, ctHop.MaBanhNavigation.TongTonKho);
+                        }
+                    }
+                }
+            }
+
+            foreach (var itemVo in nhuCauVoHop.Values)
+            {
+                if (itemVo.TonKhoHienTai < itemVo.SoLuongCan)
+                {
+                    TempData["LoiThanhToan"] = $"⚠️ Mẫu vỏ hộp \"{itemVo.TenVoHop}\" hiện chỉ còn {itemVo.TonKhoHienTai} vỏ trong kho (bạn đang đặt {itemVo.SoLuongCan} hộp). Vui lòng giảm số lượng hoặc chọn mẫu vỏ hộp khác!";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+
+            foreach (var itemBanh in nhuCauBanh.Values)
+            {
+                if (itemBanh.TonKhoHienTai < itemBanh.SoLuongCan)
+                {
+                    TempData["LoiThanhToan"] = $"⚠️ Vị bánh \"{itemBanh.TenBanh}\" hiện chỉ còn {itemBanh.TonKhoHienTai} bánh trong kho (tổng số lượng cần cho đơn hàng của bạn là {itemBanh.SoLuongCan} bánh). Vui lòng điều chỉnh lại số lượng trong giỏ!";
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+
             if (req.DanhSachDotGiao == null || !req.DanhSachDotGiao.Any())
             {
                 req.DanhSachDotGiao = new List<DotGiaoHangInput>
@@ -303,7 +371,7 @@ namespace WebBanhTrungThu.Controllers
                         TenNguoiNhan = string.IsNullOrWhiteSpace(dotInput.TenNguoiNhan) ? donHang.HoTenNguoiMua : dotInput.TenNguoiNhan.Trim(),
                         SdtnguoiNhan = string.IsNullOrWhiteSpace(dotInput.SdtNguoiNhan) ? donHang.SdtnguoiMua : dotInput.SdtNguoiNhan.Trim(),
                         DiaChiGiaoChiTiet = string.IsNullOrWhiteSpace(dotInput.DiaChiGiaoChiTiet) ? "Địa chỉ nhận quà Trung Thu" : dotInput.DiaChiGiaoChiTiet.Trim(),
-                        NgayHenGiao = dotInput.NgayHenGiao ?? DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
+                        NgayHenGiao = (dotInput.NgayHenGiao.HasValue && dotInput.NgayHenGiao.Value >= DateOnly.FromDateTime(DateTime.Today)) ? dotInput.NgayHenGiao.Value : DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
                         KhungGioGiao = string.IsNullOrWhiteSpace(dotInput.KhungGioGiao) ? "Sáng (08:00 - 11:30)" : dotInput.KhungGioGiao,
                         PhiShipDotNay = 30000m,
                         TrangThaiGiao = "CHO_DONG_GOI",

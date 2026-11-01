@@ -21,6 +21,28 @@ namespace WebBanhTrungThu.Models.Entities
 
         [NotMapped]
         public bool BanTrucTiep { get; set; } = true;
+
+        [NotMapped]
+        public decimal PhanTramGiamCanDateHieuLuc
+        {
+            get
+            {
+                if (LoSanXuatBanhs == null || !LoSanXuatBanhs.Any()) return 0m;
+                var lo = LoSanXuatBanhs
+                    .Where(l => (l.TrangThaiLo == "XA_CAN_DATE" || l.TrangThaiLo == "CAN_DATE" || l.PhanTramGiamCanDate > 0) && l.PhanTramGiamCanDate > 0)
+                    .OrderByDescending(l => l.PhanTramGiamCanDate)
+                    .FirstOrDefault();
+                return lo != null ? Math.Round(lo.PhanTramGiamCanDate, 0) : 0m;
+            }
+        }
+
+        [NotMapped]
+        public bool DangXaCanDate => PhanTramGiamCanDateHieuLuc > 0m;
+
+        [NotMapped]
+        public decimal DonGiaThucTe => DangXaCanDate
+            ? Math.Round(DonGiaLe * (1m - (PhanTramGiamCanDateHieuLuc / 100m)), 0)
+            : DonGiaLe;
     }
 
     public partial class ComboMauCoSan

@@ -129,6 +129,7 @@ namespace WebBanhTrungThu.Controllers
             var maBanhPhanBiet = req.DanhSachMaBanh.Distinct().ToList();
             var tuDienBanh = await _db.SanPhamBanhs
                 .Include(b => b.ThongSoDinhDuong)
+                .Include(b => b.LoSanXuatBanhs)
                 .Where(b => maBanhPhanBiet.Contains(b.MaBanh) && b.TrangThaiBan)
                 .ToDictionaryAsync(b => b.MaBanh);
 
@@ -150,7 +151,7 @@ namespace WebBanhTrungThu.Controllers
 
             // Tính Tổng Calo & Tổng Giá 1 Hộp (Giảm 5% giá vỏ hộp khi tự phối + Tổng đơn giá các bánh)
             int tongCaloHop = req.DanhSachMaBanh.Sum(id => tuDienBanh[id].ThongSoDinhDuong?.NangLuongCalo ?? 400);
-            decimal tongDonGiaCacBanh = req.DanhSachMaBanh.Sum(id => tuDienBanh[id].DonGiaLe);
+            decimal tongDonGiaCacBanh = req.DanhSachMaBanh.Sum(id => tuDienBanh[id].DonGiaThucTe);
             decimal tongGiaMotHop = Math.Round((voHop.GiaVoHopRieng * 0.95m) + tongDonGiaCacBanh, 0);
 
             // Tạo chuỗi MaBamCauHinh chuẩn: "VH" + MaVh + "_B" + string.Join("-B", DanhSachMaBanh)
@@ -207,7 +208,7 @@ namespace WebBanhTrungThu.Controllers
                         MaHopTc = hopMoi.MaHopTc,
                         MaBanh = maBanhO,
                         ViTriOtrongHop = i + 1,
-                        DonGiaBanhLucChon = tuDienBanh[maBanhO].DonGiaLe
+                        DonGiaBanhLucChon = tuDienBanh[maBanhO].DonGiaThucTe
                     };
                     _db.ChiTietHopTuChons.Add(ctHop);
                 }
@@ -254,7 +255,7 @@ namespace WebBanhTrungThu.Controllers
 
             if (req.LoaiSanPham == 1)
             {
-                var banh = await _db.SanPhamBanhs.FirstOrDefaultAsync(b => b.MaBanh == req.MaSanPham && b.TrangThaiBan);
+                var banh = await _db.SanPhamBanhs.Include(b => b.LoSanXuatBanhs).FirstOrDefaultAsync(b => b.MaBanh == req.MaSanPham && b.TrangThaiBan);
                 if (banh == null)
                 {
                     return Json(new { thanhCong = false, thongBao = "Sản phẩm bánh không tồn tại hoặc đã ngừng bán!" });
@@ -266,7 +267,7 @@ namespace WebBanhTrungThu.Controllers
                 if (dongHienTai != null)
                 {
                     dongHienTai.SoLuong += soLuongThem;
-                    dongHienTai.DonGiaTamTinh = banh.DonGiaLe;
+                    dongHienTai.DonGiaTamTinh = banh.DonGiaThucTe;
                 }
                 else
                 {
@@ -276,7 +277,7 @@ namespace WebBanhTrungThu.Controllers
                         LoaiSanPham = 1,
                         MaBanh = banh.MaBanh,
                         SoLuong = soLuongThem,
-                        DonGiaTamTinh = banh.DonGiaLe,
+                        DonGiaTamTinh = banh.DonGiaThucTe,
                         NgayThem = DateTime.Now
                     });
                 }

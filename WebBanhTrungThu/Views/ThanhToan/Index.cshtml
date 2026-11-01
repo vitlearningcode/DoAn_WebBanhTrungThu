@@ -21,6 +21,12 @@
         </div>
 
         <form asp-controller="ThanhToan" asp-action="DatHang" method="post" id="formDatHangTrungThu">
+            @if (TempData["LoiThanhToan"] != null)
+            {
+                <div class="alert alert-danger border border-danger mb-4">
+                    <strong>@TempData["LoiThanhToan"]</strong>
+                </div>
+            }
             @Html.AntiForgeryToken()
 
             <div class="row g-4">

@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
@@ -194,6 +195,211 @@ namespace WebBanhTrungThu.Controllers
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return RedirectToAction("Index", "Home");
+        }
+
+        // =========================================================================
+        // 4. TRANG HỒ SƠ THÀNH VIÊN & TIỆN ÍCH CÁ NHÂN ([Authorize] /TaiKhoan/HoSo)
+        // =========================================================================
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> HoSo(string? tab)
+        {
+            int? maNd = ThongTinPhienHelper.LayMaNguoiDung(HttpContext);
+            if (!maNd.HasValue)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            var nd = await _db.NguoiDungs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.MaNd == maNd.Value);
+
+            if (nd == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            var soDiaChis = await _db.SoDiaChis
+                .AsNoTracking()
+                .Where(d => d.MaNd == maNd.Value)
+                .OrderByDescending(d => d.LaMacDinh)
+                .ThenByDescending(d => d.MaDc)
+                .ToListAsync();
+
+            var lichSuDonHangs = await _db.DonHangs
+                .AsNoTracking()
+                .Include(d => d.DotGiaoHangDaDiems)
+                .Include(d => d.ChiTietDonHangs)
+                .Where(d => d.MaNd == maNd.Value)
+                .OrderByDescending(d => d.NgayDat)
+                .ToListAsync();
+
+            var danhSachHopTuChons = await _db.HopQuaTuChons
+                .AsNoTracking()
+                .Include(h => h.MaVhNavigation)
+                .Include(h => h.ChiTietHopTuChons)
+                    .ThenInclude(ct => ct.MaBanhNavigation)
+                .Where(h => h.MaNd == maNd.Value)
+                .OrderByDescending(h => h.NgayTao)
+                .ToListAsync();
+
+            ViewBag.TabMacDinh = string.IsNullOrWhiteSpace(tab) ? "DON_HANG" : tab.ToUpperInvariant();
+
+            var vm = new HoSoThanhVienViewModel
+            {
+                NguoiDung = nd,
+                DanhSachSoDiaChi = soDiaChis,
+                LichSuDonHang = lichSuDonHangs,
+                DanhSachHopTuChon = danhSachHopTuChons
+            };
+
+            return View(vm);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ThemDiaChiMoi(
+            string tenNguoiNhan,
+            string sdtNguoiNhan,
+            string tinhThanh,
+            string quanHuyen,
+            string phuongXa,
+            string diaChiCuThe,
+            string? nhanDiaChi,
+            bool laMacDinh = false)
+        {
+            int? maNd = ThongTinPhienHelper.LayMaNguoiDung(HttpContext);
+            if (!maNd.HasValue)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            if (string.IsNullOrWhiteSpace(tenNguoiNhan) || string.IsNullOrWhiteSpace(sdtNguoiNhan) || string.IsNullOrWhiteSpace(diaChiCuThe))
+            {
+                TempData["ThongBaoHoSo"] = "⚠️ Vui lòng nhập đầy đủ Tên người nhận, Số điện thoại và Địa chỉ cụ thể!";
+                return RedirectToAction(nameof(HoSo), new { tab = "DIA_CHI" });
+            }
+
+            if (laMacDinh)
+            {
+                var cacDiaChiCu = await _db.SoDiaChis.Where(d => d.MaNd == maNd.Value && d.LaMacDinh).ToListAsync();
+                foreach (var dc in cacDiaChiCu)
+                {
+                    dc.LaMacDinh = false;
+                }
+            }
+
+            var dcMoi = new SoDiaChi
+            {
+                MaNd = maNd.Value,
+                TenNguoiNhan = tenNguoiNhan.Trim(),
+                SdtnguoiNhan = sdtNguoiNhan.Trim(),
+                TinhThanh = string.IsNullOrWhiteSpace(tinhThanh) ? "TP. Hồ Chí Minh" : tinhThanh.Trim(),
+                QuanHuyen = string.IsNullOrWhiteSpace(quanHuyen) ? "Quận 1" : quanHuyen.Trim(),
+                PhuongXa = string.IsNullOrWhiteSpace(phuongXa) ? "Phường Bến Nghé" : phuongXa.Trim(),
+                DiaChiCuThe = diaChiCuThe.Trim(),
+                NhanDiaChi = string.IsNullOrWhiteSpace(nhanDiaChi) ? "Biếu Người Thân" : nhanDiaChi.Trim(),
+                LaMacDinh = laMacDinh
+            };
+
+            _db.SoDiaChis.Add(dcMoi);
+            await _db.SaveChangesAsync();
+
+            TempData["ThongBaoHoSo"] = $"📍 Đã thêm địa chỉ \"{dcMoi.NhanDiaChi} - {dcMoi.TenNguoiNhan}\" vào Sổ địa chỉ biếu tặng!";
+            return RedirectToAction(nameof(HoSo), new { tab = "DIA_CHI" });
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> XoaDiaChi(int maDc)
+        {
+            int? maNd = ThongTinPhienHelper.LayMaNguoiDung(HttpContext);
+            if (!maNd.HasValue)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            var dc = await _db.SoDiaChis.FirstOrDefaultAsync(d => d.MaDc == maDc && d.MaNd == maNd.Value);
+            if (dc != null)
+            {
+                _db.SoDiaChis.Remove(dc);
+                await _db.SaveChangesAsync();
+                TempData["ThongBaoHoSo"] = "🗑️ Đã xóa địa chỉ khỏi Sổ địa chỉ biếu tặng!";
+            }
+
+            return RedirectToAction(nameof(HoSo), new { tab = "DIA_CHI" });
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DatLaiHopTuChon(int maHopTc)
+        {
+            int? maNd = ThongTinPhienHelper.LayMaNguoiDung(HttpContext);
+            if (!maNd.HasValue)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            var hopCu = await _db.HopQuaTuChons
+                .Include(h => h.MaVhNavigation)
+                .Include(h => h.ChiTietHopTuChons)
+                .FirstOrDefaultAsync(h => h.MaHopTc == maHopTc && h.MaNd == maNd.Value);
+
+            if (hopCu == null)
+            {
+                TempData["ThongBaoHoSo"] = "⚠️ Không tìm thấy mẫu hộp tự phối này!";
+                return RedirectToAction(nameof(HoSo), new { tab = "HOP_TU_CHON" });
+            }
+
+            var gioHang = await _db.GioHangs
+                .Include(g => g.ChiTietGioHangs)
+                    .ThenInclude(ct => ct.MaHopTcNavigation)
+                .FirstOrDefaultAsync(g => g.MaNd == maNd.Value);
+
+            if (gioHang == null)
+            {
+                gioHang = new GioHang
+                {
+                    MaNd = maNd.Value,
+                    MaPhienKvl = null,
+                    LaCheDoMuaSiB2b = false,
+                    YeuCauInLogoB2b = false,
+                    NgayCapNhat = DateTime.Now
+                };
+                _db.GioHangs.Add(gioHang);
+                await _db.SaveChangesAsync();
+            }
+
+            var dongDaCo = gioHang.ChiTietGioHangs.FirstOrDefault(ct =>
+                ct.LoaiSanPham == 3 &&
+                (ct.MaHopTc == hopCu.MaHopTc || (ct.MaHopTcNavigation != null && ct.MaHopTcNavigation.MaBamCauHinh == hopCu.MaBamCauHinh)));
+
+            if (dongDaCo != null)
+            {
+                dongDaCo.SoLuong += 1;
+                dongDaCo.DonGiaTamTinh = hopCu.TongGiaMotHop;
+            }
+            else
+            {
+                _db.ChiTietGioHangs.Add(new ChiTietGioHang
+                {
+                    MaGh = gioHang.MaGh,
+                    LoaiSanPham = 3,
+                    MaHopTc = hopCu.MaHopTc,
+                    SoLuong = 1,
+                    DonGiaTamTinh = hopCu.TongGiaMotHop,
+                    NgayThem = DateTime.Now
+                });
+            }
+
+            gioHang.NgayCapNhat = DateTime.Now;
+            await _db.SaveChangesAsync();
+
+            TempData["ThongBaoHoSo"] = $"🛒 Đã đưa mẫu hộp \"{hopCu.TenHopKhachDat}\" ({hopCu.MaBamCauHinh}) vào lại Giỏ Quà thành công!";
+            return RedirectToAction(nameof(HoSo), new { tab = "HOP_TU_CHON" });
         }
 
         private async Task DamBaoVaiTroVaTaiKhoanDemoAsync()

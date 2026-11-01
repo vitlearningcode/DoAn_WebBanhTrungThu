@@ -1,168 +1,403 @@
 @model WebBanhTrungThu.ViewModels.KhoAnhAdminViewModel
 @{
-    ViewData["Title"] = "Kho Hình Ảnh Đa Nguồn (1-WebRoot • 2-Ổ Đĩa Máy • 3-Google Drive)";
+    ViewData["Title"] = "Kho hình ảnh đa nguồn - KiotViet";
 }
 
-<div class="row g-3">
-    <!-- CỘT TRÁI (4 PHẦN): FORM THÊM ẢNH ĐA NGUỒN & GẮN CHO BÁNH / VỎ HỘP -->
-    <div class="col-lg-4">
-        <div class="kv-card p-3 sticky-top" style="top: 68px;">
-            <h6 class="fw-bold text-uppercase text-primary border-bottom pb-2 mb-3">
-                <i class="bi bi-cloud-arrow-up-fill me-2"></i>THÊM HÌNH ẢNH ĐA NGUỒN
-            </h6>
+<style>
+    .kv-page-heading {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 14px 0;
+    }
+
+    .kv-select, .kv-input {
+        width: 100%;
+        height: 34px;
+        border: 1px solid #D1D5DA;
+        border-radius: 6px;
+        padding: 0 10px;
+        font-size: 13px;
+        color: #1F2937;
+        background-color: #FFFFFF;
+        outline: none;
+    }
+
+    .kv-select:focus, .kv-input:focus {
+        border-color: #0070F4;
+        box-shadow: 0 0 0 2px rgba(0, 112, 244, 0.12);
+    }
+
+    .kv-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .kv-search-box {
+        position: relative;
+        width: 340px;
+        max-width: 100%;
+    }
+
+    .kv-search-box i {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6B7280;
+        font-size: 14px;
+    }
+
+    .kv-search-box input {
+        width: 100%;
+        height: 36px;
+        padding: 0 12px 0 34px;
+        border: 1px solid #D1D5DA;
+        border-radius: 6px;
+        background: #FFFFFF;
+        font-size: 13.5px;
+        color: #1F2937;
+        outline: none;
+    }
+
+    .kv-thumb-preview {
+        width: 48px;
+        height: 48px;
+        border-radius: 6px;
+        border: 1px solid #E5E7EB;
+        background: #F9FAFB;
+        object-fit: contain;
+        padding: 2px;
+    }
+
+    .kv-tag-mini {
+        display: inline-block;
+        padding: 2px 7px;
+        font-size: 11.5px;
+        font-weight: 500;
+        border-radius: 4px;
+        background: #F3F4F6;
+        color: #374151;
+        border: 1px solid #E5E7EB;
+    }
+
+    .kv-tag-mini.src-1 {
+        background: #EBF5FF;
+        color: #0070F4;
+        border-color: #BFDBFE;
+    }
+
+    .kv-tag-mini.src-2 {
+        background: #FEF3C7;
+        color: #B45309;
+        border-color: #FDE68A;
+    }
+
+    .kv-tag-mini.src-3 {
+        background: #ECFDF5;
+        color: #047857;
+        border-color: #A7F3D0;
+    }
+</style>
+
+<div class="kv-layout-2col">
+    <!-- ========================================================================= -->
+    <!-- CỘT TRÁI (250PX): BỘ LỌC KHO HÌNH ẢNH CHUẨN KIOTVIET                      -->
+    <!-- ========================================================================= -->
+    <aside class="kv-sidebar-filter">
+        <h1 class="kv-page-heading">Kho hình ảnh</h1>
+
+        <!-- 1. Tìm kiếm nhanh -->
+        <div class="kv-filter-box">
+            <div class="kv-filter-title">
+                <span>Tìm kiếm</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <input type="text" id="fltAnhTuKhoaLeft" class="kv-input"
+                   placeholder="Theo tên tệp, tiêu đề, đường dẫn"
+                   oninput="document.getElementById('fltAnhTuKhoaTop').value = this.value; locKhoAnhClient();" />
+        </div>
+
+        <!-- 2. Nguồn lưu trữ -->
+        <div class="kv-filter-box">
+            <div class="kv-filter-title">
+                <span>Nguồn lưu trữ</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <div class="d-flex flex-column gap-2">
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="fltAnhNguon" value="ALL" checked onchange="locKhoAnhClient()" />
+                    <span>Tất cả (@Model.DanhSachHinhAnh.Count)</span>
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="fltAnhNguon" value="1" onchange="locKhoAnhClient()" />
+                    <span>1 - Thư mục WebRoot</span>
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="fltAnhNguon" value="2" onchange="locKhoAnhClient()" />
+                    <span>2 - Ổ cứng /kho-anh-may</span>
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="fltAnhNguon" value="3" onchange="locKhoAnhClient()" />
+                    <span>3 - Đám mây Google Drive</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 3. Đối tượng gắn ảnh -->
+        <div class="kv-filter-box">
+            <div class="kv-filter-title">
+                <span>Đối tượng gắn ảnh</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <select id="fltAnhDoiTuong" class="kv-select" onchange="locKhoAnhClient()">
+                <option value="ALL">Tất cả đối tượng</option>
+                <option value="BANH">Bánh lẻ (BANH)</option>
+                <option value="VOHOP">Vỏ hộp (VOHOP)</option>
+                <option value="COMBO">Combo lễ hộp (COMBO)</option>
+                <option value="BANNER">Banner Landing Page</option>
+            </select>
+        </div>
+    </aside>
+
+    <!-- ========================================================================= -->
+    <!-- CỘT PHẢI: THANH CÔNG CỤ & BẢNG KHO HÌNH ẢNH PHẲNG KIOTVIET                -->
+    <!-- ========================================================================= -->
+    <div class="kv-main-table-area">
+        <div class="kv-toolbar">
+            <div class="kv-search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="fltAnhTuKhoaTop"
+                       placeholder="Theo mã ảnh, tên tệp, tiêu đề Alt, đường dẫn..."
+                       oninput="document.getElementById('fltAnhTuKhoaLeft').value = this.value; locKhoAnhClient();" />
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn-kv-green d-inline-flex align-items-center gap-1"
+                        data-bs-toggle="modal" data-bs-target="#modalThemAnhDaNguon">
+                    <i class="bi bi-plus-lg"></i> Thêm hình ảnh mới
+                </button>
+            </div>
+        </div>
+
+        <div class="kv-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="kv-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 64px;" class="text-center">Ảnh</th>
+                            <th style="width: 80px;">Mã ảnh</th>
+                            <th>Tiêu đề & Tên tệp gốc</th>
+                            <th>Nguồn lưu trữ</th>
+                            <th>Đường dẫn thực tế (UrlHienThi)</th>
+                            <th>Đối tượng liên kết</th>
+                            <th>Ngày tải lên</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyDanhSachKhoAnh">
+                        @foreach (var anh in Model.DanhSachHinhAnh)
+                        {
+                            string nhanNguon = anh.LoaiLuuTru == 1
+                                ? "1 - Thư mục WebRoot"
+                                : anh.LoaiLuuTru == 2
+                                    ? "2 - Ổ cứng /kho-anh-may"
+                                    : "3 - Google Drive CDN";
+
+                            string classNguon = $"src-{anh.LoaiLuuTru}";
+                            string dsLoaiDoiTuong = string.Join(" ", anh.LienKetHinhAnhs.Select(l => l.LoaiDoiTuong.ToUpperInvariant()));
+                            if (string.IsNullOrWhiteSpace(dsLoaiDoiTuong) && (anh.DuongDanCucBo?.Contains("landing") == true || anh.TieuDeAlt?.Contains("Banner", StringComparison.OrdinalIgnoreCase) == true))
+                            {
+                                dsLoaiDoiTuong = "BANNER";
+                            }
+                            string searchKey = $"HA{anh.MaHa:D4} #{anh.MaHa} {anh.TenTepGoc} {anh.TieuDeAlt} {anh.UrlHienThi} {dsLoaiDoiTuong}".ToLowerInvariant();
+
+                            <tr class="border-bottom"
+                                data-nguon="@anh.LoaiLuuTru"
+                                data-doituong="@dsLoaiDoiTuong"
+                                data-search="@searchKey">
+                                <td class="text-center">
+                                    <img src="@anh.UrlHienThi"
+                                         class="kv-thumb-preview"
+                                         alt="@anh.TieuDeAlt"
+                                         onerror="window.kvImgFallback(this)" />
+                                </td>
+                                <td class="fw-semibold" style="color: #0070F4;">HA@(anh.MaHa.ToString("D4"))</td>
+                                <td>
+                                    <div class="fw-medium text-dark">@(anh.TieuDeAlt ?? anh.TenTepGoc)</div>
+                                    <small class="text-muted">@anh.TenTepGoc • @(anh.KichThuocPixel ?? "800x800")</small>
+                                </td>
+                                <td>
+                                    <span class="kv-tag-mini @classNguon">@nhanNguon</span>
+                                </td>
+                                <td style="max-width: 280px;">
+                                    <code class="d-block text-truncate" style="color: #005AC3; font-size: 12px;" title="@anh.UrlHienThi">
+                                        @anh.UrlHienThi
+                                    </code>
+                                    @if (anh.LoaiLuuTru == 3 && !string.IsNullOrWhiteSpace(anh.MaFileDrive))
+                                    {
+                                        <small class="text-muted">Drive ID: @anh.MaFileDrive</small>
+                                    }
+                                </td>
+                                <td>
+                                    @if (anh.LienKetHinhAnhs.Any())
+                                    {
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @foreach (var lk in anh.LienKetHinhAnhs)
+                                            {
+                                                <span class="kv-tag-mini">
+                                                    @lk.LoaiDoiTuong #@lk.MaDoiTuong (@lk.VaiTroAnh)
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                    else if (dsLoaiDoiTuong.Contains("BANNER"))
+                                    {
+                                        <span class="kv-tag-mini">BANNER LANDING</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Chưa gắn đối tượng</span>
+                                    }
+                                </td>
+                                <td class="text-muted">@anh.NgayTaiLen.ToString("dd/MM/yyyy HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: + THÊM HÌNH ẢNH MỚI ĐA NGUỒN CHUẨN KIOTVIET                        -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalThemAnhDaNguon" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header py-2 px-3" style="background: #F4F6F8; border-bottom: 1px solid #E5E7EB;">
+                <h6 class="modal-title fw-bold text-dark mb-0">
+                    <i class="bi bi-cloud-arrow-up-fill text-primary me-1"></i>
+                    Thêm Hình Ảnh Mới Đa Nguồn (WebRoot • Ổ Cứng • Google Drive)
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
 
             <form asp-area="Admin" asp-controller="KhoAnhAdmin" asp-action="ThemAnhMoi" method="post" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
 
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">1. Chọn Nguồn Lưu Trữ (LoaiLuuTru)</label>
-                    <select name="LoaiLuuTru" id="selLoaiLuuTru" class="form-select form-select-sm border-primary" onchange="doiNguonLuuTruAnh(this.value)">
-                        <option value="1">1 - WebRoot (Upload vào wwwroot/images/banh)</option>
-                        <option value="2">2 - Ổ Đĩa Máy (/kho-anh-may/...)</option>
-                        <option value="3">3 - Google Drive CDN (Tự động tách MaFileDrive)</option>
-                    </select>
-                </div>
+                <div class="modal-body p-3">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold mb-1">1. Chọn Nguồn Lưu Trữ (LoaiLuuTru)</label>
+                            <select name="LoaiLuuTru" id="selLoaiLuuTru" class="kv-select" onchange="doiNguonLuuTruAnh(this.value)">
+                                <option value="1">1 - Thư mục WebRoot (Upload vào wwwroot/images/banh)</option>
+                                <option value="2">2 - Ổ cứng thiết bị (/kho-anh-may/...)</option>
+                                <option value="3">3 - Đám mây Google Drive (Tự tách ID)</option>
+                            </select>
+                        </div>
 
-                <!-- NGUỒN 1: UPLOAD FILE -->
-                <div id="khungNguon1" class="mb-3">
-                    <label class="form-label small fw-semibold">Chọn tệp ảnh (.png/.jpg) từ máy tính</label>
-                    <input type="file" name="TepAnhTaiLen" accept="image/*" class="form-control form-control-sm" />
-                    <label class="form-label small text-muted mt-2">Hoặc nhập đường dẫn có sẵn trong wwwroot:</label>
-                    <input type="text" name="DuongDanCucBo" class="form-control form-control-sm"
-                           placeholder="/images/banh/banh-thap-cam.png" />
-                </div>
-
-                <!-- NGUỒN 2: Ổ ĐĨA MÁY -->
-                <div id="khungNguon2" class="mb-3 d-none">
-                    <label class="form-label small fw-semibold text-primary">Đường dẫn ảo từ ổ C:\ (/kho-anh-may/...)</label>
-                    <input type="text" id="txtDuongDanODia" class="form-control form-control-sm"
-                           placeholder="/kho-anh-may/banh-sen-hue.png"
-                           oninput="document.querySelector('input[name=DuongDanCucBo]').value = this.value" />
-                    <small class="text-muted">Ánh xạ tới <code>C:\Users\MinhDuc\KhoAnhBanhTrungThu</code></small>
-                </div>
-
-                <!-- NGUỒN 3: GOOGLE DRIVE -->
-                <div id="khungNguon3" class="mb-3 d-none">
-                    <label class="form-label small fw-semibold text-success">Dán Link Chia Sẻ Google Drive</label>
-                    <input type="text" name="DuongDanDamMay" class="form-control form-control-sm mb-2"
-                           placeholder="https://drive.google.com/file/d/1xYz.../view" />
-                    <label class="form-label small text-muted">Hoặc nhập trực tiếp MaFileDrive:</label>
-                    <input type="text" name="MaFileDrive" class="form-control form-control-sm"
-                           placeholder="VD: 1xYzAbC..." />
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">Tiêu đề mô tả ảnh (TieuDeAlt)</label>
-                    <input type="text" name="TieuDeAlt" class="form-control form-control-sm"
-                           placeholder="VD: Ảnh tách nền bánh Trung Thu..." />
-                </div>
-
-                <hr class="my-3" />
-                <strong class="text-primary small d-block mb-2">2. Gắn Liên Kết Cho Sản Phẩm (LienKetHinhAnh)</strong>
-
-                <div class="row g-2 mb-2">
-                    <div class="col-6">
-                        <label class="form-label small fw-semibold">Loại đối tượng</label>
-                        <select name="LoaiDoiTuong" class="form-select form-select-sm">
-                            <option value="BANH">BANH (Bánh Lẻ)</option>
-                            <option value="VOHOP">VOHOP (Mẫu Vỏ Hộp)</option>
-                        </select>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold mb-1">Tiêu đề mô tả ảnh (TieuDeAlt)</label>
+                            <input type="text" name="TieuDeAlt" class="kv-input"
+                                   placeholder="VD: Bánh Thập Cẩm Gà Quay Tách Nền..." />
+                        </div>
                     </div>
-                    <div class="col-6">
-                        <label class="form-label small fw-semibold">Vai trò ảnh</label>
-                        <select name="VaiTroAnh" class="form-select form-select-sm">
-                            <option value="TACH_NEN_SLOT">TACH_NEN_SLOT (Ô 3D)</option>
-                            <option value="ANH_CHINH">ANH_CHINH</option>
-                            <option value="KHAY_HOP_RONG">KHAY_HOP_RONG (Vỏ Hộp)</option>
-                        </select>
-                    </div>
-                </div>
 
-                <div class="mb-3">
-                    <label class="form-label small fw-semibold">Chọn mã sản phẩm / vỏ hộp cần gắn</label>
-                    <select name="MaDoiTuong" class="form-select form-select-sm">
-                        <optgroup label="--- DANH SÁCH BÁNH (BANH) ---">
-                            @foreach (var b in Model.DanhSachBanh)
-                            {
-                                <option value="@b.MaBanh">[BANH #@b.MaBanh] @b.TenBanh</option>
-                            }
-                        </optgroup>
-                        <optgroup label="--- DANH SÁCH VỎ HỘP (VOHOP) ---">
-                            @foreach (var v in Model.DanhSachVoHop)
-                            {
-                                <option value="@v.MaVh">[VOHOP #@v.MaVh] @v.TenVoHop</option>
-                            }
-                        </optgroup>
-                    </select>
-                </div>
-
-                <button type="submit" class="btn btn-kv-green w-100 py-2">
-                    <i class="bi bi-save2-fill me-1"></i>Lưu Vào Kho Hình Ảnh & Gắn Liên Kết
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- CỘT PHẢI (8 PHẦN): DANH SÁCH KHO HÌNH ẢNH -->
-    <div class="col-lg-8">
-        <div class="kv-card p-3">
-            <h6 class="fw-bold text-uppercase text-dark border-bottom pb-2 mb-3">
-                <i class="bi bi-images text-primary me-2"></i>DANH SÁCH KHO HÌNH ẢNH (@Model.DanhSachHinhAnh.Count ẢNH)
-            </h6>
-
-            <div class="row g-3">
-                @foreach (var anh in Model.DanhSachHinhAnh)
-                {
-                    string nhanNguon = anh.LoaiLuuTru == 1
-                        ? "1 - WebRoot (/images)"
-                        : anh.LoaiLuuTru == 2
-                            ? "2 - Ổ Đĩa Máy (/kho-anh-may)"
-                            : "3 - Google Drive CDN";
-
-                    string mauBadge = anh.LoaiLuuTru == 1
-                        ? "bg-primary"
-                        : anh.LoaiLuuTru == 2
-                            ? "bg-info text-dark"
-                            : "bg-success";
-
-                    <div class="col-md-6">
-                        <div class="p-3 rounded border bg-white h-100 d-flex gap-3 align-items-center shadow-sm">
-                            <div class="text-center">
-                                <img src="@anh.UrlHienThi" width="76" height="76"
-                                     class="rounded border p-1 bg-light object-fit-contain"
-                                     alt="@anh.TieuDeAlt" />
-                                <span class="badge bg-secondary d-block mt-1">#@anh.MaHa</span>
+                    <!-- NGUỒN 1: UPLOAD FILE / WEBROOT -->
+                    <div id="khungNguon1" class="p-3 mt-3 rounded border bg-light">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold mb-1">Chọn tệp ảnh (.png/.jpg) từ máy tính</label>
+                                <input type="file" name="TepAnhTaiLen" accept="image/*" class="form-control form-control-sm" />
                             </div>
-
-                            <div class="flex-grow-1 overflow-hidden">
-                                <span class="badge @mauBadge mb-1">@nhanNguon</span>
-                                <strong class="d-block text-dark small text-truncate" title="@anh.TieuDeAlt">
-                                    @(anh.TieuDeAlt ?? anh.TenTepGoc)
-                                </strong>
-                                <code class="d-block text-primary text-truncate my-1" style="font-size: 0.72rem;" title="@anh.UrlHienThi">
-                                    @anh.UrlHienThi
-                                </code>
-
-                                @if (anh.LienKetHinhAnhs.Any())
-                                {
-                                    <div class="d-flex flex-wrap gap-1 mt-1">
-                                        @foreach (var lk in anh.LienKetHinhAnhs)
-                                        {
-                                            <span class="badge bg-light text-dark border" style="font-size: 0.68rem;">
-                                                @lk.LoaiDoiTuong #@lk.MaDoiTuong (@lk.VaiTroAnh)
-                                            </span>
-                                        }
-                                    </div>
-                                }
-                                else
-                                {
-                                    <small class="text-muted" style="font-size: 0.7rem;">Chưa gắn đối tượng</small>
-                                }
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted mb-1">Hoặc nhập đường dẫn có sẵn trong wwwroot:</label>
+                                <input type="text" name="DuongDanCucBo" id="txtDuongDanCucBoChinh" class="kv-input"
+                                       placeholder="/images/banh/banh-thap-cam.png" />
                             </div>
                         </div>
                     </div>
-                }
-            </div>
+
+                    <!-- NGUỒN 2: Ổ CỨNG THIẾT BỊ -->
+                    <div id="khungNguon2" class="p-3 mt-3 rounded border bg-light d-none">
+                        <label class="form-label small fw-semibold text-primary mb-1">Đường dẫn ảo từ ổ cứng (/kho-anh-may/...)</label>
+                        <input type="text" id="txtDuongDanODia" class="kv-input"
+                               placeholder="/kho-anh-may/banh-sen-hue.png"
+                               oninput="document.getElementById('txtDuongDanCucBoChinh').value = this.value" />
+                        <small class="text-muted d-block mt-1">Ánh xạ trực tiếp tới thư mục vật lý <code>C:\Users\MinhDuc\KhoAnhBanhTrungThu</code></small>
+                    </div>
+
+                    <!-- NGUỒN 3: GOOGLE DRIVE -->
+                    <div id="khungNguon3" class="p-3 mt-3 rounded border bg-light d-none">
+                        <div class="row g-2">
+                            <div class="col-md-7">
+                                <label class="form-label small fw-semibold text-success mb-1">Dán Link Chia Sẻ Google Drive</label>
+                                <input type="text" name="DuongDanDamMay" class="kv-input"
+                                       placeholder="https://drive.google.com/file/d/1xYz.../view" />
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small text-muted mb-1">Hoặc nhập trực tiếp MaFileDrive:</label>
+                                <input type="text" name="MaFileDrive" class="kv-input"
+                                       placeholder="VD: 1xYzAbC..." />
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-3" />
+                    <div class="fw-semibold text-primary small mb-2">
+                        <i class="bi bi-link-45deg me-1"></i>2. Gắn Liên Kết Cho Sản Phẩm / Đối Tượng (LienKetHinhAnh)
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold mb-1">Loại đối tượng</label>
+                            <select name="LoaiDoiTuong" class="kv-select">
+                                <option value="BANH">BANH (Bánh lẻ)</option>
+                                <option value="VOHOP">VOHOP (Mẫu vỏ hộp)</option>
+                                <option value="COMBO">COMBO (Combo mẫu)</option>
+                                <option value="BANNER">BANNER (Banner Landing Page)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold mb-1">Vai trò hiển thị</label>
+                            <select name="VaiTroAnh" class="kv-select">
+                                <option value="TACH_NEN_SLOT">TACH_NEN_SLOT (Ô 3D)</option>
+                                <option value="ANH_CHINH">ANH_CHINH (Ảnh đại diện)</option>
+                                <option value="KHAY_HOP_RONG">KHAY_HOP_RONG (Khay vỏ hộp)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold mb-1">Chọn Bánh / Vỏ hộp cần gắn</label>
+                            <select name="MaDoiTuong" class="kv-select">
+                                <optgroup label="--- DANH SÁCH BÁNH (BANH) ---">
+                                    @foreach (var b in Model.DanhSachBanh)
+                                    {
+                                        <option value="@b.MaBanh">[BANH #@b.MaBanh] @b.TenBanh</option>
+                                    }
+                                </optgroup>
+                                <optgroup label="--- DANH SÁCH VỎ HỘP (VOHOP) ---">
+                                    @foreach (var v in Model.DanhSachVoHop)
+                                    {
+                                        <option value="@v.MaVh">[VOHOP #@v.MaVh] @v.TenVoHop</option>
+                                    }
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer py-2 px-3" style="background: #F9FAFB;">
+                    <button type="button" class="btn-kv-outline" data-bs-dismiss="modal">Bỏ qua</button>
+                    <button type="submit" class="btn-kv-green">
+                        <i class="bi bi-save2 me-1"></i> Lưu hình ảnh & Gắn liên kết
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -173,6 +408,32 @@
             document.getElementById("khungNguon1").classList.toggle("d-none", loai !== "1");
             document.getElementById("khungNguon2").classList.toggle("d-none", loai !== "2");
             document.getElementById("khungNguon3").classList.toggle("d-none", loai !== "3");
+        }
+
+        function locKhoAnhClient() {
+            const tuKhoa = (document.getElementById("fltAnhTuKhoaTop")?.value || "").trim().toLowerCase();
+            const nguon = document.querySelector('input[name="fltAnhNguon"]:checked')?.value || "ALL";
+            const doiTuong = document.getElementById("fltAnhDoiTuong")?.value || "ALL";
+
+            document.querySelectorAll("#tbodyDanhSachKhoAnh tr").forEach(tr => {
+                let hien = true;
+
+                if (tuKhoa !== "") {
+                    const s = tr.getAttribute("data-search") || "";
+                    if (!s.includes(tuKhoa)) hien = false;
+                }
+
+                if (hien && nguon !== "ALL") {
+                    if (tr.getAttribute("data-nguon") !== nguon) hien = false;
+                }
+
+                if (hien && doiTuong !== "ALL") {
+                    const dtRow = tr.getAttribute("data-doituong") || "";
+                    if (!dtRow.includes(doiTuong)) hien = false;
+                }
+
+                tr.style.display = hien ? "" : "none";
+            });
         }
     </script>
 }

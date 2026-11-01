@@ -159,6 +159,7 @@ namespace WebBanhTrungThu.ViewModels
         public int ChiSoDuongHuyetGi { get; set; } = 52;
         public string? CanhBaoDiUng { get; set; } = "Không";
         public string? MucDoNgot { get; set; } = "BINH_THUONG";
+        public int SoTrungMuoi { get; set; } = 1;
         public bool LaBanhChay { get; set; }
         public bool LaBanhThuongHang { get; set; }
 
@@ -172,6 +173,16 @@ namespace WebBanhTrungThu.ViewModels
         public List<MauVoHop> DanhSachVoHop { get; set; } = new();
         public List<ComboMauCoSan> DanhSachCombo { get; set; } = new();
         public List<BangChietKhauSiB2b> BangChietKhauB2B { get; set; } = new();
+        public List<SanPhamBanh> DanhSachBanh { get; set; } = new();
+    }
+
+    public class KiemKhoLoAdminViewModel
+    {
+        public List<LoSanXuatBanh> DanhSachLoBanh { get; set; } = new();
+        public List<SanPhamBanh> DanhSachBanh { get; set; } = new();
+        public string? TuKhoa { get; set; }
+        public string LocTrangThai { get; set; } = "ALL";
+        public string LocGiamGia { get; set; } = "ALL";
     }
 
     public class CapNhatBanhNhanhRequest

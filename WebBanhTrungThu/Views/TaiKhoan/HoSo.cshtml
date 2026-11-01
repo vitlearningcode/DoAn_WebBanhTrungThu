@@ -1,0 +1,398 @@
+@model WebBanhTrungThu.ViewModels.HoSoThanhVienViewModel
+@{
+    ViewData["Title"] = $"Hồ Sơ Thành Viên - {Model.NguoiDung.HoTen}";
+    var nd = Model.NguoiDung;
+    string tabMacDinh = ViewBag.TabMacDinh as string ?? "DON_HANG";
+}
+
+<section class="py-5" style="min-height: 85vh;">
+    <div class="container">
+        @if (TempData["ThongBaoHoSo"] != null)
+        {
+            <div class="alert alert-warning alert-dismissible fade show border border-warning bg-dark text-warning mb-4" role="alert">
+                <i class="bi bi-stars me-2"></i><strong>@TempData["ThongBaoHoSo"]</strong>
+                <a href="/ThanhToan" class="btn btn-sm btn-vang-kim rounded-pill ms-3 px-3">Đi tới Thanh Toán →</a>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <!-- ========================================================================= -->
+        <!-- KHỐI 1: THẺ THÀNH VIÊN VIP HOÀNG GIA (LOYALTY CARD)                        -->
+        <!-- ========================================================================= -->
+        <div class="card-hoang-gia p-4 mb-4 position-relative overflow-hidden">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-7">
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2"
+                         style="background: rgba(212,175,55,0.18); border: 1px solid var(--mau-vang-anh-kim);">
+                        <span class="chu-vang-kim small fw-bold">👑 THẺ THÀNH VIÊN NGUYỆT CÁT VIP</span>
+                        <span class="badge badge-thuong-hang rounded-pill">Hạng @nd.HangTv</span>
+                    </div>
+
+                    <h2 class="font-co-phong display-6 fw-bold chu-vang-kim mb-1">@nd.HoTen</h2>
+                    <div class="text-light opacity-75 small mb-3">
+                        <span class="me-3"><i class="bi bi-telephone-fill chu-vang-kim me-1"></i>@nd.Sdt</span>
+                        <span class="me-3"><i class="bi bi-envelope-fill chu-vang-kim me-1"></i>@nd.Email</span>
+                        <span><i class="bi bi-calendar-check chu-vang-kim me-1"></i>Thành viên từ @nd.NgayTao.ToString("dd/MM/yyyy")</span>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="/#tang-tu-chon-hop" class="btn btn-sm btn-vang-kim rounded-pill px-3">
+                            <i class="bi bi-box2-heart-fill me-1"></i>Tự Phối Hộp Quà Mới
+                        </a>
+                        <a href="/ThanhToan" class="btn btn-sm btn-vien-vang rounded-pill px-3">
+                            <i class="bi bi-bag-check-fill me-1"></i>Thanh Toán Giỏ Hàng Hiện Tại
+                        </a>
+                    </div>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="p-3 rounded border border-warning" style="background: rgba(11, 19, 43, 0.85);">
+                        <div class="row text-center g-2">
+                            <div class="col-4 border-end border-secondary">
+                                <small class="text-secondary d-block">Điểm tích lũy</small>
+                                <strong class="fs-4 chu-vang-kim">@nd.DiemTichLuy.ToString("N0")</strong>
+                                <small class="d-block text-warning" style="font-size: 0.7rem;">≈ @Model.GiaTriQuyDoiDiem.ToString("N0") đ</small>
+                            </div>
+                            <div class="col-4 border-end border-secondary">
+                                <small class="text-secondary d-block">Đơn đã đặt</small>
+                                <strong class="fs-4 text-info">@Model.LichSuDonHang.Count</strong>
+                                <small class="d-block text-secondary" style="font-size: 0.7rem;">Hóa đơn</small>
+                            </div>
+                            <div class="col-4">
+                                <small class="text-secondary d-block">Hộp tự phối</small>
+                                <strong class="fs-4 text-success">@Model.DanhSachHopTuChon.Count</strong>
+                                <small class="d-block text-secondary" style="font-size: 0.7rem;">Mẫu độc bản</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================================= -->
+        <!-- THANH ĐIỀU HƯỚNG 3 TAB TIỆN ÍCH THÀNH VIÊN                                -->
+        <!-- ========================================================================= -->
+        <ul class="nav nav-pills nav-fill mb-4 p-2 rounded card-hoang-gia" id="tabHoSoThanhVien" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill fw-semibold @(tabMacDinh == "DON_HANG" ? "active bg-warning text-dark" : "text-light")"
+                        id="btn-tab-donhang" data-bs-toggle="pill" data-bs-target="#pane-donhang" type="button" role="tab">
+                    <i class="bi bi-receipt-cutoff me-1"></i>1. Lịch Sử Đơn Hàng & Thiệp QR 3D (@Model.LichSuDonHang.Count)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill fw-semibold @(tabMacDinh == "DIA_CHI" ? "active bg-warning text-dark" : "text-light")"
+                        id="btn-tab-diachi" data-bs-toggle="pill" data-bs-target="#pane-diachi" type="button" role="tab">
+                    <i class="bi bi-geo-alt-fill me-1"></i>2. Sổ Địa Chỉ Biếu Tặng Đa Điểm (@Model.DanhSachSoDiaChi.Count)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill fw-semibold @(tabMacDinh == "HOP_TU_CHON" ? "active bg-warning text-dark" : "text-light")"
+                        id="btn-tab-hoptuchon" data-bs-toggle="pill" data-bs-target="#pane-hoptuchon" type="button" role="tab">
+                    <i class="bi bi-box2-heart-fill me-1"></i>3. Bộ Sưu Tập Hộp Quà Tự Phối Của Tôi (@Model.DanhSachHopTuChon.Count)
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <!-- ===================================================================== -->
+            <!-- TAB 1: LỊCH SỬ ĐƠN HÀNG & THIỆP QR 3D                                 -->
+            <!-- ===================================================================== -->
+            <div class="tab-pane fade @(tabMacDinh == "DON_HANG" ? "show active" : "")" id="pane-donhang" role="tabpanel">
+                @if (!Model.LichSuDonHang.Any())
+                {
+                    <div class="card-hoang-gia p-5 text-center">
+                        <h5 class="chu-vang-kim mb-2">Bạn chưa có đơn hàng nào</h5>
+                        <p class="text-secondary small mb-3">Hãy trải nghiệm Studio Tự Phối Hộp 3D và gửi tặng Thiệp QR âm nhạc tới người thân!</p>
+                        <div>
+                            <a href="/#tang-tu-chon-hop" class="btn btn-vang-kim rounded-pill px-4">Khám Phá Ngay</a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var dh in Model.LichSuDonHang)
+                    {
+                        string mauTrangThai = dh.TrangThaiDh == "HOAN_TAT"
+                            ? "bg-success"
+                            : dh.TrangThaiDh == "DA_HUY"
+                                ? "bg-danger"
+                                : "bg-warning text-dark";
+
+                        <div class="card-hoang-gia p-4 mb-3">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom border-secondary pb-3 mb-3 gap-2">
+                                <div>
+                                    <span class="badge @mauTrangThai rounded-pill px-3 py-1 me-2">@dh.TenTrangThaiDhHienThi (@dh.TrangThaiDh)</span>
+                                    <strong class="fs-5 chu-vang-kim">Mã đơn: #@dh.MaTraCuuDh</strong>
+                                    <span class="text-secondary small ms-2">• Đặt ngày @dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</span>
+                                </div>
+                                <div class="text-end">
+                                    <span class="text-secondary small me-2">@dh.PhuongThucTt (@dh.TenTrangThaiTtHienThi)</span>
+                                    <strong class="fs-5 chu-vang-kim">@dh.TongThanhToanCuoi.ToString("N0") đ</strong>
+                                    <a href="/ThanhToan/ThanhCong?maDon=@dh.MaTraCuuDh" class="btn btn-sm btn-vien-vang rounded-pill ms-2 px-3">
+                                        Xem Biên Lai & QR
+                                    </a>
+                                </div>
+                            </div>
+
+                            <div class="row g-3">
+                                <!-- Cột trái: Danh sách món & sơ đồ ô bánh -->
+                                <div class="col-lg-7">
+                                    <h6 class="text-warning small fw-bold text-uppercase mb-2">Chi tiết lễ hộp & bánh đã đặt:</h6>
+                                    @foreach (var ct in dh.ChiTietDonHangs)
+                                    {
+                                        <div class="p-2 mb-2 rounded bg-dark border border-secondary">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <strong class="text-light small">@ct.TenSanPhamLuuCung (x@(ct.SoLuong))</strong>
+                                                <span class="chu-vang-kim small fw-bold">@ct.ThanhTien.ToString("N0") đ</span>
+                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(ct.CauHinhHopJson))
+                                            {
+                                                try
+                                                {
+                                                    var mangO = Newtonsoft.Json.Linq.JArray.Parse(ct.CauHinhHopJson);
+                                                    <div class="d-flex flex-wrap gap-1 mt-1">
+                                                        @foreach (var o in mangO)
+                                                        {
+                                                            int viTri = o.Value<int?>("ViTriOTrongHop") ?? 1;
+                                                            string tenBanh = o.Value<string>("TenBanh") ?? "Bánh Trung Thu";
+                                                            decimal donGia = o.Value<decimal?>("DonGia") ?? 0m;
+                                                            <span class="badge bg-secondary text-light fw-normal" style="font-size: 0.7rem;">
+                                                                [Ô @viTri: @tenBanh - @donGia.ToString("N0")đ]
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                }
+                                                catch { }
+                                            }
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Cột phải: Các đợt giao đa điểm & nút mở Thiệp QR 3D -->
+                                <div class="col-lg-5">
+                                    <h6 class="text-info small fw-bold text-uppercase mb-2">Điểm nhận quà & Thiệp QR 3D (@dh.DotGiaoHangDaDiems.Count điểm):</h6>
+                                    @foreach (var dot in dh.DotGiaoHangDaDiems)
+                                    {
+                                        <div class="p-2 mb-2 rounded bg-dark border border-secondary small">
+                                            <div class="d-flex justify-content-between">
+                                                <strong class="text-warning">📍 @dot.TenNguoiNhan (@dot.SdtnguoiNhan)</strong>
+                                                <span class="badge bg-dark border border-info text-info">@dot.TrangThaiGiao</span>
+                                            </div>
+                                            <div class="text-secondary">@dot.DiaChiGiaoChiTiet</div>
+                                            <div class="text-secondary">Hẹn giao: @dot.NgayHenGiao.ToString("dd/MM/yyyy") (@dot.KhungGioGiao)</div>
+
+                                            @if (dot.CoKemThiepQr && !string.IsNullOrEmpty(dot.MaTokenThiepQr))
+                                            {
+                                                <div class="mt-2 pt-2 border-top border-secondary d-flex justify-content-between align-items-center">
+                                                    <span class="text-light fst-italic" style="font-size: 0.75rem;">
+                                                        💌 Đã mở xem: <strong>@dot.SoLanMoThiep lần</strong>
+                                                    </span>
+                                                    <a href="/Thiep3D/Xem/@dot.MaTokenThiepQr" target="_blank" class="btn btn-sm btn-vang-kim rounded-pill py-0 px-3">
+                                                        🌕 Mở Thiệp QR 3D
+                                                    </a>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- ===================================================================== -->
+            <!-- TAB 2: SỔ ĐỊA CHỈ BIẾU TẶNG ĐA ĐIỂM (SoDiaChi)                        -->
+            <!-- ===================================================================== -->
+            <div class="tab-pane fade @(tabMacDinh == "DIA_CHI" ? "show active" : "")" id="pane-diachi" role="tabpanel">
+                <div class="row g-4">
+                    <!-- Danh sách địa chỉ đã lưu -->
+                    <div class="col-lg-7">
+                        <div class="card-hoang-gia p-4 h-100">
+                            <h5 class="font-co-phong fs-4 chu-vang-kim border-bottom border-secondary pb-2 mb-3">
+                                <i class="bi bi-journal-bookmark-fill me-2"></i>Danh Sách Địa Chỉ Biếu Tặng Của Tôi
+                            </h5>
+
+                            @if (!Model.DanhSachSoDiaChi.Any())
+                            {
+                                <div class="text-center text-secondary py-4">
+                                    Chưa có địa chỉ nào trong sổ. Hãy thêm địa chỉ người thân/đối tác ở khung bên phải để chọn nhanh khi thanh toán đa điểm!
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="d-flex flex-column gap-3">
+                                    @foreach (var dc in Model.DanhSachSoDiaChi)
+                                    {
+                                        <div class="p-3 rounded bg-dark border @(dc.LaMacDinh ? "border-warning" : "border-secondary") d-flex justify-content-between align-items-start gap-3">
+                                            <div>
+                                                <div class="d-flex align-items-center gap-2 mb-1">
+                                                    <span class="badge bg-warning text-dark rounded-pill">🏷️ @(dc.NhanDiaChi ?? "Địa chỉ biếu tặng")</span>
+                                                    <strong class="text-light">@dc.TenNguoiNhan (@dc.SdtnguoiNhan)</strong>
+                                                    @if (dc.LaMacDinh)
+                                                    {
+                                                        <span class="badge badge-thuong-hang rounded-pill">Mặc định</span>
+                                                    }
+                                                </div>
+                                                <div class="small text-secondary">
+                                                    @dc.DiaChiCuThe, @dc.PhuongXa, @dc.QuanHuyen, @dc.TinhThanh
+                                                </div>
+                                            </div>
+
+                                            <form asp-controller="TaiKhoan" asp-action="XoaDiaChi" method="post"
+                                                  onsubmit="return confirm('Xóa địa chỉ này khỏi Sổ địa chỉ?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="maDc" value="@dc.MaDc" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" title="Xóa địa chỉ">
+                                                    <i class="bi bi-trash3"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Form thêm địa chỉ biếu tặng mới -->
+                    <div class="col-lg-5">
+                        <div class="card-hoang-gia p-4">
+                            <h5 class="font-co-phong fs-4 chu-vang-kim border-bottom border-secondary pb-2 mb-3">
+                                <i class="bi bi-plus-circle-fill me-2"></i>Thêm Địa Chỉ Nhận Quà Mới
+                            </h5>
+
+                            <form asp-controller="TaiKhoan" asp-action="ThemDiaChiMoi" method="post">
+                                @Html.AntiForgeryToken()
+
+                                <div class="mb-2">
+                                    <label class="form-label small text-warning">Nhãn gợi nhớ (VD: Biếu Ông Bà Nội, Biếu Sếp Bảo)</label>
+                                    <input type="text" name="nhanDiaChi" class="form-control bg-dark text-light border-secondary"
+                                           placeholder="VD: Biếu Ông Bà Nội" required />
+                                </div>
+
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-7">
+                                        <label class="form-label small text-warning">Họ tên người nhận *</label>
+                                        <input type="text" name="tenNguoiNhan" class="form-control bg-dark text-light border-secondary"
+                                               placeholder="Nhập tên người nhận..." required />
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="form-label small text-warning">SĐT người nhận *</label>
+                                        <input type="text" name="sdtNguoiNhan" class="form-control bg-dark text-light border-secondary"
+                                               placeholder="09xx..." required />
+                                    </div>
+                                </div>
+
+                                <div class="row g-2 mb-2">
+                                    <div class="col-md-4">
+                                        <label class="form-label small text-warning">Tỉnh / Thành</label>
+                                        <input type="text" name="tinhThanh" class="form-control bg-dark text-light border-secondary"
+                                               value="TP. Hồ Chí Minh" required />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small text-warning">Quận / Huyện</label>
+                                        <input type="text" name="quanHuyen" class="form-control bg-dark text-light border-secondary"
+                                               placeholder="Quận 1" required />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small text-warning">Phường / Xã</label>
+                                        <input type="text" name="phuongXa" class="form-control bg-dark text-light border-secondary"
+                                               placeholder="Phường Bến Nghé" required />
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label small text-warning">Số nhà, tên đường cụ thể *</label>
+                                    <input type="text" name="diaChiCuThe" class="form-control bg-dark text-light border-secondary"
+                                           placeholder="VD: 128 Nguyễn Huệ" required />
+                                </div>
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" name="laMacDinh" value="true" id="chkDiaChiMacDinh" />
+                                    <label class="form-check-label small text-light" for="chkDiaChiMacDinh">
+                                        Đặt làm địa chỉ nhận quà mặc định
+                                    </label>
+                                </div>
+
+                                <button type="submit" class="btn btn-vang-kim w-100 rounded-pill py-2">
+                                    <i class="bi bi-save2-fill me-1"></i>Lưu Vào Sổ Địa Chỉ Biếu Tặng
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================================================================== -->
+            <!-- TAB 3: BỘ SƯU TẬP HỘP QUÀ TỰ PHỐI CỦA TÔI (HopQuaTuChon)              -->
+            <!-- ===================================================================== -->
+            <div class="tab-pane fade @(tabMacDinh == "HOP_TU_CHON" ? "show active" : "")" id="pane-hoptuchon" role="tabpanel">
+                @if (!Model.DanhSachHopTuChon.Any())
+                {
+                    <div class="card-hoang-gia p-5 text-center">
+                        <h5 class="chu-vang-kim mb-2">Bạn chưa lưu mẫu hộp quà tự phối nào</h5>
+                        <p class="text-secondary small mb-3">Mọi hộp quà bạn tự tay phối ở Tầng 3 (kể cả khi phối lúc chưa đăng nhập rồi gộp giỏ) đều được lưu tại đây để tái sử dụng nhanh!</p>
+                        <div>
+                            <a href="/#tang-tu-chon-hop" class="btn btn-vang-kim rounded-pill px-4">Tự Phối Hộp Quà Ngay</a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="row g-4">
+                        @foreach (var hop in Model.DanhSachHopTuChon)
+                        {
+                            <div class="col-md-6">
+                                <div class="card-hoang-gia p-4 h-100 d-flex flex-column justify-content-between">
+                                    <div>
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <div>
+                                                <span class="badge bg-warning text-dark rounded-pill mb-1">
+                                                    🎁 @(hop.MaVhNavigation?.TenVoHop ?? "Hộp Quà Nghệ Thuật")
+                                                </span>
+                                                <h5 class="font-co-phong fs-4 chu-vang-kim mb-0">@hop.TenHopKhachDat</h5>
+                                            </div>
+                                            <span class="badge bg-dark border border-warning text-warning">@hop.MaBamCauHinh</span>
+                                        </div>
+
+                                        <div class="small text-secondary mb-3">
+                                            Thiết kế ngày @hop.NgayTao.ToString("dd/MM/yyyy HH:mm") • Tổng năng lượng: <strong class="text-info">@hop.TongCaloHop.ToString("N0") Kcal</strong>
+                                        </div>
+
+                                        <div class="p-3 rounded bg-dark border border-secondary mb-3">
+                                            <small class="text-warning fw-bold d-block mb-2">Sơ đồ các vị bánh trong khay:</small>
+                                            <div class="d-flex flex-wrap gap-1">
+                                                @foreach (var ctHop in hop.ChiTietHopTuChons.OrderBy(c => c.ViTriOtrongHop))
+                                                {
+                                                    <span class="badge bg-secondary text-light px-2 py-1">
+                                                        [Ô @ctHop.ViTriOtrongHop: @(ctHop.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu") - @ctHop.DonGiaBanhLucChon.ToString("N0")đ]
+                                                    </span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between align-items-center pt-3 border-top border-secondary">
+                                        <div>
+                                            <small class="text-secondary d-block">Đơn giá trọn hộp:</small>
+                                            <strong class="fs-5 chu-vang-kim">@hop.TongGiaMotHop.ToString("N0") đ</strong>
+                                        </div>
+
+                                        <form asp-controller="TaiKhoan" asp-action="DatLaiHopTuChon" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="maHopTc" value="@hop.MaHopTc" />
+                                            <button type="submit" class="btn btn-vang-kim rounded-pill px-3">
+                                                🛒 Đặt lại mẫu hộp này vào giỏ
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</section>
+

@@ -576,7 +576,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
                         DonGiaLe = Math.Max(0, Math.Round(req.GiaBan, 0)),
                         GiaVon = Math.Max(0, Math.Round(req.GiaVon, 0)),
                         TrongLuongGram = trongLuongGram,
-                        SoTrungMuoi = 1,
+                        SoTrungMuoi = Math.Clamp(req.SoTrungMuoi, 0, 10),
                         MucDoNgot = string.IsNullOrWhiteSpace(req.MucDoNgot) ? "BINH_THUONG" : req.MucDoNgot,
                         LaBanhChay = req.LaBanhChay,
                         LaBanhThuongHang = req.LaBanhThuongHang,
@@ -632,6 +632,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
                     banh.GiaVon = Math.Max(0, Math.Round(req.GiaVon, 0));
                     banh.TongTonKho = Math.Max(0, req.TonKho);
                     banh.TrongLuongGram = trongLuongGram;
+                    banh.SoTrungMuoi = Math.Clamp(req.SoTrungMuoi, 0, 10);
                     banh.LaBanhChay = req.LaBanhChay;
                     banh.LaBanhThuongHang = req.LaBanhThuongHang;
                     if (!string.IsNullOrWhiteSpace(req.MucDoNgot))
@@ -749,6 +750,126 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public IActionResult TaoNhaCungCapNhanh(string tenNhaCungCap)
+        {
+            if (!string.IsNullOrWhiteSpace(tenNhaCungCap))
+            {
+                var store = _kiotMeta.DocDuLieu();
+                string ncc = tenNhaCungCap.Trim();
+                if (!store.DanhSachNhaCungCap.Contains(ncc))
+                {
+                    store.DanhSachNhaCungCap.Add(ncc);
+                    _kiotMeta.LuuDuLieu(store);
+                }
+                TempData["ThongBaoAdmin"] = $"Đã thêm nhà cung cấp / lò bánh: {ncc}!";
+            }
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> TaoDanhMucNhanhAjax(string loaiDanhMuc, string tenMoi, string? moTaPhu)
+        {
+            if (string.IsNullOrWhiteSpace(tenMoi))
+            {
+                return Json(new { ok = false, message = "Vui lòng nhập tên hợp lệ!" });
+            }
+
+            string ten = tenMoi.Trim();
+            string loai = (loaiDanhMuc ?? "").Trim().ToUpperInvariant();
+
+            if (loai == "NHOM_HANG")
+            {
+                var existing = await _db.DanhMucBanhs.FirstOrDefaultAsync(d => d.TenDm == ten);
+                if (existing == null)
+                {
+                    string slug = "nhom-" + DateTime.Now.ToString("MMddHHmmss") + "-" + Random.Shared.Next(10, 99);
+                    existing = new DanhMucBanh
+                    {
+                        TenDm = ten,
+                        DuongDanSlug = slug,
+                        MoTa = string.IsNullOrWhiteSpace(moTaPhu) ? $"Nhóm hàng {ten}" : moTaPhu.Trim(),
+                        ThuTuSx = 20,
+                        TrangThai = true
+                    };
+                    _db.DanhMucBanhs.Add(existing);
+                    await _db.SaveChangesAsync();
+                }
+                return Json(new
+                {
+                    ok = true,
+                    loai = "NHOM_HANG",
+                    value = existing.MaDm.ToString(),
+                    text = existing.TenDm,
+                    message = $"Đã tạo nhóm hàng: {existing.TenDm}"
+                });
+            }
+            else if (loai == "THUONG_HIEU")
+            {
+                var store = _kiotMeta.DocDuLieu();
+                if (!store.DanhSachThuongHieu.Contains(ten))
+                {
+                    store.DanhSachThuongHieu.Add(ten);
+                }
+                if (!string.IsNullOrWhiteSpace(moTaPhu))
+                {
+                    string ncc = moTaPhu.Trim();
+                    if (!store.DanhSachNhaCungCap.Contains(ncc))
+                    {
+                        store.DanhSachNhaCungCap.Add(ncc);
+                    }
+                }
+                _kiotMeta.LuuDuLieu(store);
+                return Json(new
+                {
+                    ok = true,
+                    loai = "THUONG_HIEU",
+                    value = ten,
+                    text = ten,
+                    extraNcc = string.IsNullOrWhiteSpace(moTaPhu) ? null : moTaPhu.Trim(),
+                    message = $"Đã thêm thương hiệu: {ten}"
+                });
+            }
+            else if (loai == "NHA_CUNG_CAP")
+            {
+                var store = _kiotMeta.DocDuLieu();
+                if (!store.DanhSachNhaCungCap.Contains(ten))
+                {
+                    store.DanhSachNhaCungCap.Add(ten);
+                    _kiotMeta.LuuDuLieu(store);
+                }
+                return Json(new
+                {
+                    ok = true,
+                    loai = "NHA_CUNG_CAP",
+                    value = ten,
+                    text = ten,
+                    message = $"Đã thêm nhà cung cấp: {ten}"
+                });
+            }
+            else if (loai == "VI_TRI")
+            {
+                var store = _kiotMeta.DocDuLieu();
+                if (!store.DanhSachViTriKho.Contains(ten))
+                {
+                    store.DanhSachViTriKho.Add(ten);
+                    _kiotMeta.LuuDuLieu(store);
+                }
+                return Json(new
+                {
+                    ok = true,
+                    loai = "VI_TRI",
+                    value = ten,
+                    text = ten,
+                    message = $"Đã thêm vị trí lưu kho: {ten}"
+                });
+            }
+
+            return Json(new { ok = false, message = "Loại danh mục không hợp lệ." });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> XoaHangHoa(int idGoc, bool laCombo)
         {
             var store = _kiotMeta.DocDuLieu();
@@ -848,7 +969,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CapNhatGiamGiaCanDate(int maLo, decimal phanTramGiam, string? trangThaiLo)
+        public async Task<IActionResult> CapNhatGiamGiaCanDate(int maLo, decimal phanTramGiam, string? trangThaiLo, int? slConLai, string? returnUrl)
         {
             var lo = await _db.LoSanXuatBanhs
                 .Include(l => l.MaBanhNavigation)
@@ -857,6 +978,16 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
             if (lo != null)
             {
                 lo.PhanTramGiamCanDate = Math.Clamp(Math.Round(phanTramGiam, 0), 0m, 90m);
+                if (slConLai.HasValue && slConLai.Value >= 0)
+                {
+                    int chenhLech = slConLai.Value - lo.SlconLai;
+                    lo.SlconLai = slConLai.Value;
+                    if (lo.MaBanhNavigation != null)
+                    {
+                        lo.MaBanhNavigation.TongTonKho = Math.Max(0, lo.MaBanhNavigation.TongTonKho + chenhLech);
+                    }
+                }
+
                 if (!string.IsNullOrWhiteSpace(trangThaiLo))
                 {
                     lo.TrangThaiLo = trangThaiLo;
@@ -865,14 +996,156 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
                 {
                     lo.TrangThaiLo = "XA_CAN_DATE";
                 }
+                else if (lo.HanSuDung < DateOnly.FromDateTime(DateTime.Today))
+                {
+                    lo.TrangThaiLo = "HET_HAN";
+                }
+                else
+                {
+                    lo.TrangThaiLo = "DANG_BAN";
+                }
 
                 await _db.SaveChangesAsync();
                 TempData["ThongBaoAdmin"] = $"Đã cập nhật lô {lo.MaLoCode} ({lo.MaBanhNavigation?.TenBanh}) -> Giảm cận Date: {lo.PhanTramGiamCanDate:N0}% ({lo.TrangThaiLo})!";
             }
 
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
             return RedirectToAction(nameof(Index));
         }
 
+        // =====================================================================
+        // TRANG KIỂM KHO / QUẢN LÝ LÔ SẢN XUẤT & HẠN SỬ DỤNG (/Admin/SanPhamAdmin/KiemKho)
+        // =====================================================================
+        [HttpGet]
+        public async Task<IActionResult> KiemKho(string? tuKhoa, string locTrangThai = "ALL", string locGiamGia = "ALL")
+        {
+            var dsLo = await _db.LoSanXuatBanhs
+                .AsNoTracking()
+                .Include(l => l.MaBanhNavigation)
+                .OrderBy(l => l.HanSuDung)
+                .ToListAsync();
+
+            var dsBanh = await _db.SanPhamBanhs
+                .AsNoTracking()
+                .OrderBy(b => b.TenBanh)
+                .ToListAsync();
+
+            var vm = new KiemKhoLoAdminViewModel
+            {
+                DanhSachLoBanh = dsLo,
+                DanhSachBanh = dsBanh,
+                TuKhoa = tuKhoa,
+                LocTrangThai = locTrangThai,
+                LocGiamGia = locGiamGia
+            };
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ThemLoBanhMoi(
+            int maBanh,
+            string? maLoCode,
+            DateTime? ngaySanXuat,
+            DateTime? hanSuDung,
+            int slNhapBanDau = 50,
+            decimal phanTramGiamCanDate = 0m,
+            string? returnUrl = null)
+        {
+            var banh = await _db.SanPhamBanhs.FindAsync(maBanh);
+            if (banh == null)
+            {
+                TempData["LoiAdmin"] = "Không tìm thấy sản phẩm bánh để nhập lô mới!";
+                return RedirectToAction(nameof(KiemKho));
+            }
+
+            string code = string.IsNullOrWhiteSpace(maLoCode)
+                ? $"LO-{DateTime.Now:yyyyMMdd}-{banh.MaBanh:D2}-{Random.Shared.Next(10, 99)}"
+                : maLoCode.Trim().ToUpperInvariant();
+
+            if (await _db.LoSanXuatBanhs.AnyAsync(l => l.MaLoCode == code))
+            {
+                code += "-" + Random.Shared.Next(10, 99);
+            }
+
+            DateOnly nsx = ngaySanXuat.HasValue
+                ? DateOnly.FromDateTime(ngaySanXuat.Value)
+                : DateOnly.FromDateTime(DateTime.Today);
+            DateOnly hsd = hanSuDung.HasValue
+                ? DateOnly.FromDateTime(hanSuDung.Value)
+                : nsx.AddDays(35);
+            if (hsd < nsx)
+            {
+                hsd = nsx.AddDays(30);
+            }
+
+            int slNhap = Math.Max(1, slNhapBanDau);
+            decimal ptGiam = Math.Clamp(Math.Round(phanTramGiamCanDate, 0), 0m, 90m);
+            string trangThai = ptGiam > 0
+                ? "XA_CAN_DATE"
+                : (hsd < DateOnly.FromDateTime(DateTime.Today) ? "HET_HAN" : "DANG_BAN");
+
+            var loMoi = new LoSanXuatBanh
+            {
+                MaBanh = banh.MaBanh,
+                MaLoCode = code,
+                NgaySanXuat = nsx,
+                HanSuDung = hsd,
+                SlnhapBanDau = slNhap,
+                SlconLai = slNhap,
+                PhanTramGiamCanDate = ptGiam,
+                TrangThaiLo = trangThai
+            };
+
+            _db.LoSanXuatBanhs.Add(loMoi);
+            banh.TongTonKho = Math.Max(0, banh.TongTonKho) + slNhap;
+            await _db.SaveChangesAsync();
+
+            TempData["ThongBaoAdmin"] = $"Đã nhập lô mới [{code}] cho bánh '{banh.TenBanh}' (+{slNhap:N0} bánh vào tổng tồn kho)!";
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+            return RedirectToAction(nameof(KiemKho));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> XoaLoBanh(int maLo, string? returnUrl = null)
+        {
+            var lo = await _db.LoSanXuatBanhs
+                .Include(l => l.MaBanhNavigation)
+                .FirstOrDefaultAsync(l => l.MaLo == maLo);
+
+            if (lo != null)
+            {
+                string code = lo.MaLoCode;
+                string tenBanh = lo.MaBanhNavigation?.TenBanh ?? "";
+                if (lo.MaBanhNavigation != null && lo.SlconLai > 0)
+                {
+                    lo.MaBanhNavigation.TongTonKho = Math.Max(0, lo.MaBanhNavigation.TongTonKho - lo.SlconLai);
+                }
+
+                _db.LoSanXuatBanhs.Remove(lo);
+                await _db.SaveChangesAsync();
+                TempData["ThongBaoAdmin"] = $"Đã xóa lô [{code}] của sản phẩm '{tenBanh}' và đồng bộ lại tồn kho!";
+            }
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+            return RedirectToAction(nameof(KiemKho));
+        }
+
+        // =====================================================================
+        // TRANG THIẾT LẬP GIÁ: VỎ HỘP, CHIẾT KHẤU SỈ B2B, COMBO (/Admin/SanPhamAdmin/ThietLapGia)
+        // =====================================================================
         [HttpGet]
         public async Task<IActionResult> ThietLapGia()
         {
@@ -886,10 +1159,57 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
                         .ThenInclude(ct => ct.MaBanhNavigation)
                     .OrderBy(c => c.MaCb)
                     .ToListAsync(),
-                BangChietKhauB2B = await _db.BangChietKhauSiB2bs.AsNoTracking().OrderBy(b => b.SlhopToiThieu).ToListAsync()
+                BangChietKhauB2B = await _db.BangChietKhauSiB2bs.AsNoTracking().OrderBy(b => b.SlhopToiThieu).ToListAsync(),
+                DanhSachBanh = await _db.SanPhamBanhs.AsNoTracking().OrderBy(b => b.TenBanh).ToListAsync()
             };
 
             return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ThemVoHopMoi(
+            string? maCodeVh,
+            string tenVoHop,
+            int sucChuaBanh = 4,
+            string? kieuBoCucLuoi = "LUOI_2X2",
+            decimal giaVoHopRieng = 150000m,
+            int slTonKhoVo = 50,
+            int slBanhThuongHangToiThieu = 0,
+            string? moTaChatLieu = null)
+        {
+            if (string.IsNullOrWhiteSpace(tenVoHop))
+            {
+                TempData["LoiAdmin"] = "Vui lòng nhập tên mẫu vỏ hộp!";
+                return RedirectToAction(nameof(ThietLapGia));
+            }
+
+            string code = string.IsNullOrWhiteSpace(maCodeVh)
+                ? $"VH-{Random.Shared.Next(100, 999)}"
+                : maCodeVh.Trim().ToUpperInvariant();
+
+            if (await _db.MauVoHops.AnyAsync(v => v.MaCodeVh == code))
+            {
+                code += "-" + Random.Shared.Next(10, 99);
+            }
+
+            var vh = new MauVoHop
+            {
+                MaCodeVh = code,
+                TenVoHop = tenVoHop.Trim(),
+                SucChuaBanh = Math.Clamp(sucChuaBanh, 1, 12),
+                KieuBoCucLuoi = string.IsNullOrWhiteSpace(kieuBoCucLuoi) ? "LUOI_2X2" : kieuBoCucLuoi.Trim(),
+                GiaVoHopRieng = Math.Max(0m, Math.Round(giaVoHopRieng, 0)),
+                SltonKhoVo = Math.Max(0, slTonKhoVo),
+                SlbanhThuongHangToiThieu = Math.Max(0, slBanhThuongHangToiThieu),
+                MoTaChatLieu = string.IsNullOrWhiteSpace(moTaChatLieu) ? "Gỗ sơn mài / Giấy mỹ thuật ép kim" : moTaChatLieu.Trim(),
+                TrangThai = true
+            };
+
+            _db.MauVoHops.Add(vh);
+            await _db.SaveChangesAsync();
+            TempData["ThongBaoAdmin"] = $"Đã thêm mẫu vỏ hộp mới: [{vh.MaCodeVh}] {vh.TenVoHop}!";
+            return RedirectToAction(nameof(ThietLapGia));
         }
 
         [HttpPost]
@@ -910,16 +1230,193 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CapNhatMocB2B(int maMocCk, decimal phanTramChietKhau, decimal phiKhuonInLogo, bool mienPhiInLogo)
+        public async Task<IActionResult> XoaVoHop(int maVh)
+        {
+            var vh = await _db.MauVoHops.FindAsync(maVh);
+            if (vh != null)
+            {
+                bool dangDung = await _db.ComboMauCoSans.AnyAsync(c => c.MaVh == maVh)
+                                || await _db.HopQuaTuChons.AnyAsync(h => h.MaVh == maVh);
+                if (dangDung)
+                {
+                    vh.TrangThai = false;
+                    await _db.SaveChangesAsync();
+                    TempData["ThongBaoAdmin"] = $"Mẫu vỏ hộp [{vh.MaCodeVh}] {vh.TenVoHop} đã có đơn/combo liên kết -> Đã chuyển sang Ngừng sử dụng!";
+                }
+                else
+                {
+                    _db.MauVoHops.Remove(vh);
+                    await _db.SaveChangesAsync();
+                    TempData["ThongBaoAdmin"] = $"Đã xóa mẫu vỏ hộp [{vh.MaCodeVh}] {vh.TenVoHop}!";
+                }
+            }
+            return RedirectToAction(nameof(ThietLapGia));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ThemMocB2BMoi(
+            string tenMocB2b,
+            int slHopToiThieu = 10,
+            int? slHopToiDa = 50,
+            decimal phanTramChietKhau = 10m,
+            decimal phiKhuonInLogo = 500000m,
+            bool mienPhiInLogo = false)
+        {
+            if (string.IsNullOrWhiteSpace(tenMocB2b))
+            {
+                TempData["LoiAdmin"] = "Vui lòng nhập tên mốc chiết khấu B2B!";
+                return RedirectToAction(nameof(ThietLapGia));
+            }
+
+            var moc = new BangChietKhauSiB2b
+            {
+                TenMocB2b = tenMocB2b.Trim(),
+                SlhopToiThieu = Math.Max(1, slHopToiThieu),
+                SlhopToiDa = (slHopToiDa.HasValue && slHopToiDa.Value >= slHopToiThieu) ? slHopToiDa.Value : 9999,
+                PhanTramChietKhau = Math.Clamp(Math.Round(phanTramChietKhau, 0), 0m, 80m),
+                PhiKhuonInLogo = Math.Max(0m, Math.Round(phiKhuonInLogo, 0)),
+                MienPhiInLogo = mienPhiInLogo,
+                SoNgaySanXuatCongThem = 2
+            };
+
+            _db.BangChietKhauSiB2bs.Add(moc);
+            await _db.SaveChangesAsync();
+            TempData["ThongBaoAdmin"] = $"Đã thêm mốc chiết khấu B2B mới: {moc.TenMocB2b} (-{moc.PhanTramChietKhau:N0}%)!";
+            return RedirectToAction(nameof(ThietLapGia));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CapNhatMocB2B(
+            int maMocCk,
+            int? slHopToiThieu,
+            int? slHopToiDa,
+            decimal phanTramChietKhau,
+            decimal phiKhuonInLogo,
+            bool mienPhiInLogo)
         {
             var moc = await _db.BangChietKhauSiB2bs.FindAsync(maMocCk);
             if (moc != null)
             {
+                if (slHopToiThieu.HasValue && slHopToiThieu.Value > 0)
+                {
+                    moc.SlhopToiThieu = slHopToiThieu.Value;
+                }
+                if (slHopToiDa.HasValue && slHopToiDa.Value >= moc.SlhopToiThieu)
+                {
+                    moc.SlhopToiDa = slHopToiDa.Value;
+                }
                 moc.PhanTramChietKhau = Math.Round(phanTramChietKhau, 0);
                 moc.PhiKhuonInLogo = Math.Round(phiKhuonInLogo, 0);
                 moc.MienPhiInLogo = mienPhiInLogo;
                 await _db.SaveChangesAsync();
                 TempData["ThongBaoAdmin"] = $"Đã cập nhật mốc chiết khấu B2B: {moc.TenMocB2b} (-{moc.PhanTramChietKhau:N0}%)!";
+            }
+            return RedirectToAction(nameof(ThietLapGia));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> XoaMocB2B(int maMocCk)
+        {
+            var moc = await _db.BangChietKhauSiB2bs.FindAsync(maMocCk);
+            if (moc != null)
+            {
+                string ten = moc.TenMocB2b;
+                _db.BangChietKhauSiB2bs.Remove(moc);
+                await _db.SaveChangesAsync();
+                TempData["ThongBaoAdmin"] = $"Đã xóa mốc chiết khấu B2B: {ten}!";
+            }
+            return RedirectToAction(nameof(ThietLapGia));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ThemComboGiaMoi(
+            string? maCodeCb,
+            string tenCombo,
+            int maVh,
+            decimal giaNiemYet,
+            decimal giaUuDaiCombo,
+            string? thongDiepYngia)
+        {
+            if (string.IsNullOrWhiteSpace(tenCombo))
+            {
+                TempData["LoiAdmin"] = "Vui lòng nhập tên Combo!";
+                return RedirectToAction(nameof(ThietLapGia));
+            }
+
+            string code = string.IsNullOrWhiteSpace(maCodeCb)
+                ? $"CB-{Random.Shared.Next(100, 999)}"
+                : maCodeCb.Trim().ToUpperInvariant();
+
+            if (await _db.ComboMauCoSans.AnyAsync(c => c.MaCodeCb == code))
+            {
+                code += "-" + Random.Shared.Next(10, 99);
+            }
+
+            int maVhHopLe = maVh > 0 ? maVh : (await _db.MauVoHops.Select(v => v.MaVh).FirstOrDefaultAsync());
+            var cb = new ComboMauCoSan
+            {
+                MaCodeCb = code,
+                TenCombo = tenCombo.Trim(),
+                MaVh = maVhHopLe,
+                GiaNiemYet = Math.Max(0m, Math.Round(giaNiemYet, 0)),
+                GiaUuDaiCombo = Math.Max(0m, Math.Round(giaUuDaiCombo, 0)),
+                ThongDiepYngia = string.IsNullOrWhiteSpace(thongDiepYngia) ? "Combo lễ hộp Trung Thu tuyển chọn" : thongDiepYngia.Trim(),
+                TheDoiTuongPhuHop = "ONG_BA,SEP_VIP,BAN_BE",
+                TrangThai = true
+            };
+
+            _db.ComboMauCoSans.Add(cb);
+            await _db.SaveChangesAsync();
+            TempData["ThongBaoAdmin"] = $"Đã thêm Combo mới: [{cb.MaCodeCb}] {cb.TenCombo}!";
+            return RedirectToAction(nameof(ThietLapGia));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CapNhatGiaCombo(int maCb, decimal giaNiemYet, decimal giaUuDaiCombo)
+        {
+            var cb = await _db.ComboMauCoSans.FindAsync(maCb);
+            if (cb != null)
+            {
+                cb.GiaNiemYet = Math.Max(0m, Math.Round(giaNiemYet, 0));
+                cb.GiaUuDaiCombo = Math.Max(0m, Math.Round(giaUuDaiCombo, 0));
+                await _db.SaveChangesAsync();
+                TempData["ThongBaoAdmin"] = $"Đã cập nhật bảng giá cho Combo [{cb.MaCodeCb}] {cb.TenCombo}!";
+            }
+            return RedirectToAction(nameof(ThietLapGia));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> XoaComboGia(int maCb)
+        {
+            var cb = await _db.ComboMauCoSans
+                .Include(c => c.ChiTietComboMaus)
+                .FirstOrDefaultAsync(c => c.MaCb == maCb);
+
+            if (cb != null)
+            {
+                bool coTrongGio = await _db.ChiTietGioHangs.AnyAsync(g => g.MaCb == maCb);
+                if (coTrongGio)
+                {
+                    cb.TrangThai = false;
+                    await _db.SaveChangesAsync();
+                    TempData["ThongBaoAdmin"] = $"Combo [{cb.MaCodeCb}] đang có trong giỏ hàng -> Đã chuyển sang Ngừng kinh doanh!";
+                }
+                else
+                {
+                    if (cb.ChiTietComboMaus.Any())
+                    {
+                        _db.ChiTietComboMaus.RemoveRange(cb.ChiTietComboMaus);
+                    }
+                    _db.ComboMauCoSans.Remove(cb);
+                    await _db.SaveChangesAsync();
+                    TempData["ThongBaoAdmin"] = $"Đã xóa Combo [{cb.MaCodeCb}] {cb.TenCombo}!";
+                }
             }
             return RedirectToAction(nameof(ThietLapGia));
         }

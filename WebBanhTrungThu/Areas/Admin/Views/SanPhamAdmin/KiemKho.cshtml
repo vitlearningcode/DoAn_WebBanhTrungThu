@@ -1,0 +1,450 @@
+@model WebBanhTrungThu.ViewModels.KiemKhoLoAdminViewModel
+@{
+    ViewData["Title"] = "Kiểm kho / Quản lý Lô & Hạn sử dụng";
+    var homNay = DateOnly.FromDateTime(DateTime.Today);
+    int tongSoLo = Model.DanhSachLoBanh.Count;
+    int soLoCanDate = Model.DanhSachLoBanh.Count(l => l.PhanTramGiamCanDate > 0 || l.TrangThaiLo == "XA_CAN_DATE" || (l.HanSuDung.DayNumber - homNay.DayNumber <= 15 && l.HanSuDung >= homNay));
+    int soLoHetHan = Model.DanhSachLoBanh.Count(l => l.HanSuDung < homNay || l.TrangThaiLo == "HET_HAN");
+}
+
+<style>
+    .kv-layout-2col {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        width: 100%;
+    }
+
+    .kv-sidebar-filter {
+        width: 250px;
+        min-width: 250px;
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .kv-main-table-area {
+        flex-grow: 1;
+        min-width: 0;
+    }
+
+    .kv-page-heading {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 4px 0;
+    }
+
+    .kv-filter-box {
+        background: #FFFFFF;
+        border: 1px solid #E5E7EB;
+        border-radius: 6px;
+        padding: 12px 14px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    .kv-filter-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 13px;
+        font-weight: 700;
+        color: #1F2937;
+        margin-bottom: 10px;
+    }
+
+    .kv-input {
+        width: 100%;
+        height: 34px;
+        font-size: 13px;
+        border: 1px solid #D1D5DB;
+        border-radius: 5px;
+        padding: 4px 10px;
+        color: #1F2937;
+        background: #fff;
+    }
+
+    .kv-input:focus {
+        outline: none;
+        border-color: #0070F4;
+        box-shadow: 0 0 0 2px rgba(0, 112, 244, 0.12);
+    }
+
+    .kv-badge-lo {
+        display: inline-block;
+        padding: 3px 8px;
+        font-size: 11.5px;
+        font-weight: 600;
+        border-radius: 4px;
+    }
+
+    .kv-badge-lo.normal {
+        background: #ECFDF5;
+        color: #047857;
+        border: 1px solid #A7F3D0;
+    }
+
+    .kv-badge-lo.candate {
+        background: #FEF3C7;
+        color: #B45309;
+        border: 1px solid #FDE68A;
+    }
+
+    .kv-badge-lo.expired {
+        background: #FEF2F2;
+        color: #DC2626;
+        border: 1px solid #FECACA;
+    }
+</style>
+
+<div class="kv-layout-2col">
+    <!-- ========================================================================= -->
+    <!-- CỘT TRÁI (250PX): BỘ LỌC KIỂM KHO / LÔ HẠN DÙNG CHUẨN KIOTVIET            -->
+    <!-- ========================================================================= -->
+    <aside class="kv-sidebar-filter">
+        <h1 class="kv-page-heading">Kiểm kho & Lô bánh</h1>
+
+        <!-- 1. Tìm kiếm nhanh -->
+        <div class="kv-filter-box">
+            <div class="kv-filter-title">
+                <span>Tìm kiếm</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <input type="text" id="fltLoTuKhoaLeft" value="@Model.TuKhoa" class="kv-input"
+                   placeholder="Theo mã lô, mã SKU, tên bánh..."
+                   oninput="document.getElementById('fltLoTuKhoaTop').value = this.value; locDanhSachLoClient();" />
+        </div>
+
+        <!-- 2. Trạng thái hạn dùng -->
+        <div class="kv-filter-box">
+            <div class="kv-filter-title">
+                <span>Trạng thái hạn dùng</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="radTrangThaiLo" value="ALL" checked onchange="locDanhSachLoClient()" />
+                    <span>Tất cả lô (@tongSoLo)</span>
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="radTrangThaiLo" value="DANG_BAN" onchange="locDanhSachLoClient()" />
+                    <span>Đang bán bình thường</span>
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="radTrangThaiLo" value="XA_CAN_DATE" onchange="locDanhSachLoClient()" />
+                    <span class="text-warning fw-semibold">Sắp hết hạn / Xả cận Date (@soLoCanDate)</span>
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="radTrangThaiLo" value="HET_HAN" onchange="locDanhSachLoClient()" />
+                    <span class="text-danger">Đã hết hạn (@soLoHetHan)</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 3. Mức giảm giá cận Date -->
+        <div class="kv-filter-box">
+            <div class="kv-filter-title">
+                <span>Mức giảm giá xả kho</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="radMucGiamGia" value="ALL" checked onchange="locDanhSachLoClient()" />
+                    <span>Tất cả</span>
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="radMucGiamGia" value="CO_GIAM" onchange="locDanhSachLoClient()" />
+                    <span>Đang giảm giá (&gt; 0%)</span>
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="radMucGiamGia" value="CHUA_GIAM" onchange="locDanhSachLoClient()" />
+                    <span>Chưa giảm giá (0%)</span>
+                </label>
+            </div>
+        </div>
+
+        <button type="button" class="btn-kv-outline w-100 justify-content-center" onclick="resetBoLocLo()">
+            <i class="bi bi-arrow-counterclockwise"></i> Đặt lại bộ lọc
+        </button>
+    </aside>
+
+    <!-- ========================================================================= -->
+    <!-- CỘT PHẢI: THANH CÔNG CỤ + BẢNG QUẢN LÝ LÔ & HẠN DÙNG                       -->
+    <!-- ========================================================================= -->
+    <div class="kv-main-table-area">
+        <!-- Thanh công cụ phía trên -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+            <div class="position-relative" style="width: 360px; max-width: 100%;">
+                <i class="bi bi-search position-absolute text-muted" style="left: 11px; top: 8px; font-size: 13px;"></i>
+                <input type="text" id="fltLoTuKhoaTop" value="@Model.TuKhoa" class="kv-input"
+                       style="padding-left: 32px;"
+                       placeholder="Tìm theo mã lô (VD: LO-2026...), tên bánh..."
+                       oninput="document.getElementById('fltLoTuKhoaLeft').value = this.value; locDanhSachLoClient();" />
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <a href="/Admin/SanPhamAdmin/Index" class="btn-kv-outline">
+                    <i class="bi bi-box-seam"></i> Danh mục hàng hóa
+                </a>
+                <button type="button" class="btn-kv-green" data-bs-toggle="modal" data-bs-target="#modalNhapLoBanhMoi">
+                    <i class="bi bi-plus-lg"></i> Nhập lô bánh mới
+                </button>
+            </div>
+        </div>
+
+        <!-- Bảng danh sách Lô sản xuất bánh -->
+        <div class="kv-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="kv-table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Mã lô</th>
+                            <th>Tên bánh</th>
+                            <th class="text-center">Ngày sản xuất</th>
+                            <th class="text-center">Hạn sử dụng</th>
+                            <th class="text-center">Số ngày còn lại</th>
+                            <th class="text-end">SL Nhập</th>
+                            <th class="text-center" style="width: 95px;">SL Còn lại</th>
+                            <th class="text-center" style="width: 120px;">% Giảm cận Date</th>
+                            <th class="text-end">Giá bán sau giảm</th>
+                            <th class="text-end" style="width: 145px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyDanhSachLoBanh">
+                        @foreach (var lo in Model.DanhSachLoBanh)
+                        {
+                            var banh = lo.MaBanhNavigation;
+                            decimal giaGoc = banh?.DonGiaLe ?? 0m;
+                            decimal ptGiam = Math.Round(lo.PhanTramGiamCanDate, 0);
+                            decimal giaSauGiam = ptGiam > 0
+                                ? Math.Round(giaGoc * (1m - ptGiam / 100m), 0)
+                                : giaGoc;
+                            int soNgayConLai = lo.HanSuDung.DayNumber - homNay.DayNumber;
+                            string nhomTrangThai = (soNgayConLai < 0 || lo.TrangThaiLo == "HET_HAN")
+                                ? "HET_HAN"
+                                : (ptGiam > 0 || lo.TrangThaiLo == "XA_CAN_DATE" || soNgayConLai <= 15)
+                                    ? "XA_CAN_DATE"
+                                    : "DANG_BAN";
+                            string searchKey = $"{lo.MaLoCode} {banh?.MaSku} {banh?.TenBanh}".ToLowerInvariant();
+                            string formId = $"frmCapNhatLo_{lo.MaLo}";
+
+                            <tr class="kv-lo-row"
+                                data-search="@searchKey"
+                                data-trangthai="@nhomTrangThai"
+                                data-cogiam="@(ptGiam > 0 ? "CO_GIAM" : "CHUA_GIAM")">
+                                <td>
+                                    <span class="fw-bold text-primary">@lo.MaLoCode</span>
+                                    <div>
+                                        @if (nhomTrangThai == "HET_HAN")
+                                        {
+                                            <span class="kv-badge-lo expired">Đã hết hạn</span>
+                                        }
+                                        else if (nhomTrangThai == "XA_CAN_DATE")
+                                        {
+                                            <span class="kv-badge-lo candate">Xả kho cận Date</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="kv-badge-lo normal">Đang bán</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">@(banh?.TenBanh ?? $"Bánh #{lo.MaBanh}")</div>
+                                    <small class="text-muted">SKU: @(banh?.MaSku ?? "---") • Giá gốc: @giaGoc.ToString("N0") đ</small>
+                                </td>
+                                <td class="text-center">@lo.NgaySanXuat.ToString("dd/MM/yyyy")</td>
+                                <td class="text-center fw-medium @(soNgayConLai < 0 ? "text-danger" : soNgayConLai <= 15 ? "text-warning" : "text-dark")">
+                                    @lo.HanSuDung.ToString("dd/MM/yyyy")
+                                </td>
+                                <td class="text-center">
+                                    @if (soNgayConLai < 0)
+                                    {
+                                        <span class="text-danger fw-bold">Quá hạn @(Math.Abs(soNgayConLai)) ngày</span>
+                                    }
+                                    else if (soNgayConLai == 0)
+                                    {
+                                        <span class="text-danger fw-bold">Hết hạn hôm nay</span>
+                                    }
+                                    else if (soNgayConLai <= 15)
+                                    {
+                                        <span class="text-warning fw-bold">Còn @soNgayConLai ngày</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-success fw-medium">Còn @soNgayConLai ngày</span>
+                                    }
+                                </td>
+                                <td class="text-end text-muted">@lo.SlnhapBanDau.ToString("N0")</td>
+                                <td class="text-center">
+                                    <input type="number" name="slConLai" form="@formId" min="0"
+                                           value="@lo.SlconLai"
+                                           class="form-control form-control-sm text-center fw-semibold mx-auto"
+                                           style="width: 78px;" />
+                                </td>
+                                <td class="text-center">
+                                    <div class="input-group input-group-sm mx-auto" style="width: 96px;">
+                                        <input type="number" name="phanTramGiam" form="@formId" min="0" max="90" step="1"
+                                               value="@ptGiam.ToString("0")"
+                                               class="form-control text-end fw-bold text-danger"
+                                               oninput="tinhGiaSauGiamClient(this, @Math.Round(giaGoc, 0), 'lblGiaSauGiam_@lo.MaLo')" />
+                                        <span class="input-group-text">%</span>
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <strong id="lblGiaSauGiam_@lo.MaLo" class="@(ptGiam > 0 ? "text-danger" : "text-primary")">
+                                        @giaSauGiam.ToString("N0") đ
+                                    </strong>
+                                    @if (ptGiam > 0)
+                                    {
+                                        <div><small class="text-muted text-decoration-line-through">@giaGoc.ToString("N0") đ</small></div>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-inline-flex align-items-center gap-1">
+                                        <form id="@formId" asp-area="Admin" asp-controller="SanPhamAdmin" asp-action="CapNhatGiamGiaCanDate" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="maLo" value="@lo.MaLo" />
+                                            <input type="hidden" name="returnUrl" value="/Admin/SanPhamAdmin/KiemKho" />
+                                            <button type="submit" class="btn-kv-blue py-1 px-2" style="font-size: 12px;" title="Lưu % giảm cận Date & tồn lô">
+                                                <i class="bi bi-check2"></i> Lưu
+                                            </button>
+                                        </form>
+
+                                        <form asp-area="Admin" asp-controller="SanPhamAdmin" asp-action="XoaLoBanh" method="post" class="d-inline"
+                                              onsubmit="return confirm('Xác nhận xóa lô [@lo.MaLoCode] và trừ số lượng còn lại khỏi tồn kho bánh?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="maLo" value="@lo.MaLo" />
+                                            <input type="hidden" name="returnUrl" value="/Admin/SanPhamAdmin/KiemKho" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 12px;" title="Xóa lô">
+                                                <i class="bi bi-trash"></i> Xóa lô
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL: + NHẬP LÔ BÁNH MỚI                                                 -->
+<!-- ========================================================================= -->
+<div class="modal fade" id="modalNhapLoBanhMoi" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 8px;">
+            <form asp-area="Admin" asp-controller="SanPhamAdmin" asp-action="ThemLoBanhMoi" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="/Admin/SanPhamAdmin/KiemKho" />
+
+                <div class="modal-header py-2 px-3" style="background: #F4F6F8; border-bottom: 1px solid #E5E7EB;">
+                    <h6 class="modal-title fw-bold text-dark mb-0">
+                        <i class="bi bi-box-arrow-in-down text-primary me-1"></i> Nhập lô bánh mới vào kho
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body p-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold mb-1">Chọn sản phẩm bánh <span class="text-danger">*</span></label>
+                        <select name="maBanh" class="form-select form-select-sm" required>
+                            @foreach (var b in Model.DanhSachBanh)
+                            {
+                                <option value="@b.MaBanh">[@b.MaSku] @b.TenBanh (Tồn hiện tại: @b.TongTonKho)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold mb-1">Mã lô sản xuất</label>
+                            <input type="text" name="maLoCode" class="form-control form-control-sm"
+                                   placeholder="Tự động tạo nếu để trống" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold mb-1">Số lượng nhập ban đầu <span class="text-danger">*</span></label>
+                            <input type="number" name="slNhapBanDau" min="1" value="50" class="form-control form-control-sm text-end fw-semibold" required />
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold mb-1">Ngày sản xuất</label>
+                            <input type="date" name="ngaySanXuat" value="@DateTime.Today.ToString("yyyy-MM-dd")" class="form-control form-control-sm" required />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-bold mb-1">Hạn sử dụng</label>
+                            <input type="date" name="hanSuDung" value="@DateTime.Today.AddDays(35).ToString("yyyy-MM-dd")" class="form-control form-control-sm" required />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="form-label small fw-bold mb-1">% Giảm giá xả kho cận Date (0% = Bán giá thường)</label>
+                        <div class="input-group input-group-sm">
+                            <input type="number" name="phanTramGiamCanDate" min="0" max="90" step="1" value="0" class="form-control text-end" />
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <small class="text-muted">Số lượng nhập ban đầu sẽ tự động được cộng thêm vào tổng tồn kho của bánh.</small>
+                    </div>
+                </div>
+
+                <div class="modal-footer py-2 px-3" style="background: #F9FAFB;">
+                    <button type="button" class="btn-kv-outline" data-bs-dismiss="modal">Bỏ qua</button>
+                    <button type="submit" class="btn-kv-green">
+                        <i class="bi bi-check2-circle"></i> Lưu & Cộng tồn kho
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function locDanhSachLoClient() {
+            const tuKhoa = (document.getElementById('fltLoTuKhoaLeft')?.value || '').trim().toLowerCase();
+            const tt = document.querySelector('input[name="radTrangThaiLo"]:checked')?.value || 'ALL';
+            const mg = document.querySelector('input[name="radMucGiamGia"]:checked')?.value || 'ALL';
+
+            document.querySelectorAll('#tbodyDanhSachLoBanh tr.kv-lo-row').forEach(tr => {
+                let hien = true;
+                if (tuKhoa !== '') {
+                    const s = tr.getAttribute('data-search') || '';
+                    if (!s.includes(tuKhoa)) hien = false;
+                }
+                if (hien && tt !== 'ALL') {
+                    if (tr.getAttribute('data-trangthai') !== tt) hien = false;
+                }
+                if (hien && mg !== 'ALL') {
+                    if (tr.getAttribute('data-cogiam') !== mg) hien = false;
+                }
+                tr.style.display = hien ? '' : 'none';
+            });
+        }
+
+        function resetBoLocLo() {
+            document.getElementById('fltLoTuKhoaLeft').value = '';
+            document.getElementById('fltLoTuKhoaTop').value = '';
+            const r1 = document.querySelector('input[name="radTrangThaiLo"][value="ALL"]');
+            if (r1) r1.checked = true;
+            const r2 = document.querySelector('input[name="radMucGiamGia"][value="ALL"]');
+            if (r2) r2.checked = true;
+            locDanhSachLoClient();
+        }
+
+        function tinhGiaSauGiamClient(inp, giaGoc, lblId) {
+            const pt = Math.min(90, Math.max(0, Math.round(Number(inp.value) || 0)));
+            const giaMoi = Math.round(giaGoc * (1 - pt / 100));
+            const el = document.getElementById(lblId);
+            if (el) {
+                el.innerText = giaMoi.toLocaleString('en-US') + ' đ';
+            }
+        }
+    </script>
+}
+
