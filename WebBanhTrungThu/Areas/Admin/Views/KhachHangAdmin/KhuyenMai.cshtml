@@ -1,148 +1,316 @@
 @model WebBanhTrungThu.ViewModels.KhuyenMaiAdminViewModel
 @{
-    ViewData["Title"] = "Quản Lý Mã Khuyến Mãi / Voucher (Guest & Member)";
+    ViewData["Title"] = "Khuyến mãi - KiotViet";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <div>
-        <h5 class="fw-bold mb-0 text-dark">Chương Trình Khuyến Mãi & Mã Voucher (@Model.DanhSachKhuyenMai.Count mã)</h5>
-        <small class="text-muted">Cấu hình mã giảm giá theo % hoặc tiền mặt, giới hạn số lượt và quyền sử dụng cho Khách vãng lai (Guest)</small>
+<style>
+    .kv-page-heading {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 14px 0;
+    }
+
+    .kv-select, .kv-input {
+        width: 100%;
+        height: 34px;
+        border: 1px solid #D1D5DA;
+        border-radius: 6px;
+        padding: 0 10px;
+        font-size: 13px;
+        color: #1F2937;
+        background-color: #FFFFFF;
+        outline: none;
+    }
+
+    .kv-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .kv-search-box {
+        position: relative;
+        width: 340px;
+        max-width: 100%;
+    }
+
+    .kv-search-box i {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6B7280;
+        font-size: 14px;
+    }
+
+    .kv-search-box input {
+        width: 100%;
+        height: 36px;
+        padding: 0 12px 0 34px;
+        border: 1px solid #D1D5DA;
+        border-radius: 6px;
+        background: #FFFFFF;
+        font-size: 13.5px;
+        color: #1F2937;
+        outline: none;
+    }
+</style>
+
+<div class="kv-layout-2col">
+    <!-- ========================================================================= -->
+    <!-- CỘT TRÁI (250PX): BỘ LỌC CHƯƠNG TRÌNH KHUYẾN MÃI KIOTVIET                 -->
+    <!-- ========================================================================= -->
+    <aside class="kv-sidebar-filter">
+        <h1 class="kv-page-heading">Khuyến mãi</h1>
+
+        <div>
+            <!-- 1. Hình thức khuyến mãi -->
+            <div class="kv-filter-box">
+                <div class="kv-filter-title">
+                    <span>Hình thức khuyến mãi</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+                <select id="fltKmLoai" class="kv-select" onchange="locKhuyenMaiClient()">
+                    <option value="ALL">Tất cả hình thức</option>
+                    <option value="PHAN_TRAM">Giảm theo % (PHAN_TRAM)</option>
+                    <option value="TIEN_MAT">Giảm tiền mặt (TIEN_MAT)</option>
+                </select>
+            </div>
+
+            <!-- 2. Phạm vi áp dụng -->
+            <div class="kv-filter-box">
+                <div class="kv-filter-title">
+                    <span>Đối tượng áp dụng</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+                <div class="d-flex flex-column gap-1">
+                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                        <input type="radio" name="fltKmGuest" value="ALL" checked onchange="locKhuyenMaiClient()" />
+                        <span>Tất cả</span>
+                    </label>
+                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                        <input type="radio" name="fltKmGuest" value="GUEST_OK" onchange="locKhuyenMaiClient()" />
+                        <span>Cho phép Guest & Member</span>
+                    </label>
+                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                        <input type="radio" name="fltKmGuest" value="MEMBER_ONLY" onchange="locKhuyenMaiClient()" />
+                        <span>Chỉ dành cho Member</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ========================================================================= -->
+    <!-- CỘT PHẢI: THANH CÔNG CỤ & BẢNG CHƯƠNG TRÌNH KHUYẾN MÃI                    -->
+    <!-- ========================================================================= -->
+    <div class="kv-main-table-area">
+        <div class="kv-toolbar">
+            <div class="kv-search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="txtTimKhuyenMai" placeholder="Theo mã, tên chương trình khuyến mãi"
+                       oninput="locKhuyenMaiClient()" />
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn-kv-blue" data-bs-toggle="modal" data-bs-target="#modalThemVoucher">
+                    <i class="bi bi-plus-lg me-1"></i> Tạo khuyến mãi
+                </button>
+                <a href="/Admin/KhachHangAdmin/Index" class="btn-kv-outline text-decoration-none">
+                    Danh sách Khách hàng
+                </a>
+            </div>
+        </div>
+
+        <div class="kv-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="kv-table">
+                    <thead>
+                        <tr>
+                            <th>Mã chương trình</th>
+                            <th>Tên chương trình</th>
+                            <th>Hình thức khuyến mãi</th>
+                            <th class="text-end">Đơn tối thiểu</th>
+                            <th class="text-center">Áp dụng cho Guest</th>
+                            <th>Từ ngày - Đến ngày</th>
+                            <th class="text-center">Lượt dùng</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyKhuyenMai">
+                        @for (int i = 0; i < Model.DanhSachKhuyenMai.Count; i++)
+                        {
+                            var km = Model.DanhSachKhuyenMai[i];
+                            string searchKey = $"{km.CodeKm} {km.TenChuongTrinh}".ToLowerInvariant();
+                            bool moMacDinh = (i == 0);
+
+                            <tr class="kv-master-row @(moMacDinh ? "active-row" : "")"
+                                data-detail-id="detail-km-@km.MaKm"
+                                data-search="@searchKey"
+                                data-loai="@km.LoaiGiam"
+                                data-guest="@(km.ChoPhepKhachVangLai ? "GUEST_OK" : "MEMBER_ONLY")"
+                                onclick="toggleKvDetailRow('detail-km-@km.MaKm', this)">
+                                <td class="fw-semibold" style="color: #0070F4;">@km.CodeKm</td>
+                                <td class="fw-medium text-dark">@km.TenChuongTrinh</td>
+                                <td>
+                                    @if (km.LoaiGiam == "PHAN_TRAM")
+                                    {
+                                        <span>Giảm @km.GiaTriGiam.ToString("N0")% (Tối đa @km.GiamToiDa.ToString("N0"))</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Tiền mặt -@km.GiaTriGiam.ToString("N0")</span>
+                                    }
+                                </td>
+                                <td class="text-end">@km.DonToiThieu.ToString("N0")</td>
+                                <td class="text-center">
+                                    @if (km.ChoPhepKhachVangLai)
+                                    {
+                                        <span class="text-success fw-medium">Có</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Chỉ Member</span>
+                                    }
+                                </td>
+                                <td class="text-muted">@km.NgayBatDau.ToString("dd/MM/yyyy") - @km.NgayKetThuc.ToString("dd/MM/yyyy")</td>
+                                <td class="text-center fw-medium">@km.SldaDung.ToString("N0") / @km.SltoiDa.ToString("N0")</td>
+                            </tr>
+
+                            <!-- DÒNG MỞ RỘNG CẬP NHẬT NHANH -->
+                            <tr id="detail-km-@km.MaKm" class="kv-detail-row @(moMacDinh ? "open" : "")" onclick="event.stopPropagation();">
+                                <td colspan="7" class="p-0">
+                                    <div class="kv-detail-box">
+                                        <form asp-area="Admin" asp-controller="KhachHangAdmin" asp-action="CapNhatVoucher" method="post" class="row g-3 align-items-end">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="maKm" value="@km.MaKm" />
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-semibold mb-1">Mã Voucher</label>
+                                                <input type="text" class="form-control form-control-sm bg-light fw-bold" value="@km.CodeKm" readonly />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-semibold mb-1">Số lượt tối đa</label>
+                                                <input type="number" name="slToiDa" value="@km.SltoiDa" class="form-control form-control-sm" />
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-semibold mb-1">Ngày kết thúc</label>
+                                                <input type="date" name="ngayKetThuc" value="@km.NgayKetThuc.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+                                            </div>
+                                            <div class="col-md-3 d-flex align-items-center justify-content-between">
+                                                <label class="d-flex align-items-center gap-2 mb-0" style="cursor:pointer;">
+                                                    <input type="checkbox" name="choPhepKhachVangLai" value="true" class="form-check-input" @(km.ChoPhepKhachVangLai ? "checked" : "") />
+                                                    <span class="small fw-medium">Cho phép Guest</span>
+                                                </label>
+                                                <button type="submit" class="btn-kv-green">Lưu</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    <button type="button" class="btn btn-kv-green" data-bs-toggle="modal" data-bs-target="#modalThemVoucher">
-        <i class="bi bi-plus-lg me-1"></i>+ Thêm mã khuyến mãi mới
-    </button>
 </div>
 
-<div class="kv-card p-3">
-    <div class="table-responsive">
-        <table class="kv-table">
-            <thead>
-                <tr>
-                    <th>Mã CodeKM</th>
-                    <th>Tên Chương Trình</th>
-                    <th>Mức Giảm & Đơn Tối Thiểu</th>
-                    <th class="text-center">Đã Dùng</th>
-                    <th>Cấu Hình Lượt Tối Đa • Hạn Dùng • Cho Phép Guest KVL</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var km in Model.DanhSachKhuyenMai)
-                {
-                    <tr class="border-bottom">
-                        <td><span class="badge bg-primary fs-6">@km.CodeKm</span></td>
-                        <td>
-                            <div class="fw-bold text-dark">@km.TenChuongTrinh</div>
-                            <small class="text-muted">Loại: @km.LoaiGiam</small>
-                        </td>
-                        <td>
-                            @if (km.LoaiGiam == "PHAN_TRAM")
-                            {
-                                <strong class="text-danger">Giảm @km.GiaTriGiam%</strong>
-                                <span class="text-muted small">(Tối đa @km.GiamToiDa.ToString("N0") đ)</span>
-                            }
-                            else
-                            {
-                                <strong class="text-danger">Giảm @km.GiaTriGiam.ToString("N0") đ</strong>
-                            }
-                            <div class="small text-muted">Đơn tối thiểu: @km.DonToiThieu.ToString("N0") đ</div>
-                        </td>
-                        <td class="text-center">
-                            <span class="badge bg-info text-dark">@km.SldaDung / @km.SltoiDa</span>
-                        </td>
-                        <td>
-                            <form asp-area="Admin" asp-controller="KhachHangAdmin" asp-action="CapNhatVoucher" method="post" class="row g-2 align-items-center">
-                                @Html.AntiForgeryToken()
-                                <input type="hidden" name="maKm" value="@km.MaKm" />
-                                <div class="col-md-3">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text">Tối đa:</span>
-                                        <input type="number" name="slToiDa" value="@km.SltoiDa" class="form-control" />
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <input type="date" name="ngayKetThuc" value="@km.NgayKetThuc.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="form-check m-0">
-                                        <input class="form-check-input" type="checkbox" name="choPhepKhachVangLai" value="true" id="g_@km.MaKm" @(km.ChoPhepKhachVangLai ? "checked" : "") />
-                                        <label class="form-check-label small fw-semibold" for="g_@km.MaKm">Cho phép Guest</label>
-                                    </div>
-                                </div>
-                                <div class="col-md-2">
-                                    <button type="submit" class="btn btn-kv-green btn-sm w-100">Lưu</button>
-                                </div>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- MODAL THÊM MÃ KHUYẾN MÃI MỚI -->
-<div class="modal fade" id="modalThemVoucher" tabindex="-1">
+<!-- MODAL + TẠO KHUYẾN MÃI MỚI CHUẨN KIOTVIET -->
+<div class="modal fade" id="modalThemVoucher" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white py-2">
-                <h6 class="modal-title fw-bold mb-0"><i class="bi bi-ticket-perforated me-2"></i>Tạo Mã Khuyến Mãi / Voucher Mới</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        <div class="modal-content" style="border-radius: 14px; border: none;">
+            <div class="modal-header border-bottom py-3 px-4">
+                <h6 class="modal-title fw-bold mb-0 text-dark">Tạo chương trình khuyến mãi mới</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form asp-area="Admin" asp-controller="KhachHangAdmin" asp-action="ThemVoucherMoi" method="post">
                 @Html.AntiForgeryToken()
-                <div class="modal-body">
-                    <div class="row g-2">
+                <div class="modal-body p-4">
+                    <div class="row g-3">
                         <div class="col-md-5">
-                            <label class="form-label small fw-semibold">Mã CodeKM (*)</label>
+                            <label class="form-label small fw-semibold">Mã chương trình (*)</label>
                             <input type="text" name="CodeKm" required class="form-control form-control-sm text-uppercase" placeholder="VD: DOANVIEN50K" />
                         </div>
                         <div class="col-md-7">
                             <label class="form-label small fw-semibold">Tên chương trình (*)</label>
-                            <input type="text" name="TenChuongTrinh" required class="form-control form-control-sm" placeholder="VD: Ưu đãi Đoàn Viên giảm 50K" />
+                            <input type="text" name="TenChuongTrinh" required class="form-control form-control-sm" placeholder="VD: Ưu đãi Đoàn Viên giảm 50,000" />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Loại giảm giá</label>
+                            <label class="form-label small fw-semibold">Hình thức khuyến mãi</label>
                             <select name="LoaiGiam" class="form-select form-select-sm">
-                                <option value="PHAN_TRAM">PHAN_TRAM (Theo %)</option>
-                                <option value="TIEN_MAT">TIEN_MAT (Trừ tiền trực tiếp)</option>
+                                <option value="PHAN_TRAM">Giảm % (PHAN_TRAM)</option>
+                                <option value="TIEN_MAT">Tiền mặt (TIEN_MAT)</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Giá trị giảm (% hoặc VNĐ)</label>
-                            <input type="number" name="GiaTriGiam" value="10" class="form-control form-control-sm" />
+                            <input type="number" step="1" name="GiaTriGiam" value="10" class="form-control form-control-sm" />
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Giảm tối đa (VNĐ)</label>
                             <input type="number" step="10000" name="GiamToiDa" value="150000" class="form-control form-control-sm" />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Đơn hàng tối thiểu (VNĐ)</label>
+                            <label class="form-label small fw-semibold">Đơn tối thiểu (VNĐ)</label>
                             <input type="number" step="50000" name="DonToiThieu" value="300000" class="form-control form-control-sm" />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Số lượt tối đa</label>
-                            <input type="number" name="SltoiDa" value="100" class="form-control form-control-sm" />
+                            <label class="form-label small fw-semibold">Số lượt phát hành</label>
+                            <input type="number" step="1" name="SltoiDa" value="100" class="form-control form-control-sm" />
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Hạn sử dụng</label>
+                            <label class="form-label small fw-semibold">Đến ngày</label>
                             <input type="date" name="NgayKetThuc" value="@DateTime.Now.AddDays(45).ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
                         </div>
-                        <div class="col-12 mt-2">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="ChoPhepKhachVangLai" value="true" id="chkGuestNew" checked />
-                                <label class="form-check-label small fw-semibold text-primary" for="chkGuestNew">
-                                    Cho phép cả Khách vãng lai (Guest KVL) áp dụng mã này
-                                </label>
-                            </div>
+                        <div class="col-12">
+                            <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                                <input class="form-check-input" type="checkbox" name="ChoPhepKhachVangLai" value="true" checked />
+                                <span class="small fw-medium text-dark">Áp dụng cho cả Khách vãng lai (Guest)</span>
+                            </label>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer py-2">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
-                    <button type="submit" class="btn btn-kv-green">Lưu mã khuyến mãi</button>
+                <div class="modal-footer py-2 px-4">
+                    <button type="button" class="btn-kv-outline" data-bs-dismiss="modal">Bỏ qua</button>
+                    <button type="submit" class="btn-kv-blue">Lưu</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
+@section Scripts {
+    <script>
+        function locKhuyenMaiClient() {
+            const tk = (document.getElementById('txtTimKhuyenMai')?.value || '').trim().toLowerCase();
+            const loai = document.getElementById('fltKmLoai')?.value || 'ALL';
+            const guest = document.querySelector('input[name="fltKmGuest"]:checked')?.value || 'ALL';
+
+            document.querySelectorAll('#tbodyKhuyenMai tr.kv-master-row').forEach(tr => {
+                let hien = true;
+                if (tk !== '') {
+                    const s = tr.getAttribute('data-search') || '';
+                    if (!s.includes(tk)) hien = false;
+                }
+                if (hien && loai !== 'ALL') {
+                    if (tr.getAttribute('data-loai') !== loai) hien = false;
+                }
+                if (hien && guest !== 'ALL') {
+                    if (tr.getAttribute('data-guest') !== guest) hien = false;
+                }
+                tr.style.display = hien ? '' : 'none';
+                if (!hien) {
+                    tr.classList.remove('active-row');
+                    const dId = tr.getAttribute('data-detail-id');
+                    if (dId) {
+                        const dRow = document.getElementById(dId);
+                        if (dRow) dRow.classList.remove('open');
+                    }
+                }
+            });
+        }
+    </script>
+}

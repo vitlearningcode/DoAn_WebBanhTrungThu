@@ -4,96 +4,234 @@
     string tuKhoa = ViewBag.TuKhoa as string ?? "";
     string locTrangThai = ViewBag.LocTrangThai as string ?? "ALL";
     string locLoaiDon = ViewBag.LocLoaiDon as string ?? "ALL";
+    string locPhuongThuc = ViewBag.LocPhuongThuc as string ?? "ALL";
+    string locThoiGian = ViewBag.LocThoiGian as string ?? "ALL";
 }
 
+<style>
+    .kv-page-heading {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 14px 0;
+    }
+
+    .kv-select, .kv-input {
+        width: 100%;
+        height: 34px;
+        border: 1px solid #D1D5DA;
+        border-radius: 6px;
+        padding: 0 10px;
+        font-size: 13px;
+        color: #1F2937;
+        background-color: #FFFFFF;
+        outline: none;
+    }
+
+    .kv-select:focus, .kv-input:focus {
+        border-color: #0070F4;
+        box-shadow: 0 0 0 2px rgba(0, 112, 244, 0.12);
+    }
+
+    .kv-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .kv-search-box {
+        position: relative;
+        width: 340px;
+        max-width: 100%;
+    }
+
+    .kv-search-box i {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6B7280;
+        font-size: 14px;
+    }
+
+    .kv-search-box input {
+        width: 100%;
+        height: 36px;
+        padding: 0 12px 0 34px;
+        border: 1px solid #D1D5DA;
+        border-radius: 6px;
+        background: #FFFFFF;
+        font-size: 13.5px;
+        color: #1F2937;
+        outline: none;
+    }
+
+    .kv-search-box input:focus {
+        border-color: #0070F4;
+    }
+
+    .kv-detail-tabs {
+        display: flex;
+        gap: 20px;
+        border-bottom: 1px solid #E5E7EB;
+        margin-bottom: 14px;
+    }
+
+    .kv-detail-tab {
+        padding: 8px 4px;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: #6B7280;
+        border: none;
+        border-bottom: 2px solid transparent;
+        background: transparent;
+        cursor: pointer;
+    }
+
+    .kv-detail-tab.active {
+        color: #0070F4;
+        border-bottom-color: #0070F4;
+    }
+
+    .kv-tag-mini {
+        display: inline-block;
+        padding: 1px 6px;
+        font-size: 11px;
+        font-weight: 500;
+        border-radius: 4px;
+        background: #F3F4F6;
+        color: #374151;
+        border: 1px solid #E5E7EB;
+    }
+
+    .kv-tag-mini.member {
+        background: #EBF5FF;
+        color: #0070F4;
+        border-color: #BFDBFE;
+    }
+
+    .kv-tag-mini.b2b {
+        background: #FEF3C7;
+        color: #B45309;
+        border-color: #FDE68A;
+    }
+</style>
+
 <div class="kv-layout-2col">
-    <!-- CỘT TRÁI (250PX): BỘ LỌC HÓA ĐƠN CHUẨN KIOTVIET -->
+    <!-- ========================================================================= -->
+    <!-- CỘT TRÁI (250PX): BỘ LỌC GIAO DỊCH / HÓA ĐƠN CHUẨN KIOTVIET               -->
+    <!-- ========================================================================= -->
     <aside class="kv-sidebar-filter">
-        <h1 style="font-size: 20px; font-weight: 700; color: #111827; margin: 0 0 14px 0;">Hóa đơn</h1>
+        <h1 class="kv-page-heading">Hóa đơn</h1>
 
-        <form method="get" action="/Admin/DonHangAdmin/Index">
-            <!-- 1. Trạng thái xử lý -->
+        <div id="boxLocHoaDonClient">
+            <!-- 1. Tìm kiếm nhanh ở cột trái -->
             <div class="kv-filter-box">
                 <div class="kv-filter-title">
-                    <span>Trạng thái</span>
+                    <span>Tìm kiếm</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+                <input type="text" id="fltDhTuKhoaLeft" value="@tuKhoa" class="kv-input"
+                       placeholder="Theo mã hóa đơn, SĐT, tên khách"
+                       oninput="document.getElementById('fltDhTuKhoaTop').value = this.value; locHoaDonClient();" />
+            </div>
+
+            <!-- 2. Thời gian -->
+            <div class="kv-filter-box">
+                <div class="kv-filter-title">
+                    <span>Thời gian</span>
                     <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
                 </div>
                 <div class="d-flex flex-column gap-1">
                     <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
-                        <input type="radio" name="locTrangThai" value="ALL" @(locTrangThai == "ALL" ? "checked" : "") onchange="this.form.submit()">
-                        <span>Tất cả</span>
+                        <input type="radio" name="fltDhThoiGian" value="ALL" @(locThoiGian == "ALL" ? "checked" : "") onchange="locHoaDonClient()" />
+                        <span>Toàn thời gian</span>
                     </label>
                     <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
-                        <input type="radio" name="locTrangThai" value="CHO_XAC_NHAN" @(locTrangThai == "CHO_XAC_NHAN" ? "checked" : "") onchange="this.form.submit()">
-                        <span>Chờ xác nhận</span>
+                        <input type="radio" name="fltDhThoiGian" value="HOM_NAY" @(locThoiGian == "HOM_NAY" ? "checked" : "") onchange="locHoaDonClient()" />
+                        <span>Hôm nay</span>
                     </label>
                     <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
-                        <input type="radio" name="locTrangThai" value="DANG_DONG_GOI_HOP" @(locTrangThai == "DANG_DONG_GOI_HOP" ? "checked" : "") onchange="this.form.submit()">
-                        <span>Đang đóng gói hộp</span>
-                    </label>
-                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
-                        <input type="radio" name="locTrangThai" value="DANG_GIAO" @(locTrangThai == "DANG_GIAO" ? "checked" : "") onchange="this.form.submit()">
-                        <span>Đang giao hàng</span>
-                    </label>
-                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
-                        <input type="radio" name="locTrangThai" value="HOAN_TAT" @(locTrangThai == "HOAN_TAT" ? "checked" : "") onchange="this.form.submit()">
-                        <span>Hoàn thành</span>
-                    </label>
-                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
-                        <input type="radio" name="locTrangThai" value="DA_HUY" @(locTrangThai == "DA_HUY" ? "checked" : "") onchange="this.form.submit()">
-                        <span>Đã hủy</span>
+                        <input type="radio" name="fltDhThoiGian" value="THANG_NAY" @(locThoiGian == "THANG_NAY" ? "checked" : "") onchange="locHoaDonClient()" />
+                        <span>Tháng này</span>
                     </label>
                 </div>
             </div>
 
-            <!-- 2. Phân loại kênh & khách -->
+            <!-- 3. Trạng thái giao hàng -->
             <div class="kv-filter-box">
                 <div class="kv-filter-title">
-                    <span>Kênh bán & Khách hàng</span>
+                    <span>Trạng thái giao hàng</span>
                     <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
                 </div>
-                <div class="d-flex flex-column gap-1">
-                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
-                        <input type="radio" name="locLoaiDon" value="ALL" @(locLoaiDon == "ALL" ? "checked" : "") onchange="this.form.submit()">
-                        <span>Tất cả</span>
-                    </label>
-                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
-                        <input type="radio" name="locLoaiDon" value="B2C" @(locLoaiDon == "B2C" ? "checked" : "") onchange="this.form.submit()">
-                        <span>Khách lẻ B2C</span>
-                    </label>
-                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
-                        <input type="radio" name="locLoaiDon" value="B2B" @(locLoaiDon == "B2B" ? "checked" : "") onchange="this.form.submit()">
-                        <span>Doanh nghiệp B2B</span>
-                    </label>
-                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
-                        <input type="radio" name="locLoaiDon" value="GUEST" @(locLoaiDon == "GUEST" ? "checked" : "") onchange="this.form.submit()">
-                        <span>Khách vãng lai (Guest)</span>
-                    </label>
-                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
-                        <input type="radio" name="locLoaiDon" value="MEMBER" @(locLoaiDon == "MEMBER" ? "checked" : "") onchange="this.form.submit()">
-                        <span>Thành viên (Member)</span>
-                    </label>
-                </div>
+                <select id="fltDhTrangThai" class="kv-select" onchange="locHoaDonClient()">
+                    <option value="ALL" selected="@(locTrangThai == "ALL")">Tất cả</option>
+                    <option value="CHO_XAC_NHAN" selected="@(locTrangThai == "CHO_XAC_NHAN")">Chờ xác nhận</option>
+                    <option value="DANG_DONG_GOI_HOP" selected="@(locTrangThai == "DANG_DONG_GOI_HOP")">Đang đóng gói hộp</option>
+                    <option value="DANG_GIAO" selected="@(locTrangThai == "DANG_GIAO")">Đang giao</option>
+                    <option value="HOAN_TAT" selected="@(locTrangThai == "HOAN_TAT")">Hoàn tất</option>
+                    <option value="DA_HUY" selected="@(locTrangThai == "DA_HUY")">Đã hủy</option>
+                </select>
             </div>
-        </form>
+
+            <!-- 4. Loại đơn & Kênh bán -->
+            <div class="kv-filter-box">
+                <div class="kv-filter-title">
+                    <span>Loại đơn & Kênh bán</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+                <select id="fltDhLoaiDon" class="kv-select" onchange="locHoaDonClient()">
+                    <option value="ALL" selected="@(locLoaiDon == "ALL")">Tất cả</option>
+                    <option value="B2C" selected="@(locLoaiDon == "B2C")">Đơn lẻ B2C</option>
+                    <option value="B2B" selected="@(locLoaiDon == "B2B")">Đơn sỉ Doanh nghiệp B2B</option>
+                    <option value="GUEST" selected="@(locLoaiDon == "GUEST")">Khách vãng lai (Guest)</option>
+                    <option value="MEMBER" selected="@(locLoaiDon == "MEMBER")">Khách thành viên (Member)</option>
+                </select>
+            </div>
+
+            <!-- 5. Phương thức thanh toán -->
+            <div class="kv-filter-box">
+                <div class="kv-filter-title">
+                    <span>Phương thức thanh toán</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+                <select id="fltDhPhuongThuc" class="kv-select" onchange="locHoaDonClient()">
+                    <option value="ALL" selected="@(locPhuongThuc == "ALL")">Tất cả</option>
+                    <option value="COD" selected="@(locPhuongThuc == "COD")">COD (Tiền mặt)</option>
+                    <option value="VIETQR" selected="@(locPhuongThuc == "VIETQR")">VIETQR (Chuyển khoản)</option>
+                    <option value="VNPAY" selected="@(locPhuongThuc == "VNPAY")">VNPAY</option>
+                    <option value="MOMO" selected="@(locPhuongThuc == "MOMO")">MOMO</option>
+                </select>
+            </div>
+        </div>
     </aside>
 
-    <!-- CỘT PHẢI: THANH CÔNG CỤ & BẢNG HÓA ĐƠN -->
+    <!-- ========================================================================= -->
+    <!-- CỘT PHẢI: THANH CÔNG CỤ & BẢNG HÓA ĐƠN MASTER-DETAIL 2 TAB                -->
+    <!-- ========================================================================= -->
     <div class="kv-main-table-area">
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
-            <form method="get" action="/Admin/DonHangAdmin/Index" class="d-flex gap-2" style="width: 340px; max-width: 100%;">
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" name="tuKhoa" value="@tuKhoa" class="form-control" placeholder="Theo mã hóa đơn, SĐT, tên khách..." />
-                </div>
-            </form>
+        <div class="kv-toolbar">
+            <!-- Ô tìm kiếm nhanh phía trên -->
+            <div class="kv-search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="fltDhTuKhoaTop" value="@tuKhoa"
+                       placeholder="Theo mã hóa đơn, SĐT, tên khách"
+                       oninput="document.getElementById('fltDhTuKhoaLeft').value = this.value; locHoaDonClient();" />
+            </div>
 
+            <!-- Cụm nút bên phải -->
             <div class="d-flex align-items-center gap-2">
                 <a href="/" target="_blank" class="btn-kv-blue text-decoration-none">
-                    <i class="bi bi-plus-lg"></i> Tạo hóa đơn mới
+                    <i class="bi bi-plus-lg"></i> Tạo mới
                 </a>
                 <button type="button" class="btn-kv-outline" onclick="window.print();">
                     <i class="bi bi-download"></i> Xuất file
+                </button>
+                <button type="button" class="btn-kv-outline px-2" title="Ẩn/hiện cột">
+                    <i class="bi bi-list"></i>
                 </button>
             </div>
         </div>
@@ -103,34 +241,76 @@
                 <table class="kv-table">
                     <thead>
                         <tr>
+                            <th style="width: 34px;" class="text-center">
+                                <input type="checkbox" class="form-check-input" onclick="event.stopPropagation(); document.querySelectorAll('.chk-row-dh').forEach(c => c.checked = this.checked)" />
+                            </th>
+                            <th style="width: 32px;" class="text-center"><i class="bi bi-star text-muted"></i></th>
                             <th>Mã hóa đơn</th>
                             <th>Thời gian</th>
                             <th>Khách hàng</th>
-                            <th>Phân loại</th>
+                            <th>Kênh / Loại</th>
                             <th class="text-end">Tổng tiền hàng</th>
                             <th class="text-end">Giảm giá</th>
                             <th class="text-end">Khách cần trả</th>
                             <th>Trạng thái</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tbodyDanhSachHoaDon">
                         @for (int i = 0; i < Model.Count; i++)
                         {
                             var dh = Model[i];
-                            decimal tongGiam = dh.TienChietKhauB2b + dh.TienGiamVoucher;
+                            decimal tongGiam = Math.Round(dh.TienChietKhauB2b + dh.TienGiamVoucher, 0);
                             bool moMacDinh = (i == 0);
+                            string searchKey = $"{dh.MaTraCuuDh} {dh.HoTenNguoiMua} {dh.SdtnguoiMua} {dh.TenCongTy}".ToLowerInvariant();
+                            bool laHomNay = dh.NgayDat.Date == DateTime.Today;
+                            bool laThangNay = dh.NgayDat.Year == DateTime.Now.Year && dh.NgayDat.Month == DateTime.Now.Month;
 
-                            <tr class="kv-master-row @(moMacDinh ? "active-row" : "")" onclick="toggleKvDetailRow('detail-dh-@dh.MaDh', this)">
-                                <td class="fw-medium text-primary">@dh.MaTraCuuDh</td>
+                            <!-- DÒNG MASTER HÓA ĐƠN -->
+                            <tr class="kv-master-row @(moMacDinh ? "active-row" : "")"
+                                data-detail-id="detail-dh-@dh.MaDh"
+                                data-search="@searchKey"
+                                data-trangthai="@dh.TrangThaiDh"
+                                data-b2b="@(dh.LaDonDoanhNghiepB2b ? "B2B" : "B2C")"
+                                data-khach="@(dh.MaNd.HasValue ? "MEMBER" : "GUEST")"
+                                data-phuongthuc="@dh.PhuongThucTt"
+                                data-homnay="@(laHomNay ? "1" : "0")"
+                                data-thangnay="@(laThangNay ? "1" : "0")"
+                                onclick="toggleKvDetailRow('detail-dh-@dh.MaDh', this)">
+                                <td class="text-center" onclick="event.stopPropagation();">
+                                    <input type="checkbox" class="form-check-input chk-row-dh" />
+                                </td>
+                                <td class="text-center" onclick="event.stopPropagation(); this.querySelector('i').classList.toggle('text-warning'); this.querySelector('i').classList.toggle('bi-star'); this.querySelector('i').classList.toggle('bi-star-fill');">
+                                    <i class="bi @(dh.LaDonDoanhNghiepB2b ? "bi-star-fill text-warning" : "bi-star text-muted")"></i>
+                                </td>
+                                <td class="fw-medium" style="color: #0070F4;">@dh.MaTraCuuDh</td>
                                 <td>@dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td>
-                                    <div class="fw-medium text-dark">@dh.HoTenNguoiMua</div>
-                                    <small class="text-muted">@dh.SdtnguoiMua • @(dh.MaNd.HasValue ? $"Member #{dh.MaNd}" : "Guest KVL")</small>
+                                    <div class="d-flex align-items-center gap-1 flex-wrap">
+                                        <span class="fw-medium text-dark">@dh.HoTenNguoiMua</span>
+                                        @if (dh.MaNd.HasValue)
+                                        {
+                                            <span class="kv-tag-mini member">Member</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="kv-tag-mini">Guest</span>
+                                        }
+                                    </div>
+                                    <small class="text-muted">@dh.SdtnguoiMua</small>
                                 </td>
-                                <td>@(dh.LaDonDoanhNghiepB2b ? "Doanh nghiệp B2B" : "Bán lẻ B2C")</td>
+                                <td>
+                                    @if (dh.LaDonDoanhNghiepB2b)
+                                    {
+                                        <span class="kv-tag-mini b2b">B2B</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="kv-tag-mini">B2C</span>
+                                    }
+                                </td>
                                 <td class="text-end">@dh.TongTienHang.ToString("N0")</td>
                                 <td class="text-end text-muted">@(tongGiam > 0 ? tongGiam.ToString("N0") : "0")</td>
-                                <td class="text-end fw-semibold text-primary">@dh.TongThanhToanCuoi.ToString("N0")</td>
+                                <td class="text-end fw-semibold" style="color: #0070F4;">@dh.TongThanhToanCuoi.ToString("N0")</td>
                                 <td>
                                     <span class="fw-medium @(dh.TrangThaiDh == "HOAN_TAT" ? "text-success" : dh.TrangThaiDh == "DA_HUY" ? "text-danger" : "text-primary")">
                                         @dh.TrangThaiDh
@@ -138,103 +318,149 @@
                                 </td>
                             </tr>
 
-                            <!-- DÒNG CHI TIẾT XỔ RỘNG KIOTVIET -->
-                            <tr id="detail-dh-@dh.MaDh" class="kv-detail-row @(moMacDinh ? "open" : "")">
-                                <td colspan="8" class="p-0">
+                            <!-- DÒNG CHI TIẾT XỔ RỘNG KIOTVIET (2 TAB) -->
+                            <tr id="detail-dh-@dh.MaDh" class="kv-detail-row @(moMacDinh ? "open" : "")" onclick="event.stopPropagation();">
+                                <td colspan="10" class="p-0">
                                     <div class="kv-detail-box">
-                                        <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-2 mb-3">
-                                            <div>
-                                                <strong class="text-primary">Chi tiết hóa đơn #@dh.MaTraCuuDh</strong>
-                                                <span class="text-muted ms-2">• Thanh toán: <strong>@dh.PhuongThucTt (@dh.TrangThaiTt)</strong></span>
-                                                @if (dh.LaDonDoanhNghiepB2b)
-                                                {
-                                                    <span class="text-muted ms-2">• Công ty: <strong>@dh.TenCongTy (MST: @dh.MaSoThue)</strong></span>
-                                                }
-                                            </div>
-                                            <a href="/Admin/DonHangAdmin/ChiTiet/@dh.MaDh" class="text-decoration-none small" style="color: #0070F4;">
-                                                Mở trang chi tiết →
-                                            </a>
+                                        <!-- Thanh 2 Tab chuẩn KiotViet -->
+                                        <div class="kv-detail-tabs">
+                                            <button type="button" class="kv-detail-tab active"
+                                                    id="btnTabDh1_@dh.MaDh"
+                                                    onclick="chuyenTabChiTietDon(@dh.MaDh, 1)">
+                                                Thông tin & Sơ đồ đóng gói hộp
+                                            </button>
+                                            <button type="button" class="kv-detail-tab"
+                                                    id="btnTabDh2_@dh.MaDh"
+                                                    onclick="chuyenTabChiTietDon(@dh.MaDh, 2)">
+                                                Lịch sử giao hàng đa điểm & Thiệp QR 3D (@dh.DotGiaoHangDaDiems.Count)
+                                            </button>
                                         </div>
 
-                                        <!-- BẢNG HÀNG HÓA TRONG HÓA ĐƠN -->
-                                        <div class="table-responsive mb-3">
-                                            <table class="table table-sm table-bordered align-middle mb-0" style="font-size: 13px;">
-                                                <thead class="table-light">
-                                                    <tr>
-                                                        <th>Tên hàng hóa / Cấu hình hộp tự chọn</th>
-                                                        <th class="text-center" style="width: 90px;">Số lượng</th>
-                                                        <th class="text-end" style="width: 120px;">Đơn giá</th>
-                                                        <th class="text-end" style="width: 130px;">Thành tiền</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    @foreach (var ct in dh.ChiTietDonHangs)
-                                                    {
-                                                        <tr>
-                                                            <td>
-                                                                <strong class="text-dark d-block">@ct.TenSanPhamLuuCung</strong>
-                                                                @if (!string.IsNullOrWhiteSpace(ct.CauHinhHopJson))
-                                                                {
-                                                                    try
-                                                                    {
-                                                                        var mangO = Newtonsoft.Json.Linq.JArray.Parse(ct.CauHinhHopJson);
-                                                                        <div class="d-flex flex-wrap gap-1 mt-1">
-                                                                            @foreach (var o in mangO)
-                                                                            {
-                                                                                int viTri = o.Value<int?>("ViTriOTrongHop") ?? 1;
-                                                                                string tenBanh = o.Value<string>("TenBanh") ?? "Bánh Trung Thu";
-                                                                                decimal donGia = o.Value<decimal?>("DonGia") ?? 0m;
-                                                                                <span class="badge bg-light text-dark border fw-normal px-2 py-1">
-                                                                                    Ô @viTri: @tenBanh (@donGia.ToString("N0"))
-                                                                                </span>
-                                                                            }
-                                                                        </div>
-                                                                    }
-                                                                    catch
-                                                                    {
-                                                                        <small class="text-muted">Hộp quà tự chọn</small>
-                                                                    }
-                                                                }
-                                                            </td>
-                                                            <td class="text-center">@ct.SoLuong</td>
-                                                            <td class="text-end">@ct.DonGiaLucMua.ToString("N0")</td>
-                                                            <td class="text-end fw-semibold">@ct.ThanhTien.ToString("N0")</td>
-                                                        </tr>
-                                                    }
-                                                </tbody>
-                                            </table>
-                                        </div>
-
-                                        <!-- ĐỢT GIAO HÀNG ĐA ĐIỂM & THIỆP QR -->
-                                        <div class="row g-2 mb-3">
-                                            @foreach (var dot in dh.DotGiaoHangDaDiems)
-                                            {
-                                                <div class="col-md-6">
-                                                    <div class="p-2 rounded border bg-light d-flex justify-content-between align-items-center" style="font-size: 12.5px;">
-                                                        <div>
-                                                            <strong class="text-dark">Người nhận: @dot.TenNguoiNhan (@dot.SdtnguoiNhan)</strong>
-                                                            <div class="text-muted">@dot.DiaChiGiaoChiTiet</div>
-                                                            <div class="text-muted">Ngày giao: @dot.NgayHenGiao.ToString("dd/MM/yyyy") (@dot.KhungGioGiao)</div>
-                                                        </div>
-                                                        @if (dot.CoKemThiepQr && !string.IsNullOrEmpty(dot.MaTokenThiepQr))
-                                                        {
-                                                            <a href="/Thiep3D/Xem/@dot.MaTokenThiepQr" target="_blank" class="btn-kv-outline text-decoration-none py-1 px-2">
-                                                                Xem Thiệp 3D (@dot.SoLanMoThiep)
-                                                            </a>
-                                                        }
+                                        <!-- TAB 1: THÔNG TIN & SƠ ĐỒ ĐÓNG GÓI HỘP -->
+                                        <div id="paneTabDh1_@dh.MaDh">
+                                            <div class="row g-3 mb-3" style="font-size: 13px;">
+                                                <div class="col-md-4">
+                                                    <div class="py-1 border-bottom d-flex justify-content-between">
+                                                        <span class="text-muted">Mã hóa đơn:</span>
+                                                        <strong class="text-primary">@dh.MaTraCuuDh</strong>
+                                                    </div>
+                                                    <div class="py-1 border-bottom d-flex justify-content-between">
+                                                        <span class="text-muted">Thời gian đặt:</span>
+                                                        <strong>@dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</strong>
                                                     </div>
                                                 </div>
-                                            }
+                                                <div class="col-md-4">
+                                                    <div class="py-1 border-bottom d-flex justify-content-between">
+                                                        <span class="text-muted">Khách hàng:</span>
+                                                        <strong>@dh.HoTenNguoiMua (@dh.SdtnguoiMua)</strong>
+                                                    </div>
+                                                    <div class="py-1 border-bottom d-flex justify-content-between">
+                                                        <span class="text-muted">Phân loại:</span>
+                                                        <strong>@(dh.LaDonDoanhNghiepB2b ? $"Đơn sỉ B2B - {dh.TenCongTy} (MST: {dh.MaSoThue})" : "Khách lẻ B2C")</strong>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="py-1 border-bottom d-flex justify-content-between">
+                                                        <span class="text-muted">Phương thức thanh toán:</span>
+                                                        <strong>@dh.PhuongThucTt (@dh.TrangThaiTt)</strong>
+                                                    </div>
+                                                    <div class="py-1 border-bottom d-flex justify-content-between">
+                                                        <span class="text-muted">Khách cần trả:</span>
+                                                        <strong class="text-primary">@dh.TongThanhToanCuoi.ToString("N0")</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Bảng mặt hàng & sơ đồ từng ô bánh -->
+                                            <div class="table-responsive mb-2">
+                                                <table class="table table-sm table-bordered align-middle mb-0" style="font-size: 13px;">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Hàng hóa / Sơ đồ vị trí từng ô bánh trong hộp</th>
+                                                            <th class="text-center" style="width: 90px;">Số lượng</th>
+                                                            <th class="text-end" style="width: 120px;">Đơn giá</th>
+                                                            <th class="text-end" style="width: 130px;">Thành tiền</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var ct in dh.ChiTietDonHangs)
+                                                        {
+                                                            <tr>
+                                                                <td>
+                                                                    <strong class="text-dark d-block">@ct.TenSanPhamLuuCung</strong>
+                                                                    @if (!string.IsNullOrWhiteSpace(ct.CauHinhHopJson))
+                                                                    {
+                                                                        try
+                                                                        {
+                                                                            var mangO = Newtonsoft.Json.Linq.JArray.Parse(ct.CauHinhHopJson);
+                                                                            <div class="d-flex flex-wrap gap-1 mt-1">
+                                                                                @foreach (var o in mangO)
+                                                                                {
+                                                                                    int viTri = o.Value<int?>("ViTriOTrongHop") ?? 1;
+                                                                                    string tenBanh = o.Value<string>("TenBanh") ?? "Bánh Trung Thu";
+                                                                                    decimal donGia = o.Value<decimal?>("DonGia") ?? 0m;
+                                                                                    <span class="badge bg-light text-dark border fw-medium px-2 py-1">
+                                                                                        [Ô @viTri: @tenBanh - @donGia.ToString("N0")]
+                                                                                    </span>
+                                                                                }
+                                                                            </div>
+                                                                        }
+                                                                        catch
+                                                                        {
+                                                                            <small class="text-muted">Hộp quà tự chọn</small>
+                                                                        }
+                                                                    }
+                                                                </td>
+                                                                <td class="text-center fw-medium">@ct.SoLuong.ToString("N0")</td>
+                                                                <td class="text-end">@ct.DonGiaLucMua.ToString("N0")</td>
+                                                                <td class="text-end fw-semibold text-primary">@ct.ThanhTien.ToString("N0")</td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
                                         </div>
 
-                                        <!-- NÚT TÁC VỤ -->
-                                        <div class="d-flex flex-wrap justify-content-between align-items-center pt-2 border-top gap-2">
+                                        <!-- TAB 2: LỊCH SỬ GIAO HÀNG ĐA ĐIỂM & THIỆP QR 3D -->
+                                        <div id="paneTabDh2_@dh.MaDh" style="display: none;">
+                                            <div class="row g-2 mb-2">
+                                                @foreach (var dot in dh.DotGiaoHangDaDiems)
+                                                {
+                                                    <div class="col-md-6">
+                                                        <div class="p-3 rounded border bg-light" style="font-size: 13px;">
+                                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                                <strong class="text-dark">📍 Người nhận: @dot.TenNguoiNhan (@dot.SdtnguoiNhan)</strong>
+                                                                <span class="kv-tag-mini member">@dot.TrangThaiGiao</span>
+                                                            </div>
+                                                            <div class="text-muted mb-1">Địa chỉ: @dot.DiaChiGiaoChiTiet</div>
+                                                            <div class="text-muted mb-1">Hẹn giao: @dot.NgayHenGiao.ToString("dd/MM/yyyy") (@dot.KhungGioGiao)</div>
+
+                                                            @if (dot.CoKemThiepQr && !string.IsNullOrEmpty(dot.MaTokenThiepQr))
+                                                            {
+                                                                <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
+                                                                    <div>
+                                                                        <div class="small text-dark">💌 Lời chúc: <em>"@(dot.LoiChucThiep ?? "Chúc mùa trăng tròn viên mãn")"</em></div>
+                                                                        <div class="small text-primary">Token QR: <strong>@dot.MaTokenThiepQr</strong> • Đã mở xem: <strong>@dot.SoLanMoThiep.ToString("N0") lần</strong></div>
+                                                                    </div>
+                                                                    <a href="/Thiep3D/Xem/@dot.MaTokenThiepQr" target="_blank" class="btn-kv-outline text-decoration-none py-1 px-2 text-nowrap ms-2">
+                                                                        🌕 Xem thử Thiệp 3D
+                                                                    </a>
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <!-- FOOTER KHUNG MỞ RỘNG: CẬP NHẬT TRẠNG THÁI & IN HÓA ĐƠN -->
+                                        <div class="d-flex flex-wrap justify-content-between align-items-center pt-3 mt-2 border-top gap-2">
                                             <div class="d-flex flex-wrap gap-2">
                                                 <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="CapNhatTrangThai" method="post" class="d-inline">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="maDh" value="@dh.MaDh" />
                                                     <input type="hidden" name="trangThaiDh" value="DANG_DONG_GOI_HOP" />
-                                                    <button type="submit" class="btn-kv-outline">Đóng gói hộp</button>
+                                                    <button type="submit" class="btn-kv-outline">Xác nhận đóng gói</button>
                                                 </form>
 
                                                 <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="CapNhatTrangThai" method="post" class="d-inline">
@@ -249,21 +475,24 @@
                                                     <input type="hidden" name="maDh" value="@dh.MaDh" />
                                                     <input type="hidden" name="trangThaiDh" value="HOAN_TAT" />
                                                     <input type="hidden" name="trangThaiTt" value="DA_TT" />
-                                                    <button type="submit" class="btn-kv-green">Hoàn thành</button>
+                                                    <button type="submit" class="btn-kv-green">Hoàn tất</button>
                                                 </form>
 
                                                 <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="CapNhatTrangThai" method="post" class="d-inline"
-                                                      onsubmit="return confirm('Xác nhận hủy đơn hàng #@dh.MaTraCuuDh?');">
+                                                      onsubmit="return confirm('Xác nhận hủy bỏ hóa đơn #@dh.MaTraCuuDh?');">
                                                     @Html.AntiForgeryToken()
                                                     <input type="hidden" name="maDh" value="@dh.MaDh" />
                                                     <input type="hidden" name="trangThaiDh" value="DA_HUY" />
-                                                    <button type="submit" class="btn btn-outline-danger btn-sm">Hủy bỏ</button>
+                                                    <button type="submit" class="btn btn-outline-danger btn-sm px-3" style="font-size: 13px;">Hủy bỏ</button>
                                                 </form>
                                             </div>
 
-                                            <a href="/Admin/DonHangAdmin/InHoaDon/@dh.MaDh" target="_blank" class="btn-kv-blue text-decoration-none">
-                                                <i class="bi bi-printer me-1"></i> In hóa đơn
-                                            </a>
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn-kv-blue"
+                                                        onclick="window.open('/Admin/DonHangAdmin/InHoaDon/@dh.MaDh', 'InHoaDonKiot', 'width=920,height=760');">
+                                                    🖨️ In hóa đơn
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
@@ -275,3 +504,68 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function chuyenTabChiTietDon(maDh, tabIdx) {
+            const p1 = document.getElementById('paneTabDh1_' + maDh);
+            const p2 = document.getElementById('paneTabDh2_' + maDh);
+            const b1 = document.getElementById('btnTabDh1_' + maDh);
+            const b2 = document.getElementById('btnTabDh2_' + maDh);
+            if (!p1 || !p2) return;
+
+            p1.style.display = (tabIdx === 1) ? 'block' : 'none';
+            p2.style.display = (tabIdx === 2) ? 'block' : 'none';
+            if (b1) b1.classList.toggle('active', tabIdx === 1);
+            if (b2) b2.classList.toggle('active', tabIdx === 2);
+        }
+
+        function locHoaDonClient() {
+            const tuKhoa = (document.getElementById('fltDhTuKhoaTop')?.value || '').trim().toLowerCase();
+            const thoiGian = document.querySelector('input[name="fltDhThoiGian"]:checked')?.value || 'ALL';
+            const trangThai = document.getElementById('fltDhTrangThai')?.value || 'ALL';
+            const loaiDon = document.getElementById('fltDhLoaiDon')?.value || 'ALL';
+            const phuongThuc = document.getElementById('fltDhPhuongThuc')?.value || 'ALL';
+
+            const rows = document.querySelectorAll('#tbodyDanhSachHoaDon tr.kv-master-row');
+            rows.forEach(tr => {
+                let hien = true;
+
+                if (tuKhoa !== '') {
+                    const s = tr.getAttribute('data-search') || '';
+                    if (!s.includes(tuKhoa)) hien = false;
+                }
+
+                if (hien && thoiGian !== 'ALL') {
+                    if (thoiGian === 'HOM_NAY' && tr.getAttribute('data-homnay') !== '1') hien = false;
+                    else if (thoiGian === 'THANG_NAY' && tr.getAttribute('data-thangnay') !== '1') hien = false;
+                }
+
+                if (hien && trangThai !== 'ALL') {
+                    if (tr.getAttribute('data-trangthai') !== trangThai) hien = false;
+                }
+
+                if (hien && loaiDon !== 'ALL') {
+                    if (loaiDon === 'B2B' && tr.getAttribute('data-b2b') !== 'B2B') hien = false;
+                    else if (loaiDon === 'B2C' && tr.getAttribute('data-b2b') !== 'B2C') hien = false;
+                    else if (loaiDon === 'GUEST' && tr.getAttribute('data-khach') !== 'GUEST') hien = false;
+                    else if (loaiDon === 'MEMBER' && tr.getAttribute('data-khach') !== 'MEMBER') hien = false;
+                }
+
+                if (hien && phuongThuc !== 'ALL') {
+                    if (tr.getAttribute('data-phuongthuc') !== phuongThuc) hien = false;
+                }
+
+                tr.style.display = hien ? '' : 'none';
+                if (!hien) {
+                    tr.classList.remove('active-row');
+                    const detailId = tr.getAttribute('data-detail-id');
+                    if (detailId) {
+                        const dRow = document.getElementById(detailId);
+                        if (dRow) dRow.classList.remove('open');
+                    }
+                }
+            });
+        }
+    </script>
+}

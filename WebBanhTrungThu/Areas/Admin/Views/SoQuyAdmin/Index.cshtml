@@ -1,134 +1,236 @@
 @model WebBanhTrungThu.ViewModels.SoQuyAdminViewModel
 @{
-    ViewData["Title"] = "Sổ Quỹ Tiền Mặt, Ngân Hàng & Lợi Nhuận Gộp";
-    string locPt = ViewBag.LocPhuongThuc as string ?? "ALL";
+    ViewData["Title"] = "Sổ quỹ - KiotViet";
 }
 
-<!-- HÀNG TRÊN: THANH CHỈ SỐ DÒNG TIỀN KIOTVIET SỔ QUỸ -->
+<style>
+    .kv-page-heading {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 14px 0;
+    }
+
+    .kv-select, .kv-input {
+        width: 100%;
+        height: 34px;
+        border: 1px solid #D1D5DA;
+        border-radius: 6px;
+        padding: 0 10px;
+        font-size: 13px;
+        color: #1F2937;
+        background-color: #FFFFFF;
+        outline: none;
+    }
+
+    .kv-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .kv-search-box {
+        position: relative;
+        width: 340px;
+        max-width: 100%;
+    }
+
+    .kv-search-box i {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6B7280;
+        font-size: 14px;
+    }
+
+    .kv-search-box input {
+        width: 100%;
+        height: 36px;
+        padding: 0 12px 0 34px;
+        border: 1px solid #D1D5DA;
+        border-radius: 6px;
+        background: #FFFFFF;
+        font-size: 13.5px;
+        color: #1F2937;
+        outline: none;
+    }
+</style>
+
+<!-- THANH 4 CHỈ SỐ ĐẦU TRANG SỔ QUỸ CHUẨN KIOTVIET -->
 <div class="kv-card p-3 mb-3">
-    <div class="row g-3 text-center">
-        <div class="col-md-3 border-end">
-            <div class="text-muted small fw-semibold text-uppercase">Quỹ đầu kỳ</div>
-            <div class="fs-4 fw-bold text-dark">@Model.QuyDauKy.ToString("N0") đ</div>
-            <small class="text-muted">Vốn lưu động đầu mùa vụ</small>
+    <div class="row g-3 text-end align-items-center">
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Quỹ đầu kỳ</div>
+            <div class="fs-5 fw-bold text-dark">@Model.QuyDauKy.ToString("N0")</div>
         </div>
-        <div class="col-md-3 border-end">
-            <div class="text-muted small fw-semibold text-uppercase">Tổng thu bán hàng (+)</div>
-            <div class="fs-4 fw-bold text-primary">+@Model.TongThuTrongKy.ToString("N0") đ</div>
-            <small class="text-success">COD • VietQR • VNPAY • MoMo</small>
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Tổng thu</div>
+            <div class="fs-5 fw-bold" style="color: #0070F4;">+@Model.TongThuTrongKy.ToString("N0")</div>
         </div>
-        <div class="col-md-3 border-end">
-            <div class="text-muted small fw-semibold text-uppercase">Tổng giá vốn & Chi nguyên liệu (-)</div>
-            <div class="fs-4 fw-bold text-danger">-@Model.TongGiaVonUocTinh.ToString("N0") đ</div>
-            <small class="text-muted">Chi phí nhân bánh & vỏ hộp</small>
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Tổng chi (Giá vốn nhập hàng)</div>
+            <div class="fs-5 fw-bold text-danger">-@Model.TongGiaVonUocTinh.ToString("N0")</div>
         </div>
-        <div class="col-md-3">
-            <div class="text-muted small fw-semibold text-uppercase">Lợi nhuận gộp / Tồn quỹ</div>
-            <div class="fs-4 fw-bold text-success">@Model.LoiNhuanGop.ToString("N0") đ</div>
-            <small class="text-primary fw-semibold">Tồn quỹ cuối: @Model.TonQuyCuoiKy.ToString("N0") đ</small>
+        <div class="col-md-3 pe-3">
+            <div class="text-muted small">Tồn quỹ / Lợi nhuận gộp</div>
+            <div class="fs-5 fw-bold text-success">@Model.LoiNhuanGop.ToString("N0")</div>
+            <small class="text-muted">Tồn quỹ cuối: @Model.TonQuyCuoiKy.ToString("N0")</small>
         </div>
     </div>
 </div>
 
 <div class="kv-layout-2col">
-    <!-- CỘT TRÁI (260PX): LỌC THEO QUỸ TIỀN MẶT / NGÂN HÀNG / VÍ -->
+    <!-- ========================================================================= -->
+    <!-- CỘT TRÁI (250PX): BỘ LỌC SỔ QUỸ CHUẨN KIOTVIET                            -->
+    <!-- ========================================================================= -->
     <aside class="kv-sidebar-filter">
-        <form method="get" action="/Admin/SoQuyAdmin/Index">
-            <div class="kv-filter-box mb-3">
+        <h1 class="kv-page-heading">Sổ quỹ</h1>
+
+        <div>
+            <!-- 1. Loại chứng từ -->
+            <div class="kv-filter-box">
                 <div class="kv-filter-title">
-                    <span>💳 Loại quỹ & Phương thức</span>
+                    <span>Loại chứng từ</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+                <div class="d-flex flex-column gap-1">
+                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                        <input type="radio" name="fltSqLoaiCt" value="ALL" checked onchange="locSoQuyClient()" />
+                        <span>Tất cả chứng từ</span>
+                    </label>
+                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                        <input type="radio" name="fltSqLoaiCt" value="PHIEU_THU" onchange="locSoQuyClient()" />
+                        <span>Phiếu thu đơn hàng</span>
+                    </label>
+                    <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                        <input type="radio" name="fltSqLoaiCt" value="GIA_VON" onchange="locSoQuyClient()" />
+                        <span>Giá vốn lô bánh</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 2. Phương thức thanh toán -->
+            <div class="kv-filter-box">
+                <div class="kv-filter-title">
+                    <span>Phương thức</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
                 </div>
                 <div class="d-flex flex-column gap-2">
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="locPhuongThuc" value="ALL" id="pt_all"
-                               @(locPt == "ALL" ? "checked" : "") onchange="this.form.submit()">
-                        <label class="form-check-label d-flex justify-content-between" for="pt_all">
-                            <span>Tất cả quỹ</span>
-                            <strong>@Model.TongThuTrongKy.ToString("N0")</strong>
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="locPhuongThuc" value="COD" id="pt_cod"
-                               @(locPt == "COD" ? "checked" : "") onchange="this.form.submit()">
-                        <label class="form-check-label d-flex justify-content-between" for="pt_cod">
-                            <span>💵 Tiền mặt (COD)</span>
-                            <strong class="text-success">@Model.ThuTienMatCod.ToString("N0")</strong>
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="locPhuongThuc" value="VIETQR" id="pt_vqr"
-                               @(locPt == "VIETQR" ? "checked" : "") onchange="this.form.submit()">
-                        <label class="form-check-label d-flex justify-content-between" for="pt_vqr">
-                            <span>🏦 VietQR 24/7</span>
-                            <strong class="text-primary">@Model.ThuChuyenKhoanVietQr.ToString("N0")</strong>
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="locPhuongThuc" value="MOMO" id="pt_momo"
-                               @(locPt == "MOMO" ? "checked" : "") onchange="this.form.submit()">
-                        <label class="form-check-label d-flex justify-content-between" for="pt_momo">
-                            <span>👛 Ví MoMo</span>
-                            <strong class="text-danger">@Model.ThuViMoMo.ToString("N0")</strong>
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="locPhuongThuc" value="VNPAY" id="pt_vnp"
-                               @(locPt == "VNPAY" ? "checked" : "") onchange="this.form.submit()">
-                        <label class="form-check-label d-flex justify-content-between" for="pt_vnp">
-                            <span>💳 Cổng VNPAY</span>
-                            <strong class="text-info">@Model.ThuVnPay.ToString("N0")</strong>
-                        </label>
-                    </div>
+                    <label class="d-flex align-items-center justify-content-between" style="cursor:pointer;">
+                        <span class="d-flex align-items-center gap-2">
+                            <input type="radio" name="fltSqPhuongThuc" value="ALL" checked onchange="locSoQuyClient()" />
+                            <span>Tất cả</span>
+                        </span>
+                        <span class="text-muted small">@Model.TongThuTrongKy.ToString("N0")</span>
+                    </label>
+                    <label class="d-flex align-items-center justify-content-between" style="cursor:pointer;">
+                        <span class="d-flex align-items-center gap-2">
+                            <input type="radio" name="fltSqPhuongThuc" value="COD" onchange="locSoQuyClient()" />
+                            <span>Tiền mặt COD</span>
+                        </span>
+                        <span class="text-muted small">@Model.ThuTienMatCod.ToString("N0")</span>
+                    </label>
+                    <label class="d-flex align-items-center justify-content-between" style="cursor:pointer;">
+                        <span class="d-flex align-items-center gap-2">
+                            <input type="radio" name="fltSqPhuongThuc" value="VIETQR" onchange="locSoQuyClient()" />
+                            <span>Chuyển khoản VietQR</span>
+                        </span>
+                        <span class="text-muted small">@Model.ThuChuyenKhoanVietQr.ToString("N0")</span>
+                    </label>
+                    <label class="d-flex align-items-center justify-content-between" style="cursor:pointer;">
+                        <span class="d-flex align-items-center gap-2">
+                            <input type="radio" name="fltSqPhuongThuc" value="VI_DIEN_TU" onchange="locSoQuyClient()" />
+                            <span>Ví MoMo / VNPay</span>
+                        </span>
+                        <span class="text-muted small">@((Model.ThuViMoMo + Model.ThuVnPay).ToString("N0"))</span>
+                    </label>
                 </div>
             </div>
-        </form>
+        </div>
     </aside>
 
-    <!-- CỘT PHẢI: BẢNG PHIẾU THU SỔ QUỸ CHUẨN KIOTVIET -->
+    <!-- ========================================================================= -->
+    <!-- CỘT PHẢI: BẢNG PHIẾU THU / CHI SỔ QUỸ CHUẨN KIOTVIET                      -->
+    <!-- ========================================================================= -->
     <div class="kv-main-table-area">
-        <div class="kv-card overflow-hidden">
-            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-                <h6 class="fw-bold text-uppercase mb-0 text-dark">
-                    <i class="bi bi-journal-check text-primary me-2"></i>DANH SÁCH PHIẾU THU BÁN HÀNG (@Model.DanhSachPhieuThuDonHang.Count PHIẾU)
-                </h6>
-                <span class="badge bg-primary">Sổ quỹ tự động đối soát</span>
+        <div class="kv-toolbar">
+            <div class="kv-search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="txtTimSoQuy" placeholder="Theo mã phiếu, mã hóa đơn, người nộp"
+                       oninput="locSoQuyClient()" />
             </div>
 
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn-kv-outline" onclick="window.print();">
+                    <i class="bi bi-download"></i> Xuất file
+                </button>
+            </div>
+        </div>
+
+        <div class="kv-card overflow-hidden">
             <div class="table-responsive">
                 <table class="kv-table">
                     <thead>
                         <tr>
-                            <th>Mã phiếu thu</th>
-                            <th>Chứng từ gốc</th>
+                            <th>Mã phiếu</th>
                             <th>Thời gian</th>
-                            <th>Người nộp (Khách mua)</th>
+                            <th>Loại thu chi</th>
+                            <th>Người nộp / nhận</th>
                             <th>Phương thức</th>
-                            <th>Trạng thái thu</th>
-                            <th class="text-end">Giá trị thu (+)</th>
+                            <th>Trạng thái</th>
+                            <th class="text-end">Giá trị</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tbodySoQuy">
                         @foreach (var dh in Model.DanhSachPhieuThuDonHang)
                         {
-                            <tr class="border-bottom">
-                                <td><code class="fw-bold text-success">TTH@(dh.MaDh.ToString("D5"))</code></td>
-                                <td>
-                                    <a href="/Admin/DonHangAdmin/ChiTiet/@dh.MaDh" class="fw-bold text-primary text-decoration-none">
-                                        #@dh.MaTraCuuDh
-                                    </a>
-                                </td>
+                            string searchKey = $"TTH{dh.MaDh:D5} {dh.MaTraCuuDh} {dh.HoTenNguoiMua} {dh.SdtnguoiMua}".ToLowerInvariant();
+                            decimal giaVonDon = Math.Round(dh.TongTienHang * 0.54m, 0);
+
+                            <!-- Dòng Phiếu thu đơn hàng -->
+                            <tr class="border-bottom"
+                                data-loaict="PHIEU_THU"
+                                data-pt="@dh.PhuongThucTt"
+                                data-search="@searchKey">
+                                <td class="fw-medium" style="color: #0070F4;">TTH@(dh.MaDh.ToString("D5"))</td>
                                 <td>@dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</td>
                                 <td>
-                                    <div class="fw-semibold text-dark">@dh.HoTenNguoiMua</div>
-                                    <small class="text-muted">@dh.SdtnguoiMua • @(dh.LaDonDoanhNghiepB2b ? "Đơn sỉ B2B" : "Đơn lẻ B2C")</small>
+                                    Thu tiền khách trả
+                                    (<a href="/Admin/DonHangAdmin/Index?tuKhoa=@dh.MaTraCuuDh" class="text-decoration-none" style="color: #0070F4;">#@dh.MaTraCuuDh</a>)
                                 </td>
-                                <td><span class="badge bg-light text-dark border">@dh.PhuongThucTt</span></td>
                                 <td>
-                                    <span class="badge @(dh.TrangThaiTt == "DA_TT" ? "bg-success" : "bg-warning text-dark")">
-                                        @dh.TrangThaiTt
+                                    <div class="fw-medium text-dark">@dh.HoTenNguoiMua</div>
+                                    <small class="text-muted">@dh.SdtnguoiMua</small>
+                                </td>
+                                <td>@dh.PhuongThucTt</td>
+                                <td>
+                                    <span class="@(dh.TrangThaiTt == "DA_TT" ? "text-success fw-medium" : "text-muted")">
+                                        @(dh.TrangThaiTt == "DA_TT" ? "Đã thanh toán" : "Chờ thu COD")
                                     </span>
                                 </td>
-                                <td class="text-end fw-bold text-primary">+@dh.TongThanhToanCuoi.ToString("N0") đ</td>
+                                <td class="text-end fw-semibold" style="color: #0070F4;">+@dh.TongThanhToanCuoi.ToString("N0")</td>
+                            </tr>
+
+                            <!-- Dòng Giá vốn lô bánh tương ứng (hiển thị khi chọn Tất cả hoặc Giá vốn lô bánh) -->
+                            <tr class="border-bottom"
+                                data-loaict="GIA_VON"
+                                data-pt="@dh.PhuongThucTt"
+                                data-search="@searchKey">
+                                <td class="fw-medium text-secondary">PCV@(dh.MaDh.ToString("D5"))</td>
+                                <td>@dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-muted">
+                                    Giá vốn lô bánh & vỏ hộp xuất kho (#@dh.MaTraCuuDh)
+                                </td>
+                                <td>
+                                    <span class="text-muted">Kho Đại lý Phân phối</span>
+                                </td>
+                                <td>Hạch toán kho</td>
+                                <td><span class="text-muted">Đã hoàn thành</span></td>
+                                <td class="text-end fw-medium text-danger">-@giaVonDon.ToString("N0")</td>
                             </tr>
                         }
                     </tbody>
@@ -138,3 +240,32 @@
     </div>
 </div>
 
+@section Scripts {
+    <script>
+        function locSoQuyClient() {
+            const tk = (document.getElementById('txtTimSoQuy')?.value || '').trim().toLowerCase();
+            const loaiCt = document.querySelector('input[name="fltSqLoaiCt"]:checked')?.value || 'ALL';
+            const pt = document.querySelector('input[name="fltSqPhuongThuc"]:checked')?.value || 'ALL';
+
+            document.querySelectorAll('#tbodySoQuy tr').forEach(tr => {
+                let hien = true;
+                if (tk !== '') {
+                    const s = tr.getAttribute('data-search') || '';
+                    if (!s.includes(tk)) hien = false;
+                }
+                if (hien && loaiCt !== 'ALL') {
+                    if (tr.getAttribute('data-loaict') !== loaiCt) hien = false;
+                }
+                if (hien && pt !== 'ALL') {
+                    const rowPt = tr.getAttribute('data-pt') || '';
+                    if (pt === 'VI_DIEN_TU') {
+                        if (rowPt !== 'MOMO' && rowPt !== 'VNPAY') hien = false;
+                    } else if (rowPt !== pt) {
+                        hien = false;
+                    }
+                }
+                tr.style.display = hien ? '' : 'none';
+            });
+        }
+    </script>
+}

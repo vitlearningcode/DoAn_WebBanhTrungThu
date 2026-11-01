@@ -552,25 +552,46 @@ function hienThiThongBaoGioHang(noiDung, thanhCong = true) {
 }
 
 // =========================================================================
-// 2. BỘ LỌC BÁNH THEO CHỈ SỐ DINH DƯỠNG (TẦNG 4)
+// 2. BỘ LỌC BÁNH THEO CHỈ SỐ DINH DƯỠNG & THƯƠNG HIỆU (TẦNG 4)
 // =========================================================================
-function locSanPham(loaiLoc, btn) {
-    document.querySelectorAll("#tang-bo-suu-tap .btn-vien-vang").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
+let boLocDinhDuongHienTai = "ALL";
+let boLocThuongHieuHienTai = "ALL";
 
+function apDungBoLocTang4() {
     document.querySelectorAll(".item-banh-card").forEach(card => {
-        if (loaiLoc === "ALL") {
-            card.classList.remove("d-none");
-        } else if (loaiLoc === "ISOMALT") {
-            card.classList.toggle("d-none", card.dataset.isomalt !== "1");
-        } else if (loaiLoc === "VIP") {
-            card.classList.toggle("d-none", card.dataset.vip !== "1");
-        } else if (loaiLoc === "LAVA") {
-            card.classList.toggle("d-none", card.dataset.lava !== "1");
-        } else if (loaiLoc === "CHAY") {
-            card.classList.toggle("d-none", card.dataset.chay !== "1");
+        let khopDinhDuong = true;
+        if (boLocDinhDuongHienTai === "ISOMALT") khopDinhDuong = card.dataset.isomalt === "1";
+        else if (boLocDinhDuongHienTai === "VIP") khopDinhDuong = card.dataset.vip === "1";
+        else if (boLocDinhDuongHienTai === "LAVA") khopDinhDuong = card.dataset.lava === "1";
+        else if (boLocDinhDuongHienTai === "CHAY") khopDinhDuong = card.dataset.chay === "1";
+
+        let khopThuongHieu = true;
+        if (boLocThuongHieuHienTai !== "ALL") {
+            khopThuongHieu = (card.dataset.thuonghieu || "") === boLocThuongHieuHienTai;
         }
+
+        card.classList.toggle("d-none", !(khopDinhDuong && khopThuongHieu));
     });
+}
+
+function locSanPham(loaiLoc, btn) {
+    boLocDinhDuongHienTai = loaiLoc;
+    document.querySelectorAll("#nhomLocDinhDuong .btn-vien-vang").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+    apDungBoLocTang4();
+}
+
+function locTheoThuongHieu(thuongHieu, btn) {
+    boLocThuongHieuHienTai = thuongHieu;
+    document.querySelectorAll("#nhomLocThuongHieu .btn-thuong-hieu").forEach(b => {
+        b.classList.remove("btn-vang-kim");
+        b.classList.add("btn-outline-warning");
+    });
+    if (btn) {
+        btn.classList.remove("btn-outline-warning");
+        btn.classList.add("btn-vang-kim");
+    }
+    apDungBoLocTang4();
 }
 
 // =========================================================================

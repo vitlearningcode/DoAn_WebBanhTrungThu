@@ -77,7 +77,7 @@
         <div class="text-center mb-5">
             <span class="text-uppercase small chu-vang-kim fw-bold">Trải Nghiệm Độc Quyền</span>
             <h2 class="font-co-phong display-5 fw-bold chu-vang-kim">Studio Tự Phối Hộp Quà 3 Bước</h2>
-            <p class="text-secondary">Chọn mẫu vỏ hộp sang trọng, chạm để đặt từng chiếc bánh vào ô trống và theo dõi trực tiếp tổng Calo & cảnh báo dị ứng</p>
+            <p class="text-secondary">Chọn mẫu vỏ hộp sang trọng, chạm để đặt từng chiếc bánh từ các thương hiệu danh tiếng vào ô trống và theo dõi trực tiếp tổng Calo & cảnh báo dị ứng</p>
         </div>
 
         <div class="row g-4">
@@ -96,7 +96,7 @@
                                    id="vh_@vh.MaVh" value="@vh.MaVh"
                                    data-ten="@vh.TenVoHop"
                                    data-succhua="@vh.SucChuaBanh"
-                                   data-giavo="@vh.GiaVoHopRieng"
+                                   data-giavo="@Math.Round(vh.GiaVoHopRieng, 0)"
                                    data-minvip="@vh.SlbanhThuongHangToiThieu"
                                    data-luoi="@vh.KieuBoCucLuoi"
                                    data-anhkhay="@anhKhay"
@@ -191,7 +191,8 @@
                             <div class="d-flex align-items-center gap-3 p-2 mb-2 rounded bg-dark border border-secondary">
                                 <img src="@anhSlot" width="64" height="64" class="rounded-circle border border-warning p-1" alt="@b.TenBanh" />
                                 <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center gap-1">
+                                    <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
+                                        <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">🏷️ @b.ThuongHieu</span>
                                         <strong class="small text-light">@b.TenBanh</strong>
                                         @if (b.LaBanhThuongHang)
                                         {
@@ -209,7 +210,7 @@
                                     </div>
                                 </div>
                                 <button class="btn btn-sm btn-vang-kim rounded-pill px-3"
-                                        onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @b.DonGiaLe, @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhSlot', '@diUng')">
+                                        onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaLe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhSlot', '@diUng')">
                                     + Đặt
                                 </button>
                             </div>
@@ -222,22 +223,36 @@
 </section>
 
 <!-- =========================================================================
-     TẦNG 4: BỘ SƯU TẬP BÁNH & BỘ LỌC DINH DƯỠNG THÔNG MINH (AJAX TABS)
+     TẦNG 4: BỘ SƯU TẬP BÁNH & BỘ LỌC DINH DƯỠNG + THƯƠNG HIỆU ĐẠI LÝ (AJAX TABS)
      ========================================================================= -->
 <section id="tang-bo-suu-tap" class="py-5">
     <div class="container py-3">
         <div class="text-center mb-4">
-            <span class="text-uppercase small chu-vang-kim fw-bold">Minh Bạch Dinh Dưỡng & Chỉ Số Đường Huyết (GI)</span>
+            <span class="text-uppercase small chu-vang-kim fw-bold">Đại Lý Phân Phối Đa Thương Hiệu & Minh Bạch Chỉ Số GI</span>
             <h2 class="font-co-phong display-5 fw-bold chu-vang-kim">Bộ Sưu Tập Bánh Trung Thu Tuyển Chọn</h2>
         </div>
 
-        <!-- Thanh nút lọc nhanh không tải lại trang -->
-        <div class="d-flex justify-content-center flex-wrap gap-2 mb-4">
+        <!-- Thanh nút lọc nhanh theo Dinh Dưỡng -->
+        <div class="d-flex justify-content-center flex-wrap gap-2 mb-3" id="nhomLocDinhDuong">
             <button class="btn btn-vien-vang rounded-pill px-4 active" onclick="locSanPham('ALL', this)">Tất Cả (@Model.DanhSachBanh.Count)</button>
             <button class="btn btn-vien-vang rounded-pill px-4" onclick="locSanPham('ISOMALT', this)">🌿 Đường Isomalt - Tiểu Đường</button>
             <button class="btn btn-vien-vang rounded-pill px-4" onclick="locSanPham('VIP', this)">👑 Thượng Hạng Biếu Sếp</button>
             <button class="btn btn-vien-vang rounded-pill px-4" onclick="locSanPham('LAVA', this)">🔥 Nhân Chảy Lava</button>
             <button class="btn btn-vien-vang rounded-pill px-4" onclick="locSanPham('CHAY', this)">🌱 Thuần Chay 100%</button>
+        </div>
+
+        <!-- Thanh nút lọc nhanh theo Thương Hiệu (Kinh Đô, Đồng Khánh, Như Lan, Brodard...) -->
+        <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mb-4" id="nhomLocThuongHieu">
+            <span class="small text-warning fw-semibold me-1"><i class="bi bi-award-fill me-1"></i>Thương hiệu:</span>
+            <button type="button" class="btn btn-sm btn-vang-kim rounded-pill px-3 btn-thuong-hieu" onclick="locTheoThuongHieu('ALL', this)">
+                Tất cả hãng
+            </button>
+            @foreach (var th in Model.DanhSachThuongHieu)
+            {
+                <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-3 btn-thuong-hieu" onclick="locTheoThuongHieu('@th', this)">
+                    🏷️ @th
+                </button>
+            }
         </div>
 
         <div class="row g-4" id="luoiSanPhamBanh">
@@ -249,6 +264,7 @@
                 decimal duong = b.ThongSoDinhDuong?.LuongDuongGram ?? 15;
 
                 <div class="col-md-6 col-lg-3 item-banh-card"
+                     data-thuonghieu="@b.ThuongHieu"
                      data-isomalt="@(b.MucDoNgot == "ISOMALT_TIEUDUONG" ? "1" : "0")"
                      data-vip="@(b.LaBanhThuongHang ? "1" : "0")"
                      data-lava="@(b.NhomHuongVi == "LAVA_CHAY" ? "1" : "0")"
@@ -256,6 +272,7 @@
                     <div class="card-hoang-gia p-3 h-100 d-flex flex-column justify-content-between">
                         <div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge bg-warning text-dark rounded-pill">🏷️ @b.ThuongHieu</span>
                                 @if (b.MucDoNgot == "ISOMALT_TIEUDUONG")
                                 {
                                     <span class="badge badge-isomalt rounded-pill">🌿 GI Thấp: @gi</span>
@@ -268,7 +285,6 @@
                                 {
                                     <span class="badge bg-secondary rounded-pill">@b.TrongLuongGram g</span>
                                 }
-                                <small class="text-secondary">Trứng: @b.SoTrungMuoi</small>
                             </div>
 
                             <div class="text-center my-3">
@@ -282,7 +298,7 @@
                         <div>
                             <div class="p-2 rounded bg-dark border border-secondary mb-3 d-flex justify-content-around text-center small">
                                 <div><strong class="text-info d-block">@calo</strong><span class="text-muted" style="font-size:0.7rem;">Kcal</span></div>
-                                <div class="border-start border-secondary ps-2"><strong class="text-warning d-block">@duong g</strong><span class="text-muted" style="font-size:0.7rem;">Đường</span></div>
+                                <div class="border-start border-secondary ps-2"><strong class="text-warning d-block">@duong.ToString("N0") g</strong><span class="text-muted" style="font-size:0.7rem;">Đường</span></div>
                                 <div class="border-start border-secondary ps-2"><strong class="text-success d-block">@gi</strong><span class="text-muted" style="font-size:0.7rem;">Chỉ số GI</span></div>
                             </div>
 
@@ -294,7 +310,7 @@
                                         🛒 Mua lẻ
                                     </button>
                                     <a href="#tang-tu-chon-hop" class="btn btn-sm btn-vang-kim rounded-pill px-2"
-                                       onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @b.DonGiaLe, @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhBanh', '@(b.ThongSoDinhDuong?.CanhBaoDiUng)')">
+                                       onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaLe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhBanh', '@(b.ThongSoDinhDuong?.CanhBaoDiUng)')">
                                         Đưa vào hộp ↑
                                     </a>
                                 </div>
@@ -367,7 +383,7 @@
                                     <tr>
                                         <td class="fw-semibold">@moc.TenMocB2b</td>
                                         <td>@moc.SlhopToiThieu – @moc.SlhopToiDa hộp</td>
-                                        <td><span class="badge bg-warning text-dark fw-bold">-@moc.PhanTramChietKhau%</span></td>
+                                        <td><span class="badge bg-warning text-dark fw-bold">-@moc.PhanTramChietKhau.ToString("N0")%</span></td>
                                         <td>
                                             @if (moc.MienPhiInLogo)
                                             {

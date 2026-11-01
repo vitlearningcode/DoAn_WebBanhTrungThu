@@ -19,7 +19,12 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(string? tuKhoa, string? locTrangThai, string? locLoaiDon)
+        public async Task<IActionResult> Index(
+            string? tuKhoa,
+            string? locTrangThai,
+            string? locLoaiDon,
+            string? locPhuongThuc,
+            string? locThoiGian)
         {
             var query = _db.DonHangs
                 .AsNoTracking()
@@ -59,9 +64,27 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
                 query = query.Where(d => d.MaNd.HasValue);
             }
 
+            if (!string.IsNullOrWhiteSpace(locPhuongThuc) && locPhuongThuc != "ALL")
+            {
+                query = query.Where(d => d.PhuongThucTt == locPhuongThuc);
+            }
+
+            if (locThoiGian == "HOM_NAY")
+            {
+                DateTime homNay = DateTime.Today;
+                query = query.Where(d => d.NgayDat >= homNay);
+            }
+            else if (locThoiGian == "THANG_NAY")
+            {
+                DateTime dauThang = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+                query = query.Where(d => d.NgayDat >= dauThang);
+            }
+
             ViewBag.TuKhoa = tuKhoa;
             ViewBag.LocTrangThai = locTrangThai ?? "ALL";
             ViewBag.LocLoaiDon = locLoaiDon ?? "ALL";
+            ViewBag.LocPhuongThuc = locPhuongThuc ?? "ALL";
+            ViewBag.LocThoiGian = locThoiGian ?? "ALL";
 
             var danhSach = await query.OrderByDescending(d => d.NgayDat).ToListAsync();
             return View(danhSach);

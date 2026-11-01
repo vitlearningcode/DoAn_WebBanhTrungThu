@@ -12,11 +12,16 @@ namespace WebBanhTrungThu.Controllers
     {
         private readonly CSDLBanhTrungThuContext _db;
         private readonly DichVuHinhAnh _dichVuHinhAnh;
+        private readonly DichVuKiotVietMetadata _kiotMeta;
 
-        public HomeController(CSDLBanhTrungThuContext db, DichVuHinhAnh dichVuHinhAnh)
+        public HomeController(
+            CSDLBanhTrungThuContext db,
+            DichVuHinhAnh dichVuHinhAnh,
+            DichVuKiotVietMetadata kiotMeta)
         {
             _db = db;
             _dichVuHinhAnh = dichVuHinhAnh;
+            _kiotMeta = kiotMeta;
         }
 
         public async Task<IActionResult> Index()
@@ -52,6 +57,22 @@ namespace WebBanhTrungThu.Controllers
                     .ThenInclude(ct => ct.MaBanhNavigation)
                 .Where(cb => cb.TrangThai)
                 .ToListAsync();
+
+            // Đồng bộ Thương hiệu (Kinh Đô, Đồng Khánh, Như Lan, Brodard...) từ KiotViet Metadata
+            var store = _kiotMeta.DocDuLieu();
+            foreach (var b in vm.DanhSachBanh)
+            {
+                _kiotMeta.GanMetadataChoBanh(b, store);
+            }
+            foreach (var cb in vm.DanhSachCombo)
+            {
+                _kiotMeta.GanMetadataChoCombo(cb, store);
+            }
+            vm.DanhSachThuongHieu = vm.DanhSachBanh
+                .Select(b => b.ThuongHieu)
+                .Where(th => !string.IsNullOrWhiteSpace(th))
+                .Distinct()
+                .ToList();
 
             // 4. Lấy bảng chiết khấu B2B và Mã khuyến mãi
             vm.BangGiaSiB2B = await _db.BangChietKhauSiB2bs.OrderBy(b => b.SlhopToiThieu).ToListAsync();
@@ -132,7 +153,7 @@ namespace WebBanhTrungThu.Controllers
                     }
                     else
                     {
-                        diemPhat = 500; // Loại trừ bánh nhiều đường cho người tiểu đường
+                        diemPhat = 500;
                     }
                 }
                 else if (sucKhoe == "AN_CHAY")
@@ -149,7 +170,7 @@ namespace WebBanhTrungThu.Controllers
                     diemSucKhoe = 30;
                 }
 
-                // 2. Chấm điểm Ngân sách (W2 = 25) - Tính theo giá quy đổi 1 hộp 4 bánh (~ 4 * giá lẻ)
+                // 2. Chấm điểm Ngân sách (W2 = 25)
                 decimal giaUocTinhHop = b.DonGiaLe * 4;
                 if (giaUocTinhHop <= nganSachMax)
                 {
