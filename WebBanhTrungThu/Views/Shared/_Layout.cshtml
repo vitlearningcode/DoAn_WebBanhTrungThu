@@ -9,46 +9,161 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <!-- TẦNG 1: STICKY GLASSMORPHISM NAVBAR -->
+    <!-- TẦNG 1: HEADER SƠN MÀI HOÀNG GIA & HOVER DROPDOWN MENU (STYLE BUM97RACING.VN) -->
     <header class="sticky-top navbar-kinh-mo">
         <nav class="navbar navbar-expand-lg navbar-dark container py-2">
             <a class="navbar-brand d-flex align-items-center gap-2" asp-controller="Home" asp-action="Index">
-                <span class="fs-3">🌕</span>
+                <span class="fs-3">🏮</span>
                 <div>
                     <span class="font-co-phong fs-3 fw-bold chu-vang-kim d-block lh-1">NGUYỆT CÁT</span>
-                    <small class="text-light opacity-75" style="font-size: 0.7rem; letter-spacing: 2px;">TINH HOA TRĂNG RẰM</small>
+                    <small class="chu-kem-vang opacity-75" style="font-size: 0.68rem; letter-spacing: 2px;">TINH HOA TRĂNG RẰM</small>
                 </div>
             </a>
 
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menuChinh">
+            <button class="navbar-toggler border-warning" type="button" data-bs-toggle="collapse" data-bs-target="#menuChinh">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="menuChinh">
-                <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-3">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-1 nav-menu-hoang-gia">
+                    <!-- 1. TRANG CHỦ -->
                     <li class="nav-item">
-                        <a class="nav-link text-light fw-medium" href="/#tang-hero">Câu Chuyện</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link chu-vang-kim fw-bold" href="/#tang-tu-chon-hop">
-                            <i class="bi bi-box2-heart-fill me-1"></i>Tự Phối Hộp 3D
+                        <a class="nav-link nav-link-chinh" href="/#tang-hero" onclick="return cuonDenPhanKhu('#tang-hero', event)">
+                            TRANG CHỦ
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-light fw-medium" href="/#tang-bo-suu-tap">Bộ Sưu Tập & Dinh Dưỡng</a>
+
+                    <!-- 2. THƯƠNG HIỆU ▾ -->
+                    <li class="nav-item nav-item-dropdown">
+                        <a class="nav-link nav-link-chinh" href="/#tang-bo-suu-tap" onclick="return cuonDenPhanKhu('#tang-bo-suu-tap', event)">
+                            THƯƠNG HIỆU <span class="nav-caret-icon">▾</span>
+                        </a>
+                        <ul class="hover-dropdown-panel">
+                            <li>
+                                <a class="hover-dropdown-item" href="/#tang-bo-suu-tap" onclick="return dieuHuongMenuThuongHieu('Kinh Đô', event)">
+                                    <span>🏮 Bánh Trung Thu Kinh Đô</span>
+                                    <small>Truyền thống</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="hover-dropdown-item" href="/#tang-bo-suu-tap" onclick="return dieuHuongMenuThuongHieu('Đồng Khánh', event)">
+                                    <span>🏮 Bánh Trung Thu Đồng Khánh</span>
+                                    <small>Chính gốc</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="hover-dropdown-item" href="/#tang-bo-suu-tap" onclick="return dieuHuongMenuThuongHieu('Như Lan', event)">
+                                    <span>🏮 Bánh Trung Thu Như Lan</span>
+                                    <small>Sài Gòn xưa</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="hover-dropdown-item" href="/#tang-bo-suu-tap" onclick="return dieuHuongMenuThuongHieu('Brodard', event)">
+                                    <span>🏮 Bánh Trung Thu Brodard</span>
+                                    <small>Thượng hạng</small>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-light fw-medium" href="/#tang-b2b">Chiết Khấu B2B</a>
+
+                    <!-- 3. BỘ SƯU TẬP BÁNH ▾ -->
+                    <li class="nav-item nav-item-dropdown">
+                        <a class="nav-link nav-link-chinh" href="/#tang-bo-suu-tap" onclick="return cuonDenPhanKhu('#tang-bo-suu-tap', event)">
+                            BỘ SƯU TẬP BÁNH <span class="nav-caret-icon">▾</span>
+                        </a>
+                        <ul class="hover-dropdown-panel" style="min-width: 310px;">
+                            <li>
+                                <a class="hover-dropdown-item" href="/#tang-bo-suu-tap" onclick="return dieuHuongMenuBoSuuTap('ALL', event)">
+                                    <span>🌕 Tất cả vị bánh</span>
+                                    <small>Trọn bộ</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="hover-dropdown-item" href="/#tang-bo-suu-tap" onclick="return dieuHuongMenuBoSuuTap('VIP', event)">
+                                    <span>👑 Bánh Thượng Hạng Biếu Tặng</span>
+                                    <small>Cao cấp</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="hover-dropdown-item" href="/#tang-bo-suu-tap" onclick="return dieuHuongMenuBoSuuTap('ISOMALT', event)">
+                                    <span>🌿 Bánh Đường Ăn Kiêng Isomalt (GI Thấp)</span>
+                                    <small>Thực dưỡng</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="hover-dropdown-item" href="/#tang-bo-suu-tap" onclick="return dieuHuongMenuBoSuuTap('LAVA', event)">
+                                    <span>🔥 Bánh Nhân Chảy Kim Sa Lava</span>
+                                    <small>Hiện đại</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="hover-dropdown-item" href="/#tang-bo-suu-tap" onclick="return dieuHuongMenuBoSuuTap('CHAY', event)">
+                                    <span>🌱 Bánh Thuần Chay Thanh Đạm</span>
+                                    <small>Thanh tịnh</small>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link text-light fw-medium" href="/#tang-thiep-qr">Thiệp QR 3D</a>
+
+                    <!-- 4. TỰ PHỐI HỘP QUÀ ▾ -->
+                    <li class="nav-item nav-item-dropdown">
+                        <a class="nav-link nav-link-chinh" href="/#tang-tu-chon-hop" onclick="return cuonDenPhanKhu('#tang-tu-chon-hop', event)">
+                            TỰ PHỐI HỘP QUÀ <span class="nav-caret-icon">▾</span>
+                        </a>
+                        <ul class="hover-dropdown-panel" style="min-width: 300px;">
+                            <li>
+                                <a class="hover-dropdown-item" href="/#tang-tu-chon-hop" onclick="return dieuHuongMenuVoHop(1, event)">
+                                    <span>🎁 Hộp Tứ Quý Đoàn Viên (4 Bánh)</span>
+                                    <small>4 Ô</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="hover-dropdown-item" href="/#tang-tu-chon-hop" onclick="return dieuHuongMenuVoHop(2, event)">
+                                    <span>👑 Hộp Sơn Mài Hoàng Gia (6 Bánh + Trà)</span>
+                                    <small>6 Ô</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="hover-dropdown-item" href="javascript:void(0)" onclick="moModalTuVanQua()">
+                                    <span>✨ Tư Vấn Chọn Quà Hợp Ý</span>
+                                    <small>Gợi ý vị</small>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <!-- 5. DOANH NGHIỆP (B2B) ▾ -->
+                    <li class="nav-item nav-item-dropdown">
+                        <a class="nav-link nav-link-chinh" href="/#tang-b2b" onclick="return cuonDenPhanKhu('#tang-b2b', event)">
+                            DOANH NGHIỆP (B2B) <span class="nav-caret-icon">▾</span>
+                        </a>
+                        <ul class="hover-dropdown-panel" style="min-width: 290px;">
+                            <li>
+                                <a class="hover-dropdown-item" href="/#tang-b2b" onclick="return cuonDenPhanKhu('#tang-b2b', event)">
+                                    <span>📊 Bảng Chiết Khấu Sỉ B2B</span>
+                                    <small>Ưu đãi cao</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="hover-dropdown-item" href="/#tang-b2b" onclick="return cuonDenPhanKhu('#tang-b2b', event)">
+                                    <span>🖋️ Dịch Vụ Ép Kim Logo Riêng</span>
+                                    <small>Thương hiệu</small>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="hover-dropdown-item" href="/#tang-thiep-qr" onclick="return cuonDenPhanKhu('#tang-thiep-qr', event)">
+                                    <span>🧧 Thiệp Điện Tử QR 3D Đa Điểm Nhận</span>
+                                    <small>Độc đáo</small>
+                                </a>
+                            </li>
+                        </ul>
                     </li>
                 </ul>
 
                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <!-- Nút Tra cứu đơn dành cho cả Guest & Member -->
+                    <!-- Nút Tra cứu đơn hàng -->
                     <button class="btn btn-sm btn-vien-vang rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalTraCuuDon">
-                        <i class="bi bi-search me-1"></i>Tra Đơn Guest
+                        <i class="bi bi-search me-1"></i>Tra Cứu Đơn Hàng
                     </button>
 
                     <!-- Nút Đăng Nhập / Gộp Giỏ hoặc Thông tin Thành Viên -->
@@ -57,19 +172,19 @@
                         if (User.IsInRole("QUAN_TRI") || User.IsInRole("NHAN_VIEN") || User.IsInRole("THU_NGAN") || User.IsInRole("GIAO_HANG"))
                         {
                             <a href="/Admin/Dashboard/Index" class="btn btn-sm btn-vang-kim rounded-pill px-3">
-                                📊 KiotViet Admin
+                                📊 Quản Trị Cửa Hàng
                             </a>
                         }
 
                         string hangTv = User.FindFirst("HangTV")?.Value ?? "Đồng";
-                        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-dark border border-warning">
-                            <span class="small text-light fw-semibold">
-                                <a href="/TaiKhoan/HoSo" class="text-light text-decoration-none" title="Xem Hồ Sơ Thành Viên & Sổ Địa Chỉ"><i class="bi bi-person-check-fill chu-vang-kim me-1"></i>@User.Identity.Name</a>
+                        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill" style="background: rgba(255,255,255,0.1); border: 1px solid var(--mau-vang-anh-kim);">
+                            <span class="small chu-kem-vang fw-semibold">
+                                <a href="/TaiKhoan/HoSo" class="chu-kem-vang text-decoration-none" title="Xem Hồ Sơ Thành Viên & Sổ Địa Chỉ"><i class="bi bi-person-check-fill chu-vang-kim me-1"></i>@User.Identity.Name</a>
                             </span>
                             <span class="badge badge-thuong-hang rounded-pill">Hạng @hangTv</span>
                             <form asp-area="" asp-controller="TaiKhoan" asp-action="DangXuat" method="post" class="d-inline m-0">
-                                <button type="submit" class="btn btn-sm btn-link text-danger text-decoration-none p-0 ms-1 small fw-bold" title="Đăng xuất">
-                                    [Đăng xuất]
+                                <button type="submit" class="btn btn-sm btn-link text-warning text-decoration-none p-0 ms-1 small fw-bold" title="Đăng xuất">
+                                    [Thoát]
                                 </button>
                             </form>
                         </div>
@@ -77,14 +192,14 @@
                     else
                     {
                         <button class="btn btn-sm btn-vien-vang rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalTaiKhoan">
-                            👤 Đăng Nhập / Gộp Giỏ
+                            👤 Tài Khoản Thành Viên
                         </button>
                     }
 
-                    <!-- Nút mở Ngăn kéo Giỏ hàng Kép -->
+                    <!-- Nút mở Ngăn kéo Giỏ quà -->
                     <button class="btn btn-sm btn-vang-kim rounded-pill px-3 position-relative" data-bs-toggle="offcanvas" data-bs-target="#nganKeoGioHang">
                         <i class="bi bi-bag-heart-fill me-1"></i>Giỏ Quà
-                        <span id="badgeSoLuongGio" class="badge bg-danger rounded-pill ms-1">0</span>
+                        <span id="badgeSoLuongGio" class="badge bg-danger text-white rounded-pill ms-1">0</span>
                     </button>
                 </div>
             </div>
@@ -96,39 +211,39 @@
     </main>
 
     <!-- VÙNG HIỂN THỊ THÔNG BÁO TOAST HOÀNG GIA -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090; margin-top: 68px;" id="khungThongBaoToast"></div>
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090; margin-top: 76px;" id="khungThongBaoToast"></div>
 
-    <!-- NÚT NỔI KÍCH HOẠT TRỢ LÝ CHỌN QUÀ 30 GIÂY -->
+    <!-- NÚT NỔI KÍCH HOẠT TƯ VẤN CHỌN HỘP QUÀ HỢP Ý -->
     <button class="floating-quiz-btn" data-bs-toggle="modal" data-bs-target="#modalTroLyChonBanh">
-        <i class="bi bi-stars me-1"></i> Trợ Lý Chọn Bánh 30s
+        ✨ Tư Vấn Chọn Hộp Quà Hợp Ý
     </button>
 
-    <!-- MODAL ĐĂNG NHẬP / ĐĂNG KÝ & TỰ ĐỘNG HỢP NHẤT GIỎ HÀNG (GUEST -> MEMBER) -->
+    <!-- MODAL ĐĂNG NHẬP / ĐĂNG KÝ & TỰ ĐỘNG HỢP NHẤT GIỎ QUÀ -->
     <div class="modal fade" id="modalTaiKhoan" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content card-hoang-gia text-light p-2">
-                <div class="modal-header border-secondary pb-2">
+            <div class="modal-content card-hoang-gia p-2">
+                <div class="modal-header border-bottom pb-2" style="border-color: var(--mau-vien-vang-dong) !important;">
                     <div>
-                        <h5 class="modal-title font-co-phong fs-3 chu-vang-kim">
-                            <i class="bi bi-shield-lock-fill me-2"></i>Tài Khoản & Hợp Nhất Giỏ Quà
+                        <h5 class="modal-title font-co-phong fs-3 chu-do-son-mai fw-bold">
+                            <i class="bi bi-shield-lock-fill chu-vang-dong me-2"></i>Hội Viên Nguyệt Cát & Lưu Giỏ Quà
                         </h5>
-                        <small class="text-secondary">Mọi hộp bánh tự phối ở chế độ Guest sẽ tự động gộp vào tài khoản của bạn</small>
+                        <small class="chu-nau-phu">Các hộp bánh bạn đã chọn sẽ tự động lưu vào tài khoản thành viên</small>
                     </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <!-- Thanh chuyển Tab Đăng Nhập / Đăng Ký -->
-                    <ul class="nav nav-pills nav-fill mb-3 p-1 rounded bg-dark border border-secondary" id="tabTaiKhoan" role="tablist">
+                    <ul class="nav nav-pills nav-fill mb-3 p-1 rounded" style="background: var(--mau-nen-ngoc-trai); border: 1px solid var(--mau-vien-vang-dong);" id="tabTaiKhoan" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link active rounded-pill fw-semibold text-warning" id="btn-tab-dangnhap"
+                            <button class="nav-link active rounded-pill fw-semibold" id="btn-tab-dangnhap"
                                     data-bs-toggle="pill" data-bs-target="#pane-dangnhap" type="button" role="tab">
                                 Đăng Nhập
                             </button>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <button class="nav-link rounded-pill fw-semibold text-light" id="btn-tab-dangky"
+                            <button class="nav-link rounded-pill fw-semibold chu-nau-tram" id="btn-tab-dangky"
                                     data-bs-toggle="pill" data-bs-target="#pane-dangky" type="button" role="tab">
-                                Đăng Ký Thành Viên Mới (+50 Điểm)
+                                Đăng Ký Hội Viên Mới (+50 Điểm)
                             </button>
                         </li>
                     </ul>
@@ -136,59 +251,65 @@
                     <div class="tab-content">
                         <!-- TAB 1: ĐĂNG NHẬP -->
                         <div class="tab-pane fade show active" id="pane-dangnhap" role="tabpanel">
-                            <div class="p-2 mb-3 rounded bg-dark border border-warning">
-                                <small class="text-warning fw-bold d-block mb-2">🎯 Nút điền nhanh 1-Click (Demo Bảo Vệ Đồ Án):</small>
+                            <div class="p-2 mb-3 rounded" style="background: var(--mau-nen-giay-do); border: 1px dashed var(--mau-vang-dong-co);">
+                                <small class="chu-do-son-mai fw-bold d-block mb-2">🎯 Chọn nhanh tài khoản trải nghiệm:</small>
                                 <div class="d-grid gap-2">
-                                    <button type="button" class="btn btn-sm btn-outline-warning text-start"
+                                    <button type="button" class="btn btn-sm btn-vien-vang text-start"
                                             onclick="dienNhanhTaiKhoanDemo('0909123456', '123456')">
-                                        ⚡ Demo Khách VIP (Minh Châu - SĐT: 0909123456 / MK: 123456)
+                                        🌟 Khách Hàng Thân Thiết (Minh Châu - SĐT: 0909123456)
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-outline-info text-start"
+                                    <button type="button" class="btn btn-sm btn-vien-vang text-start"
                                             onclick="dienNhanhTaiKhoanDemo('0814585526', '123456')">
-                                        👑 Demo Quản Trị Viên (Lê Minh Đức - SĐT: 0814585526 / MK: 123456)</button>
-                                    <button type="button" class="btn btn-sm btn-outline-success text-start" onclick="dienNhanhTaiKhoanDemo('0908111222', '123456')">💼 Demo Thu Ngân & Order (Trần Thu Ngân - SĐT: 0908111222 / MK: 123456)</button>
-                                    <button type="button" class="btn btn-sm btn-outline-light text-start" onclick="dienNhanhTaiKhoanDemo('0908333444', '123456')">🚚 Demo Nhân Viên Giao Hàng (Nguyễn Văn Giao - SĐT: 0908333444 / MK: 123456)
+                                        👑 Quản Lý Cửa Hàng (Lê Minh Đức - SĐT: 0814585526)
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-vien-vang text-start"
+                                            onclick="dienNhanhTaiKhoanDemo('0908111222', '123456')">
+                                        💼 Chuyên Viên Quầy Lễ (Trần Thu Ngân - SĐT: 0908111222)
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-vien-vang text-start"
+                                            onclick="dienNhanhTaiKhoanDemo('0908333444', '123456')">
+                                        🚚 Phụ Trách Giao Quà (Nguyễn Văn Giao - SĐT: 0908333444)
                                     </button>
                                 </div>
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label small text-warning">Số điện thoại hoặc Email</label>
-                                <input type="text" id="txtDangNhapTaiKhoan" class="form-control bg-dark text-light border-secondary" placeholder="Nhập SĐT hoặc Email..." />
+                                <label class="form-label small fw-semibold chu-nau-tram">Số điện thoại hoặc Email</label>
+                                <input type="text" id="txtDangNhapTaiKhoan" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="Nhập SĐT hoặc Email..." />
                             </div>
                             <div class="mb-3">
-                                <label class="form-label small text-warning">Mật khẩu</label>
-                                <input type="password" id="txtDangNhapMatKhau" class="form-control bg-dark text-light border-secondary" placeholder="Nhập mật khẩu..." />
+                                <label class="form-label small fw-semibold chu-nau-tram">Mật khẩu</label>
+                                <input type="password" id="txtDangNhapMatKhau" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="Nhập mật khẩu..." />
                             </div>
                             <div id="thongBaoLoiDangNhap" class="alert alert-danger py-2 small d-none"></div>
-                            <button type="button" id="btnSubmitDangNhap" class="btn btn-vang-kim w-100 py-2 rounded-pill" onclick="thucHienDangNhapAjax()">
-                                <i class="bi bi-box-arrow-in-right me-1"></i>Đăng Nhập & Gộp Giỏ Hàng Ngay
+                            <button type="button" id="btnSubmitDangNhap" class="btn btn-do-son-mai w-100 py-2 rounded-pill" onclick="thucHienDangNhapAjax()">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Đăng Nhập & Đồng Bộ Giỏ Quà
                             </button>
                         </div>
 
                         <!-- TAB 2: ĐĂNG KÝ THÀNH VIÊN MỚI -->
                         <div class="tab-pane fade" id="pane-dangky" role="tabpanel">
                             <div class="mb-2">
-                                <label class="form-label small text-warning">Họ và tên</label>
-                                <input type="text" id="txtDangKyHoTen" class="form-control bg-dark text-light border-secondary" placeholder="VD: Nguyễn Ngọc Ánh" />
+                                <label class="form-label small fw-semibold chu-nau-tram">Họ và tên</label>
+                                <input type="text" id="txtDangKyHoTen" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="VD: Nguyễn Ngọc Ánh" />
                             </div>
                             <div class="row g-2 mb-2">
                                 <div class="col-md-6">
-                                    <label class="form-label small text-warning">Số điện thoại</label>
-                                    <input type="text" id="txtDangKySdt" class="form-control bg-dark text-light border-secondary" placeholder="09xx..." />
+                                    <label class="form-label small fw-semibold chu-nau-tram">Số điện thoại</label>
+                                    <input type="text" id="txtDangKySdt" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="09xx..." />
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label small text-warning">Email</label>
-                                    <input type="email" id="txtDangKyEmail" class="form-control bg-dark text-light border-secondary" placeholder="email@domain.com" />
+                                    <label class="form-label small fw-semibold chu-nau-tram">Email</label>
+                                    <input type="email" id="txtDangKyEmail" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="email@domain.com" />
                                 </div>
                             </div>
                             <div class="mb-3">
-                                <label class="form-label small text-warning">Mật khẩu khởi tạo</label>
-                                <input type="password" id="txtDangKyMatKhau" class="form-control bg-dark text-light border-secondary" placeholder="Tối thiểu 6 ký tự..." />
+                                <label class="form-label small fw-semibold chu-nau-tram">Mật khẩu khởi tạo</label>
+                                <input type="password" id="txtDangKyMatKhau" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="Tối thiểu 6 ký tự..." />
                             </div>
                             <div id="thongBaoLoiDangKy" class="alert alert-danger py-2 small d-none"></div>
-                            <button type="button" id="btnSubmitDangKy" class="btn btn-vang-kim w-100 py-2 rounded-pill" onclick="thucHienDangKyAjax()">
-                                <i class="bi bi-person-plus-fill me-1"></i>Đăng Ký (+50 Điểm) & Gộp Giỏ Hàng
+                            <button type="button" id="btnSubmitDangKy" class="btn btn-do-son-mai w-100 py-2 rounded-pill" onclick="thucHienDangKyAjax()">
+                                <i class="bi bi-person-plus-fill me-1"></i>Đăng Ký Hội Viên (+50 Điểm Thưởng)
                             </button>
                         </div>
                     </div>
@@ -197,39 +318,61 @@
         </div>
     </div>
 
-    <!-- MODAL TRA CỨU ĐƠN HÀNG NHANH CHO KHÁCH VÃNG LAI -->
+    <!-- MODAL TRA CỨU ĐƠN HÀNG NHANH -->
     <div class="modal fade" id="modalTraCuuDon" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content card-hoang-gia text-light p-2">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title font-co-phong fs-3 chu-vang-kim">
-                        <i class="bi bi-box-seam me-2"></i>Tra Cứu Đơn Hàng (Không Cần Đăng Nhập)
+            <div class="modal-content card-hoang-gia p-2">
+                <div class="modal-header border-bottom" style="border-color: var(--mau-vien-vang-dong) !important;">
+                    <h5 class="modal-title font-co-phong fs-3 chu-do-son-mai fw-bold">
+                        <i class="bi bi-box-seam chu-vang-dong me-2"></i>Tra Cứu Hành Trình Đơn Quà
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="small text-secondary mb-3">Dành cho khách mua nhanh: Nhập mã đơn hàng và số điện thoại người mua để kiểm tra tiến độ giao đa điểm & mã QR thiệp.</p>
+                    <p class="small chu-nau-phu mb-3">Nhập mã đơn hàng và số điện thoại người đặt mua để theo dõi tiến độ giao quà đa điểm và mở thiệp chúc mừng QR 3D.</p>
                     <div class="mb-3">
-                        <label class="form-label small">Mã tra cứu đơn hàng (VD: TT2026-8891)</label>
-                        <input type="text" id="txtMaTraCuu" class="form-control bg-dark text-light border-secondary" placeholder="Nhập mã đơn..." />
+                        <label class="form-label small fw-semibold chu-nau-tram">Mã tra cứu đơn hàng (VD: TT2026-8891)</label>
+                        <input type="text" id="txtMaTraCuu" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="Nhập mã đơn..." />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label small">Số điện thoại đặt mua</label>
-                        <input type="text" id="txtSdtTraCuu" class="form-control bg-dark text-light border-secondary" placeholder="0909..." />
+                        <label class="form-label small fw-semibold chu-nau-tram">Số điện thoại đặt mua</label>
+                        <input type="text" id="txtSdtTraCuu" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="0909..." />
                     </div>
-                    <button type="button" class="btn btn-vang-kim w-100" onclick="traCuuDonHangGuest()">Kiểm Tra Ngay</button>
-                    <div id="ketQuaTraCuuBox" class="mt-3 d-none p-3 rounded bg-dark border border-warning"></div>
+                    <button type="button" class="btn btn-do-son-mai w-100 rounded-pill py-2" onclick="traCuuDonHangGuest()">Kiểm Tra Đơn Hàng</button>
+                    <div id="ketQuaTraCuuBox" class="mt-3 d-none p-3 rounded" style="background: var(--mau-nen-giay-do); border: 1px solid var(--mau-vang-dong-co);"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- FOOTER CỔ PHONG -->
-    <footer class="border-top border-secondary py-5 mt-5" style="background: #060B19;">
-        <div class="container text-center">
-            <h4 class="font-co-phong chu-vang-kim fs-2 mb-2">NGUYỆT CÁT – TINH HOA BÁNH TRUNG THU VIỆT</h4>
-            <p class="text-secondary small mb-3">Đồ án ASP.NET Core MVC Chuyên Nghiệp • Kiến trúc 25 Bảng • Hỗ trợ Mua hàng Kép (Guest & Member)</p>
-            <div class="small text-muted">&copy; 2026 Nguyệt Cát Mooncake. All rights reserved.</div>
+    <!-- FOOTER ĐỎ SƠN MÀI TRẦM TRUYỀN THỐNG -->
+    <footer class="nen-le-hoi-son-mai border-top py-5 mt-0" style="border-color: rgba(212, 175, 55, 0.45) !important;">
+        <div class="container">
+            <div class="row g-4 align-items-center text-center text-md-start">
+                <div class="col-md-7">
+                    <h4 class="font-co-phong chu-vang-kim fs-2 fw-bold mb-2">
+                        🏮 Nguyệt Cát – Đại Lý Phân Phối Bánh Trung Thu Chính Hãng (Kinh Đô • Đồng Khánh • Như Lan • Brodard)
+                    </h4>
+                    <p class="chu-kem-vang opacity-75 small mb-2">
+                        Tinh hoa quà biếu Tết Đoàn Viên cổ truyền • Tự tay phối lễ hộp sơn mài độc bản • Dịch vụ ép kim logo doanh nghiệp & giao quà đa điểm kèm thiệp QR 3D.
+                    </p>
+                </div>
+                <div class="col-md-5 text-md-end">
+                    <div class="small chu-kem-vang mb-1">
+                        <i class="bi bi-geo-alt-fill chu-vang-kim me-1"></i><strong>Địa chỉ:</strong> 128 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh
+                    </div>
+                    <div class="small chu-kem-vang mb-1">
+                        <i class="bi bi-telephone-fill chu-vang-kim me-1"></i><strong>Hotline tư vấn & đặt sỉ B2B:</strong> 1900 6886 – 0909 123 456
+                    </div>
+                    <div class="small chu-kem-vang">
+                        <i class="bi bi-clock-fill chu-vang-kim me-1"></i><strong>Giờ mở cửa:</strong> 07:30 – 22:00 (Tất cả các ngày trong tuần)
+                    </div>
+                </div>
+            </div>
+            <hr class="my-3" style="border-color: rgba(212, 175, 55, 0.3);" />
+            <div class="text-center small chu-kem-vang opacity-75">
+                &copy; 2026 Nguyệt Cát – Nghệ Thuật Quà Tặng Trung Thu Truyền Thống Việt Nam.
+            </div>
         </div>
     </footer>
 

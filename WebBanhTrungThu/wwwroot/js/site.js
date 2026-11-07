@@ -1,5 +1,5 @@
 // =========================================================================
-// 1. BIẾN TRẠNG THÁI CHO TRÌNH DỰNG HỘP QUÀ TỰ CHỌN (TẦNG 3)
+// 1. BIẾN TRẠNG THÁI CHO KHUNG TỰ PHỐI LỄ HỘP QUÀ TẶNG (TẦNG 2)
 // =========================================================================
 let cauHinhHop = {
     maVH: 1,
@@ -12,7 +12,7 @@ let cauHinhHop = {
 };
 
 // Xử lý toàn cục khi ảnh bị lỗi tải -> chặn đứng vòng lặp vô tận bằng dataset.fallbackApplied và SVG nội tuyến
-const INLINE_FALLBACK_SVG = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" rx="12" fill="#F3F4F6"/><circle cx="60" cy="54" r="24" fill="#F59E0B" opacity="0.25"/><text x="60" y="96" font-family="sans-serif" font-size="11" fill="#6B7280" text-anchor="middle">Bánh Trung Thu</text></svg>');
+const INLINE_FALLBACK_SVG = "data:image/svg+xml;utf8," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><rect width="120" height="120" rx="12" fill="#FDF8EE"/><circle cx="60" cy="54" r="24" fill="#C89B3C" opacity="0.28"/><text x="60" y="96" font-family="sans-serif" font-size="11" fill="#6E5041" text-anchor="middle">Bánh Trung Thu</text></svg>');
 
 window.addEventListener('error', function (e) {
     if (e.target && e.target.tagName === 'IMG') {
@@ -32,8 +32,400 @@ document.addEventListener("DOMContentLoaded", function () {
     renderKhayHop();
     khoiChayDongHoDemNguoc();
     taiLaiGioHangOffcanvas();
+    khoiTaoSectionScrollObserver();
+    khoiTaoTrinhLatTangBanhXe();
+    khoiTaoLienKetNeoMuot();
 });
 
+// =========================================================================
+// 1A. ĐIỀU HƯỚNG PHÂN KHU MƯỢT MÀ (SAO.AGU.EDU.VN) & MENU DROPDOWN (BUM97RACING.VN)
+// =========================================================================
+// Danh sách 5 phân khu chính có chấm điều hướng bên phải
+const DANH_SACH_PHAN_KHU = [
+    "#tang-hero",
+    "#tang-tu-chon-hop",
+    "#tang-bo-suu-tap",
+    "#tang-b2b",
+    "#tang-thiep-qr"
+];
+
+// Danh sách các tầng mục tiêu cho thao tác lật phân khu bằng bánh xe chuột
+const DANH_SACH_TANG_LAT_TRANG = [
+    "tang-hero",
+    "tang-tu-chon-hop",
+    "tang-bo-suu-tap",
+    "tang-b2b",
+    "tang-thiep-qr",
+    "footer"
+];
+
+const THOI_GIAN_NGHI_SAU_CUON = 150; // Thời gian hạ nhiệt sau khi hoàn tất cuộn (150ms cooldown)
+let dangCuonChuyenTang = false;
+let thoiGianKetThucCuon = 0;
+let maKhungHinhCuon = 0;
+
+// Hàm nội suy mượt mà bậc ba: easeInOutCubic(t)
+function hamEmDiuBacBa(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+// Kiểm tra xem người dùng có bật chế độ giảm chuyển động trong hệ điều hành không
+function kiemTraGiamChuyenDong() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+
+// Lấy chiều cao thực tế của thanh menu cố định phía trên
+function layChieuCaoThanhMenu() {
+    const thanhMenu = document.querySelector(".navbar-kinh-mo");
+    return thanhMenu ? thanhMenu.offsetHeight : 72;
+}
+
+// Lấy giới hạn cuộn tối đa của tài liệu
+function layGioiHanCuonToiDa() {
+    return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+}
+
+// Hàm cuộn trang mượt mà 60fps bằng requestAnimationFrame (sử dụng easeInOutCubic)
+function cuonMuotDenViTri(viTriDichY, thoiGianChay = 700) {
+    const viTriBatDau = window.scrollY;
+    const viTriToiDa = layGioiHanCuonToiDa();
+    const viTriDich = Math.min(Math.max(0, Math.round(viTriDichY)), viTriToiDa);
+    const quangDuong = viTriDich - viTriBatDau;
+
+    if (maKhungHinhCuon) {
+        cancelAnimationFrame(maKhungHinhCuon);
+        maKhungHinhCuon = 0;
+    }
+
+    if (Math.abs(quangDuong) < 2 || thoiGianChay <= 0 || kiemTraGiamChuyenDong()) {
+        window.scrollTo(0, viTriDich);
+        dangCuonChuyenTang = false;
+        thoiGianKetThucCuon = Date.now();
+        return;
+    }
+
+    dangCuonChuyenTang = true;
+    const thoiDiemBatDau = performance.now();
+
+    function buocKhungHinh(thoiDiemHienTai) {
+        const thoiGianTroiQua = thoiDiemHienTai - thoiDiemBatDau;
+        const tienDo = Math.min(1, thoiGianTroiQua / thoiGianChay);
+        const heSoEmDiu = hamEmDiuBacBa(tienDo);
+
+        window.scrollTo(0, viTriBatDau + quangDuong * heSoEmDiu);
+
+        if (tienDo < 1) {
+            maKhungHinhCuon = requestAnimationFrame(buocKhungHinh);
+        } else {
+            maKhungHinhCuon = 0;
+            thoiGianKetThucCuon = Date.now();
+            setTimeout(() => {
+                if (!maKhungHinhCuon) {
+                    dangCuonChuyenTang = false;
+                }
+            }, THOI_GIAN_NGHI_SAU_CUON);
+        }
+    }
+
+    maKhungHinhCuon = requestAnimationFrame(buocKhungHinh);
+}
+
+// Cuộn trang mượt mà đến vị trí đỉnh của một phần tử cụ thể (có trừ khoảng đệm menu sticky)
+function cuonMuotDenPhanTu(phanTu, thoiGianChay = 700) {
+    if (!phanTu) return;
+    const chieuCaoHeader = layChieuCaoThanhMenu();
+    const viTriDich = phanTu.getBoundingClientRect().top + window.scrollY - chieuCaoHeader;
+    cuonMuotDenViTri(viTriDich, thoiGianChay);
+
+    if (phanTu.id) {
+        capNhatChamTronActive("#" + phanTu.id);
+    }
+    const khoiHienDan = phanTu.querySelector(".section-reveal");
+    if (khoiHienDan) {
+        khoiHienDan.classList.add("active");
+    }
+}
+
+// Hàm kích hoạt điều hướng phân khu từ các nút chấm tròn bên phải hoặc thẻ liên kết
+function cuonDenPhanKhu(selector, e) {
+    const mucTieu = document.querySelector(selector);
+    if (!mucTieu) {
+        return true; // Cho phép điều hướng href mặc định nếu đang ở trang con khác
+    }
+    if (e && typeof e.preventDefault === "function") {
+        e.preventDefault();
+    }
+
+    cuonMuotDenPhanTu(mucTieu);
+    return false;
+}
+
+// Cập nhật trạng thái sáng chấm tròn dọc bên phải (.side-dot-btn.active)
+function capNhatChamTronActive(selector) {
+    document.querySelectorAll(".side-dot-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.getAttribute("data-target") === selector);
+    });
+}
+
+// Lấy danh sách các phần tử tầng trang chủ hiện có trong DOM
+function layDanhSachSectionTrangChu() {
+    return DANH_SACH_PHAN_KHU
+        .map(id => document.querySelector(id))
+        .filter(el => el !== null);
+}
+
+// Lấy danh sách các tầng mục tiêu để cuộn lật phân khu theo bánh xe chuột
+function layDanhSachTangLatTrang() {
+    return DANH_SACH_TANG_LAT_TRANG
+        .map(id => id === "footer" ? (document.getElementById("footer") || document.querySelector("footer")) : document.getElementById(id))
+        .filter(el => el !== null);
+}
+
+// Khởi tạo IntersectionObserver: chỉ bật sáng chấm tròn active và trượt nhẹ .section-reveal.active
+function khoiTaoSectionScrollObserver() {
+    const cacSection = layDanhSachSectionTrangChu();
+    if (cacSection.length === 0 || !("IntersectionObserver" in window)) {
+        cacSection.forEach(sec => sec.querySelector(".section-reveal")?.classList.add("active"));
+        return;
+    }
+
+    // 1. Theo dõi tầng đang xuất hiện ở vùng trung tâm tầm mắt để đổi chấm active
+    const boQuanSatChamTron = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                capNhatChamTronActive("#" + entry.target.id);
+            }
+        });
+    }, {
+        root: null,
+        rootMargin: "-40% 0px -40% 0px",
+        threshold: 0
+    });
+
+    // 2. Theo dõi tầng bắt đầu lọt vào khung nhìn để kích hoạt hiệu ứng hiện dần
+    const boQuanSatHienDan = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.querySelector(".section-reveal")?.classList.add("active");
+            }
+        });
+    }, {
+        root: null,
+        rootMargin: "0px 0px -10% 0px",
+        threshold: 0
+    });
+
+    cacSection.forEach(sec => {
+        boQuanSatChamTron.observe(sec);
+        boQuanSatHienDan.observe(sec);
+    });
+}
+
+// Kiểm tra con trỏ chuột có đang nằm trong một hộp cuộn nội bộ (VD: danh sách bánh) chưa chạm mép
+function kiemTraHopCuonNoiBo(phanTuDich, huongXuong) {
+    let nut = phanTuDich instanceof Element ? phanTuDich : null;
+    while (nut && nut !== document.body && nut !== document.documentElement) {
+        const phongCach = window.getComputedStyle(nut);
+        const kieuTranY = phongCach.overflowY;
+        const laHopCuon = (kieuTranY === "auto" || kieuTranY === "scroll" || nut.classList.contains("overflow-auto"));
+
+        if (laHopCuon && nut.scrollHeight > nut.clientHeight + 1) {
+            if (huongXuong && Math.ceil(nut.scrollTop + nut.clientHeight) < nut.scrollHeight - 1) {
+                return true; // Còn cuộn xuống tiếp được bên trong hộp
+            }
+            if (!huongXuong && nut.scrollTop > 1) {
+                return true; // Còn cuộn lên tiếp được bên trong hộp
+            }
+        }
+        nut = nut.parentElement;
+    }
+    return false;
+}
+
+// Khởi tạo trình lắng nghe sự kiện lăn chuột phân khu mượt mà (style sao.agu.edu.vn)
+function khoiTaoTrinhLatTangBanhXe() {
+    const cacTang = layDanhSachTangLatTrang();
+    if (cacTang.length < 2 || kiemTraGiamChuyenDong()) return;
+    window.addEventListener("wheel", xuLyLanChuotPhanKhu, { passive: false });
+}
+
+// Xử lý sự kiện lăn bánh xe chuột phân trang thông minh
+function xuLyLanChuotPhanKhu(e) {
+    // 1. Kiểm tra các điều kiện bỏ qua (Bypass conditions)
+    if (e.ctrlKey) return; // Người dùng đang nhấn phím Ctrl để zoom trình duyệt
+    if (Math.abs(e.deltaY) < 1 || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return; // Bỏ qua lăn ngang
+    if (document.querySelector(".modal.show, .offcanvas.show")) return; // Đang mở Modal hoặc Drawer
+
+    const huongXuong = e.deltaY > 0;
+    if (kiemTraHopCuonNoiBo(e.target, huongXuong)) return; // Con trỏ chuột nằm trong danh sách nội bộ chưa chạm mép
+
+    // 2. Chặn các thao tác cuộn đè trong khi đang chạy hiệu ứng hoặc trong khoảng hồi phục (150ms cooldown)
+    const bayGio = Date.now();
+    if (dangCuonChuyenTang || (bayGio - thoiGianKetThucCuon < THOI_GIAN_NGHI_SAU_CUON)) {
+        e.preventDefault();
+        return;
+    }
+
+    const cacTang = layDanhSachTangLatTrang();
+    const chieuCaoHeader = layChieuCaoThanhMenu();
+    const chieuCaoManHinh = window.innerHeight;
+    const viTriCuonHienTai = window.scrollY;
+    const duongMoc = chieuCaoHeader + 2;
+
+    // Tìm tầng hiện tại đang hiển thị dưới thanh header
+    let chiSoTang = cacTang.findIndex(tang => {
+        const r = tang.getBoundingClientRect();
+        return r.top <= duongMoc && r.bottom > duongMoc;
+    });
+
+    if (chiSoTang === -1) {
+        // Dự phòng: chọn tầng có diện tích bao phủ lớn nhất trong màn hình
+        let maxDienTich = -1;
+        cacTang.forEach((tang, idx) => {
+            const r = tang.getBoundingClientRect();
+            const topNhin = Math.max(chieuCaoHeader, r.top);
+            const botNhin = Math.min(chieuCaoManHinh, r.bottom);
+            const chieuCao = botNhin - topNhin;
+            if (chieuCao > maxDienTich) {
+                maxDienTich = chieuCao;
+                chiSoTang = idx;
+            }
+        });
+    }
+
+    if (chiSoTang === -1) return;
+
+    const tangHienTai = cacTang[chiSoTang];
+    const khungTang = tangHienTai.getBoundingClientRect();
+    const buocCuonTrongTang = Math.round((chieuCaoManHinh - chieuCaoHeader) * 0.75);
+    let viTriDich = viTriCuonHienTai;
+
+    if (huongXuong) {
+        // Cuộn XUỐNG: Nếu tầng hiện tại cao hơn viewport và đáy tầng vẫn nằm dưới đáy viewport -> cuộn tiếp bên trong tầng
+        const dayTangToaDo = khungTang.bottom + viTriCuonHienTai;
+        if ((khungTang.bottom - khungTang.top > chieuCaoManHinh - chieuCaoHeader) && (khungTang.bottom > chieuCaoManHinh + 5)) {
+            viTriDich = Math.min(viTriCuonHienTai + buocCuonTrongTang, dayTangToaDo - chieuCaoManHinh);
+        } else if (chiSoTang < cacTang.length - 1) {
+            // Đã thấy đáy tầng hiện tại -> lướt mượt xuống đỉnh tầng kế tiếp
+            const tangKeTiep = cacTang[chiSoTang + 1];
+            viTriDich = tangKeTiep.getBoundingClientRect().top + viTriCuonHienTai - chieuCaoHeader;
+        } else {
+            return; // Đã ở tầng cuối cùng
+        }
+    } else {
+        // Cuộn LÊN: Nếu đỉnh tầng hiện tại đang nằm trên sticky header -> cuộn lên đỉnh tầng hiện tại trước
+        const dinhTangToaDo = khungTang.top + viTriCuonHienTai - chieuCaoHeader;
+        if (khungTang.top < chieuCaoHeader - 5) {
+            viTriDich = Math.max(dinhTangToaDo, viTriCuonHienTai - buocCuonTrongTang);
+        } else if (chiSoTang > 0) {
+            // Đang ở sát đỉnh tầng hiện tại -> lướt mượt về tầng phía trước
+            const tangTruoc = cacTang[chiSoTang - 1];
+            const khungTangTruoc = tangTruoc.getBoundingClientRect();
+            const chieuCaoTangTruoc = khungTangTruoc.bottom - khungTangTruoc.top;
+
+            // Nếu tầng trước cao hơn màn hình thì cuộn đến đáy của tầng trước để người dùng không bỏ lỡ nội dung
+            if (chieuCaoTangTruoc > (chieuCaoManHinh - chieuCaoHeader + 5)) {
+                viTriDich = khungTangTruoc.bottom + viTriCuonHienTai - chieuCaoManHinh;
+            } else {
+                viTriDich = khungTangTruoc.top + viTriCuonHienTai - chieuCaoHeader;
+            }
+        } else {
+            return; // Đã ở tầng đầu tiên
+        }
+    }
+
+    const viTriToiDa = layGioiHanCuonToiDa();
+    const viTriDichChuan = Math.min(Math.max(0, viTriDich), viTriToiDa);
+
+    if (Math.abs(viTriDichChuan - viTriCuonHienTai) < 2) return;
+
+    e.preventDefault();
+    cuonMuotDenViTri(viTriDichChuan, 700);
+}
+
+// Bắt sự kiện click vào tất cả các liên kết neo #tang-... để trượt mượt mà
+function khoiTaoLienKetNeoMuot() {
+    document.addEventListener("click", function (e) {
+        if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
+
+        const lienKet = e.target instanceof Element ? e.target.closest('a[href*="#tang-"]') : null;
+        if (!lienKet) return;
+
+        const duongDan = new URL(lienKet.href, window.location.href);
+        if (duongDan.pathname !== window.location.pathname) return;
+
+        const mucTieu = document.getElementById(duongDan.hash.slice(1));
+        if (!mucTieu) return;
+
+        e.preventDefault();
+        cuonMuotDenPhanTu(mucTieu);
+    });
+}
+
+function dieuHuongMenuThuongHieu(tenThuongHieu, e) {
+    const tangBst = document.getElementById("tang-bo-suu-tap");
+    if (!tangBst) return true;
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+
+    // Đặt lại bộ lọc hương vị về Tất cả để hiển thị đầy đủ bánh của thương hiệu
+    const btnAllLoc = document.querySelector('#nhomLocDinhDuong button[data-loc="ALL"]');
+    locSanPham("ALL", btnAllLoc);
+
+    // Tìm nút thương hiệu tương ứng
+    let btnTh = null;
+    document.querySelectorAll("#nhomLocThuongHieu .btn-thuong-hieu").forEach(b => {
+        if ((b.getAttribute("data-th") || "").toLowerCase() === tenThuongHieu.toLowerCase()) {
+            btnTh = b;
+        }
+    });
+    locTheoThuongHieu(tenThuongHieu, btnTh);
+
+    cuonMuotDenPhanTu(tangBst);
+    return false;
+}
+
+function dieuHuongMenuBoSuuTap(loaiLoc, e) {
+    const tangBst = document.getElementById("tang-bo-suu-tap");
+    if (!tangBst) return true;
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+
+    // Đặt lại thương hiệu về Tất cả
+    const btnAllTh = document.querySelector('#nhomLocThuongHieu button[data-th="ALL"]');
+    locTheoThuongHieu("ALL", btnAllTh);
+
+    const btnLoc = document.querySelector(`#nhomLocDinhDuong button[data-loc="${loaiLoc}"]`);
+    locSanPham(loaiLoc, btnLoc);
+
+    cuonMuotDenPhanTu(tangBst);
+    return false;
+}
+
+function dieuHuongMenuVoHop(maVh, e) {
+    const tangHop = document.getElementById("tang-tu-chon-hop");
+    if (!tangHop) return true;
+    if (e && typeof e.preventDefault === "function") e.preventDefault();
+
+    const radioVh = document.getElementById(`vh_${maVh}`);
+    if (radioVh) {
+        radioVh.checked = true;
+        doiMauVoHop(radioVh);
+    }
+
+    cuonMuotDenPhanTu(tangHop);
+    return false;
+}
+
+function moModalTuVanQua() {
+    const modalEl = document.getElementById("modalTroLyChonBanh");
+    if (modalEl && typeof bootstrap !== "undefined") {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+}
+
+// =========================================================================
+// 1B. TƯƠNG TÁC KHAY HỘP TỰ PHỐI
+// =========================================================================
 function doiMauVoHop(radio) {
     cauHinhHop.maVH = parseInt(radio.value);
     cauHinhHop.tenVoHop = radio.dataset.ten;
@@ -43,10 +435,14 @@ function doiMauVoHop(radio) {
     cauHinhHop.kieuLuoi = radio.dataset.luoi;
 
     const khungKhay = document.getElementById("khungKhayHop");
-    khungKhay.style.backgroundImage = `linear-gradient(rgba(11,19,43,0.65), rgba(11,19,43,0.65)), url('${radio.dataset.anhkhay}')`;
+    if (khungKhay) {
+        khungKhay.style.backgroundImage = `linear-gradient(rgba(74, 7, 9, 0.32), rgba(74, 7, 9, 0.32)), url('${radio.dataset.anhkhay}')`;
+    }
 
     const luoi = document.getElementById("luoiOBanh");
-    luoi.className = cauHinhHop.kieuLuoi === "grid-3x2" ? "luoi-hop-3x2 w-100" : "luoi-hop-2x2 w-100";
+    if (luoi) {
+        luoi.className = cauHinhHop.kieuLuoi === "grid-3x2" ? "luoi-hop-3x2 w-100" : "luoi-hop-2x2 w-100";
+    }
 
     // Điều chỉnh mảng các ô theo sức chứa mới
     let mangMoi = new Array(cauHinhHop.sucChua).fill(null);
@@ -60,7 +456,7 @@ function doiMauVoHop(radio) {
 function datBanhVaoOTrong(maBanh, tenBanh, donGia, calo, laVip, anhSlot, diUng) {
     const viTriTrong = cauHinhHop.cacO.findIndex(o => o === null);
     if (viTriTrong === -1) {
-        alert("Khay hộp đã đầy! Bạn có thể bấm vào 1 ô bất kỳ trên khay để đổi bánh khác hoặc chọn vỏ hộp 6 bánh.");
+        hienThiThongBaoGioHang("Khay lễ hộp đã đầy! Bạn có thể chạm vào 1 ô trên khay để đổi vị bánh hoặc chọn mẫu hộp 6 bánh.", false);
         return;
     }
 
@@ -103,24 +499,24 @@ function renderKhayHop() {
             maBanhArr.push("B" + banh.maBanh);
 
             div.onclick = () => xoaBanhKhoiO(idx);
-            div.title = "Bấm để bỏ bánh này ra khỏi ô";
+            div.title = "Chạm để đổi bánh khác cho ô này";
             div.innerHTML = `
                 <img src="${banh.anhSlot}" alt="${banh.tenBanh}" />
-                <span class="badge bg-dark border border-warning text-warning mt-1 text-truncate" style="max-width:95%; font-size:0.68rem;">
+                <span class="badge badge-thuong-hang mt-1 text-truncate" style="max-width:95%; font-size:0.68rem;">
                     Ô ${idx + 1}: ${banh.tenBanh}
                 </span>
             `;
         } else {
             maBanhArr.push("0");
             div.innerHTML = `
-                <i class="bi bi-plus-circle-dotted fs-3 text-warning opacity-50"></i>
-                <small class="text-secondary mt-1">Ô số ${idx + 1}</small>
+                <i class="bi bi-plus-circle-dotted fs-3 chu-do-son-mai opacity-75"></i>
+                <small class="chu-nau-phu fw-medium mt-1">Ô bánh số ${idx + 1}</small>
             `;
         }
         luoi.appendChild(div);
     });
 
-    // Tính giá theo công thức Giai đoạn 1: Vỏ hộp giảm 5% khi tự phối + Tổng giá bánh lẻ
+    // Tính giá: Vỏ hộp giảm 5% khi tự phối + Tổng giá bánh lẻ
     let tongGiaHop = (cauHinhHop.giaVo * 0.95) + tongTienBanh;
     let maBam = `VH${cauHinhHop.maVH}_${maBanhArr.join("-")}`;
 
@@ -128,20 +524,20 @@ function renderKhayHop() {
     document.getElementById("lblTongCalo").innerText = `${tongCalo.toLocaleString("vi-VN")} Kcal`;
     document.getElementById("lblSoBanhVip").innerText = `${soBanhVip} bánh`;
     document.getElementById("lblCanhBaoDiUng").innerText = tapHopDiUng.size > 0 ? Array.from(tapHopDiUng).join("; ") : "An toàn";
-    document.getElementById("lblMaBamCauHinh").innerText = `Mã cấu hình: #${maBam}`;
+    document.getElementById("lblMaBamCauHinh").innerText = `Ký hiệu hộp lễ: ${maBam}`;
     document.getElementById("lblTongGiaHop").innerText = `${Math.round(tongGiaHop).toLocaleString("vi-VN")} đ`;
 
-    // Kiểm tra điều kiện hợp lệ (IsValidBox)
+    // Kiểm tra điều kiện hợp lệ
     const btnThem = document.getElementById("btnThemHopVaoGio");
     if (soBanhDaXep < cauHinhHop.sucChua) {
         btnThem.disabled = true;
-        btnThem.innerText = `🔒 Hãy chọn thêm ${cauHinhHop.sucChua - soBanhDaXep} bánh nữa để đóng hộp`;
+        btnThem.innerText = `🔒 Mời chọn thêm ${cauHinhHop.sucChua - soBanhDaXep} bánh nữa để hoàn tất lễ hộp`;
     } else if (soBanhVip < cauHinhHop.minVipRequired) {
         btnThem.disabled = true;
-        btnThem.innerText = `⚠️ Vỏ hộp VIP này yêu cầu tối thiểu ${cauHinhHop.minVipRequired} bánh Thượng Hạng`;
+        btnThem.innerText = `⚠️ Mẫu hộp này cần tối thiểu ${cauHinhHop.minVipRequired} bánh Thượng Hạng`;
     } else {
         btnThem.disabled = false;
-        btnThem.innerText = `🎁 Thêm Hộp Tự Phối Này Vào Giỏ Quà (${Math.round(tongGiaHop).toLocaleString("vi-VN")} đ)`;
+        btnThem.innerText = `🎁 Thêm Lễ Hộp Tự Phối Vào Giỏ Quà (${Math.round(tongGiaHop).toLocaleString("vi-VN")} đ)`;
     }
 }
 
@@ -164,7 +560,7 @@ async function xacNhanThemHopTuChon() {
     const noiDungCu = btnThem ? btnThem.innerHTML : "";
     if (btnThem) {
         btnThem.disabled = true;
-        btnThem.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu cấu hình hộp quà...`;
+        btnThem.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Đang lưu lễ hộp quà tặng...`;
     }
 
     try {
@@ -185,10 +581,10 @@ async function xacNhanThemHopTuChon() {
             await taiLaiGioHangOffcanvas();
             moNganKeoGioHang();
         } else {
-            hienThiThongBaoGioHang(data.thongBao || "Không thể thêm hộp quà tự chọn!", false);
+            hienThiThongBaoGioHang(data.thongBao || "Không thể thêm lễ hộp tự chọn!", false);
         }
     } catch (err) {
-        hienThiThongBaoGioHang("Lỗi kết nối máy chủ khi lưu hộp quà tự chọn!", false);
+        hienThiThongBaoGioHang("Lỗi kết nối máy chủ khi lưu lễ hộp tự chọn!", false);
     } finally {
         if (btnThem) {
             btnThem.disabled = false;
@@ -199,7 +595,7 @@ async function xacNhanThemHopTuChon() {
 }
 
 // =========================================================================
-// 1B. CÁC HÀM AJAX GIỎ HÀNG KÉP (GUEST & MEMBER) & OFFCANVAS REALTIME
+// 1C. CÁC HÀM AJAX GIỎ QUÀ & ĐỒNG BỘ NGĂN KÉO GIỎ HÀNG
 // =========================================================================
 async function themBanhLeVaoGio(maBanh, soLuong = 1) {
     try {
@@ -222,7 +618,7 @@ async function themBanhLeVaoGio(maBanh, soLuong = 1) {
             hienThiThongBaoGioHang(data.thongBao || "Không thể thêm bánh vào giỏ!", false);
         }
     } catch (err) {
-        hienThiThongBaoGioHang("Lỗi kết nối khi thêm bánh lẻ vào giỏ hàng!", false);
+        hienThiThongBaoGioHang("Lỗi kết nối khi thêm bánh lẻ vào giỏ quà!", false);
     }
 }
 
@@ -267,7 +663,7 @@ async function xoaMonKhoiGio(maCtgh) {
             hienThiThongBaoGioHang(data.thongBao || "Không thể xóa món quà!", false);
         }
     } catch (err) {
-        hienThiThongBaoGioHang("Lỗi kết nối khi xóa món khỏi giỏ hàng!", false);
+        hienThiThongBaoGioHang("Lỗi kết nối khi xóa món khỏi giỏ quà!", false);
     }
 }
 
@@ -315,7 +711,7 @@ async function taiLaiGioHangOffcanvas() {
         if (!khungDanhSach) return;
 
         if (!data.danhSachMon || data.danhSachMon.length === 0) {
-            khungDanhSach.innerHTML = `<div class="text-center text-secondary py-5">Giỏ quà đang trống. Hãy tự phối hộp bánh ở Tầng 3!</div>`;
+            khungDanhSach.innerHTML = `<div class="text-center chu-nau-phu py-5">Giỏ quà đang trống. Mời bạn chọn bánh hoặc tự phối lễ hộp!</div>`;
             return;
         }
 
@@ -323,37 +719,37 @@ async function taiLaiGioHangOffcanvas() {
         data.danhSachMon.forEach(item => {
             let thongTinPhu = "";
             if (item.loaiSanPham === 3) {
-                thongTinPhu += `<small class="text-info d-block mt-1">Mã cấu hình: ${item.maBamCauHinh} (${item.tongCalo.toLocaleString("vi-VN")} Kcal)</small>`;
+                thongTinPhu += `<small class="chu-nau-phu d-block mt-1">Ký hiệu hộp lễ: ${item.maBamCauHinh} (${item.tongCalo.toLocaleString("vi-VN")} Kcal)</small>`;
                 if (item.danhSachViBanh && item.danhSachViBanh.length > 0) {
-                    thongTinPhu += `<div class="small text-secondary mt-1" style="font-size: 0.75rem;">${item.danhSachViBanh.join(" • ")}</div>`;
+                    thongTinPhu += `<div class="small chu-nau-phu mt-1" style="font-size: 0.75rem;">${item.danhSachViBanh.join(" • ")}</div>`;
                 }
             } else if (item.loaiSanPham === 1 && item.tongCalo > 0) {
-                thongTinPhu += `<small class="text-secondary d-block mt-1">Bánh lẻ • ${item.tongCalo} Kcal / bánh</small>`;
+                thongTinPhu += `<small class="chu-nau-phu d-block mt-1">Bánh lẻ • ${item.tongCalo} Kcal / bánh</small>`;
             }
 
             html += `
                 <div class="p-3 mb-2 rounded card-hoang-gia">
                     <div class="d-flex justify-content-between align-items-start gap-2">
-                        <strong class="chu-vang-kim">${item.tenMon}</strong>
+                        <strong class="chu-do-son-mai">${item.tenMon}</strong>
                         <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2"
                                 onclick="xoaMonKhoiGio(${item.maCtgh})" title="Xóa món này">
                             🗑️
                         </button>
                     </div>
                     ${thongTinPhu}
-                    <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-secondary">
+                    <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
                         <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-outline-warning px-2 py-0"
+                            <button type="button" class="btn btn-vien-vang px-2 py-0"
                                     onclick="capNhatSoLuongMon(${item.maCtgh}, ${item.soLuong - 1})">
                                 -
                             </button>
-                            <span class="btn btn-dark border-warning text-light px-3 py-0 disabled">${item.soLuong}</span>
-                            <button type="button" class="btn btn-outline-warning px-2 py-0"
+                            <span class="btn px-3 py-0 disabled fw-bold" style="background: var(--mau-nen-ngoc-trai); color: var(--mau-chu-nau-tram); border-color: var(--mau-vang-dong-co);">${item.soLuong}</span>
+                            <button type="button" class="btn btn-vien-vang px-2 py-0"
                                     onclick="capNhatSoLuongMon(${item.maCtgh}, ${item.soLuong + 1})">
                                 +
                             </button>
                         </div>
-                        <div class="fw-bold text-warning">${Math.round(item.thanhTien).toLocaleString("vi-VN")} đ</div>
+                        <div class="fw-bold chu-do-son-mai">${Math.round(item.thanhTien).toLocaleString("vi-VN")} đ</div>
                     </div>
                 </div>
             `;
@@ -361,7 +757,7 @@ async function taiLaiGioHangOffcanvas() {
 
         khungDanhSach.innerHTML = html;
     } catch (err) {
-        console.error("Không thể đồng bộ giỏ hàng:", err);
+        console.error("Không thể đồng bộ giỏ quà:", err);
     }
 }
 
@@ -378,7 +774,7 @@ function chuyenDenTrangThanhToan(e) {
     const soLuong = badge ? parseInt(badge.innerText || "0") : 0;
     if (soLuong <= 0) {
         if (e) e.preventDefault();
-        hienThiThongBaoGioHang("Giỏ quà đang trống! Hãy chọn bánh lẻ hoặc tự phối hộp quà trước khi thanh toán.", false);
+        hienThiThongBaoGioHang("Giỏ quà đang trống! Hãy chọn bánh lẻ hoặc tự phối lễ hộp trước khi đặt quà.", false);
         return false;
     }
     window.location.href = "/ThanhToan/Index";
@@ -418,12 +814,12 @@ async function apDungVoucherGioHang() {
             await taiLaiGioHangOffcanvas();
         }
     } catch (err) {
-        hienThiThongBaoGioHang("Lỗi kết nối máy chủ khi áp dụng mã giảm giá!", false);
+        hienThiThongBaoGioHang("Lỗi kết nối máy chủ khi áp dụng mã ưu đãi!", false);
     }
 }
 
 // =========================================================================
-// 1C. ĐĂNG NHẬP, ĐĂNG KÝ COOKIE AUTH & TỰ ĐỘNG HỢP NHẤT GIỎ HÀNG GUEST -> MEMBER
+// 1D. ĐĂNG NHẬP, ĐĂNG KÝ HỘI VIÊN & ĐỒNG BỘ GIỎ QUÀ
 // =========================================================================
 function dienNhanhTaiKhoanDemo(taiKhoan, matKhau) {
     const txtTk = document.getElementById("txtDangNhapTaiKhoan");
@@ -454,7 +850,7 @@ async function thucHienDangNhapAjax() {
 
         const data = await res.json();
         if (data.thanhCong) {
-            hienThiThongBaoGioHang(`${data.thongBao} Xin chào ${data.hoTen} (Hạng ${data.hangTv} • ${data.diem} điểm)!`, true);
+            hienThiThongBaoGioHang(`${data.thongBao} Kính chào ${data.hoTen} (Hạng ${data.hangTv} • ${data.diem} điểm)!`, true);
             setTimeout(() => {
                 window.location.reload();
             }, 900);
@@ -526,21 +922,24 @@ function hienThiThongBaoGioHang(noiDung, thanhCong = true) {
         container.id = "khungThongBaoToast";
         container.className = "toast-container position-fixed top-0 end-0 p-3";
         container.style.zIndex = "1090";
-        container.style.marginTop = "68px";
+        container.style.marginTop = "76px";
         document.body.appendChild(container);
     }
 
     const toastEl = document.createElement("div");
-    toastEl.className = `toast align-items-center text-light bg-dark border ${thanhCong ? "border-warning" : "border-danger"} show mb-2`;
+    toastEl.className = "toast align-items-center show mb-2";
     toastEl.setAttribute("role", "alert");
-    toastEl.style.boxShadow = "0 8px 24px rgba(0,0,0,0.65)";
+    toastEl.style.background = thanhCong ? "linear-gradient(135deg, #6E0D10 0%, #4A0709 100%)" : "#FFFFFF";
+    toastEl.style.color = thanhCong ? "#FAF0CA" : "#2C1810";
+    toastEl.style.border = thanhCong ? "1.5px solid #D4AF37" : "1.5px solid #DC3545";
+    toastEl.style.boxShadow = "0 10px 28px rgba(74, 7, 9, 0.28)";
     toastEl.innerHTML = `
         <div class="d-flex">
-            <div class="toast-body">
+            <div class="toast-body fw-medium">
                 <i class="bi ${thanhCong ? "bi-check-circle-fill chu-vang-kim" : "bi-exclamation-triangle-fill text-danger"} me-2"></i>
                 <span>${noiDung}</span>
             </div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            <button type="button" class="btn-close ${thanhCong ? "btn-close-white" : ""} me-2 m-auto" data-bs-dismiss="toast"></button>
         </div>
     `;
 
@@ -552,7 +951,7 @@ function hienThiThongBaoGioHang(noiDung, thanhCong = true) {
 }
 
 // =========================================================================
-// 2. BỘ LỌC BÁNH THEO CHỈ SỐ DINH DƯỠNG & THƯƠNG HIỆU (TẦNG 4)
+// 2. BỘ LỌC BÁNH THEO HƯƠNG VỊ DINH DƯỠNG & THƯƠNG HIỆU (TẦNG 3)
 // =========================================================================
 let boLocDinhDuongHienTai = "ALL";
 let boLocThuongHieuHienTai = "ALL";
@@ -567,7 +966,7 @@ function apDungBoLocTang4() {
 
         let khopThuongHieu = true;
         if (boLocThuongHieuHienTai !== "ALL") {
-            khopThuongHieu = (card.dataset.thuonghieu || "") === boLocThuongHieuHienTai;
+            khopThuongHieu = (card.dataset.thuonghieu || "").toLowerCase() === boLocThuongHieuHienTai.toLowerCase();
         }
 
         card.classList.toggle("d-none", !(khopDinhDuong && khopThuongHieu));
@@ -584,18 +983,18 @@ function locSanPham(loaiLoc, btn) {
 function locTheoThuongHieu(thuongHieu, btn) {
     boLocThuongHieuHienTai = thuongHieu;
     document.querySelectorAll("#nhomLocThuongHieu .btn-thuong-hieu").forEach(b => {
-        b.classList.remove("btn-vang-kim");
-        b.classList.add("btn-outline-warning");
+        b.classList.remove("btn-do-son-mai");
+        b.classList.add("btn-vien-vang");
     });
     if (btn) {
-        btn.classList.remove("btn-outline-warning");
-        btn.classList.add("btn-vang-kim");
+        btn.classList.remove("btn-vien-vang");
+        btn.classList.add("btn-do-son-mai");
     }
     apDungBoLocTang4();
 }
 
 // =========================================================================
-// 3. MÁY TÍNH CHIẾT KHẤU SỈ B2B TRỰC TIẾP (TẦNG 5)
+// 3. BẢNG ƯỚC TÍNH CHIẾT KHẤU SỈ B2B TRỰC TIẾP (TẦNG 4)
 // =========================================================================
 function tinhGiaSiB2B(soHop) {
     soHop = parseInt(soHop);
@@ -615,7 +1014,7 @@ function tinhGiaSiB2B(soHop) {
 }
 
 // =========================================================================
-// 4. GỌI API TRỢ LÝ CHỌN QUÀ 30 GIÂY & TRA CỨU ĐƠN HÀNG GUEST
+// 4. NGHỆ NHÂN TƯ VẤN CHỌN QUÀ HỢP Ý & TRA CỨU ĐƠN HÀNG
 // =========================================================================
 async function chayThuatToanGoiY() {
     const dt = document.getElementById("quizDoiTuong").value;
@@ -632,13 +1031,13 @@ async function chayThuatToanGoiY() {
     data.forEach(item => {
         container.innerHTML += `
             <div class="col-md-4">
-                <div class="p-3 rounded bg-dark border border-warning h-100 text-center">
-                    <span class="badge bg-success mb-2">Độ tương thích: ${item.doPhuHop}%</span>
-                    <img src="${item.anhBanh}" width="90" height="90" class="d-block mx-auto my-2 rounded-circle border border-warning" />
-                    <h6 class="chu-vang-kim fw-bold">${item.tenBanh}</h6>
-                    <div class="small text-info mb-1">${item.calo} Kcal • Chỉ số GI: ${item.chiSoGI}</div>
-                    <p class="small text-secondary mb-2" style="font-size:0.75rem;">${item.lyDo}</p>
-                    <strong class="d-block text-light">${item.donGia.toLocaleString("vi-VN")} đ / bánh</strong>
+                <div class="p-3 rounded card-hoang-gia h-100 text-center">
+                    <span class="badge badge-thuong-hang mb-2">Độ hợp vị: ${item.doPhuHop}%</span>
+                    <img src="${item.anhBanh}" width="90" height="90" class="d-block mx-auto my-2 rounded-circle p-1 bg-white" style="border: 1.5px solid var(--mau-vang-dong-co);" />
+                    <h6 class="chu-do-son-mai fw-bold">${item.tenBanh}</h6>
+                    <div class="small text-success fw-medium mb-1">${item.calo} Kcal • Chỉ số GI: ${item.chiSoGI}</div>
+                    <p class="small chu-nau-phu mb-2" style="font-size:0.75rem;">${item.lyDo}</p>
+                    <strong class="d-block chu-nau-tram">${item.donGia.toLocaleString("vi-VN")} đ / bánh</strong>
                 </div>
             </div>
         `;
@@ -655,15 +1054,15 @@ async function traCuuDonHangGuest() {
 
     box.classList.remove("d-none");
     if (!data.thanhCong) {
-        box.innerHTML = `<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>${data.thongBao}</span>`;
+        box.innerHTML = `<span class="text-danger fw-medium"><i class="bi bi-exclamation-triangle me-1"></i>${data.thongBao}</span>`;
     } else {
         box.innerHTML = `
-            <div class="small">
-                <strong class="chu-vang-kim d-block mb-1">Đơn hàng: ${data.maDon} (${data.trangThai})</strong>
+            <div class="small chu-nau-tram">
+                <strong class="chu-do-son-mai d-block mb-1">Đơn hàng: ${data.maDon} (${data.trangThai})</strong>
                 <div>Người đặt: ${data.nguoiMua} • Ngày đặt: ${data.ngayDat}</div>
-                <div>Tổng thanh toán: <strong class="text-warning">${data.tongTien}</strong> (${data.soDiemGiao} điểm giao)</div>
-                <a href="/ThanhToan/ThanhCong?maDon=${encodeURIComponent(data.maDon)}" class="btn btn-sm btn-vang-kim rounded-pill mt-2 w-100">
-                    <i class="bi bi-qr-code-scan me-1"></i>Xem Chi Tiết Đơn & Mã QR Thiệp 3D
+                <div>Tổng thanh toán: <strong class="chu-do-son-mai">${data.tongTien}</strong> (${data.soDiemGiao} điểm giao)</div>
+                <a href="/ThanhToan/ThanhCong?maDon=${encodeURIComponent(data.maDon)}" class="btn btn-sm btn-do-son-mai rounded-pill mt-2 w-100">
+                    <i class="bi bi-qr-code-scan me-1"></i>Xem Chi Tiết Đơn &amp; Mã QR Thiệp 3D
                 </a>
             </div>
         `;

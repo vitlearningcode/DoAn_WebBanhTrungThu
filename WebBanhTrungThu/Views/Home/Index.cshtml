@@ -6,51 +6,76 @@
 }
 
 <!-- =========================================================================
-     TẦNG 2: HERO STORYTELLING BANNER & ĐẾM NGƯỢC TẾT ĐOÀN VIÊN
+     THANH ĐIỀU HƯỚNG ĐIỂM DỌC BÊN PHẢI (RIGHT SIDE SECTION DOTS - SAO.AGU.EDU.VN)
      ========================================================================= -->
-<section id="tang-hero" class="position-relative py-5" style="background: linear-gradient(135deg, rgba(11,19,43,0.92) 40%, rgba(28,37,65,0.82) 100%), url('@anhHero') center/cover no-repeat; min-height: 82vh; display: flex; align-items: center;">
-    <div class="container py-4">
+<ul class="side-section-dots" id="thanhDieuHuongDiemDoc" aria-label="Điều hướng phân khu trang chủ">
+    <li class="side-dot-item">
+        <span class="side-dot-label">01. Đêm Trăng Đoàn Viên</span>
+        <button type="button" class="side-dot-btn active" data-target="#tang-hero" onclick="cuonDenPhanKhu('#tang-hero', event)" aria-label="01. Đêm Trăng Đoàn Viên"></button>
+    </li>
+    <li class="side-dot-item">
+        <span class="side-dot-label">02. Tự Tay Phối Hộp</span>
+        <button type="button" class="side-dot-btn" data-target="#tang-tu-chon-hop" onclick="cuonDenPhanKhu('#tang-tu-chon-hop', event)" aria-label="02. Tự Tay Phối Hộp"></button>
+    </li>
+    <li class="side-dot-item">
+        <span class="side-dot-label">03. Tuyệt Phẩm Bánh &amp; Trà</span>
+        <button type="button" class="side-dot-btn" data-target="#tang-bo-suu-tap" onclick="cuonDenPhanKhu('#tang-bo-suu-tap', event)" aria-label="03. Tuyệt Phẩm Bánh & Trà"></button>
+    </li>
+    <li class="side-dot-item">
+        <span class="side-dot-label">04. Quà Tặng Doanh Nghiệp</span>
+        <button type="button" class="side-dot-btn" data-target="#tang-b2b" onclick="cuonDenPhanKhu('#tang-b2b', event)" aria-label="04. Quà Tặng Doanh Nghiệp"></button>
+    </li>
+    <li class="side-dot-item">
+        <span class="side-dot-label">05. Thiệp Chúc Tết Đoàn Viên</span>
+        <button type="button" class="side-dot-btn" data-target="#tang-thiep-qr" onclick="cuonDenPhanKhu('#tang-thiep-qr', event)" aria-label="05. Thiệp Chúc Tết Đoàn Viên"></button>
+    </li>
+</ul>
+
+<!-- =========================================================================
+     TẦNG 1 (01): HERO BANNER LỄ HỘI TRUNG THU TRUYỀN THỐNG & ĐẾM NGƯỢC ĐOÀN VIÊN
+     ========================================================================= -->
+<section id="tang-hero" class="tang-phan-khu nen-le-hoi-son-mai" style="background: linear-gradient(135deg, rgba(110, 13, 16, 0.94) 0%, rgba(74, 7, 9, 0.90) 100%), url('@anhHero') center/cover no-repeat;">
+    <div class="container py-4 section-reveal active">
         <div class="row align-items-center g-5">
             <div class="col-lg-7">
-                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background: rgba(212,175,55,0.15); border: 1px solid var(--mau-vang-anh-kim);">
-                    <span class="chu-vang-kim small fw-semibold">✨ @(Model.HeroBanner?.TieuDePhu ?? "BỘ SƯU TẬP TRUNG THU NGHỆ THUẬT 2026")</span>
-                    <span class="badge bg-dark text-warning border border-warning">Phiên: @Model.MaPhienHienTai</span>
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background: rgba(212, 175, 55, 0.16); border: 1px solid var(--mau-vang-anh-kim);">
+                    <span class="chu-vang-kim small fw-semibold">🏮 @(Model.HeroBanner?.TieuDePhu ?? "BỘ SƯU TẬP LỄ HỘP TRUNG THU CỔ TRUYỀN 2026")</span>
                 </div>
 
                 <h1 class="font-co-phong display-4 fw-bold chu-vang-kim mb-3">
-                    @(Model.HeroBanner?.TieuDeChinh ?? "Tuyệt Tác Trăng Rằm – Tự Tay Kiến Tạo Hộp Quà Độc Bản")
+                    @(Model.HeroBanner?.TieuDeChinh ?? "Tuyệt Tác Trăng Rằm – Tự Tay Kiến Tạo Lễ Hộp Độc Bản")
                 </h1>
 
-                <p class="lead text-light opacity-75 mb-4">
-                    @(Model.HeroBanner?.NoiDungMoTa ?? "Kết hợp tinh hoa nhân bánh truyền thống, dòng bánh đường ăn kiêng Isomalt tốt cho sức khỏe và trình dựng hộp quà 3D thông minh.")
+                <p class="lead chu-kem-vang opacity-90 mb-4">
+                    @(Model.HeroBanner?.NoiDungMoTa ?? "Hội tụ tinh hoa bánh nướng, bánh dẻo cổ truyền từ Kinh Đô, Đồng Khánh, Như Lan, Brodard cùng dòng bánh thực dưỡng đường Isomalt thanh tao cho mùa Trăng Đoàn Viên trọn vẹn.")
                 </p>
 
-                <!-- Đồng hồ đếm ngược Trung Thu -->
+                <!-- Đồng hồ đếm ngược Đêm Rằm Trung Thu -->
                 <div class="d-flex gap-3 mb-4">
-                    <div class="card-hoang-gia px-3 py-2 text-center">
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
                         <span id="cd-ngay" class="fs-3 fw-bold chu-vang-kim d-block">18</span>
-                        <small class="text-secondary">Ngày</small>
+                        <small class="chu-kem-vang opacity-75">Ngày</small>
                     </div>
-                    <div class="card-hoang-gia px-3 py-2 text-center">
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
                         <span id="cd-gio" class="fs-3 fw-bold chu-vang-kim d-block">09</span>
-                        <small class="text-secondary">Giờ</small>
+                        <small class="chu-kem-vang opacity-75">Giờ</small>
                     </div>
-                    <div class="card-hoang-gia px-3 py-2 text-center">
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
                         <span id="cd-phut" class="fs-3 fw-bold chu-vang-kim d-block">45</span>
-                        <small class="text-secondary">Phút</small>
+                        <small class="chu-kem-vang opacity-75">Phút</small>
                     </div>
-                    <div class="card-hoang-gia px-3 py-2 text-center">
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
                         <span id="cd-giay" class="fs-3 fw-bold chu-vang-kim d-block">30</span>
-                        <small class="text-secondary">Giây</small>
+                        <small class="chu-kem-vang opacity-75">Giây</small>
                     </div>
                 </div>
 
                 <div class="d-flex flex-wrap gap-3">
-                    <a href="#tang-tu-chon-hop" class="btn btn-vang-kim btn-lg rounded-pill px-4">
-                        <i class="bi bi-magic me-2"></i>Tự Phối Hộp Quà Ngay
+                    <a href="#tang-tu-chon-hop" onclick="return cuonDenPhanKhu('#tang-tu-chon-hop', event)" class="btn btn-vang-kim btn-lg rounded-pill px-4">
+                        <i class="bi bi-box2-heart-fill me-2"></i>Tự Phối Hộp Quà Ngay
                     </a>
                     <button class="btn btn-vien-vang btn-lg rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalTroLyChonBanh">
-                        <i class="bi bi-robot me-2"></i>Nhờ AI Chọn Bánh Trong 30s
+                        ✨ Tư Vấn Chọn Hộp Quà Hợp Ý
                     </button>
                 </div>
             </div>
@@ -58,11 +83,13 @@
             <div class="col-lg-5 text-center">
                 <div class="card-hoang-gia p-4 position-relative">
                     <span class="badge badge-thuong-hang position-absolute top-0 end-0 m-3 px-3 py-2 rounded-pill">
-                        🔥 Đặt sớm giảm 10% (Mã: TRANGTRON2026)
+                        🔥 Ưu đãi đặt sớm -10% (Mã: TRANGTRON2026)
                     </span>
-                    <img src="@DichVuHinhAnh.LayUrl(Model.TuDienAnh, "BANH", 1, "TACH_NEN_SLOT")" class="img-fluid my-3" style="max-height: 290px;" alt="Bánh Trung Thu Chủ Đạo" />
-                    <h4 class="font-co-phong chu-vang-kim mb-1">Hộp Sơn Mài Tứ Quý Đoàn Viên</h4>
-                    <p class="small text-secondary mb-0">Tự do phối 4 hoặc 6 vị bánh • Tính Calo & Chỉ số GI tự động</p>
+                    <div class="khung-anh-banh-sang my-3">
+                        <img src="@DichVuHinhAnh.LayUrl(Model.TuDienAnh, "BANH", 1, "TACH_NEN_SLOT")" class="img-fluid" style="max-height: 270px;" alt="Bánh Trung Thu Chủ Đạo" />
+                    </div>
+                    <h4 class="font-co-phong fs-3 fw-bold chu-do-son-mai mb-1">Lễ Hộp Sơn Mài Tứ Quý Đoàn Viên</h4>
+                    <p class="small chu-nau-phu mb-0">Tự do phối 4 hoặc 6 vị bánh danh tiếng • Cân đối năng lượng &amp; độ ngọt thanh</p>
                 </div>
             </div>
         </div>
@@ -70,28 +97,30 @@
 </section>
 
 <!-- =========================================================================
-     TẦNG 3: TRÌNH DỰNG HỘP QUÀ THÔNG MINH 3 BƯỚC (CUSTOM BOX BUILDER STUDIO)
+     TẦNG 2 (02): KHUNG TỰ PHỐI LỄ HỘP QUÀ TẶNG 3 BƯỚC (NỀN KEM GIẤY DÓ ẤM)
      ========================================================================= -->
-<section id="tang-tu-chon-hop" class="py-5 border-top border-secondary" style="background: rgba(28,37,65,0.35);">
-    <div class="container py-3">
-        <div class="text-center mb-5">
-            <span class="text-uppercase small chu-vang-kim fw-bold">Trải Nghiệm Độc Quyền</span>
-            <h2 class="font-co-phong display-5 fw-bold chu-vang-kim">Studio Tự Phối Hộp Quà 3 Bước</h2>
-            <p class="text-secondary">Chọn mẫu vỏ hộp sang trọng, chạm để đặt từng chiếc bánh từ các thương hiệu danh tiếng vào ô trống và theo dõi trực tiếp tổng Calo & cảnh báo dị ứng</p>
+<section id="tang-tu-chon-hop" class="tang-phan-khu nen-ngoc-trai-am border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
+    <div class="container py-3 section-reveal">
+        <div class="text-center mb-4">
+            <span class="text-uppercase small chu-do-son-mai fw-bold" style="letter-spacing: 1.5px;">Nghệ Thuật Quà Biếu Thủ Công</span>
+            <h2 class="font-co-phong display-5 fw-bold chu-nau-tram">Không Gian Tự Tay Phối Hộp Quà Đoàn Viên</h2>
+            <p class="chu-nau-phu mx-auto" style="max-width: 760px;">
+                Lựa chọn mẫu tráp sơn mài hoặc hộp lụa hoàng gia, chạm để xếp từng chiếc bánh từ các thương hiệu trứ danh vào khay và theo dõi thông số dinh dưỡng trực tiếp.
+            </p>
         </div>
 
         <div class="row g-4">
             <!-- CỘT 1 (3 Phần): Chọn Vỏ Hộp & Bảng Thống Kê Dinh Dưỡng Hộp -->
             <div class="col-lg-3">
                 <div class="card-hoang-gia p-3 h-100">
-                    <h5 class="font-co-phong fs-4 chu-vang-kim border-bottom border-secondary pb-2 mb-3">
-                        1. Chọn Mẫu Vỏ Hộp
+                    <h5 class="font-co-phong fs-4 fw-bold chu-do-son-mai border-bottom pb-2 mb-3" style="border-color: var(--mau-vien-vang-dong) !important;">
+                        1. Chọn Mẫu Lễ Hộp
                     </h5>
 
                     @foreach (var vh in Model.DanhSachVoHop)
                     {
                         string anhKhay = DichVuHinhAnh.LayUrl(Model.TuDienAnh, "VOHOP", vh.MaVh, "KHAY_HOP_RONG");
-                        <div class="form-check p-3 mb-2 rounded border border-secondary bg-dark">
+                        <div class="form-check p-3 mb-2 item-chon-vo-hop">
                             <input class="form-check-input ms-0 me-2" type="radio" name="chonVoHop"
                                    id="vh_@vh.MaVh" value="@vh.MaVh"
                                    data-ten="@vh.TenVoHop"
@@ -103,34 +132,34 @@
                                    @(vh.MaVh == 1 ? "checked" : "")
                                    onchange="doiMauVoHop(this)">
                             <label class="form-check-label d-block" for="vh_@vh.MaVh" style="cursor:pointer;">
-                                <strong class="chu-vang-kim d-block">@vh.TenVoHop</strong>
-                                <span class="small text-light">Sức chứa: @vh.SucChuaBanh bánh • Vỏ: @vh.GiaVoHopRieng.ToString("N0")đ</span>
+                                <strong class="chu-nau-tram d-block">@vh.TenVoHop</strong>
+                                <span class="small chu-nau-phu">Sức chứa: @vh.SucChuaBanh bánh • Vỏ hộp: @vh.GiaVoHopRieng.ToString("N0")đ</span>
                                 @if (vh.SlbanhThuongHangToiThieu > 0)
                                 {
-                                    <span class="badge badge-thuong-hang d-block mt-1">Yêu cầu >= @vh.SlbanhThuongHangToiThieu bánh Thượng Hạng</span>
+                                    <span class="badge badge-thuong-hang d-block mt-1">Cần tối thiểu @vh.SlbanhThuongHangToiThieu bánh Thượng Hạng</span>
                                 }
                             </label>
                         </div>
                     }
 
-                    <hr class="border-secondary my-3" />
-                    <h6 class="chu-vang-kim fw-bold mb-2"><i class="bi bi-activity me-1"></i>Thông Số Hộp Tự Tính:</h6>
+                    <hr class="my-3" style="border-color: var(--mau-vien-vang-dong);" />
+                    <h6 class="chu-do-son-mai fw-bold mb-2"><i class="bi bi-journal-check me-1"></i>Thông Số Hộp Lễ:</h6>
                     <ul class="list-unstyled small mb-0">
                         <li class="d-flex justify-content-between py-1">
-                            <span>Số ô đã xếp:</span>
-                            <strong id="lblSoODaXep" class="text-warning">0 / 4 bánh</strong>
+                            <span class="chu-nau-phu">Số ô đã xếp:</span>
+                            <strong id="lblSoODaXep" class="chu-do-son-mai">0 / 4 bánh</strong>
                         </li>
                         <li class="d-flex justify-content-between py-1">
-                            <span>Tổng năng lượng:</span>
-                            <strong id="lblTongCalo" class="text-info">0 Kcal</strong>
+                            <span class="chu-nau-phu">Tổng năng lượng:</span>
+                            <strong id="lblTongCalo" class="text-success">0 Kcal</strong>
                         </li>
                         <li class="d-flex justify-content-between py-1">
-                            <span>Bánh Thượng Hạng:</span>
-                            <strong id="lblSoBanhVip">0 bánh</strong>
+                            <span class="chu-nau-phu">Bánh Thượng Hạng:</span>
+                            <strong id="lblSoBanhVip" class="chu-nau-tram">0 bánh</strong>
                         </li>
                         <li class="py-1">
-                            <span class="text-secondary d-block">Cảnh báo dị ứng tổng hợp:</span>
-                            <span id="lblCanhBaoDiUng" class="text-warning fst-italic">Chưa chọn bánh</span>
+                            <span class="chu-nau-phu d-block">Lưu ý thành phần dị ứng:</span>
+                            <span id="lblCanhBaoDiUng" class="chu-do-son-mai fst-italic">Chưa chọn bánh</span>
                         </li>
                     </ul>
                 </div>
@@ -141,15 +170,15 @@
                 <div class="card-hoang-gia p-4 text-center h-100 d-flex flex-column justify-content-between">
                     <div>
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-secondary" id="lblMaBamCauHinh">Mã cấu hình: #VH1_EMPTY</span>
-                            <button class="btn btn-sm btn-outline-warning" onclick="lamTrongKhayHop()">
-                                <i class="bi bi-arrow-counterclockwise"></i> Làm trống khay
+                            <span class="small chu-nau-phu fw-medium" id="lblMaBamCauHinh">Ký hiệu hộp lễ: VH1_EMPTY</span>
+                            <button class="btn btn-sm btn-vien-vang rounded-pill px-3" onclick="lamTrongKhayHop()">
+                                <i class="bi bi-arrow-counterclockwise"></i> Xếp lại khay
                             </button>
                         </div>
 
                         <!-- Khay hộp có nền động từ KhoHinhAnh -->
                         <div id="khungKhayHop" class="khung-khay-hop my-2 d-flex align-items-center justify-content-center"
-                             style="background-image: linear-gradient(rgba(11,19,43,0.65), rgba(11,19,43,0.65)), url('@DichVuHinhAnh.LayUrl(Model.TuDienAnh, "VOHOP", 1, "KHAY_HOP_RONG")');">
+                             style="background-image: linear-gradient(rgba(74, 7, 9, 0.32), rgba(74, 7, 9, 0.32)), url('@DichVuHinhAnh.LayUrl(Model.TuDienAnh, "VOHOP", 1, "KHAY_HOP_RONG")');">
                             <div id="luoiOBanh" class="luoi-hop-2x2 w-100">
                                 <!-- Các ô trống được render động bằng JS -->
                             </div>
@@ -158,16 +187,16 @@
 
                     <div class="mt-3 text-start">
                         <div class="input-group input-group-sm mb-3">
-                            <span class="input-group-text bg-dark text-warning border-secondary">Tên hộp quà:</span>
-                            <input type="text" id="txtTenHopTuDat" class="form-control bg-dark text-light border-secondary" value="Hộp Quà Đoàn Viên Tự Phối" />
+                            <span class="input-group-text fw-semibold" style="background: var(--mau-nen-ngoc-trai); color: var(--mau-do-son-mai); border-color: var(--mau-vien-vang-dong);">Tên lễ hộp:</span>
+                            <input type="text" id="txtTenHopTuDat" class="form-control" style="border-color: var(--mau-vien-vang-dong); color: var(--mau-chu-nau-tram);" value="Hộp Quà Đoàn Viên Tự Phối" />
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="text-light">Giá trọn bộ (Đã giảm 5% giá vỏ):</span>
-                            <span id="lblTongGiaHop" class="fs-4 fw-bold chu-vang-kim">80.750 đ</span>
+                            <span class="chu-nau-phu fw-medium">Giá trọn bộ (Ưu đãi 5% giá vỏ hộp):</span>
+                            <span id="lblTongGiaHop" class="fs-4 fw-bold chu-do-son-mai">80.750 đ</span>
                         </div>
 
-                        <button id="btnThemHopVaoGio" class="btn btn-vang-kim w-100 py-2" disabled onclick="xacNhanThemHopTuChon()">
+                        <button id="btnThemHopVaoGio" class="btn btn-do-son-mai w-100 py-2 rounded-pill" disabled onclick="xacNhanThemHopTuChon()">
                             🔒 Vui lòng xếp đủ bánh vào các ô trống
                         </button>
                     </div>
@@ -177,7 +206,7 @@
             <!-- CỘT 3 (4 Phần): Danh Sách Nhân Bánh Tách Nền .PNG Để Bấm/Thả Vào Ô -->
             <div class="col-lg-4">
                 <div class="card-hoang-gia p-3 h-100">
-                    <h5 class="font-co-phong fs-4 chu-vang-kim border-bottom border-secondary pb-2 mb-3">
+                    <h5 class="font-co-phong fs-4 fw-bold chu-do-son-mai border-bottom pb-2 mb-3" style="border-color: var(--mau-vien-vang-dong) !important;">
                         3. Chọn Vị Bánh Đặt Vào Khay
                     </h5>
                     <div class="overflow-auto pe-1" style="max-height: 460px;">
@@ -188,44 +217,44 @@
                             int gi = b.ThongSoDinhDuong?.ChiSoDuongHuyetGi ?? 55;
                             string diUng = b.ThongSoDinhDuong?.CanhBaoDiUng ?? "Không";
 
-                            <div class="d-flex align-items-center gap-3 p-2 mb-2 rounded bg-dark border border-secondary">
-                                <img src="@anhSlot" width="64" height="64" class="rounded-circle border border-warning p-1" alt="@b.TenBanh" />
+                            <div class="d-flex align-items-center gap-3 p-2 mb-2 item-banh-khay">
+                                <img src="@anhSlot" width="62" height="62" class="rounded-circle p-1 bg-white" style="border: 1.5px solid var(--mau-vang-dong-co);" alt="@b.TenBanh" />
                                 <div class="flex-grow-1">
                                     <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
-                                        <span class="badge bg-warning text-dark" style="font-size: 0.65rem;">🏷️ @b.ThuongHieu</span>
-                                        <strong class="small text-light">@b.TenBanh</strong>
+                                        <span class="tem-lua-thuong-hieu" style="font-size: 0.64rem; padding: 1px 7px;">@b.ThuongHieu</span>
+                                        <strong class="small chu-nau-tram">@b.TenBanh</strong>
                                         @if (b.LaBanhThuongHang)
                                         {
-                                            <span class="badge badge-thuong-hang" style="font-size:0.65rem;">👑 VIP</span>
+                                            <span class="badge badge-thuong-hang" style="font-size:0.65rem;">👑 Thượng Hạng</span>
                                         }
                                         @if (b.DangXaCanDate)
                                         {
-                                            <span class="badge bg-danger text-white" style="font-size:0.65rem;">⚡ Cận Date -@b.PhanTramGiamCanDateHieuLuc.ToString("N0")%</span>
+                                            <span class="badge bg-danger text-white" style="font-size:0.65rem;">Ưu đãi -@b.PhanTramGiamCanDateHieuLuc.ToString("N0")%</span>
                                         }
                                     </div>
                                     @if (b.DangXaCanDate)
                                     {
                                         <div class="small">
-                                            <del class="text-secondary me-1">@b.DonGiaLe.ToString("N0") đ</del>
-                                            <span class="chu-vang-kim fw-bold">@b.DonGiaThucTe.ToString("N0") đ</span>
+                                            <del class="chu-nau-phu me-1">@b.DonGiaLe.ToString("N0") đ</del>
+                                            <span class="chu-do-son-mai fw-bold">@b.DonGiaThucTe.ToString("N0") đ</span>
                                         </div>
                                     }
                                     else
                                     {
-                                        <div class="small chu-vang-kim fw-semibold">@b.DonGiaLe.ToString("N0") đ</div>
+                                        <div class="small chu-do-son-mai fw-bold">@b.DonGiaLe.ToString("N0") đ</div>
                                     }
                                     <div class="d-flex gap-2 mt-1" style="font-size: 0.72rem;">
-                                        <span class="text-info">@calo Kcal</span>
-                                        <span class="text-success">• GI: @gi</span>
+                                        <span class="chu-nau-phu">@calo Kcal</span>
+                                        <span class="text-success fw-medium">• GI: @gi</span>
                                         @if (b.LaBanhChay)
                                         {
-                                            <span class="text-warning">• 🌱 Chay</span>
+                                            <span class="text-success">• 🌱 Thuần chay</span>
                                         }
                                     </div>
                                 </div>
-                                <button class="btn btn-sm btn-vang-kim rounded-pill px-3"
+                                <button class="btn btn-sm btn-do-son-mai rounded-pill px-3"
                                         onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaThucTe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhSlot', '@diUng')">
-                                    + Đặt
+                                    + Chọn
                                 </button>
                             </div>
                         }
@@ -237,34 +266,34 @@
 </section>
 
 <!-- =========================================================================
-     TẦNG 4: BỘ SƯU TẬP BÁNH & BỘ LỌC DINH DƯỠNG + THƯƠNG HIỆU ĐẠI LÝ (AJAX TABS)
+     TẦNG 3 (03): BỘ SƯU TẬP TUYỆT PHẨM BÁNH & TRÀ TRUNG THU (NỀN KEM GIẤY DÓ SÁNG)
      ========================================================================= -->
-<section id="tang-bo-suu-tap" class="py-5">
-    <div class="container py-3">
+<section id="tang-bo-suu-tap" class="tang-phan-khu nen-giay-do-sang border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
+    <div class="container py-3 section-reveal">
         <div class="text-center mb-4">
-            <span class="text-uppercase small chu-vang-kim fw-bold">Đại Lý Phân Phối Đa Thương Hiệu & Minh Bạch Chỉ Số GI</span>
-            <h2 class="font-co-phong display-5 fw-bold chu-vang-kim">Bộ Sưu Tập Bánh Trung Thu Tuyển Chọn</h2>
+            <span class="text-uppercase small chu-do-son-mai fw-bold" style="letter-spacing: 1.5px;">Tinh Hoa Hội Tụ Từ Bốn Thương Hiệu Danh Tiếng</span>
+            <h2 class="font-co-phong display-5 fw-bold chu-nau-tram">Tuyệt Phẩm Bánh Trung Thu &amp; Thưởng Trà</h2>
         </div>
 
-        <!-- Thanh nút lọc nhanh theo Dinh Dưỡng -->
+        <!-- Thanh nút lọc nhanh theo Hương Vị & Dinh Dưỡng -->
         <div class="d-flex justify-content-center flex-wrap gap-2 mb-3" id="nhomLocDinhDuong">
-            <button class="btn btn-vien-vang rounded-pill px-4 active" onclick="locSanPham('ALL', this)">Tất Cả (@Model.DanhSachBanh.Count)</button>
-            <button class="btn btn-vien-vang rounded-pill px-4" onclick="locSanPham('ISOMALT', this)">🌿 Đường Isomalt - Tiểu Đường</button>
-            <button class="btn btn-vien-vang rounded-pill px-4" onclick="locSanPham('VIP', this)">👑 Thượng Hạng Biếu Sếp</button>
-            <button class="btn btn-vien-vang rounded-pill px-4" onclick="locSanPham('LAVA', this)">🔥 Nhân Chảy Lava</button>
-            <button class="btn btn-vien-vang rounded-pill px-4" onclick="locSanPham('CHAY', this)">🌱 Thuần Chay 100%</button>
+            <button class="btn btn-vien-vang rounded-pill px-4 active" data-loc="ALL" onclick="locSanPham('ALL', this)">Tất Cả Vị Bánh (@Model.DanhSachBanh.Count)</button>
+            <button class="btn btn-vien-vang rounded-pill px-4" data-loc="VIP" onclick="locSanPham('VIP', this)">👑 Bánh Thượng Hạng Biếu Tặng</button>
+            <button class="btn btn-vien-vang rounded-pill px-4" data-loc="ISOMALT" onclick="locSanPham('ISOMALT', this)">🌿 Đường Ăn Kiêng Isomalt (GI Thấp)</button>
+            <button class="btn btn-vien-vang rounded-pill px-4" data-loc="LAVA" onclick="locSanPham('LAVA', this)">🔥 Nhân Chảy Kim Sa Lava</button>
+            <button class="btn btn-vien-vang rounded-pill px-4" data-loc="CHAY" onclick="locSanPham('CHAY', this)">🌱 Bánh Thuần Chay Thanh Đạm</button>
         </div>
 
         <!-- Thanh nút lọc nhanh theo Thương Hiệu (Kinh Đô, Đồng Khánh, Như Lan, Brodard...) -->
         <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mb-4" id="nhomLocThuongHieu">
-            <span class="small text-warning fw-semibold me-1"><i class="bi bi-award-fill me-1"></i>Thương hiệu:</span>
-            <button type="button" class="btn btn-sm btn-vang-kim rounded-pill px-3 btn-thuong-hieu" onclick="locTheoThuongHieu('ALL', this)">
-                Tất cả hãng
+            <span class="small chu-do-son-mai fw-bold me-1"><i class="bi bi-award-fill me-1"></i>Thương hiệu:</span>
+            <button type="button" class="btn btn-sm btn-do-son-mai rounded-pill px-3 btn-thuong-hieu" data-th="ALL" onclick="locTheoThuongHieu('ALL', this)">
+                Tất cả thương hiệu
             </button>
             @foreach (var th in Model.DanhSachThuongHieu)
             {
-                <button type="button" class="btn btn-sm btn-outline-warning rounded-pill px-3 btn-thuong-hieu" onclick="locTheoThuongHieu('@th', this)">
-                    🏷️ @th
+                <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-3 btn-thuong-hieu" data-th="@th" onclick="locTheoThuongHieu('@th', this)">
+                    🏮 @th
                 </button>
             }
         </div>
@@ -286,11 +315,11 @@
                     <div class="card-hoang-gia p-3 h-100 d-flex flex-column justify-content-between">
                         <div>
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-1 mb-2">
-                                <span class="badge bg-warning text-dark rounded-pill">🏷️ @b.ThuongHieu</span>
+                                <span class="tem-lua-thuong-hieu">🏮 @b.ThuongHieu</span>
                                 <div class="d-flex align-items-center gap-1">
                                     @if (b.DangXaCanDate)
                                     {
-                                        <span class="badge bg-danger text-white rounded-pill">⚡ Cận Date -@b.PhanTramGiamCanDateHieuLuc.ToString("N0")%</span>
+                                        <span class="badge bg-danger text-white rounded-pill">Ưu đãi -@b.PhanTramGiamCanDateHieuLuc.ToString("N0")%</span>
                                     }
                                     @if (b.MucDoNgot == "ISOMALT_TIEUDUONG")
                                     {
@@ -302,36 +331,36 @@
                                     }
                                     else
                                     {
-                                        <span class="badge bg-secondary rounded-pill">@b.TrongLuongGram g</span>
+                                        <span class="badge rounded-pill" style="background: var(--mau-nen-ngoc-trai); color: var(--mau-chu-phu); border: 1px solid var(--mau-vien-vang-dong);">@b.TrongLuongGram g</span>
                                     }
                                 </div>
                             </div>
 
-                            <div class="text-center my-3">
-                                <img src="@anhBanh" class="img-fluid" style="max-height: 165px;" alt="@b.TenBanh" />
+                            <div class="khung-anh-banh-sang text-center my-2">
+                                <img src="@anhBanh" class="img-fluid" style="max-height: 155px;" alt="@b.TenBanh" />
                             </div>
 
-                            <h5 class="font-co-phong fs-4 chu-vang-kim mb-1">@b.TenBanh</h5>
-                            <p class="small text-secondary mb-2">@b.MoTaNgan</p>
+                            <h5 class="font-co-phong fs-4 fw-bold chu-nau-tram mb-1">@b.TenBanh</h5>
+                            <p class="small chu-nau-phu mb-2">@b.MoTaNgan</p>
                         </div>
 
                         <div>
-                            <div class="p-2 rounded bg-dark border border-secondary mb-3 d-flex justify-content-around text-center small">
-                                <div><strong class="text-info d-block">@calo</strong><span class="text-muted" style="font-size:0.7rem;">Kcal</span></div>
-                                <div class="border-start border-secondary ps-2"><strong class="text-warning d-block">@duong.ToString("N0") g</strong><span class="text-muted" style="font-size:0.7rem;">Đường</span></div>
-                                <div class="border-start border-secondary ps-2"><strong class="text-success d-block">@gi</strong><span class="text-muted" style="font-size:0.7rem;">Chỉ số GI</span></div>
+                            <div class="p-2 rounded mb-3 d-flex justify-content-around text-center small" style="background: var(--mau-nen-giay-do); border: 1px solid var(--mau-vien-vang-dong);">
+                                <div><strong class="chu-nau-tram d-block">@calo</strong><span class="chu-nau-phu" style="font-size:0.7rem;">Kcal</span></div>
+                                <div class="border-start ps-2" style="border-color: var(--mau-vien-vang-dong) !important;"><strong class="chu-do-son-mai d-block">@duong.ToString("N0") g</strong><span class="chu-nau-phu" style="font-size:0.7rem;">Đường</span></div>
+                                <div class="border-start ps-2" style="border-color: var(--mau-vien-vang-dong) !important;"><strong class="text-success d-block">@gi</strong><span class="chu-nau-phu" style="font-size:0.7rem;">Chỉ số GI</span></div>
                             </div>
 
                             <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                                 <div>
                                     @if (b.DangXaCanDate)
                                     {
-                                        <del class="text-secondary small d-block lh-1">@b.DonGiaLe.ToString("N0") đ</del>
-                                        <span class="fs-5 fw-bold chu-vang-kim">@b.DonGiaThucTe.ToString("N0") đ</span>
+                                        <del class="chu-nau-phu small d-block lh-1">@b.DonGiaLe.ToString("N0") đ</del>
+                                        <span class="fs-5 fw-bold chu-do-son-mai">@b.DonGiaThucTe.ToString("N0") đ</span>
                                     }
                                     else
                                     {
-                                        <span class="fs-5 fw-bold chu-vang-kim">@b.DonGiaLe.ToString("N0") đ</span>
+                                        <span class="fs-5 fw-bold chu-do-son-mai">@b.DonGiaLe.ToString("N0") đ</span>
                                     }
                                 </div>
                                 <div class="d-flex gap-1">
@@ -339,9 +368,9 @@
                                             onclick="themBanhLeVaoGio(@b.MaBanh, 1)" title="Mua lẻ bánh này">
                                         🛒 Mua lẻ
                                     </button>
-                                    <a href="#tang-tu-chon-hop" class="btn btn-sm btn-vang-kim rounded-pill px-2"
+                                    <a href="#tang-tu-chon-hop" class="btn btn-sm btn-do-son-mai rounded-pill px-2"
                                        onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaThucTe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhBanh', '@(b.ThongSoDinhDuong?.CanhBaoDiUng)')">
-                                        Đưa vào hộp ↑
+                                        Xếp vào hộp ↑
                                     </a>
                                 </div>
                             </div>
@@ -354,40 +383,42 @@
 </section>
 
 <!-- =========================================================================
-     TẦNG 5: TRÌNH TÍNH CHIẾT KHẤU SỈ B2B ĐỘNG (B2B INTERACTIVE CALCULATOR)
+     TẦNG 4 (04): QUÀ TẶNG DOANH NGHIỆP B2B & ÉP KIM LOGO RIÊNG (NỀN NGỌC TRAI ẤM)
      ========================================================================= -->
-<section id="tang-b2b" class="py-5 border-top border-secondary" style="background: rgba(28,37,65,0.4);">
-    <div class="container py-3">
+<section id="tang-b2b" class="tang-phan-khu nen-ngoc-trai-am border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
+    <div class="container py-3 section-reveal">
         <div class="row align-items-center g-5">
             <div class="col-lg-6">
-                <span class="text-uppercase small chu-vang-kim fw-bold">Giải Pháp Quà Tặng Doanh Nghiệp</span>
-                <h2 class="font-co-phong display-5 fw-bold chu-vang-kim mb-3">Tính Giá Sỉ B2B & Ép Kim Logo Riêng</h2>
-                <p class="text-secondary mb-4">Kéo thanh trượt bên dưới để xem mức chiết khấu tự động theo số lượng hộp và chính sách miễn phí khuôn in Logo công ty lên nắp hộp.</p>
+                <span class="text-uppercase small chu-do-son-mai fw-bold" style="letter-spacing: 1.5px;">Giải Pháp Quà Biếu Doanh Nghiệp Đẳng Cấp</span>
+                <h2 class="font-co-phong display-5 fw-bold chu-nau-tram mb-3">Chiết Khấu Sỉ B2B &amp; Ép Kim Logo Thương Hiệu</h2>
+                <p class="chu-nau-phu mb-4">
+                    Kéo thanh trượt bên dưới để ước tính ngay mức chiết khấu ưu đãi theo số lượng lễ hộp và chính sách miễn phí khuôn ép kim Logo doanh nghiệp lên nắp hộp sơn mài.
+                </p>
 
                 <div class="card-hoang-gia p-4">
-                    <label class="form-label d-flex justify-content-between">
-                        <span>Số lượng hộp dự kiến đặt:</span>
-                        <strong id="lblSoHopB2B" class="fs-4 chu-vang-kim">35 Hộp</strong>
+                    <label class="form-label d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold chu-nau-tram">Số lượng lễ hộp dự kiến đặt:</span>
+                        <strong id="lblSoHopB2B" class="fs-4 chu-do-son-mai">35 Hộp</strong>
                     </label>
                     <input type="range" class="form-range" id="sliderSoHopB2B" min="10" max="200" step="5" value="35" oninput="tinhGiaSiB2B(this.value)">
 
                     <div class="row g-3 mt-2 text-center">
                         <div class="col-4">
-                            <div class="p-2 rounded bg-dark border border-secondary">
-                                <small class="text-secondary d-block">Chiết khấu</small>
-                                <strong id="lblPhanTramB2B" class="fs-4 text-warning">15%</strong>
+                            <div class="p-2 rounded" style="background: var(--mau-nen-giay-do); border: 1px solid var(--mau-vien-vang-dong);">
+                                <small class="chu-nau-phu d-block">Mức chiết khấu</small>
+                                <strong id="lblPhanTramB2B" class="fs-4 chu-do-son-mai">15%</strong>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="p-2 rounded bg-dark border border-secondary">
-                                <small class="text-secondary d-block">Khuôn Logo</small>
+                            <div class="p-2 rounded" style="background: var(--mau-nen-giay-do); border: 1px solid var(--mau-vien-vang-dong);">
+                                <small class="chu-nau-phu d-block">Khuôn ép kim Logo</small>
                                 <strong id="lblLogoB2B" class="fs-6 text-success">MIỄN PHÍ</strong>
                             </div>
                         </div>
                         <div class="col-4">
-                            <div class="p-2 rounded bg-dark border border-secondary">
-                                <small class="text-secondary d-block">Tiết kiệm ước tính</small>
-                                <strong id="lblTietKiemB2B" class="fs-6 chu-vang-kim">3.150.000đ</strong>
+                            <div class="p-2 rounded" style="background: var(--mau-nen-giay-do); border: 1px solid var(--mau-vien-vang-dong);">
+                                <small class="chu-nau-phu d-block">Ngân sách tiết kiệm</small>
+                                <strong id="lblTietKiemB2B" class="fs-6 chu-vang-dong">3.150.000đ</strong>
                             </div>
                         </div>
                     </div>
@@ -396,32 +427,32 @@
 
             <div class="col-lg-6">
                 <div class="card-hoang-gia p-4">
-                    <h5 class="font-co-phong fs-3 chu-vang-kim mb-3">Bảng Định Mức Chiết Khấu B2B Chính Thức</h5>
+                    <h5 class="font-co-phong fs-3 fw-bold chu-do-son-mai mb-3">Bảng Định Mức Chiết Khấu B2B Chính Thức</h5>
                     <div class="table-responsive">
-                        <table class="table table-dark table-hover align-middle mb-0">
+                        <table class="table table-hover align-middle mb-0 table-trung-thu">
                             <thead>
-                                <tr class="chu-vang-kim">
+                                <tr>
                                     <th>Hạng Mức</th>
                                     <th>Số Lượng Hộp</th>
                                     <th>Chiết Khấu</th>
-                                    <th>In Logo Công Ty</th>
+                                    <th>Ép Kim Logo Riêng</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach (var moc in Model.BangGiaSiB2B)
                                 {
                                     <tr>
-                                        <td class="fw-semibold">@moc.TenMocB2b</td>
-                                        <td>@moc.SlhopToiThieu – @moc.SlhopToiDa hộp</td>
-                                        <td><span class="badge bg-warning text-dark fw-bold">-@moc.PhanTramChietKhau.ToString("N0")%</span></td>
+                                        <td class="fw-semibold chu-nau-tram">@moc.TenMocB2b</td>
+                                        <td class="chu-nau-phu">@moc.SlhopToiThieu – @moc.SlhopToiDa hộp</td>
+                                        <td><span class="badge badge-thuong-hang">-@moc.PhanTramChietKhau.ToString("N0")%</span></td>
                                         <td>
                                             @if (moc.MienPhiInLogo)
                                             {
-                                                <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Miễn phí khuôn</span>
+                                                <span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Miễn phí khuôn</span>
                                             }
                                             else
                                             {
-                                                <span class="text-secondary">Phụ phí @moc.PhiKhuonInLogo.ToString("N0")đ</span>
+                                                <span class="chu-nau-phu">Phụ phí @moc.PhiKhuonInLogo.ToString("N0")đ</span>
                                             }
                                         </td>
                                     </tr>
@@ -436,22 +467,24 @@
 </section>
 
 <!-- =========================================================================
-     TẦNG 6: TRẢI NGHIỆM THIỆP ĐIỆN TỬ QR 3D ĐA ĐIỂM NHẬN
+     TẦNG 5 (05): THIỆP CHÚC TẾT ĐOÀN VIÊN QR 3D ĐA ĐIỂM NHẬN (NỀN ĐỎ SƠN MÀI LỄ HỘI)
      ========================================================================= -->
-<section id="tang-thiep-qr" class="py-5">
-    <div class="container py-3 text-center">
-        <span class="text-uppercase small chu-vang-kim fw-bold">Gửi Trọn Tâm Giao Qua Công Nghệ</span>
-        <h2 class="font-co-phong display-5 fw-bold chu-vang-kim mb-3">Thiệp Chúc Mừng QR 3D Cho Từng Điểm Nhận</h2>
-        <p class="text-secondary mx-auto mb-4" style="max-width: 720px;">
-            Một đơn hàng có thể chia thành nhiều đợt giao tới Ông Bà, Sếp, Đối tác. Mỗi hộp quà sẽ đính kèm một mã QR riêng biệt mở ra tấm thiệp 3D mang tên người nhận.
+<section id="tang-thiep-qr" class="tang-phan-khu nen-le-hoi-son-mai border-top" style="border-color: rgba(212, 175, 55, 0.45) !important;">
+    <div class="container py-3 text-center section-reveal">
+        <span class="text-uppercase small chu-vang-kim fw-bold" style="letter-spacing: 1.5px;">Gửi Trọn Tâm Giao Mùa Trăng Rằm</span>
+        <h2 class="font-co-phong display-5 fw-bold chu-vang-kim mb-3">Thiệp Chúc Tết Đoàn Viên QR 3D Cho Từng Điểm Nhận</h2>
+        <p class="chu-kem-vang opacity-90 mx-auto mb-4" style="max-width: 720px;">
+            Một đơn đặt quà có thể phân phối đến nhiều địa chỉ của Ông Bà, Đối tác và Khách quý. Mỗi lễ hộp đều đính kèm ấn phẩm QR riêng biệt mở ra cánh thiệp 3D đề tên người nhận trang trọng.
         </p>
 
         <div class="card-hoang-gia p-4 mx-auto" style="max-width: 680px;">
-            <span class="badge badge-thuong-hang mb-2">Bản Xem Trước Thiệp Điện Tử Cổ Phong</span>
-            <h4 class="font-co-phong fs-2 chu-vang-kim">"Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên & An Khang"</h4>
-            <p class="small text-light opacity-75 fst-italic mb-3">— Người gửi: Lê Minh Đức (Quét mã QR trên nắp hộp để mở hiệu ứng lật thiệp 3D) —</p>
+            <span class="badge badge-thuong-hang mb-2 px-3 py-1 rounded-pill">Ấn Phẩm Thiệp Chúc Mừng Đoàn Viên</span>
+            <h4 class="font-co-phong fs-2 fw-bold chu-do-son-mai my-2">"Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên &amp; An Khang"</h4>
+            <p class="small chu-nau-phu fst-italic mb-3">— Người gửi: Lê Minh Đức (Quét mã QR trên nắp hộp sơn mài để mở thiệp chúc 3D) —</p>
             <div class="d-flex justify-content-center flex-wrap gap-3">
-                <a href="#tang-tu-chon-hop" class="btn btn-vang-kim rounded-pill px-4">Tạo Hộp Quà Kèm Thiệp QR Ngay</a>
+                <a href="#tang-tu-chon-hop" onclick="return cuonDenPhanKhu('#tang-tu-chon-hop', event)" class="btn btn-do-son-mai rounded-pill px-4">
+                    🎁 Tạo Lễ Hộp Kèm Thiệp Ngay
+                </a>
                 <a href="/Thiep3D/Xem/QR-DEMO2026" target="_blank" class="btn btn-vien-vang rounded-pill px-4">
                     ✨ Mở Xem Thử Thiệp 3D Mẫu
                 </a>
@@ -461,13 +494,13 @@
 </section>
 
 <!-- =========================================================================
-     NGĂN KÉO GIỎ HÀNG KÉP (OFF-CANVAS CART DRAWER: GUEST & MEMBER)
+     NGĂN KÉO GIỎ QUÀ TRUNG THU (OFF-CANVAS CART DRAWER)
      ========================================================================= -->
-<div class="offcanvas offcanvas-end bg-dark text-light border-start border-warning" tabindex="-1" id="nganKeoGioHang">
-    <div class="offcanvas-header border-bottom border-secondary">
+<div class="offcanvas offcanvas-end" style="background: var(--mau-nen-giay-do); color: var(--mau-chu-nau-tram); border-left: 2px solid var(--mau-vang-dong-co);" tabindex="-1" id="nganKeoGioHang">
+    <div class="offcanvas-header nen-le-hoi-son-mai border-bottom" style="border-color: rgba(212, 175, 55, 0.4) !important;">
         <div>
-            <h5 class="offcanvas-title font-co-phong fs-3 chu-vang-kim">Giỏ Quà Trung Thu</h5>
-            <small class="text-warning"><i class="bi bi-person-badge me-1"></i>Chế độ: @Model.HoTenHienThi (@Model.MaPhienHienTai)</small>
+            <h5 class="offcanvas-title font-co-phong fs-3 fw-bold chu-vang-kim">🏮 Giỏ Quà Trung Thu</h5>
+            <small class="chu-kem-vang"><i class="bi bi-person-heart me-1"></i>Khách hàng: @Model.HoTenHienThi</small>
         </div>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
     </div>
@@ -485,7 +518,7 @@
 
                     <div class="p-3 mb-2 rounded card-hoang-gia">
                         <div class="d-flex justify-content-between align-items-start gap-2">
-                            <strong class="chu-vang-kim">@tenMon</strong>
+                            <strong class="chu-do-son-mai">@tenMon</strong>
                             <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2"
                                     onclick="xoaMonKhoiGio(@item.MaCtgh)" title="Xóa món này">
                                 🗑️
@@ -493,130 +526,130 @@
                         </div>
                         @if (item.LoaiSanPham == 3 && item.MaHopTcNavigation != null)
                         {
-                            <small class="text-info d-block mt-1">Mã cấu hình: @item.MaHopTcNavigation.MaBamCauHinh (@item.MaHopTcNavigation.TongCaloHop Kcal)</small>
+                            <small class="chu-nau-phu d-block mt-1">Ký hiệu hộp lễ: @item.MaHopTcNavigation.MaBamCauHinh (@item.MaHopTcNavigation.TongCaloHop Kcal)</small>
                             if (item.MaHopTcNavigation.ChiTietHopTuChons != null && item.MaHopTcNavigation.ChiTietHopTuChons.Any())
                             {
-                                <div class="small text-secondary mt-1" style="font-size: 0.75rem;">
+                                <div class="small chu-nau-phu mt-1" style="font-size: 0.75rem;">
                                     @string.Join(" • ", item.MaHopTcNavigation.ChiTietHopTuChons.OrderBy(x => x.ViTriOtrongHop).Select(x => $"Ô {x.ViTriOtrongHop}: {x.MaBanhNavigation?.TenBanh}"))
                                 </div>
                             }
                         }
-                        <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top border-secondary">
+                        <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
                             <div class="btn-group btn-group-sm" role="group">
-                                <button type="button" class="btn btn-outline-warning px-2 py-0"
+                                <button type="button" class="btn btn-vien-vang px-2 py-0"
                                         onclick="capNhatSoLuongMon(@item.MaCtgh, @(item.SoLuong - 1))">
                                     -
                                 </button>
-                                <span class="btn btn-dark border-warning text-light px-3 py-0 disabled">@item.SoLuong</span>
-                                <button type="button" class="btn btn-outline-warning px-2 py-0"
+                                <span class="btn px-3 py-0 disabled fw-bold" style="background: var(--mau-nen-ngoc-trai); color: var(--mau-chu-nau-tram); border-color: var(--mau-vang-dong-co);">@item.SoLuong</span>
+                                <button type="button" class="btn btn-vien-vang px-2 py-0"
                                         onclick="capNhatSoLuongMon(@item.MaCtgh, @(item.SoLuong + 1))">
                                     +
                                 </button>
                             </div>
-                            <div class="fw-bold text-warning">@((item.SoLuong * item.DonGiaTamTinh).ToString("N0")) đ</div>
+                            <div class="fw-bold chu-do-son-mai">@((item.SoLuong * item.DonGiaTamTinh).ToString("N0")) đ</div>
                         </div>
                     </div>
                 }
             }
             else
             {
-                <div class="text-center text-secondary py-5">Giỏ quà đang trống. Hãy tự phối hộp bánh ở Tầng 3!</div>
+                <div class="text-center chu-nau-phu py-5">Giỏ quà đang trống. Mời bạn chọn bánh hoặc tự phối lễ hộp!</div>
             }
         </div>
 
-        <div class="border-top border-secondary pt-3">
+        <div class="border-top pt-3" style="border-color: var(--mau-vien-vang-dong) !important;">
             @if (!Model.DaDangNhap)
             {
-                <div class="alert alert-warning py-2 small mb-2 d-flex justify-content-between align-items-center gap-2">
-                    <span><i class="bi bi-info-circle-fill me-1"></i>Chế độ <strong>Khách vãng lai</strong>. Đăng nhập để gộp giỏ & tích điểm!</span>
-                    <button type="button" class="btn btn-sm btn-dark text-warning border-warning text-nowrap"
+                <div class="p-2 rounded small mb-2 d-flex justify-content-between align-items-center gap-2" style="background: var(--mau-nen-ngoc-trai); border: 1px solid var(--mau-vang-dong-co);">
+                    <span class="chu-nau-tram"><i class="bi bi-gift-fill chu-do-son-mai me-1"></i>Đăng nhập hội viên để lưu giỏ quà &amp; tích điểm thưởng!</span>
+                    <button type="button" class="btn btn-sm btn-do-son-mai rounded-pill text-nowrap"
                             data-bs-toggle="modal" data-bs-target="#modalTaiKhoan">
-                        Gộp Giỏ Ngay
+                        Đăng Nhập
                     </button>
                 </div>
             }
 
             <!-- Khu vực nhập Mã Giảm Giá / Voucher -->
-            <div class="p-2 mb-3 rounded bg-dark border border-secondary">
+            <div class="p-2 mb-3 rounded" style="background: #FFFFFF; border: 1px solid var(--mau-vien-vang-dong);">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <small class="text-warning fw-semibold"><i class="bi bi-ticket-perforated-fill me-1"></i>Mã Khuyến Mãi:</small>
-                    <button type="button" class="badge bg-warning text-dark border-0" style="cursor:pointer;"
+                    <small class="chu-do-son-mai fw-bold"><i class="bi bi-ticket-perforated-fill me-1"></i>Mã Ưu Đãi Lễ Hội:</small>
+                    <button type="button" class="badge badge-thuong-hang border-0" style="cursor:pointer;"
                             onclick="chonNhanhVoucher('TRANGTRON2026')">
-                        ⚡ Dùng mã TRANGTRON2026 (-10%)
+                        ⚡ Áp mã TRANGTRON2026 (-10%)
                     </button>
                 </div>
                 <div class="input-group input-group-sm">
-                    <input type="text" id="txtMaVoucherGioHang" class="form-control bg-dark text-light border-secondary text-uppercase"
+                    <input type="text" id="txtMaVoucherGioHang" class="form-control text-uppercase" style="border-color: var(--mau-vien-vang-dong);"
                            placeholder="Nhập mã (VD: TRANGTRON2026)" value="@(Model.GioHangHienTai?.CodeKmdangApDung ?? "")" />
-                    <button class="btn btn-vien-vang px-3" type="button" onclick="apDungVoucherGioHang()">
+                    <button class="btn btn-do-son-mai px-3" type="button" onclick="apDungVoucherGioHang()">
                         Áp Dụng
                     </button>
                 </div>
-                <small id="lblThongBaoVoucher" class="d-block mt-1 text-info" style="font-size: 0.75rem;"></small>
+                <small id="lblThongBaoVoucher" class="d-block mt-1 text-success" style="font-size: 0.75rem;"></small>
             </div>
 
-            <div class="d-flex justify-content-between small text-light mb-1">
+            <div class="d-flex justify-content-between small chu-nau-phu mb-1">
                 <span>Tạm tính:</span>
-                <span id="lblTamTinhOffcanvas" class="fw-semibold">@Model.TongTamTinhGioHang.ToString("N0") đ</span>
+                <span id="lblTamTinhOffcanvas" class="fw-semibold chu-nau-tram">@Model.TongTamTinhGioHang.ToString("N0") đ</span>
             </div>
             <div class="d-flex justify-content-between small text-success mb-2">
-                <span>Giảm giá Voucher:</span>
+                <span>Ưu đãi Voucher:</span>
                 <span id="lblTienGiamVoucherOffcanvas" class="fw-semibold">-0 đ</span>
             </div>
-            <div class="d-flex justify-content-between fs-5 fw-bold mb-3 pt-2 border-top border-secondary">
-                <span>Tổng thanh toán:</span>
-                <span id="lblTongThanhToanSauGiam" class="chu-vang-kim">@Model.TongTamTinhGioHang.ToString("N0") đ</span>
+            <div class="d-flex justify-content-between fs-5 fw-bold mb-3 pt-2 border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
+                <span class="chu-nau-tram">Tổng thanh toán:</span>
+                <span id="lblTongThanhToanSauGiam" class="chu-do-son-mai">@Model.TongTamTinhGioHang.ToString("N0") đ</span>
             </div>
             <a href="/ThanhToan/Index" id="btnTienHanhThanhToanOffcanvas"
-               class="btn btn-vang-kim w-100 py-2 rounded-pill text-decoration-none d-block text-center"
+               class="btn btn-do-son-mai w-100 py-2 rounded-pill text-decoration-none d-block text-center"
                onclick="return chuyenDenTrangThanhToan(event)">
-                <i class="bi bi-shield-check me-1"></i>Tiến Hành Thanh Toán (Guest / Member)
+                <i class="bi bi-shield-check me-1"></i>Tiến Hành Đặt Quà &amp; Ghi Thiệp
             </a>
         </div>
     </div>
 </div>
 
 <!-- =========================================================================
-     MODAL TRỢ LÝ CHỌN BÁNH 30 GIÂY (WEIGHTED SCORING QUIZ)
+     MODAL NGHỆ NHÂN TƯ VẤN CHỌN VỊ BÁNH THEO GU THƯỞNG THỨC
      ========================================================================= -->
 <div class="modal fade" id="modalTroLyChonBanh" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content card-hoang-gia text-light">
-            <div class="modal-header border-secondary">
-                <h5 class="modal-title font-co-phong fs-2 chu-vang-kim">
-                    🤖 Trợ Lý Chấm Điểm Trọng Số Chọn Quà Trung Thu
+        <div class="modal-content card-hoang-gia">
+            <div class="modal-header nen-le-hoi-son-mai border-bottom" style="border-color: var(--mau-vang-dong-co) !important; border-radius: 15px 15px 0 0;">
+                <h5 class="modal-title font-co-phong fs-2 fw-bold chu-vang-kim">
+                    ✨ Nghệ Nhân Tư Vấn Chọn Vị Bánh Theo Gu Thưởng Thức
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body p-4">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label small text-warning">1. Bạn muốn biếu tặng ai?</label>
-                        <select id="quizDoiTuong" class="form-select bg-dark text-light border-secondary">
+                        <label class="form-label small fw-bold chu-do-son-mai">1. Bạn muốn biếu tặng ai?</label>
+                        <select id="quizDoiTuong" class="form-select" style="border-color: var(--mau-vien-vang-dong);">
                             <option value="ONG_BA">Ông Bà / Cha Mẹ (Người lớn tuổi)</option>
-                            <option value="SEP_VIP">Sếp / Đối tác VIP</option>
-                            <option value="BAN_BE">Bạn bè / Đồng nghiệp trẻ</option>
+                            <option value="SEP_VIP">Cấp trên / Đối tác Trọng thị</option>
+                            <option value="BAN_BE">Bạn bè / Đồng nghiệp thân thiết</option>
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small text-warning">2. Ưu tiên chế độ sức khỏe?</label>
-                        <select id="quizSucKhoe" class="form-select bg-dark text-light border-secondary">
+                        <label class="form-label small fw-bold chu-do-son-mai">2. Ưu tiên chế độ dinh dưỡng?</label>
+                        <select id="quizSucKhoe" class="form-select" style="border-color: var(--mau-vien-vang-dong);">
                             <option value="TIEU_DUONG">Ăn kiêng / Tiểu đường (Ưu tiên đường Isomalt GI thấp)</option>
-                            <option value="AN_CHAY">Thuần chay 100%</option>
-                            <option value="BINH_THUONG">Bình thường</option>
+                            <option value="AN_CHAY">Thuần chay thanh tịnh 100%</option>
+                            <option value="BINH_THUONG">Truyền thống đậm đà</option>
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small text-warning">3. Gu thưởng thức yêu thích?</label>
-                        <select id="quizHuongVi" class="form-select bg-dark text-light border-secondary">
+                        <label class="form-label small fw-bold chu-do-son-mai">3. Gu thưởng thức yêu thích?</label>
+                        <select id="quizHuongVi" class="form-select" style="border-color: var(--mau-vien-vang-dong);">
                             <option value="NGOT_HIENDAI">Ngọt thanh hạt sen / Đậu xanh</option>
                             <option value="THUONG_HANG">Mặn thượng hạng (Bào ngư, Hải sản)</option>
                             <option value="LAVA_CHAY">Nhân chảy Kim sa Lava</option>
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label small text-warning">4. Ngân sách dự kiến cho hộp 4 bánh?</label>
-                        <select id="quizNganSach" class="form-select bg-dark text-light border-secondary">
+                        <label class="form-label small fw-bold chu-do-son-mai">4. Ngân sách dự kiến cho hộp 4 bánh?</label>
+                        <select id="quizNganSach" class="form-select" style="border-color: var(--mau-vien-vang-dong);">
                             <option value="500000">Dưới 500.000 đ</option>
                             <option value="800000" selected>Khoảng 500.000đ – 800.000 đ</option>
                             <option value="1500000">Cao cấp trên 800.000 đ</option>
@@ -625,8 +658,8 @@
                 </div>
 
                 <div class="text-center mt-4">
-                    <button class="btn btn-vang-kim px-5 rounded-pill" onclick="chayThuatToanGoiY()">
-                        <i class="bi bi-cpu-fill me-1"></i> Chấm Điểm & Đề Xuất Top 3 Vị Bánh
+                    <button class="btn btn-do-son-mai px-5 py-2 rounded-pill" onclick="chayThuatToanGoiY()">
+                        <i class="bi bi-stars me-1"></i> Xem Gợi Ý Quà Tặng Phù Hợp
                     </button>
                 </div>
 
