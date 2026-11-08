@@ -324,8 +324,22 @@ namespace WebBanhTrungThu.Controllers
                     }
                 }
 
-                decimal tongPhiVanChuyen = req.DanhSachDotGiao.Count * 30000m;
-                decimal tongThanhToanCuoi = Math.Max(0m, tongTienHang - tienChietKhauB2B - tienGiamVoucher + phiInLogo + tongPhiVanChuyen);
+                // Kiểm tra nếu khách chọn Nhận tại cửa hàng (hoặc DiaChiGiaoChiTiet chứa "[Nhận tại cửa hàng]") hoặc tổng tiền hàng sau giảm >= 349000
+                bool laNhanTaiCuaHang = string.Equals(Request.Form["HinhThucNhanHang"], "NHAN_TAI_CUA_HANG", StringComparison.OrdinalIgnoreCase)
+                    || req.DanhSachDotGiao.Any(d => !string.IsNullOrWhiteSpace(d.DiaChiGiaoChiTiet) &&
+                        (d.DiaChiGiaoChiTiet.Contains("[Nhận tại cửa hàng]", StringComparison.OrdinalIgnoreCase) ||
+                         d.DiaChiGiaoChiTiet.Contains("Nhận tại Cửa hàng", StringComparison.OrdinalIgnoreCase)));
+
+                if (laNhanTaiCuaHang && req.DanhSachDotGiao.Count > 1)
+                {
+                    req.DanhSachDotGiao = req.DanhSachDotGiao.Take(1).ToList();
+                }
+
+                decimal tongTienHangSauGiam = Math.Max(0m, tongTienHang - tienChietKhauB2B - tienGiamVoucher);
+                bool mienPhiVanChuyen = laNhanTaiCuaHang || tongTienHangSauGiam >= 349000m;
+
+                decimal tongPhiVanChuyen = mienPhiVanChuyen ? 0m : (req.DanhSachDotGiao.Count * 30000m);
+                decimal tongThanhToanCuoi = Math.Max(0m, tongTienHangSauGiam + phiInLogo + tongPhiVanChuyen);
 
                 // 3. Lưu bản ghi DonHang
                 var donHang = new DonHang
@@ -365,6 +379,11 @@ namespace WebBanhTrungThu.Controllers
                         tokenQr = "QR-" + Guid.NewGuid().ToString("N").ToUpper()[..12];
                     }
 
+                    bool dotNhanTaiCuaHang = laNhanTaiCuaHang || (!string.IsNullOrWhiteSpace(dotInput.DiaChiGiaoChiTiet) &&
+                        (dotInput.DiaChiGiaoChiTiet.Contains("[Nhận tại cửa hàng]", StringComparison.OrdinalIgnoreCase) ||
+                         dotInput.DiaChiGiaoChiTiet.Contains("Nhận tại Cửa hàng", StringComparison.OrdinalIgnoreCase)));
+                    decimal phiVanChuyen = (dotNhanTaiCuaHang || mienPhiVanChuyen) ? 0m : 30000m;
+
                     var dotEntity = new DotGiaoHangDaDiem
                     {
                         MaDh = donHang.MaDh,
@@ -373,7 +392,7 @@ namespace WebBanhTrungThu.Controllers
                         DiaChiGiaoChiTiet = string.IsNullOrWhiteSpace(dotInput.DiaChiGiaoChiTiet) ? "Địa chỉ nhận quà Trung Thu" : dotInput.DiaChiGiaoChiTiet.Trim(),
                         NgayHenGiao = (dotInput.NgayHenGiao.HasValue && dotInput.NgayHenGiao.Value >= DateOnly.FromDateTime(DateTime.Today)) ? dotInput.NgayHenGiao.Value : DateOnly.FromDateTime(DateTime.Now.AddDays(1)),
                         KhungGioGiao = string.IsNullOrWhiteSpace(dotInput.KhungGioGiao) ? "Sáng (08:00 - 11:30)" : dotInput.KhungGioGiao,
-                        PhiShipDotNay = 30000m,
+                        PhiShipDotNay = phiVanChuyen,
                         TrangThaiGiao = "CHO_DONG_GOI",
                         CoKemThiepQr = dotInput.CoKemThiepQr,
                         MaTokenThiepQr = tokenQr,

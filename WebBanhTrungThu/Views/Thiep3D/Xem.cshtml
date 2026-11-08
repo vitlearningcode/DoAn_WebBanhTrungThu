@@ -7,18 +7,19 @@
 <style>
     .san-khau-thiep-3d {
         perspective: 1600px;
-        max-width: 720px;
+        max-width: 560px;
+        width: 100%;
         margin: 0 auto;
-        min-height: 500px;
+        min-height: 360px;
         position: relative;
     }
 
     .khung-thiep-lat-3d {
         width: 100%;
-        min-height: 480px;
+        min-height: 360px;
         position: relative;
         transform-style: preserve-3d;
-        transition: transform 1.15s cubic-bezier(0.25, 0.8, 0.25, 1);
+        transition: transform 1.05s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
 
     .khung-thiep-lat-3d.da-mo-thiep {
@@ -31,37 +32,37 @@
         top: 0;
         left: 0;
         width: 100%;
-        min-height: 480px;
+        min-height: 360px;
         backface-visibility: hidden;
         -webkit-backface-visibility: hidden;
-        border-radius: 22px;
-        padding: 36px 28px;
+        border-radius: 20px;
+        padding: 28px 24px;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
         align-items: center;
-        box-shadow: 0 22px 50px rgba(0, 0, 0, 0.75);
+        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.65);
     }
 
     .mat-ngoai-thiep {
         background: radial-gradient(circle at center, #5C0606 0%, #2B0202 85%);
-        border: 3px solid var(--mau-vang-anh-kim);
+        border: 2px solid var(--mau-vang-anh-kim);
         z-index: 2;
     }
 
     .mat-trong-thiep {
         background: radial-gradient(circle at top, #1C2541 0%, #0B132B 90%);
-        border: 3px solid var(--mau-vang-anh-kim);
+        border: 2px solid var(--mau-vang-anh-kim);
         transform: rotateY(180deg);
     }
 
     .con-dau-sap-vang {
-        width: 112px;
-        height: 112px;
+        width: 88px;
+        height: 88px;
         border-radius: 50%;
         background: radial-gradient(circle, #FFD700 0%, #D4AF37 60%, #8A6608 100%);
         border: 3px double #FFF;
-        box-shadow: 0 0 30px rgba(212, 175, 55, 0.75), inset 0 0 12px rgba(139, 0, 0, 0.6);
+        box-shadow: 0 0 24px rgba(212, 175, 55, 0.75), inset 0 0 10px rgba(139, 0, 0, 0.6);
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -73,99 +74,83 @@
     }
 
     .con-dau-sap-vang:hover {
-        transform: scale(1.08) rotate(5deg);
-        box-shadow: 0 0 42px rgba(255, 215, 0, 0.95);
+        transform: scale(1.06) rotate(4deg);
+        box-shadow: 0 0 34px rgba(255, 215, 0, 0.95);
     }
 
     .vanh-trang-ram {
-        width: 84px;
-        height: 84px;
+        width: 60px;
+        height: 60px;
         border-radius: 50%;
         background: radial-gradient(circle, #FFFDE7 10%, #FFD54F 65%, rgba(255, 213, 79, 0) 100%);
-        box-shadow: 0 0 45px #FFD54F, 0 0 85px rgba(212, 175, 55, 0.65);
+        box-shadow: 0 0 32px #FFD54F, 0 0 60px rgba(212, 175, 55, 0.6);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 2.5rem;
-        margin-bottom: 10px;
+        font-size: 1.85rem;
+        margin-bottom: 6px;
     }
 </style>
 
-<section class="py-5">
+<section class="d-flex align-items-center justify-content-center py-4" style="min-height: calc(100vh - 180px);">
     <div class="container text-center">
-        <div class="mb-4">
-            <span class="badge badge-thuong-hang px-3 py-2 rounded-pill mb-2" style="letter-spacing: 1.2px;">
-                THƯ CHÚC TẾT TRUNG THU ĐOÀN VIÊN
-            </span>
-            <h1 class="font-co-phong display-5 fw-bold chu-vang-kim mb-0">Tuyệt Tác Tâm Giao Mùa Trăng Rằm</h1>
-        </div>
-
-        <!-- SÂN KHẤU LẬT THIỆP 3D -->
-        <div class="san-khau-thiep-3d my-4">
+        <!-- SÂN KHẤU LẬT THIỆP 3D GỌN TRONG 1 KHUNG MÀN HÌNH -->
+        <div class="san-khau-thiep-3d">
             <div id="khungThiep3D" class="khung-thiep-lat-3d">
                 <!-- MẶT NGOÀI: PHONG BÌ KHÉP KÍN & CON DẤU SÁP VÀNG KIM -->
                 <div class="mat-ngoai-thiep">
                     <div class="w-100 border-bottom border-warning pb-2">
-                        <small class="text-uppercase chu-vang-kim fw-bold" style="letter-spacing: 2px;">
-                            🌕 NGUYỆT CÁT NGHỆ THUẬT TRUNG THU 2026
+                        <small class="text-uppercase chu-vang-kim fw-bold" style="letter-spacing: 1.5px; font-size: 0.78rem;">
+                            🌕 THIỆP TRUNG THU ĐOÀN VIÊN NGUYỆT CÁT
                         </small>
                     </div>
 
-                    <div class="my-3">
+                    <div class="my-2">
                         <div class="con-dau-sap-vang mx-auto mb-3" onclick="latMoThiep3D()" title="Chạm để mở niêm phong thiệp">
-                            <span class="fs-3">🌕</span>
-                            <small style="font-size: 0.65rem; letter-spacing: 1px;">NIÊM PHONG</small>
+                            <span class="fs-4">🌕</span>
+                            <small style="font-size: 0.6rem; letter-spacing: 0.8px;">MỞ THIỆP</small>
                         </div>
 
-                        <h2 class="font-co-phong fs-1 fw-bold chu-vang-kim mb-2">
-                            Nguyệt Cát Đoàn Viên - Kính gửi: @Model.TenNguoiNhan
+                        <h2 class="font-co-phong fs-3 fw-bold chu-vang-kim mb-1">
+                            Kính gửi: @Model.TenNguoiNhan
                         </h2>
-                        <p class="text-light opacity-75 mb-0">
-                            Một món quà Trung Thu cùng tấm thiệp chúc mừng 3D từ <strong>@tenNguoiGui</strong> đang chờ bạn mở niêm phong!
+                        <p class="text-light opacity-75 small mb-0">
+                            Thiệp chúc Trung Thu từ <strong>@tenNguoiGui</strong>
                         </p>
                     </div>
 
                     <div class="w-100">
-                        <button type="button" class="btn btn-vang-kim btn-lg rounded-pill px-5 py-2 shadow" onclick="latMoThiep3D()">
+                        <button type="button" class="btn btn-vang-kim rounded-pill px-4 py-2 shadow-sm" onclick="latMoThiep3D()">
                             🌕 Chạm Để Mở Thiệp Chúc Mừng
                         </button>
                     </div>
                 </div>
 
-                <!-- MẶT TRONG: ÁNH TRĂNG RẰM, LỜI CHÚC TÂM GIAO & THÔNG TIN HẸN GIAO -->
+                <!-- MẶT TRONG: MẶT TRĂNG NHỎ GỌN, KÍNH GỬI, LỜI CHÚC CHÍNH, NGƯỜI GỬI & 2 NÚT NHỎ -->
                 <div class="mat-trong-thiep">
                     <div class="d-flex flex-column align-items-center">
                         <div class="vanh-trang-ram">🌕</div>
-                        <span class="small text-uppercase chu-vang-kim fw-bold" style="letter-spacing: 2px;">
-                            THƯ CHÚC TẾT TRUNG THU ĐOÀN VIÊN
-                        </span>
-                        <h3 class="font-co-phong fs-2 chu-vang-kim mt-1 mb-0">
+                        <h3 class="font-co-phong fs-3 chu-vang-kim mb-0">
                             Kính gửi: @Model.TenNguoiNhan
                         </h3>
                     </div>
 
-                    <div class="p-4 my-3 rounded border border-warning w-100" style="background: rgba(11, 19, 43, 0.72);">
-                        <p class="font-co-phong fs-2 fst-italic text-light mb-2">
+                    <div class="p-3 my-2 rounded-3 border border-warning w-100" style="background: rgba(11, 19, 43, 0.72);">
+                        <p class="font-co-phong fs-4 fst-italic text-light mb-2">
                             "@(string.IsNullOrWhiteSpace(Model.LoiChucThiep) ? "Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên, Viên Mãn & An Khang!" : Model.LoiChucThiep)"
                         </p>
-                        <div class="text-end chu-vang-kim fw-bold">
-                            — Người gửi: @tenNguoiGui —
+                        <div class="text-end chu-vang-kim fw-bold small">
+                            Người gửi: @tenNguoiGui
                         </div>
                     </div>
 
-                    <div class="w-100">
-                        <div class="d-flex flex-wrap justify-content-center align-items-center small text-secondary border-top border-secondary pt-3 mb-3">
-                            <span>Ngày hẹn giao quà: <strong class="text-light">@Model.NgayHenGiao.ToString("dd/MM/yyyy") (@Model.KhungGioGiao)</strong></span>
-                        </div>
-
-                        <div class="d-flex justify-content-center gap-3">
-                            <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-4" onclick="dongThiep3D()">
-                                Khép Lại Phong Bì
-                            </button>
-                            <a asp-controller="Home" asp-action="Index" class="btn btn-sm btn-vang-kim rounded-pill px-4">
-                                Khám Phá Bộ Sưu Tập Nguyệt Cát
-                            </a>
-                        </div>
+                    <div class="d-flex justify-content-center gap-2 w-100 pt-1">
+                        <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-3" onclick="dongThiep3D()">
+                            Khép Lại
+                        </button>
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-sm btn-vang-kim rounded-pill px-3">
+                            Về Trang Chủ Nguyệt Cát
+                        </a>
                     </div>
                 </div>
             </div>

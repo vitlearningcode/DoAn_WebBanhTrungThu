@@ -2,9 +2,11 @@
 @{
     ViewData["Title"] = "Thanh Toán Đơn Hàng - Nguyệt Cát";
     int tongSoMon = Model.DanhSachMon.Sum(x => x.SoLuong);
-    bool duMienPhiShip = Model.TongTienHang >= 349000m;
+    int tongSoLuongSanPham = Model.GioHang?.ChiTietGioHangs?.Sum(x => x.SoLuong) ?? tongSoMon;
+    decimal tongTienSauGiamBanDau = Math.Max(0m, Model.TongTienHang - Model.TienChietKhauB2B - Model.TienGiamVoucher);
+    bool duMienPhiShip = tongTienSauGiamBanDau >= 349000m;
     decimal phiShipMacDinh = duMienPhiShip ? 0m : 30000m;
-    decimal tongThanhToanBanDau = Math.Max(0m, Model.TongTienHang - Model.TienChietKhauB2B - Model.TienGiamVoucher + phiShipMacDinh);
+    decimal tongThanhToanBanDau = Math.Max(0m, tongTienSauGiamBanDau + phiShipMacDinh);
     string ngayHenMacDinh = DateTime.Now.AddDays(2).ToString("yyyy-MM-dd");
 
     var diaChiMacDinh = Model.DanhSachSoDiaChi.FirstOrDefault();
@@ -383,8 +385,10 @@
                                 <div class="form-check d-flex align-items-center gap-2 m-0">
                                     <input class="form-check-input chk-tron-shondo" type="checkbox" id="chkGoiNguoiKhacNhan"
                                            onchange="xuLyBatTatNguoiKhacNhan()">
-                                    <label class="form-check-label fw-semibold" for="chkGoiNguoiKhacNhan" style="cursor: pointer; color: #1F2937; font-size: 0.92rem;">
-                                        Gọi người khác nhận hàng / Biếu tặng đa điểm (nếu có)
+                                    <label class="form-check-label fw-semibold" id="lblChkGoiNguoiKhacNhan" for="chkGoiNguoiKhacNhan" style="cursor: pointer; color: #1F2937; font-size: 0.92rem;">
+                                        @(tongSoLuongSanPham >= 2
+                                            ? $"Gọi người khác nhận hàng / Giao nhiều địa chỉ (tối đa {tongSoLuongSanPham} điểm nhận)"
+                                            : "Gọi người khác nhận hàng (nếu có)")
                                     </label>
                                 </div>
 
@@ -392,7 +396,9 @@
                                     <div class="row g-2 mb-2">
                                         <div class="col-md-6">
                                             <div class="khung-input-floating-shondo">
-                                                <label for="dot0_TenNguoiNhan" class="nhan-floating-nho">Tên người nhận quà #1 <span class="text-danger">*</span></label>
+                                                <label for="dot0_TenNguoiNhan" id="lblDot0TenNguoiNhan" class="nhan-floating-nho">
+                                                    @(tongSoLuongSanPham >= 2 ? "Tên người nhận quà #1" : "Tên người nhận") <span class="text-danger">*</span>
+                                                </label>
                                                 <input type="text" name="DanhSachDotGiao[0].TenNguoiNhan" id="dot0_TenNguoiNhan" required
                                                        value="@(diaChiMacDinh?.TenNguoiNhan ?? Model.HoTenNguoiMua)"
                                                        placeholder="VD: Ông Bà Nội / Đối tác..." />
@@ -400,7 +406,9 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="khung-input-floating-shondo">
-                                                <label for="dot0_SdtNguoiNhan" class="nhan-floating-nho">SĐT người nhận #1 <span class="text-danger">*</span></label>
+                                                <label for="dot0_SdtNguoiNhan" id="lblDot0SdtNguoiNhan" class="nhan-floating-nho">
+                                                    @(tongSoLuongSanPham >= 2 ? "SĐT người nhận #1" : "SĐT người nhận") <span class="text-danger">*</span>
+                                                </label>
                                                 <input type="text" name="DanhSachDotGiao[0].SdtNguoiNhan" id="dot0_SdtNguoiNhan" required
                                                        value="@(diaChiMacDinh?.SdtnguoiNhan ?? Model.SdtNguoiMua)"
                                                        placeholder="09xx..." />
@@ -413,9 +421,11 @@
                                     <input type="hidden" name="DiemNhanQuas[0].SdtNguoiNhan" id="diem0_SdtNguoiNhan" value="@(diaChiMacDinh?.SdtnguoiNhan ?? Model.SdtNguoiMua)" />
 
                                     <!-- Danh sách các điểm nhận quà bổ sung (từ điểm #2 trở đi) -->
-                                    <div id="danhSachCacDotGiaoContainer" class="mt-2"></div>
+                                    <div id="danhSachCacDotGiaoContainer" class="mt-2" style="display: @(tongSoLuongSanPham >= 2 ? "block" : "none");"></div>
 
-                                    <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-3 mt-2" onclick="themDotGiaoHangMoi()">
+                                    <button type="button" id="btnThemDiemNhanQua" class="btn btn-sm btn-outline-dark rounded-pill px-3 mt-2"
+                                            style="display: @(tongSoLuongSanPham >= 2 ? "inline-block" : "none");"
+                                            onclick="themDotGiaoHangMoi()">
                                         <i class="bi bi-plus-circle me-1"></i>+ Thêm điểm nhận quà khác
                                     </button>
                                 </div>
@@ -720,8 +730,10 @@
         const MIEN_PHI_LOGO = @(Model.MienPhiInLogo ? "true" : "false");
         const PHI_LOGO_MAC_DINH = @Model.PhiInLogoMacDinh;
         const NGAY_HEN_MAC_DINH = "@ngayHenMacDinh";
+        const tongSoLuongSanPham = @tongSoLuongSanPham;
 
         document.addEventListener("DOMContentLoaded", function () {
+            capNhatGiaoDienNguoiKhacNhan();
             dongBoNguoiMuaSangNguoiNhan();
             dongBoDiaChiGiaoChinh();
             capNhatBangTinhThanhToan();
@@ -742,8 +754,53 @@
             if (khungDiaChiGiao) khungDiaChiGiao.style.display = laNhanTaiCuaHang ? "none" : "block";
             if (khungCuaHang) khungCuaHang.style.display = laNhanTaiCuaHang ? "block" : "none";
 
+            capNhatGiaoDienNguoiKhacNhan();
             dongBoDiaChiGiaoChinh();
             capNhatBangTinhThanhToan();
+        }
+
+        // Cập nhật nhãn checkbox và giới hạn số điểm nhận theo hình thức nhận hàng & tongSoLuongSanPham
+        function capNhatGiaoDienNguoiKhacNhan() {
+            const laNhanTaiCuaHang = document.getElementById("radNhanTaiCuaHang")?.checked === true;
+            const lblChk = document.getElementById("lblChkGoiNguoiKhacNhan");
+            const lblTen0 = document.getElementById("lblDot0TenNguoiNhan");
+            const lblSdt0 = document.getElementById("lblDot0SdtNguoiNhan");
+            const container = document.getElementById("danhSachCacDotGiaoContainer");
+            const btnThem = document.getElementById("btnThemDiemNhanQua");
+
+            if (laNhanTaiCuaHang) {
+                // Trường hợp 1: Khách chọn Nhận tại cửa hàng
+                if (lblChk) lblChk.textContent = "Nhờ người khác đến cửa hàng nhận thay (nếu có)";
+                if (lblTen0) lblTen0.innerHTML = 'Họ tên người nhận thay <span class="text-danger">*</span>';
+                if (lblSdt0) lblSdt0.innerHTML = 'Số điện thoại người nhận thay <span class="text-danger">*</span>';
+                if (container) {
+                    container.innerHTML = "";
+                    container.style.display = "none";
+                }
+                if (btnThem) btnThem.style.display = "none";
+            } else if (tongSoLuongSanPham <= 1) {
+                // Trường hợp 2: Khách chọn Giao tận nơi nhưng chỉ mua 1 sản phẩm (tongSoLuongSanPham <= 1)
+                if (lblChk) lblChk.textContent = "Gọi người khác nhận hàng (nếu có)";
+                if (lblTen0) lblTen0.innerHTML = 'Tên người nhận <span class="text-danger">*</span>';
+                if (lblSdt0) lblSdt0.innerHTML = 'SĐT người nhận <span class="text-danger">*</span>';
+                if (container) {
+                    container.innerHTML = "";
+                    container.style.display = "none";
+                }
+                if (btnThem) btnThem.style.display = "none";
+            } else {
+                // Trường hợp 3: Khách chọn Giao tận nơi và mua từ 2 sản phẩm trở lên (tongSoLuongSanPham >= 2)
+                if (lblChk) lblChk.textContent = `Gọi người khác nhận hàng / Giao nhiều địa chỉ (tối đa ${tongSoLuongSanPham} điểm nhận)`;
+                if (lblTen0) lblTen0.innerHTML = 'Tên người nhận quà #1 <span class="text-danger">*</span>';
+                if (lblSdt0) lblSdt0.innerHTML = 'SĐT người nhận #1 <span class="text-danger">*</span>';
+                if (container) {
+                    container.style.display = "block";
+                }
+                const soDiemHienTai = 1 + (container ? container.querySelectorAll(".item-dot-giao").length : 0);
+                if (btnThem) {
+                    btnThem.style.display = soDiemHienTai >= tongSoLuongSanPham ? "none" : "inline-block";
+                }
+            }
         }
 
         // Ghép địa chỉ giao tận nơi hoặc gán địa chỉ cửa hàng vào DiaChiGiaoChiTiet
@@ -803,6 +860,7 @@
 
         function xuLyBatTatNguoiKhacNhan() {
             batTatKhungTuyChonMoRong("chkGoiNguoiKhacNhan", "khungNguoiKhacNhanHang");
+            capNhatGiaoDienNguoiKhacNhan();
             dongBoNguoiMuaSangNguoiNhan();
         }
 
@@ -868,8 +926,20 @@
         }
 
         function themDotGiaoHangMoi() {
+            const laNhanTaiCuaHang = document.getElementById("radNhanTaiCuaHang")?.checked === true;
+            if (laNhanTaiCuaHang || tongSoLuongSanPham <= 1) {
+                capNhatGiaoDienNguoiKhacNhan();
+                return;
+            }
+
             const container = document.getElementById("danhSachCacDotGiaoContainer");
             const soDiemPhuHienTai = container.querySelectorAll(".item-dot-giao").length;
+            const tongSoDiemHienTai = 1 + soDiemPhuHienTai;
+            if (tongSoDiemHienTai >= tongSoLuongSanPham) {
+                capNhatGiaoDienNguoiKhacNhan();
+                return;
+            }
+
             const idx = soDiemPhuHienTai + 1; // Điểm chính là index 0
 
             const div = document.createElement("div");
@@ -935,6 +1005,7 @@
 
             container.appendChild(div);
             danhSoLaiCacDotGiao();
+            capNhatGiaoDienNguoiKhacNhan();
             capNhatBangTinhThanhToan();
         }
 
@@ -943,6 +1014,7 @@
             if (item) {
                 item.remove();
                 danhSoLaiCacDotGiao();
+                capNhatGiaoDienNguoiKhacNhan();
                 capNhatBangTinhThanhToan();
             }
         }
@@ -1047,15 +1119,16 @@
             }
 
             const laNhanTaiCuaHang = document.getElementById("radNhanTaiCuaHang")?.checked === true;
-            const soDiemPhu = document.querySelectorAll("#danhSachCacDotGiaoContainer .item-dot-giao").length;
+            const soDiemPhu = laNhanTaiCuaHang ? 0 : document.querySelectorAll("#danhSachCacDotGiaoContainer .item-dot-giao").length;
             const soDiemGiao = 1 + soDiemPhu;
+            const tongTienSauGiam = Math.max(0, TONG_TIEN_HANG - TIEN_CK_B2B - TIEN_GIAM_VOUCHER);
 
             let tongPhiShip = 0;
-            if (!laNhanTaiCuaHang && TONG_TIEN_HANG < 349000) {
+            if (!laNhanTaiCuaHang && tongTienSauGiam < 349000) {
                 tongPhiShip = soDiemGiao * 30000;
             }
 
-            const tongCuoi = Math.max(0, TONG_TIEN_HANG - TIEN_CK_B2B - TIEN_GIAM_VOUCHER + phiLogo + tongPhiShip);
+            const tongCuoi = Math.max(0, tongTienSauGiam + phiLogo + tongPhiShip);
 
             const lblSoDiem = document.getElementById("lblSoDiemGiaoCheckout");
             if (lblSoDiem) lblSoDiem.innerText = soDiemGiao;
