@@ -225,7 +225,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
                 thongBao = $"Đã tạo thẻ thành viên cho '{khachMoi.HoTen}' (Tặng +50 điểm mở thẻ, MK mặc định: 123456)!",
                 khach = new
                 {
-                    maNd = khachMoi.MaNd,
+                    maNd = khachMoi.MaNd,   
                     hoTen = khachMoi.HoTen,
                     sdt = khachMoi.Sdt,
                     email = khachMoi.Email,

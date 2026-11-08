@@ -33,14 +33,13 @@ document.addEventListener("DOMContentLoaded", function () {
     khoiChayDongHoDemNguoc();
     taiLaiGioHangOffcanvas();
     khoiTaoSectionScrollObserver();
-    khoiTaoTrinhLatTangBanhXe();
+    khoiTaoBoMayChuyenCanhRoiRac();
     khoiTaoLienKetNeoMuot();
 });
 
 // =========================================================================
-// 1A. ĐIỀU HƯỚNG PHÂN KHU MƯỢT MÀ (SAO.AGU.EDU.VN) & MENU DROPDOWN (BUM97RACING.VN)
+// 1A. BỘ ĐIỀU KHIỂN FULLPAGE SLIDE DECK GPU (TRANSFORM: TRANSLATE3D - SAO.AGU.EDU.VN)
 // =========================================================================
-// Danh sách 5 phân khu chính có chấm điều hướng bên phải
 const DANH_SACH_PHAN_KHU = [
     "#tang-hero",
     "#tang-tu-chon-hop",
@@ -49,115 +48,20 @@ const DANH_SACH_PHAN_KHU = [
     "#tang-thiep-qr"
 ];
 
-// Danh sách các tầng mục tiêu cho thao tác lật phân khu bằng bánh xe chuột
-const DANH_SACH_TANG_LAT_TRANG = [
-    "tang-hero",
-    "tang-tu-chon-hop",
-    "tang-bo-suu-tap",
-    "tang-b2b",
-    "tang-thiep-qr",
-    "footer"
-];
+let danhSachCacTang = [];
+let chiSoTangHienTai = 0;
+let dangChuyenCanh = false;
+let khoaQuanTinhSauChuyen = false;
+let boHenGioDuPhongChuyenCanh = null;
 
-const THOI_GIAN_NGHI_SAU_CUON = 150; // Thời gian hạ nhiệt sau khi hoàn tất cuộn (150ms cooldown)
-let dangCuonChuyenTang = false;
-let thoiGianKetThucCuon = 0;
-let maKhungHinhCuon = 0;
-
-// Hàm nội suy mượt mà bậc ba: easeInOutCubic(t)
-function hamEmDiuBacBa(t) {
-    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
-
-// Kiểm tra xem người dùng có bật chế độ giảm chuyển động trong hệ điều hành không
-function kiemTraGiamChuyenDong() {
-    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+// Kiểm tra trang hiện tại có đang ở chế độ Fullpage Slide Deck trên Desktop (>= 992px) không
+function laCheDoFullpageDesktop() {
+    return window.innerWidth >= 992 && document.getElementById("dai-truot-fullpage") !== null;
 }
 
 // Lấy chiều cao thực tế của thanh menu cố định phía trên
 function layChieuCaoThanhMenu() {
-    const thanhMenu = document.querySelector(".navbar-kinh-mo");
-    return thanhMenu ? thanhMenu.offsetHeight : 72;
-}
-
-// Lấy giới hạn cuộn tối đa của tài liệu
-function layGioiHanCuonToiDa() {
-    return Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-}
-
-// Hàm cuộn trang mượt mà 60fps bằng requestAnimationFrame (sử dụng easeInOutCubic)
-function cuonMuotDenViTri(viTriDichY, thoiGianChay = 700) {
-    const viTriBatDau = window.scrollY;
-    const viTriToiDa = layGioiHanCuonToiDa();
-    const viTriDich = Math.min(Math.max(0, Math.round(viTriDichY)), viTriToiDa);
-    const quangDuong = viTriDich - viTriBatDau;
-
-    if (maKhungHinhCuon) {
-        cancelAnimationFrame(maKhungHinhCuon);
-        maKhungHinhCuon = 0;
-    }
-
-    if (Math.abs(quangDuong) < 2 || thoiGianChay <= 0 || kiemTraGiamChuyenDong()) {
-        window.scrollTo(0, viTriDich);
-        dangCuonChuyenTang = false;
-        thoiGianKetThucCuon = Date.now();
-        return;
-    }
-
-    dangCuonChuyenTang = true;
-    const thoiDiemBatDau = performance.now();
-
-    function buocKhungHinh(thoiDiemHienTai) {
-        const thoiGianTroiQua = thoiDiemHienTai - thoiDiemBatDau;
-        const tienDo = Math.min(1, thoiGianTroiQua / thoiGianChay);
-        const heSoEmDiu = hamEmDiuBacBa(tienDo);
-
-        window.scrollTo(0, viTriBatDau + quangDuong * heSoEmDiu);
-
-        if (tienDo < 1) {
-            maKhungHinhCuon = requestAnimationFrame(buocKhungHinh);
-        } else {
-            maKhungHinhCuon = 0;
-            thoiGianKetThucCuon = Date.now();
-            setTimeout(() => {
-                if (!maKhungHinhCuon) {
-                    dangCuonChuyenTang = false;
-                }
-            }, THOI_GIAN_NGHI_SAU_CUON);
-        }
-    }
-
-    maKhungHinhCuon = requestAnimationFrame(buocKhungHinh);
-}
-
-// Cuộn trang mượt mà đến vị trí đỉnh của một phần tử cụ thể (có trừ khoảng đệm menu sticky)
-function cuonMuotDenPhanTu(phanTu, thoiGianChay = 700) {
-    if (!phanTu) return;
-    const chieuCaoHeader = layChieuCaoThanhMenu();
-    const viTriDich = phanTu.getBoundingClientRect().top + window.scrollY - chieuCaoHeader;
-    cuonMuotDenViTri(viTriDich, thoiGianChay);
-
-    if (phanTu.id) {
-        capNhatChamTronActive("#" + phanTu.id);
-    }
-    const khoiHienDan = phanTu.querySelector(".section-reveal");
-    if (khoiHienDan) {
-        khoiHienDan.classList.add("active");
-    }
-}
-
-// Hàm kích hoạt điều hướng phân khu từ các nút chấm tròn bên phải hoặc thẻ liên kết
-function cuonDenPhanKhu(selector, e) {
-    const mucTieu = document.querySelector(selector);
-    if (!mucTieu) {
-        return true; // Cho phép điều hướng href mặc định nếu đang ở trang con khác
-    }
-    if (e && typeof e.preventDefault === "function") {
-        e.preventDefault();
-    }
-
-    cuonMuotDenPhanTu(mucTieu);
-    return false;
+    return document.querySelector('header, .navbar')?.offsetHeight || 68;
 }
 
 // Cập nhật trạng thái sáng chấm tròn dọc bên phải (.side-dot-btn.active)
@@ -167,6 +71,221 @@ function capNhatChamTronActive(selector) {
     });
 }
 
+// Đồng bộ class body.trang-chu-fullpage và vị trí translate3d khi tải trang hoặc đổi kích thước màn hình
+function dongBoKhungFullpageTheoManHinh() {
+    const daiTruot = document.getElementById("dai-truot-fullpage");
+    if (!daiTruot) return;
+
+    const footerNgoai = document.querySelector("body > footer");
+    if (footerNgoai) {
+        footerNgoai.style.display = "none";
+    }
+
+    if (window.innerWidth >= 992) {
+        document.body.classList.add("trang-chu-fullpage");
+        window.scrollTo(0, 0);
+        daiTruot.style.transform = "translate3d(0, -" + (chiSoTangHienTai * 100) + "%, 0)";
+    } else {
+        document.body.classList.remove("trang-chu-fullpage");
+        daiTruot.style.transform = "none";
+    }
+}
+
+// Khởi tạo danh sách 5 Slide và bộ điều khiển chuyển cảnh GPU
+function khoiTaoBoMayChuyenCanhRoiRac() {
+    const daiTruot = document.getElementById("dai-truot-fullpage");
+    danhSachCacTang = DANH_SACH_PHAN_KHU
+        .map(sel => document.querySelector(sel))
+        .filter(el => el !== null);
+
+    if (danhSachCacTang.length === 0) return;
+
+    dongBoKhungFullpageTheoManHinh();
+
+    // Bật sẵn hiệu ứng .section-reveal.active cho tầng đầu tiên
+    const tangDau = danhSachCacTang[chiSoTangHienTai];
+    if (tangDau) {
+        capNhatChamTronActive("#" + tangDau.id);
+        tangDau.querySelector(".section-reveal")?.classList.add("active");
+    }
+
+    // Nếu URL có hash (#tang-...) khi vừa mở trang chủ từ trang khác sang
+    if (window.location.hash) {
+        const mucTieuHash = document.querySelector(window.location.hash);
+        const idxHash = danhSachCacTang.indexOf(mucTieuHash);
+        if (idxHash > 0) {
+            setTimeout(() => {
+                window.scrollTo(0, 0);
+                chuyenDenTang(idxHash);
+            }, 60);
+        }
+    }
+
+    if (daiTruot) {
+        daiTruot.addEventListener("transitionend", function (e) {
+            if (e.target !== daiTruot || e.propertyName !== "transform") return;
+            hoanTatChuyenCanhGPU();
+        });
+    }
+
+    window.addEventListener("wheel", xuLyLanChuotChuyenCanh, { passive: false });
+    window.addEventListener("keydown", xuLyPhimMuiTenChuyenCanh);
+    window.addEventListener("resize", dongBoKhungFullpageTheoManHinh);
+}
+
+// Mở khóa sau khi #dai-truot-fullpage đã trượt xong và bật khóa quán tính ngắn 70ms
+function hoanTatChuyenCanhGPU() {
+    if (!dangChuyenCanh) return;
+    if (boHenGioDuPhongChuyenCanh) {
+        clearTimeout(boHenGioDuPhongChuyenCanh);
+        boHenGioDuPhongChuyenCanh = null;
+    }
+
+    dangChuyenCanh = false;
+    khoaQuanTinhSauChuyen = true;
+    setTimeout(() => {
+        khoaQuanTinhSauChuyen = false;
+    }, 70);
+}
+
+// Hàm chuyển đến tầng chỉ định bằng GPU transform: translate3d
+function chuyenDenTang(chiSoMoi) {
+    const tongSoTang = danhSachCacTang.length;
+    if (tongSoTang === 0) return;
+
+    const chiSoHopLe = Math.max(0, Math.min(chiSoMoi, tongSoTang - 1));
+    if (dangChuyenCanh === true || chiSoHopLe === chiSoTangHienTai) return;
+
+    const phanTuDich = danhSachCacTang[chiSoHopLe];
+    if (!phanTuDich) return;
+
+    // Trên Mobile (< 992px): cuộn mượt truyền thống
+    if (!laCheDoFullpageDesktop()) {
+        chiSoTangHienTai = chiSoHopLe;
+        capNhatChamTronActive("#" + phanTuDich.id);
+        phanTuDich.querySelector(".section-reveal")?.classList.add("active");
+        const chieuCaoThanhMenu = layChieuCaoThanhMenu();
+        window.scrollTo({
+            top: Math.max(0, phanTuDich.offsetTop - chieuCaoThanhMenu),
+            behavior: "smooth"
+        });
+        return;
+    }
+
+    dangChuyenCanh = true;
+    chiSoTangHienTai = chiSoHopLe;
+
+    // Dịch chuyển #dai-truot-fullpage bằng GPU
+    const daiTruot = document.getElementById("dai-truot-fullpage");
+    if (daiTruot) {
+        window.scrollTo(0, 0);
+        daiTruot.style.transform = "translate3d(0, -" + (chiSoTangHienTai * 100) + "%, 0)";
+    }
+
+    // Cập nhật ngay chấm tròn .active bên phải màn hình và hiệu ứng .section-reveal.active
+    if (phanTuDich.id) {
+        capNhatChamTronActive("#" + phanTuDich.id);
+    }
+    phanTuDich.querySelector(".section-reveal")?.classList.add("active");
+
+    // Bộ hẹn giờ dự phòng 880ms phòng trường hợp trình duyệt bỏ qua sự kiện transitionend
+    if (boHenGioDuPhongChuyenCanh) {
+        clearTimeout(boHenGioDuPhongChuyenCanh);
+    }
+    boHenGioDuPhongChuyenCanh = setTimeout(() => {
+        hoanTatChuyenCanhGPU();
+    }, 880);
+}
+
+// Kiểm tra con trỏ chuột có đang nằm trong khung danh sách chọn vị bánh nhỏ ở Cột 3 Tầng 2 (.overflow-auto) và chưa chạm đỉnh/đáy không
+function conKhoangCuonTrongKhungCon(phanTuMucTieu, deltaY) {
+    let el = phanTuMucTieu instanceof Element ? phanTuMucTieu.closest(".overflow-auto, .luoi-san-pham-cuon") : null;
+    while (el) {
+        if (el.scrollHeight > el.clientHeight + 1) {
+            if (deltaY < 0 && el.scrollTop > 0) {
+                return true;
+            }
+            if (deltaY > 0 && el.scrollTop + el.clientHeight < el.scrollHeight - 2) {
+                return true;
+            }
+        }
+        el = el.parentElement ? el.parentElement.closest(".overflow-auto, .luoi-san-pham-cuon") : null;
+    }
+    return false;
+}
+
+// Sự kiện wheel ({ passive: false }) điều khiển chuyển cảnh rời rạc từng Slide
+function xuLyLanChuotChuyenCanh(e) {
+    if (!laCheDoFullpageDesktop() || danhSachCacTang.length === 0) return;
+
+    if (e.ctrlKey || document.querySelector(".modal.show, .offcanvas.show")) return;
+
+    if (conKhoangCuonTrongKhungCon(e.target, e.deltaY)) return;
+
+    e.preventDefault();
+
+    if (dangChuyenCanh === true || khoaQuanTinhSauChuyen === true || Math.abs(e.deltaY) < 4) return;
+
+    if (e.deltaY > 0) {
+        chuyenDenTang(chiSoTangHienTai + 1);
+    } else if (e.deltaY < 0) {
+        chuyenDenTang(chiSoTangHienTai - 1);
+    }
+}
+
+// Hỗ trợ phím mũi tên và PageUp / PageDown để chuyển tầng mượt mà
+function xuLyPhimMuiTenChuyenCanh(e) {
+    if (!laCheDoFullpageDesktop() || danhSachCacTang.length === 0) return;
+    if (document.querySelector(".modal.show, .offcanvas.show")) return;
+
+    const phanTuDangFocus = document.activeElement;
+    if (phanTuDangFocus && ["INPUT", "TEXTAREA", "SELECT"].includes(phanTuDangFocus.tagName)) return;
+
+    if (e.key === "ArrowDown" || e.key === "PageDown") {
+        e.preventDefault();
+        if (!dangChuyenCanh && !khoaQuanTinhSauChuyen) {
+            chuyenDenTang(chiSoTangHienTai + 1);
+        }
+    } else if (e.key === "ArrowUp" || e.key === "PageUp") {
+        e.preventDefault();
+        if (!dangChuyenCanh && !khoaQuanTinhSauChuyen) {
+            chuyenDenTang(chiSoTangHienTai - 1);
+        }
+    }
+}
+
+// Tìm chỉ số tầng theo phần tử và gọi trực tiếp chuyenDenTang(chiSoTuongUng)
+function diChuyenDenPhanTuTang(mucTieu) {
+    if (!mucTieu) return;
+    const chiSo = danhSachCacTang.indexOf(mucTieu);
+    if (chiSo !== -1) {
+        chuyenDenTang(chiSo);
+    } else if (!laCheDoFullpageDesktop()) {
+        const chieuCaoThanhMenu = layChieuCaoThanhMenu();
+        const viTriDichY = Math.max(0, mucTieu.offsetTop - chieuCaoThanhMenu);
+        window.scrollTo({ top: viTriDichY, behavior: "smooth" });
+    }
+}
+
+// Hàm kích hoạt điều hướng phân khu từ các nút chấm tròn bên phải hoặc nút bấm cuộn
+function cuonDenPhanKhu(selector, e) {
+    const mucTieu = document.querySelector(selector);
+    if (!mucTieu) {
+        return true; // Cho phép điều hướng href mặc định nếu đang ở trang con khác
+    }
+    if (e && typeof e.preventDefault === "function") {
+        e.preventDefault();
+    }
+
+    const chiSoTuongUng = danhSachCacTang.indexOf(mucTieu);
+    if (chiSoTuongUng !== -1) {
+        chuyenDenTang(chiSoTuongUng);
+    } else {
+        diChuyenDenPhanTuTang(mucTieu);
+    }
+    return false;
+}
+
 // Lấy danh sách các phần tử tầng trang chủ hiện có trong DOM
 function layDanhSachSectionTrangChu() {
     return DANH_SACH_PHAN_KHU
@@ -174,14 +293,7 @@ function layDanhSachSectionTrangChu() {
         .filter(el => el !== null);
 }
 
-// Lấy danh sách các tầng mục tiêu để cuộn lật phân khu theo bánh xe chuột
-function layDanhSachTangLatTrang() {
-    return DANH_SACH_TANG_LAT_TRANG
-        .map(id => id === "footer" ? (document.getElementById("footer") || document.querySelector("footer")) : document.getElementById(id))
-        .filter(el => el !== null);
-}
-
-// Khởi tạo IntersectionObserver: chỉ bật sáng chấm tròn active và trượt nhẹ .section-reveal.active
+// Khởi tạo IntersectionObserver hỗ trợ hiển thị .section-reveal trên thiết bị di động (< 992px)
 function khoiTaoSectionScrollObserver() {
     const cacSection = layDanhSachSectionTrangChu();
     if (cacSection.length === 0 || !("IntersectionObserver" in window)) {
@@ -189,161 +301,31 @@ function khoiTaoSectionScrollObserver() {
         return;
     }
 
-    // 1. Theo dõi tầng đang xuất hiện ở vùng trung tâm tầm mắt để đổi chấm active
-    const boQuanSatChamTron = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                capNhatChamTronActive("#" + entry.target.id);
-            }
-        });
-    }, {
-        root: null,
-        rootMargin: "-40% 0px -40% 0px",
-        threshold: 0
-    });
-
-    // 2. Theo dõi tầng bắt đầu lọt vào khung nhìn để kích hoạt hiệu ứng hiện dần
     const boQuanSatHienDan = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.querySelector(".section-reveal")?.classList.add("active");
+                if (!laCheDoFullpageDesktop() && !dangChuyenCanh) {
+                    capNhatChamTronActive("#" + entry.target.id);
+                    const idx = danhSachCacTang.indexOf(entry.target);
+                    if (idx !== -1) {
+                        chiSoTangHienTai = idx;
+                    }
+                }
             }
         });
     }, {
         root: null,
         rootMargin: "0px 0px -10% 0px",
-        threshold: 0
+        threshold: 0.15
     });
 
     cacSection.forEach(sec => {
-        boQuanSatChamTron.observe(sec);
         boQuanSatHienDan.observe(sec);
     });
 }
 
-// Kiểm tra con trỏ chuột có đang nằm trong một hộp cuộn nội bộ (VD: danh sách bánh) chưa chạm mép
-function kiemTraHopCuonNoiBo(phanTuDich, huongXuong) {
-    let nut = phanTuDich instanceof Element ? phanTuDich : null;
-    while (nut && nut !== document.body && nut !== document.documentElement) {
-        const phongCach = window.getComputedStyle(nut);
-        const kieuTranY = phongCach.overflowY;
-        const laHopCuon = (kieuTranY === "auto" || kieuTranY === "scroll" || nut.classList.contains("overflow-auto"));
-
-        if (laHopCuon && nut.scrollHeight > nut.clientHeight + 1) {
-            if (huongXuong && Math.ceil(nut.scrollTop + nut.clientHeight) < nut.scrollHeight - 1) {
-                return true; // Còn cuộn xuống tiếp được bên trong hộp
-            }
-            if (!huongXuong && nut.scrollTop > 1) {
-                return true; // Còn cuộn lên tiếp được bên trong hộp
-            }
-        }
-        nut = nut.parentElement;
-    }
-    return false;
-}
-
-// Khởi tạo trình lắng nghe sự kiện lăn chuột phân khu mượt mà (style sao.agu.edu.vn)
-function khoiTaoTrinhLatTangBanhXe() {
-    const cacTang = layDanhSachTangLatTrang();
-    if (cacTang.length < 2 || kiemTraGiamChuyenDong()) return;
-    window.addEventListener("wheel", xuLyLanChuotPhanKhu, { passive: false });
-}
-
-// Xử lý sự kiện lăn bánh xe chuột phân trang thông minh
-function xuLyLanChuotPhanKhu(e) {
-    // 1. Kiểm tra các điều kiện bỏ qua (Bypass conditions)
-    if (e.ctrlKey) return; // Người dùng đang nhấn phím Ctrl để zoom trình duyệt
-    if (Math.abs(e.deltaY) < 1 || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return; // Bỏ qua lăn ngang
-    if (document.querySelector(".modal.show, .offcanvas.show")) return; // Đang mở Modal hoặc Drawer
-
-    const huongXuong = e.deltaY > 0;
-    if (kiemTraHopCuonNoiBo(e.target, huongXuong)) return; // Con trỏ chuột nằm trong danh sách nội bộ chưa chạm mép
-
-    // 2. Chặn các thao tác cuộn đè trong khi đang chạy hiệu ứng hoặc trong khoảng hồi phục (150ms cooldown)
-    const bayGio = Date.now();
-    if (dangCuonChuyenTang || (bayGio - thoiGianKetThucCuon < THOI_GIAN_NGHI_SAU_CUON)) {
-        e.preventDefault();
-        return;
-    }
-
-    const cacTang = layDanhSachTangLatTrang();
-    const chieuCaoHeader = layChieuCaoThanhMenu();
-    const chieuCaoManHinh = window.innerHeight;
-    const viTriCuonHienTai = window.scrollY;
-    const duongMoc = chieuCaoHeader + 2;
-
-    // Tìm tầng hiện tại đang hiển thị dưới thanh header
-    let chiSoTang = cacTang.findIndex(tang => {
-        const r = tang.getBoundingClientRect();
-        return r.top <= duongMoc && r.bottom > duongMoc;
-    });
-
-    if (chiSoTang === -1) {
-        // Dự phòng: chọn tầng có diện tích bao phủ lớn nhất trong màn hình
-        let maxDienTich = -1;
-        cacTang.forEach((tang, idx) => {
-            const r = tang.getBoundingClientRect();
-            const topNhin = Math.max(chieuCaoHeader, r.top);
-            const botNhin = Math.min(chieuCaoManHinh, r.bottom);
-            const chieuCao = botNhin - topNhin;
-            if (chieuCao > maxDienTich) {
-                maxDienTich = chieuCao;
-                chiSoTang = idx;
-            }
-        });
-    }
-
-    if (chiSoTang === -1) return;
-
-    const tangHienTai = cacTang[chiSoTang];
-    const khungTang = tangHienTai.getBoundingClientRect();
-    const buocCuonTrongTang = Math.round((chieuCaoManHinh - chieuCaoHeader) * 0.75);
-    let viTriDich = viTriCuonHienTai;
-
-    if (huongXuong) {
-        // Cuộn XUỐNG: Nếu tầng hiện tại cao hơn viewport và đáy tầng vẫn nằm dưới đáy viewport -> cuộn tiếp bên trong tầng
-        const dayTangToaDo = khungTang.bottom + viTriCuonHienTai;
-        if ((khungTang.bottom - khungTang.top > chieuCaoManHinh - chieuCaoHeader) && (khungTang.bottom > chieuCaoManHinh + 5)) {
-            viTriDich = Math.min(viTriCuonHienTai + buocCuonTrongTang, dayTangToaDo - chieuCaoManHinh);
-        } else if (chiSoTang < cacTang.length - 1) {
-            // Đã thấy đáy tầng hiện tại -> lướt mượt xuống đỉnh tầng kế tiếp
-            const tangKeTiep = cacTang[chiSoTang + 1];
-            viTriDich = tangKeTiep.getBoundingClientRect().top + viTriCuonHienTai - chieuCaoHeader;
-        } else {
-            return; // Đã ở tầng cuối cùng
-        }
-    } else {
-        // Cuộn LÊN: Nếu đỉnh tầng hiện tại đang nằm trên sticky header -> cuộn lên đỉnh tầng hiện tại trước
-        const dinhTangToaDo = khungTang.top + viTriCuonHienTai - chieuCaoHeader;
-        if (khungTang.top < chieuCaoHeader - 5) {
-            viTriDich = Math.max(dinhTangToaDo, viTriCuonHienTai - buocCuonTrongTang);
-        } else if (chiSoTang > 0) {
-            // Đang ở sát đỉnh tầng hiện tại -> lướt mượt về tầng phía trước
-            const tangTruoc = cacTang[chiSoTang - 1];
-            const khungTangTruoc = tangTruoc.getBoundingClientRect();
-            const chieuCaoTangTruoc = khungTangTruoc.bottom - khungTangTruoc.top;
-
-            // Nếu tầng trước cao hơn màn hình thì cuộn đến đáy của tầng trước để người dùng không bỏ lỡ nội dung
-            if (chieuCaoTangTruoc > (chieuCaoManHinh - chieuCaoHeader + 5)) {
-                viTriDich = khungTangTruoc.bottom + viTriCuonHienTai - chieuCaoManHinh;
-            } else {
-                viTriDich = khungTangTruoc.top + viTriCuonHienTai - chieuCaoHeader;
-            }
-        } else {
-            return; // Đã ở tầng đầu tiên
-        }
-    }
-
-    const viTriToiDa = layGioiHanCuonToiDa();
-    const viTriDichChuan = Math.min(Math.max(0, viTriDich), viTriToiDa);
-
-    if (Math.abs(viTriDichChuan - viTriCuonHienTai) < 2) return;
-
-    e.preventDefault();
-    cuonMuotDenViTri(viTriDichChuan, 700);
-}
-
-// Bắt sự kiện click vào tất cả các liên kết neo #tang-... để trượt mượt mà
+// Bắt sự kiện click vào tất cả các liên kết neo #tang-... trên Menu Bar và trang chủ để gọi chuyenDenTang(chiSoTuongUng)
 function khoiTaoLienKetNeoMuot() {
     document.addEventListener("click", function (e) {
         if (e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey) return;
@@ -358,7 +340,12 @@ function khoiTaoLienKetNeoMuot() {
         if (!mucTieu) return;
 
         e.preventDefault();
-        cuonMuotDenPhanTu(mucTieu);
+        const chiSoTuongUng = danhSachCacTang.indexOf(mucTieu);
+        if (chiSoTuongUng !== -1) {
+            chuyenDenTang(chiSoTuongUng);
+        } else {
+            diChuyenDenPhanTuTang(mucTieu);
+        }
     });
 }
 
@@ -380,7 +367,10 @@ function dieuHuongMenuThuongHieu(tenThuongHieu, e) {
     });
     locTheoThuongHieu(tenThuongHieu, btnTh);
 
-    cuonMuotDenPhanTu(tangBst);
+    const chiSoTuongUng = danhSachCacTang.indexOf(tangBst);
+    if (chiSoTuongUng !== -1) {
+        chuyenDenTang(chiSoTuongUng);
+    }
     return false;
 }
 
@@ -396,7 +386,10 @@ function dieuHuongMenuBoSuuTap(loaiLoc, e) {
     const btnLoc = document.querySelector(`#nhomLocDinhDuong button[data-loc="${loaiLoc}"]`);
     locSanPham(loaiLoc, btnLoc);
 
-    cuonMuotDenPhanTu(tangBst);
+    const chiSoTuongUng = danhSachCacTang.indexOf(tangBst);
+    if (chiSoTuongUng !== -1) {
+        chuyenDenTang(chiSoTuongUng);
+    }
     return false;
 }
 
@@ -411,8 +404,23 @@ function dieuHuongMenuVoHop(maVh, e) {
         doiMauVoHop(radioVh);
     }
 
-    cuonMuotDenPhanTu(tangHop);
+    const chiSoTuongUng = danhSachCacTang.indexOf(tangHop);
+    if (chiSoTuongUng !== -1) {
+        chuyenDenTang(chiSoTuongUng);
+    }
     return false;
+}
+
+// Hàm trượt ngang Carousel Bộ Sưu Tập Bánh ở Tầng 3 khi bấm nút [‹] hoặc [›]
+function truotBstBanh(huong) {
+    const luoi = document.getElementById("luoiSanPhamBanh");
+    if (!luoi) return;
+    const theDauTien = luoi.querySelector(".item-banh-card:not(.d-none)");
+    const buocTruot = theDauTien ? (theDauTien.offsetWidth + 16) * 2 : luoi.clientWidth * 0.75;
+    luoi.scrollBy({
+        left: huong * buocTruot,
+        behavior: "smooth"
+    });
 }
 
 function moModalTuVanQua() {
@@ -971,6 +979,11 @@ function apDungBoLocTang4() {
 
         card.classList.toggle("d-none", !(khopDinhDuong && khopThuongHieu));
     });
+
+    const luoi = document.getElementById("luoiSanPhamBanh");
+    if (luoi) {
+        luoi.scrollTo({ left: 0, behavior: "smooth" });
+    }
 }
 
 function locSanPham(loaiLoc, btn) {

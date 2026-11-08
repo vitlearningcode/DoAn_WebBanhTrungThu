@@ -18,7 +18,8 @@
 }
 
 /* Tắt cuộn mặc định của trình duyệt để site.js điều khiển trượt tầng mượt 60fps qua requestAnimationFrame */
-html, body {
+html,
+body {
     overflow-x: hidden;
     overflow-y: scroll;
     scroll-behavior: auto !important;
@@ -104,32 +105,49 @@ body {
     border-bottom: 2px solid rgba(212, 175, 55, 0.55);
     box-shadow: 0 6px 24px rgba(74, 7, 9, 0.28);
     transition: all 0.3s ease;
-    min-height: 76px;
+    height: 68px;
+    min-height: 68px;
+    max-height: 68px;
 }
 
-.nav-menu-hoang-gia .nav-item-dropdown {
+.navbar-kinh-mo a,
+.navbar-kinh-mo button,
+.nav-menu-hoang-gia a,
+.nav-menu-hoang-gia button,
+.header-right-actions a,
+.header-right-actions button {
+    white-space: nowrap !important;
+}
+
+.nav-menu-hoang-gia {
+    gap: 14px;
+}
+
+.nav-menu-hoang-gia .nav-item-dropdown,
+.header-right-actions .nav-item-dropdown {
     position: relative;
 }
 
 .nav-menu-hoang-gia .nav-link-chinh {
     color: var(--mau-kem-vang) !important;
-    font-size: 0.84rem;
+    font-size: 0.82rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.8px;
-    padding: 0.65rem 0.9rem !important;
+    letter-spacing: 0.6px;
+    padding: 0.5rem 0.6rem !important;
     position: relative;
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    white-space: nowrap !important;
     transition: color 0.25s ease;
 }
 
 .nav-menu-hoang-gia .nav-link-chinh::after {
     content: "";
     position: absolute;
-    left: 0.9rem;
-    right: 0.9rem;
+    left: 0.6rem;
+    right: 0.6rem;
     bottom: 4px;
     height: 2px;
     background: linear-gradient(90deg, #D4AF37, #FAF0CA);
@@ -153,7 +171,8 @@ body {
     transition: transform 0.28s ease;
 }
 
-.nav-menu-hoang-gia .nav-item-dropdown:hover .nav-caret-icon {
+.nav-menu-hoang-gia .nav-item-dropdown:hover .nav-caret-icon,
+.header-right-actions .nav-item-dropdown:hover .nav-caret-icon {
     transform: rotate(180deg);
 }
 
@@ -178,7 +197,13 @@ body {
     transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.nav-menu-hoang-gia .nav-item-dropdown:hover>.hover-dropdown-panel {
+.hover-dropdown-panel-end {
+    left: auto;
+    right: 0;
+}
+
+.nav-menu-hoang-gia .nav-item-dropdown:hover>.hover-dropdown-panel,
+.header-right-actions .nav-item-dropdown:hover>.hover-dropdown-panel {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
@@ -211,6 +236,11 @@ body {
 }
 
 @media (max-width: 991.98px) {
+    .navbar-kinh-mo {
+        height: auto;
+        max-height: none;
+    }
+
     .hover-dropdown-panel {
         position: static;
         opacity: 1;
@@ -368,21 +398,48 @@ body {
     background: radial-gradient(circle, #FFFFFF 0%, #FDF8EE 65%, #F6EFE2 100%);
     border: 1px solid #EFE4CE;
     border-radius: 12px;
-    padding: 12px;
+    padding: 8px;
     position: relative;
 }
 
+.khung-anh-banh-bst {
+    height: 115px;
+    max-height: 115px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+}
+
+.khung-anh-banh-bst img {
+    max-height: 100px !important;
+    width: auto;
+    object-fit: contain;
+}
+
+.mo-ta-banh-2-dong {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.35;
+    min-height: 2.7em;
+    font-size: 0.78rem;
+}
+
 /* =========================================================================
-   TẦNG 3: KHAY HỘP TỰ CHỌN TƯƠNG TÁC (BOX BUILDER TRUYỀN THỐNG)
+   TẦNG 2: KHAY HỘP TỰ CHỌN TƯƠNG TÁC (BOX BUILDER TRUYỀN THỐNG)
    ========================================================================= */
 .khung-khay-hop {
     background-size: cover;
     background-position: center;
-    border: 3px solid var(--mau-vang-dong-co);
-    border-radius: 18px;
-    padding: 22px;
-    box-shadow: inset 0 0 32px rgba(74, 7, 9, 0.35), 0 12px 28px rgba(110, 13, 16, 0.12);
-    min-height: 400px;
+    border: 2.5px solid var(--mau-vang-dong-co);
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: inset 0 0 28px rgba(74, 7, 9, 0.35), 0 8px 20px rgba(110, 13, 16, 0.1);
+    min-height: 200px;
     overflow: hidden;
     width: 100%;
     box-sizing: border-box;
@@ -391,28 +448,32 @@ body {
 .luoi-hop-2x2 {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
+    gap: 8px;
     width: 100%;
+    max-width: 320px;
     margin: 0 auto;
 }
 
 .luoi-hop-3x2 {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
+    gap: 8px;
     width: 100%;
+    max-width: 360px;
     margin: 0 auto;
 }
 
 .o-banh-slot {
-    aspect-ratio: 1 / 1;
+    height: 92px;
+    min-height: 88px;
+    max-height: 96px;
     min-width: 0;
     width: 100%;
     overflow: hidden;
     box-sizing: border-box;
     background: rgba(253, 248, 238, 0.92);
     border: 2px dashed var(--mau-vang-dong-co);
-    border-radius: 14px;
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -433,11 +494,95 @@ body {
 }
 
 .o-banh-slot img {
-    max-width: 78%;
-    max-height: 72%;
+    max-width: 68%;
+    max-height: 56px;
     object-fit: contain;
-    filter: drop-shadow(0 6px 10px rgba(44, 24, 16, 0.28));
+    filter: drop-shadow(0 4px 8px rgba(44, 24, 16, 0.26));
     animation: thaBanhVaoO 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* =========================================================================
+   TẦNG 3: HORIZONTAL CAROUSEL / SLIDER BỘ SƯU TẬP BÁNH (4 THẺ / KHUNG NHÌN)
+   ========================================================================= */
+.khung-slider-bst {
+    position: relative;
+    padding: 0 26px;
+}
+
+.dai-truot-san-pham-bst {
+    display: flex;
+    flex-wrap: nowrap !important;
+    gap: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 6px 2px;
+}
+
+.dai-truot-san-pham-bst::-webkit-scrollbar {
+    display: none;
+}
+
+.dai-truot-san-pham-bst>.item-banh-card {
+    flex: 0 0 calc((100% - 48px) / 4);
+    max-width: calc((100% - 48px) / 4);
+    min-width: 0;
+    scroll-snap-align: start;
+}
+
+@media (max-width: 991.98px) {
+    .dai-truot-san-pham-bst>.item-banh-card {
+        flex: 0 0 calc((100% - 16px) / 2);
+        max-width: calc((100% - 16px) / 2);
+    }
+}
+
+@media (max-width: 575.98px) {
+    .dai-truot-san-pham-bst>.item-banh-card {
+        flex: 0 0 88%;
+        max-width: 88%;
+    }
+}
+
+.btn-mui-ten-bst {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6E0D10 0%, #4A0709 100%);
+    color: var(--mau-vang-anh-kim);
+    border: 1.5px solid var(--mau-vang-anh-kim);
+    box-shadow: 0 6px 18px rgba(74, 7, 9, 0.28);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.65rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0 0 3px 0;
+    z-index: 15;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.btn-mui-ten-bst:hover {
+    background: linear-gradient(135deg, #D4AF37 0%, #B3831E 100%);
+    color: #2C1810;
+    transform: translateY(-50%) scale(1.08);
+    box-shadow: 0 8px 22px rgba(200, 155, 60, 0.48);
+}
+
+.btn-mui-ten-trai {
+    left: -10px;
+}
+
+.btn-mui-ten-phai {
+    right: -10px;
 }
 
 @keyframes thaBanhVaoO {
@@ -493,17 +638,106 @@ body {
 }
 
 /* =========================================================================
-   NHÁNH 2.0.3: SECTION SCROLL & RIGHT SIDE NAVIGATION DOTS (SAO.AGU.EDU.VN)
+   NHÁNH 2.0.3.4: KIẾN TRÚC FULLPAGE SLIDE DECK GPU (SAO.AGU.EDU.VN)
    ========================================================================= */
 .tang-phan-khu {
-    min-height: calc(100vh - 72px);
+    min-height: calc(100vh - 68px);
     display: flex;
     align-items: center;
     position: relative;
     box-sizing: border-box;
-    padding: 3.5rem 0;
-    /* Bù chiều cao thanh menu khi trình duyệt tự nhảy tới neo #tang-... lúc mở trang */
-    scroll-margin-top: 72px;
+    padding: 2.5rem 0;
+    scroll-margin-top: 68px;
+}
+
+.min-h-0 {
+    min-height: 0 !important;
+}
+
+@media (min-width: 992px) {
+    body.trang-chu-fullpage {
+        height: 100vh;
+        overflow: hidden !important;
+    }
+
+    body.trang-chu-fullpage>footer {
+        display: none !important;
+    }
+
+    #khung-fullpage-trang-chu {
+        height: calc(100vh - 68px);
+        width: 100%;
+        overflow: hidden;
+        position: relative;
+    }
+
+    #dai-truot-fullpage {
+        height: calc(100vh - 68px);
+        width: 100%;
+        will-change: transform;
+        transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+        transform: translate3d(0, 0, 0);
+    }
+
+    #dai-truot-fullpage>.tang-phan-khu,
+    #tang-hero,
+    #tang-tu-chon-hop,
+    #tang-bo-suu-tap,
+    #tang-b2b,
+    #tang-thiep-qr {
+        height: calc(100vh - 68px) !important;
+        min-height: calc(100vh - 68px) !important;
+        max-height: calc(100vh - 68px) !important;
+        width: 100%;
+        overflow: hidden !important;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        box-sizing: border-box;
+        padding: 20px 0 !important;
+    }
+
+    #tang-thiep-qr {
+        justify-content: space-between !important;
+        padding: 20px 0 0 0 !important;
+    }
+
+    .studio-phoi-hop-row,
+    .studio-phoi-hop-col {
+        max-height: calc(100vh - 196px) !important;
+        height: calc(100vh - 196px);
+    }
+
+    .studio-phoi-hop-col>.card-hoang-gia {
+        max-height: calc(100vh - 196px) !important;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .luoi-san-pham-cuon {
+        max-height: 100% !important;
+        min-height: 0;
+        overflow-y: auto;
+        padding-right: 6px;
+    }
+
+    .luoi-san-pham-cuon::-webkit-scrollbar,
+    .overflow-auto::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .luoi-san-pham-cuon::-webkit-scrollbar-track,
+    .overflow-auto::-webkit-scrollbar-track {
+        background: rgba(230, 213, 184, 0.35);
+        border-radius: 6px;
+    }
+
+    .luoi-san-pham-cuon::-webkit-scrollbar-thumb,
+    .overflow-auto::-webkit-scrollbar-thumb {
+        background: var(--mau-vang-dong-co);
+        border-radius: 6px;
+    }
 }
 
 /* Hiệu ứng trồi nhẹ khi tầng lộ ra – chỉ chuyển động opacity & transform để giữ 60 khung hình/giây */
@@ -520,6 +754,7 @@ body {
 
 /* Người dùng bật giảm chuyển động: hiện nội dung ngay, không trồi */
 @media (prefers-reduced-motion: reduce) {
+
     .section-reveal,
     .section-reveal.active {
         opacity: 1;

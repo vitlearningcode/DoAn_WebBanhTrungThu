@@ -11,12 +11,12 @@
 <body>
     <!-- TẦNG 1: HEADER SƠN MÀI HOÀNG GIA & HOVER DROPDOWN MENU (STYLE BUM97RACING.VN) -->
     <header class="sticky-top navbar-kinh-mo">
-        <nav class="navbar navbar-expand-lg navbar-dark container py-2">
-            <a class="navbar-brand d-flex align-items-center gap-2" asp-controller="Home" asp-action="Index">
-                <span class="fs-3">🏮</span>
+        <nav class="navbar navbar-expand-lg navbar-dark container-fluid px-3 px-xl-4 py-0 h-100">
+            <a class="navbar-brand d-flex align-items-center gap-2 text-nowrap py-0" asp-controller="Home" asp-action="Index">
+                <span class="fs-4">🏮</span>
                 <div>
-                    <span class="font-co-phong fs-3 fw-bold chu-vang-kim d-block lh-1">NGUYỆT CÁT</span>
-                    <small class="chu-kem-vang opacity-75" style="font-size: 0.68rem; letter-spacing: 2px;">TINH HOA TRĂNG RẰM</small>
+                    <span class="font-co-phong fs-4 fw-bold chu-vang-kim d-block lh-1">NGUYỆT CÁT</span>
+                    <small class="chu-kem-vang opacity-75 d-block" style="font-size: 0.62rem; letter-spacing: 1.5px;">TINH HOA TRĂNG RẰM</small>
                 </div>
             </a>
 
@@ -25,7 +25,7 @@
             </button>
 
             <div class="collapse navbar-collapse" id="menuChinh">
-                <ul class="navbar-nav mx-auto mb-2 mb-lg-0 gap-lg-1 nav-menu-hoang-gia">
+                <ul class="navbar-nav mx-auto mb-2 mb-lg-0 nav-menu-hoang-gia align-items-lg-center">
                     <!-- 1. TRANG CHỦ -->
                     <li class="nav-item">
                         <a class="nav-link nav-link-chinh" href="/#tang-hero" onclick="return cuonDenPhanKhu('#tang-hero', event)">
@@ -160,46 +160,65 @@
                     </li>
                 </ul>
 
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <!-- Nút Tra cứu đơn hàng -->
-                    <button class="btn btn-sm btn-vien-vang rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalTraCuuDon">
-                        <i class="bi bi-search me-1"></i>Tra Cứu Đơn Hàng
+                <div class="d-flex align-items-center gap-2 flex-nowrap header-right-actions">
+                    <!-- 1. Nút Tra cứu đơn hàng -->
+                    <button class="btn btn-sm btn-vien-vang rounded-pill px-3 text-nowrap" data-bs-toggle="modal" data-bs-target="#modalTraCuuDon">
+                        <i class="bi bi-search me-1"></i>Tra Cứu Đơn
                     </button>
 
-                    <!-- Nút Đăng Nhập / Gộp Giỏ hoặc Thông tin Thành Viên -->
+                    <!-- 2. Nút Dropdown Tài khoản duy nhất hoặc Nút Đăng nhập -->
                     @if (User.Identity != null && User.Identity.IsAuthenticated)
                     {
-                        if (User.IsInRole("QUAN_TRI") || User.IsInRole("NHAN_VIEN") || User.IsInRole("THU_NGAN") || User.IsInRole("GIAO_HANG"))
-                        {
-                            <a href="/Admin/Dashboard/Index" class="btn btn-sm btn-vang-kim rounded-pill px-3">
-                                📊 Quản Trị Cửa Hàng
-                            </a>
-                        }
+                        string hangTv = User.FindFirst("HangTV")?.Value ?? "Kim Cương";
+                        bool laQuanTri = User.IsInRole("QUAN_TRI") || User.IsInRole("NHAN_VIEN") || User.IsInRole("THU_NGAN") || User.IsInRole("GIAO_HANG");
+                        string nhanVaiTro = User.IsInRole("QUAN_TRI") ? " (Admin)" : (laQuanTri ? " (Staff)" : "");
 
-                        string hangTv = User.FindFirst("HangTV")?.Value ?? "Đồng";
-                        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill" style="background: rgba(255,255,255,0.1); border: 1px solid var(--mau-vang-anh-kim);">
-                            <span class="small chu-kem-vang fw-semibold">
-                                <a href="/TaiKhoan/HoSo" class="chu-kem-vang text-decoration-none" title="Xem Hồ Sơ Thành Viên & Sổ Địa Chỉ"><i class="bi bi-person-check-fill chu-vang-kim me-1"></i>@User.Identity.Name</a>
-                            </span>
-                            <span class="badge badge-thuong-hang rounded-pill">Hạng @hangTv</span>
-                            <form asp-area="" asp-controller="TaiKhoan" asp-action="DangXuat" method="post" class="d-inline m-0">
-                                <button type="submit" class="btn btn-sm btn-link text-warning text-decoration-none p-0 ms-1 small fw-bold" title="Đăng xuất">
-                                    [Thoát]
-                                </button>
-                            </form>
+                        <div class="nav-item-dropdown position-relative">
+                            <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-3 text-nowrap d-inline-flex align-items-center gap-1">
+                                <span>👑 @User.Identity.Name</span>
+                                <span class="nav-caret-icon">▾</span>
+                            </button>
+                            <ul class="hover-dropdown-panel hover-dropdown-panel-end" style="min-width: 265px;">
+                                <li class="px-3 py-2 border-bottom" style="border-color: var(--mau-vien-vang-dong) !important; background: var(--mau-nen-giay-do);">
+                                    <div class="fw-bold chu-do-son-mai small text-nowrap">@User.Identity.Name@nhanVaiTro</div>
+                                    <span class="badge badge-thuong-hang rounded-pill mt-1">Hạng @hangTv</span>
+                                </li>
+                                <li>
+                                    <a class="hover-dropdown-item" href="/TaiKhoan/HoSo">
+                                        <span><i class="bi bi-person-vcard chu-do-son-mai me-2"></i>Hồ sơ cá nhân</span>
+                                        <small>Chi tiết</small>
+                                    </a>
+                                </li>
+                                @if (laQuanTri)
+                                {
+                                    <li>
+                                        <a class="hover-dropdown-item" href="/Admin/Dashboard/Index">
+                                            <span><i class="bi bi-speedometer2 chu-do-son-mai me-2"></i>Quản trị Cửa hàng</span>
+                                            <small>Admin</small>
+                                        </a>
+                                    </li>
+                                }
+                                <li class="border-top mt-1 pt-1" style="border-color: var(--mau-vien-vang-dong) !important;">
+                                    <form asp-area="" asp-controller="TaiKhoan" asp-action="DangXuat" method="post" class="m-0">
+                                        <button type="submit" class="hover-dropdown-item w-100 border-0 bg-transparent text-start text-danger fw-semibold">
+                                            <span><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</span>
+                                            <small class="text-danger">Thoát</small>
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
                         </div>
                     }
                     else
                     {
-                        <button class="btn btn-sm btn-vien-vang rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#modalTaiKhoan">
-                            👤 Tài Khoản Thành Viên
+                        <button class="btn btn-sm btn-vien-vang rounded-pill px-3 text-nowrap" data-bs-toggle="modal" data-bs-target="#modalTaiKhoan">
+                            👤 Tài Khoản
                         </button>
                     }
 
-                    <!-- Nút mở Ngăn kéo Giỏ quà -->
-                    <button class="btn btn-sm btn-vang-kim rounded-pill px-3 position-relative" data-bs-toggle="offcanvas" data-bs-target="#nganKeoGioHang">
-                        <i class="bi bi-bag-heart-fill me-1"></i>Giỏ Quà
-                        <span id="badgeSoLuongGio" class="badge bg-danger text-white rounded-pill ms-1">0</span>
+                    <!-- 3. Nút mở Ngăn kéo Giỏ quà -->
+                    <button class="btn btn-sm btn-vang-kim rounded-pill px-3 position-relative text-nowrap" data-bs-toggle="offcanvas" data-bs-target="#nganKeoGioHang">
+                        🛒 Giỏ Quà (<span id="badgeSoLuongGio">0</span>)
                     </button>
                 </div>
             </div>
@@ -211,7 +230,7 @@
     </main>
 
     <!-- VÙNG HIỂN THỊ THÔNG BÁO TOAST HOÀNG GIA -->
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090; margin-top: 76px;" id="khungThongBaoToast"></div>
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1090; margin-top: 68px;" id="khungThongBaoToast"></div>
 
     <!-- NÚT NỔI KÍCH HOẠT TƯ VẤN CHỌN HỘP QUÀ HỢP Ý -->
     <button class="floating-quiz-btn" data-bs-toggle="modal" data-bs-target="#modalTroLyChonBanh">
