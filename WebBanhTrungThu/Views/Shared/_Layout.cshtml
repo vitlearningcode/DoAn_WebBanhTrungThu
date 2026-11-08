@@ -365,6 +365,65 @@
         </div>
     </div>
 
+    @if (!(string.Equals(ViewContext.RouteData.Values["controller"]?.ToString(), "Home", StringComparison.OrdinalIgnoreCase) &&
+           string.Equals(ViewContext.RouteData.Values["action"]?.ToString(), "Index", StringComparison.OrdinalIgnoreCase)))
+    {
+        <!-- NGĂN KÉO GIỎ QUÀ TRUNG THU (OFFCANVAS DÙNG CHUNG) -->
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="nganKeoGioHang" style="background: var(--mau-nen-giay-do); color: var(--mau-chu-nau-tram); border-left: 2px solid var(--mau-vang-dong-co); width: 410px;">
+            <div class="offcanvas-header border-bottom" style="border-color: var(--mau-vien-vang-dong) !important; background: linear-gradient(90deg, #5C0A0D 0%, #6E0D10 100%);">
+                <h5 class="offcanvas-title font-co-phong fs-3 fw-bold chu-vang-kim">
+                    🏮 Giỏ Quà Trung Thu
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+            </div>
+            <div class="offcanvas-body d-flex flex-column justify-content-between p-3">
+                <div id="danhSachMonTrongGio" class="overflow-auto pe-1" style="max-height: 55vh;">
+                    <div class="text-center chu-nau-phu py-5">Đang đồng bộ giỏ quà...</div>
+                </div>
+
+                <div class="border-top pt-3 mt-2" style="border-color: var(--mau-vien-vang-dong) !important;">
+                    <!-- KHU VỰC MÃ ƯU ĐÃI 1 HÀNG NGANG GỌN GÀNG -->
+                    <div class="mb-3 p-2 rounded" style="background: var(--mau-nen-ngoc-trai); border: 1px dashed var(--mau-vang-dong-co);">
+                        <div class="hang-nhan-ma-uu-dai" style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap;">
+                            <label for="txtMaVoucherGioHang" class="small fw-bold chu-do-son-mai mb-0">
+                                <i class="bi bi-ticket-perforated-fill me-1"></i>Mã ưu đãi:
+                            </label>
+                            <button type="button" class="btn btn-sm btn-vien-vang rounded-pill py-0 px-2" style="font-size: 0.72rem;"
+                                    onclick="chonNhanhVoucher('TRANGTRON2026')">
+                                Áp mã TRANGTRON2026 (-10%)
+                            </button>
+                        </div>
+                        <div class="nhom-nhap-ma-uu-dai">
+                            <input type="text" id="txtMaVoucherGioHang" class="form-control form-control-sm"
+                                   placeholder="Nhập mã ưu đãi..." />
+                            <button type="button" class="btn btn-sm btn-do-son-mai px-3" onclick="apDungVoucherGioHang()">
+                                Áp Dụng
+                            </button>
+                        </div>
+                        <small id="lblThongBaoVoucher" class="d-block mt-1" style="font-size: 0.75rem;"></small>
+                    </div>
+
+                    <div class="d-flex justify-content-between small mb-1">
+                        <span class="chu-nau-phu">Tạm tính tiền bánh &amp; hộp:</span>
+                        <strong id="lblTamTinhOffcanvas" class="chu-nau-tram">0 đ</strong>
+                    </div>
+                    <div class="d-flex justify-content-between small mb-1 text-success">
+                        <span>Ưu đãi Voucher lễ hội:</span>
+                        <strong id="lblTienGiamVoucherOffcanvas">-0 đ</strong>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3 pt-2 border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
+                        <span class="fw-bold chu-nau-tram">Tổng cộng:</span>
+                        <span id="lblTongThanhToanSauGiam" class="fs-4 fw-bold chu-do-son-mai">0 đ</span>
+                    </div>
+
+                    <a href="/ThanhToan/Index" onclick="return chuyenDenTrangThanhToan(event)" class="btn btn-do-son-mai w-100 py-2 rounded-pill shadow">
+                        Tiến Hành Đặt Quà &amp; Tạo Thiệp QR 3D <i class="bi bi-arrow-right-circle ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+
     <!-- FOOTER ĐỎ SƠN MÀI TRẦM TRUYỀN THỐNG -->
     <footer class="nen-le-hoi-son-mai border-top py-5 mt-0" style="border-color: rgba(212, 175, 55, 0.45) !important;">
         <div class="container">

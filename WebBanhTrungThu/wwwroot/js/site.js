@@ -29,6 +29,7 @@ window.addEventListener('error', function (e) {
 }, true);
 
 document.addEventListener("DOMContentLoaded", function () {
+    chuanHoaKhungVoucherOffcanvas();
     renderKhayHop();
     khoiChayDongHoDemNguoc();
     taiLaiGioHangOffcanvas();
@@ -539,7 +540,7 @@ function renderKhayHop() {
     document.getElementById("lblTongCalo").innerText = `${tongCalo.toLocaleString("vi-VN")} Kcal`;
     document.getElementById("lblSoBanhVip").innerText = `${soBanhVip} bánh`;
     document.getElementById("lblCanhBaoDiUng").innerText = tapHopDiUng.size > 0 ? Array.from(tapHopDiUng).join("; ") : "An toàn";
-    document.getElementById("lblMaBamCauHinh").innerText = `Ký hiệu hộp lễ: ${maBam}`;
+    document.getElementById("lblMaBamCauHinh").innerText = `Loại hộp: ${cauHinhHop.sucChua} bánh • ${tongCalo.toLocaleString("vi-VN")} Kcal`;
     document.getElementById("lblTongGiaHop").innerText = `${Math.round(tongGiaHop).toLocaleString("vi-VN")} đ`;
 
     // Kiểm tra điều kiện hợp lệ
@@ -682,8 +683,87 @@ async function xoaMonKhoiGio(maCtgh) {
     }
 }
 
+// Chuẩn hóa khung Mã ưu đãi dưới đáy Ngăn kéo Giỏ quà để nhãn "Mã ưu đãi:" và nút "Áp mã TRANGTRON2026 (-10%)" nằm gọn trên 1 hàng ngang
+function chuanHoaKhungVoucherOffcanvas() {
+    const txtVoucher = document.getElementById("txtMaVoucherGioHang");
+    if (!txtVoucher) return;
+
+    const khungVoucher = txtVoucher.closest(".mb-3") || txtVoucher.parentElement?.parentElement;
+    if (!khungVoucher || khungVoucher.dataset.daChuanHoaVoucher === "true") return;
+
+    const giaTriHienTai = txtVoucher.value || "";
+    const lblThongBaoCu = document.getElementById("lblThongBaoVoucher");
+    const htmlThongBaoCu = lblThongBaoCu ? lblThongBaoCu.innerHTML : "";
+    const classThongBaoCu = lblThongBaoCu ? lblThongBaoCu.className : "d-block mt-1";
+
+    khungVoucher.dataset.daChuanHoaVoucher = "true";
+    khungVoucher.innerHTML = `
+        <div class="hang-nhan-ma-uu-dai" style="display: flex; justify-content: space-between; align-items: center; white-space: nowrap; gap: 8px; margin-bottom: 6px;">
+            <label for="txtMaVoucherGioHang" class="small fw-bold chu-do-son-mai mb-0" style="white-space: nowrap;">
+                <i class="bi bi-ticket-perforated-fill me-1"></i>Mã ưu đãi:
+            </label>
+            <button type="button" class="btn btn-sm btn-vien-vang rounded-pill py-0 px-2" style="font-size: 0.72rem; white-space: nowrap;"
+                    onclick="chonNhanhVoucher('TRANGTRON2026')">
+                Áp mã TRANGTRON2026 (-10%)
+            </button>
+        </div>
+        <div class="nhom-nhap-ma-uu-dai" style="display: flex; align-items: stretch; gap: 6px;">
+            <input type="text" id="txtMaVoucherGioHang" class="form-control form-control-sm"
+                   value="${giaTriHienTai}" placeholder="Nhập mã ưu đãi..." />
+            <button type="button" class="btn btn-sm btn-do-son-mai px-3 text-nowrap" onclick="apDungVoucherGioHang()">
+                Áp Dụng
+            </button>
+        </div>
+        <small id="lblThongBaoVoucher" class="${classThongBaoCu}" style="font-size: 0.75rem;">${htmlThongBaoCu}</small>
+    `;
+}
+
+// Tách danh sách ô bánh thành bảng 2 cột trật tự (.bang-thanh-phan-hop-2-cot: Ô số 1..6 | Tên bánh)
+function taoBangThanhPhanHop2Cot(danhSachViBanh) {
+    if (!danhSachViBanh) return "";
+
+    let mangO = [];
+    if (Array.isArray(danhSachViBanh)) {
+        danhSachViBanh.forEach(chuoi => {
+            if (typeof chuoi === "string" && chuoi.includes("•")) {
+                chuoi.split("•").forEach(phan => {
+                    if (phan.trim()) mangO.push(phan.trim());
+                });
+            } else if (typeof chuoi === "string" && chuoi.trim()) {
+                mangO.push(chuoi.trim());
+            }
+        });
+    } else if (typeof danhSachViBanh === "string") {
+        danhSachViBanh.split("•").forEach(phan => {
+            if (phan.trim()) mangO.push(phan.trim());
+        });
+    }
+
+    if (mangO.length === 0) return "";
+
+    let dongHtml = "";
+    mangO.forEach((muc, idx) => {
+        let nhanO = `Ô số ${idx + 1}`;
+        let tenBanh = muc;
+        const khop = muc.match(/^Ô\s*(?:số\s*)?(\d+)\s*:\s*(.+)$/i);
+        if (khop) {
+            nhanO = `Ô số ${khop[1]}`;
+            tenBanh = khop[2].trim();
+        }
+        dongHtml += `
+            <div class="dong-thanh-phan-hop" style="display: flex; align-items: baseline; padding: 4px 8px; border-bottom: 1px dashed #EADBC8; font-size: 0.78rem;">
+                <span class="cot-o-banh" style="font-weight: 700; color: #7A1215; flex: 0 0 56px;">${nhanO}</span>
+                <span class="cot-ten-banh" style="flex: 1; color: #2C1810; font-weight: 500;">${tenBanh}</span>
+            </div>
+        `;
+    });
+
+    return `<div class="bang-thanh-phan-hop-2-cot">${dongHtml}</div>`;
+}
+
 async function taiLaiGioHangOffcanvas() {
     try {
+        chuanHoaKhungVoucherOffcanvas();
         const res = await fetch("/GioHang/LayThongTinGioHangJson");
         const data = await res.json();
         if (!data || !data.thanhCong) return;
@@ -734,9 +814,15 @@ async function taiLaiGioHangOffcanvas() {
         data.danhSachMon.forEach(item => {
             let thongTinPhu = "";
             if (item.loaiSanPham === 3) {
-                thongTinPhu += `<small class="chu-nau-phu d-block mt-1">Ký hiệu hộp lễ: ${item.maBamCauHinh} (${item.tongCalo.toLocaleString("vi-VN")} Kcal)</small>`;
+                const soBanhTrongHop = (item.danhSachViBanh && item.danhSachViBanh.length > 0)
+                    ? item.danhSachViBanh.length
+                    : (item.maBamCauHinh && item.maBamCauHinh.includes("_")
+                        ? item.maBamCauHinh.split("_")[1].split("-").length
+                        : 4);
+                const caloText = (item.tongCalo || 0).toLocaleString("vi-VN");
+                thongTinPhu += `<small class="chu-nau-phu d-block mt-1">Loại hộp: ${soBanhTrongHop} bánh • ${caloText} Kcal</small>`;
                 if (item.danhSachViBanh && item.danhSachViBanh.length > 0) {
-                    thongTinPhu += `<div class="small chu-nau-phu mt-1" style="font-size: 0.75rem;">${item.danhSachViBanh.join(" • ")}</div>`;
+                    thongTinPhu += taoBangThanhPhanHop2Cot(item.danhSachViBanh);
                 }
             } else if (item.loaiSanPham === 1 && item.tongCalo > 0) {
                 thongTinPhu += `<small class="chu-nau-phu d-block mt-1">Bánh lẻ • ${item.tongCalo} Kcal / bánh</small>`;
@@ -755,12 +841,12 @@ async function taiLaiGioHangOffcanvas() {
                     <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" class="btn btn-vien-vang px-2 py-0"
-                                    onclick="capNhatSoLuongMon(${item.maCtgh}, ${item.soLuong - 1})">
+                                     onclick="capNhatSoLuongMon(${item.maCtgh}, ${item.soLuong - 1})">
                                 -
                             </button>
                             <span class="btn px-3 py-0 disabled fw-bold" style="background: var(--mau-nen-ngoc-trai); color: var(--mau-chu-nau-tram); border-color: var(--mau-vang-dong-co);">${item.soLuong}</span>
                             <button type="button" class="btn btn-vien-vang px-2 py-0"
-                                    onclick="capNhatSoLuongMon(${item.maCtgh}, ${item.soLuong + 1})">
+                                     onclick="capNhatSoLuongMon(${item.maCtgh}, ${item.soLuong + 1})">
                                 +
                             </button>
                         </div>
