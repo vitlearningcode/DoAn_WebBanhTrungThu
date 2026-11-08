@@ -35,6 +35,7 @@ document.addEventListener("DOMContentLoaded", function () {
     khoiTaoSectionScrollObserver();
     khoiTaoBoMayChuyenCanhRoiRac();
     khoiTaoLienKetNeoMuot();
+    khoiTaoTuDongThuGonNutTuVan();
 });
 
 // =========================================================================
@@ -431,6 +432,15 @@ function moModalTuVanQua() {
     }
 }
 
+// Tự động thu gọn nút nổi Tư Vấn Chọn Hộp Quà thành hình tròn 52x52px sau 10 giây
+function khoiTaoTuDongThuGonNutTuVan() {
+    const nutTuVan = document.getElementById("nutNoiTuVanQua") || document.querySelector(".floating-quiz-btn");
+    if (!nutTuVan) return;
+    setTimeout(() => {
+        nutTuVan.classList.add("thu-gon-nut-tu-van");
+    }, 10000);
+}
+
 // =========================================================================
 // 1B. TƯƠNG TÁC KHAY HỘP TỰ PHỐI
 // =========================================================================
@@ -442,14 +452,9 @@ function doiMauVoHop(radio) {
     cauHinhHop.minVipRequired = parseInt(radio.dataset.minvip);
     cauHinhHop.kieuLuoi = radio.dataset.luoi;
 
-    const khungKhay = document.getElementById("khungKhayHop");
-    if (khungKhay) {
-        khungKhay.style.backgroundImage = `linear-gradient(rgba(74, 7, 9, 0.32), rgba(74, 7, 9, 0.32)), url('${radio.dataset.anhkhay}')`;
-    }
-
     const luoi = document.getElementById("luoiOBanh");
     if (luoi) {
-        luoi.className = cauHinhHop.kieuLuoi === "grid-3x2" ? "luoi-hop-3x2 w-100" : "luoi-hop-2x2 w-100";
+        luoi.className = cauHinhHop.kieuLuoi === "grid-3x2" ? "luoi-hop-3x2 w-100 h-100" : "luoi-hop-2x2 w-100 h-100";
     }
 
     // Điều chỉnh mảng các ô theo sức chứa mới
@@ -461,14 +466,14 @@ function doiMauVoHop(radio) {
     renderKhayHop();
 }
 
-function datBanhVaoOTrong(maBanh, tenBanh, donGia, calo, laVip, anhSlot, diUng) {
+function datBanhVaoOTrong(maBanh, tenBanh, donGia, calo, laVip, anhSlot, diUng, thuongHieu = "") {
     const viTriTrong = cauHinhHop.cacO.findIndex(o => o === null);
     if (viTriTrong === -1) {
         hienThiThongBaoGioHang("Khay lễ hộp đã đầy! Bạn có thể chạm vào 1 ô trên khay để đổi vị bánh hoặc chọn mẫu hộp 6 bánh.", false);
         return;
     }
 
-    cauHinhHop.cacO[viTriTrong] = { maBanh, tenBanh, donGia, calo, laVip, anhSlot, diUng };
+    cauHinhHop.cacO[viTriTrong] = { maBanh, tenBanh, donGia, calo, laVip, anhSlot, diUng, thuongHieu };
     renderKhayHop();
 }
 
@@ -496,7 +501,7 @@ function renderKhayHop() {
 
     cauHinhHop.cacO.forEach((banh, idx) => {
         const div = document.createElement("div");
-        div.className = "o-banh-slot p-2";
+        div.className = banh ? "o-banh-slot da-co-banh" : "o-banh-slot";
 
         if (banh) {
             soBanhDaXep++;
@@ -506,19 +511,21 @@ function renderKhayHop() {
             if (banh.diUng && banh.diUng !== "Không") tapHopDiUng.add(banh.diUng);
             maBanhArr.push("B" + banh.maBanh);
 
+            const nhanPhu = (banh.thuongHieu ? banh.thuongHieu + " • " : "") + banh.donGia.toLocaleString("vi-VN") + "đ";
             div.onclick = () => xoaBanhKhoiO(idx);
-            div.title = "Chạm để đổi bánh khác cho ô này";
+            div.title = "Chạm để gỡ hoặc đổi vị bánh khác cho ô này";
             div.innerHTML = `
+                <button type="button" class="btn-xoa-banh-o" aria-label="Gỡ bánh khỏi ô ${idx + 1}" title="Gỡ bánh">×</button>
                 <img src="${banh.anhSlot}" alt="${banh.tenBanh}" />
-                <span class="badge badge-thuong-hang mt-1 text-truncate" style="max-width:95%; font-size:0.68rem;">
-                    Ô ${idx + 1}: ${banh.tenBanh}
-                </span>
+                <div class="ten-banh-trong-o" title="${banh.tenBanh}">${banh.tenBanh}</div>
+                <div class="nhan-phu-trong-o">${nhanPhu}</div>
             `;
         } else {
             maBanhArr.push("0");
             div.innerHTML = `
-                <i class="bi bi-plus-circle-dotted fs-3 chu-do-son-mai opacity-75"></i>
-                <small class="chu-nau-phu fw-medium mt-1">Ô bánh số ${idx + 1}</small>
+                <span class="fs-4 fw-bold chu-do-son-mai opacity-75 lh-1">+</span>
+                <small class="chu-nau-tram fw-semibold mt-1" style="font-size: 0.78rem;">Ô bánh số ${idx + 1}</small>
+                <span class="chu-nau-phu" style="font-size: 0.68rem;">Chọn vị bánh ở cột phải</span>
             `;
         }
         luoi.appendChild(div);

@@ -152,7 +152,7 @@
 
                     <div>
                         <hr class="my-1" style="border-color: var(--mau-vien-vang-dong);" />
-                        <h6 class="chu-do-son-mai fw-bold mb-1 small" style="font-size: 0.78rem;"><i class="bi bi-journal-check me-1"></i>Thông Số Hộp Lễ:</h6>
+                        <h6 class="chu-do-son-mai fw-bold mb-1 small" style="font-size: 0.78rem;">Thông Số Hộp Lễ:</h6>
                         <ul class="list-unstyled small mb-0" style="font-size: 0.76rem;">
                             <li class="d-flex justify-content-between py-0">
                                 <span class="chu-nau-phu">Số ô đã xếp:</span>
@@ -182,14 +182,13 @@
                         <div class="d-flex justify-content-between align-items-center mb-1">
                             <span class="small chu-nau-phu fw-medium" id="lblMaBamCauHinh" style="font-size: 0.75rem;">Ký hiệu hộp lễ: VH1_EMPTY</span>
                             <button class="btn btn-sm btn-vien-vang rounded-pill px-2 py-0" style="font-size: 0.75rem;" onclick="lamTrongKhayHop()">
-                                <i class="bi bi-arrow-counterclockwise"></i> Xếp lại khay
+                                Xếp lại khay
                             </button>
                         </div>
 
-                        <!-- Khay hộp có nền động từ KhoHinhAnh -->
-                        <div id="khungKhayHop" class="khung-khay-hop my-1 d-flex align-items-center justify-content-center flex-grow-1"
-                             style="background-image: linear-gradient(rgba(74, 7, 9, 0.32), rgba(74, 7, 9, 0.32)), url('@DichVuHinhAnh.LayUrl(Model.TuDienAnh, "VOHOP", 1, "KHAY_HOP_RONG")');">
-                            <div id="luoiOBanh" class="luoi-hop-2x2 w-100">
+                        <!-- Khay hộp sơn mài sang trọng, không có chữ chìm đè giữa khay -->
+                        <div id="khungKhayHop" class="khung-khay-hop my-1 d-flex align-items-stretch justify-content-center flex-grow-1">
+                            <div id="luoiOBanh" class="luoi-hop-2x2 w-100 h-100">
                                 <!-- Các ô trống được render động bằng JS -->
                             </div>
                         </div>
@@ -207,7 +206,7 @@
                         </div>
 
                         <button id="btnThemHopVaoGio" class="btn btn-sm btn-do-son-mai w-100 py-1 rounded-pill" style="font-size: 0.8rem;" disabled onclick="xacNhanThemHopTuChon()">
-                            🔒 Vui lòng xếp đủ bánh vào các ô trống
+                            Vui lòng xếp đủ bánh vào các ô trống
                         </button>
                     </div>
                 </div>
@@ -227,43 +226,43 @@
                             int gi = b.ThongSoDinhDuong?.ChiSoDuongHuyetGi ?? 55;
                             string diUng = b.ThongSoDinhDuong?.CanhBaoDiUng ?? "Không";
 
-                            <div class="d-flex align-items-center gap-2 p-2 mb-2 item-banh-khay">
+                            <div class="mb-2 item-banh-khay">
                                 <img src="@anhSlot" width="46" height="46" class="rounded-circle p-1 bg-white flex-shrink-0" style="border: 1.5px solid var(--mau-vang-dong-co);" alt="@b.TenBanh" />
-                                <div class="flex-grow-1 min-w-0">
+                                <div class="thong-tin-banh-khay">
                                     <div class="d-flex align-items-center flex-wrap gap-1 mb-1">
                                         <span class="tem-lua-thuong-hieu" style="font-size: 0.6rem; padding: 1px 6px;">@b.ThuongHieu</span>
-                                        <strong class="small chu-nau-tram text-truncate" style="font-size: 0.8rem;">@b.TenBanh</strong>
                                         @if (b.LaBanhThuongHang)
                                         {
-                                            <span class="badge badge-thuong-hang" style="font-size:0.6rem;">👑 Thượng Hạng</span>
+                                            <span class="badge badge-thuong-hang" style="font-size:0.6rem;">Thượng Hạng</span>
                                         }
                                         @if (b.DangXaCanDate)
                                         {
                                             <span class="badge bg-danger text-white" style="font-size:0.6rem;">Ưu đãi -@b.PhanTramGiamCanDateHieuLuc.ToString("N0")%</span>
                                         }
                                     </div>
+                                    <strong class="ten-banh-khay chu-nau-tram">@b.TenBanh</strong>
                                     @if (b.DangXaCanDate)
                                     {
-                                        <div class="small lh-1" style="font-size: 0.76rem;">
+                                        <div class="small lh-1 mt-1" style="font-size: 0.76rem;">
                                             <del class="chu-nau-phu me-1">@b.DonGiaLe.ToString("N0") đ</del>
                                             <span class="chu-do-son-mai fw-bold">@b.DonGiaThucTe.ToString("N0") đ</span>
                                         </div>
                                     }
                                     else
                                     {
-                                        <div class="small chu-do-son-mai fw-bold lh-1" style="font-size: 0.76rem;">@b.DonGiaLe.ToString("N0") đ</div>
+                                        <div class="small chu-do-son-mai fw-bold lh-1 mt-1" style="font-size: 0.76rem;">@b.DonGiaLe.ToString("N0") đ</div>
                                     }
-                                    <div class="d-flex gap-2 mt-1" style="font-size: 0.68rem;">
+                                    <div class="d-flex flex-wrap gap-2 mt-1" style="font-size: 0.68rem;">
                                         <span class="chu-nau-phu">@calo Kcal</span>
                                         <span class="text-success fw-medium">• GI: @gi</span>
                                         @if (b.LaBanhChay)
                                         {
-                                            <span class="text-success">• 🌱 Thuần chay</span>
+                                            <span class="text-success">• Thuần chay</span>
                                         }
                                     </div>
                                 </div>
-                                <button class="btn btn-sm btn-do-son-mai rounded-pill px-2 py-1 text-nowrap flex-shrink-0" style="font-size: 0.74rem;"
-                                        onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaThucTe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhSlot', '@diUng')">
+                                <button type="button" class="btn btn-sm btn-do-son-mai rounded-pill px-2 py-1 btn-chon-banh-khay" style="font-size: 0.74rem;"
+                                        onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaThucTe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhSlot', '@diUng', '@b.ThuongHieu')">
                                     + Chọn
                                 </button>
                             </div>
@@ -288,22 +287,22 @@
         <!-- Thanh nút lọc nhanh theo Hương Vị & Dinh Dưỡng -->
         <div class="d-flex justify-content-center flex-wrap gap-2 mb-2" id="nhomLocDinhDuong">
             <button class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1 active" data-loc="ALL" onclick="locSanPham('ALL', this)">Tất Cả Vị Bánh (@Model.DanhSachBanh.Count)</button>
-            <button class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1" data-loc="VIP" onclick="locSanPham('VIP', this)">👑 Bánh Thượng Hạng Biếu Tặng</button>
-            <button class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1" data-loc="ISOMALT" onclick="locSanPham('ISOMALT', this)">🌿 Đường Ăn Kiêng Isomalt (GI Thấp)</button>
-            <button class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1" data-loc="LAVA" onclick="locSanPham('LAVA', this)">🔥 Nhân Chảy Kim Sa Lava</button>
-            <button class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1" data-loc="CHAY" onclick="locSanPham('CHAY', this)">🌱 Bánh Thuần Chay Thanh Đạm</button>
+            <button class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1" data-loc="VIP" onclick="locSanPham('VIP', this)">Bánh Thượng Hạng Biếu Tặng</button>
+            <button class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1" data-loc="ISOMALT" onclick="locSanPham('ISOMALT', this)">Đường Ăn Kiêng Isomalt (GI Thấp)</button>
+            <button class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1" data-loc="LAVA" onclick="locSanPham('LAVA', this)">Nhân Chảy Kim Sa Lava</button>
+            <button class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1" data-loc="CHAY" onclick="locSanPham('CHAY', this)">Bánh Thuần Chay Thanh Đạm</button>
         </div>
 
         <!-- Thanh nút lọc nhanh theo Thương Hiệu (Kinh Đô, Đồng Khánh, Như Lan, Brodard...) -->
         <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mb-2" id="nhomLocThuongHieu">
-            <span class="small chu-do-son-mai fw-bold me-1"><i class="bi bi-award-fill me-1"></i>Thương hiệu:</span>
+            <span class="small chu-do-son-mai fw-bold me-1">Thương hiệu:</span>
             <button type="button" class="btn btn-sm btn-do-son-mai rounded-pill px-3 py-1 btn-thuong-hieu" data-th="ALL" onclick="locTheoThuongHieu('ALL', this)">
                 Tất cả thương hiệu
             </button>
             @foreach (var th in Model.DanhSachThuongHieu)
             {
                 <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1 btn-thuong-hieu" data-th="@th" onclick="locTheoThuongHieu('@th', this)">
-                    🏮 @th
+                    @th
                 </button>
             }
         </div>
@@ -385,7 +384,7 @@
                                             🛒 Mua lẻ
                                         </button>
                                         <a href="#tang-tu-chon-hop" class="btn btn-sm btn-do-son-mai rounded-pill px-2 py-1 text-nowrap" style="font-size: 0.74rem;"
-                                           onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaThucTe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhBanh', '@(b.ThongSoDinhDuong?.CanhBaoDiUng)')">
+                                           onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaThucTe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhBanh', '@(b.ThongSoDinhDuong?.CanhBaoDiUng)', '@b.ThuongHieu')">
                                             Xếp vào hộp ↑
                                         </a>
                                     </div>

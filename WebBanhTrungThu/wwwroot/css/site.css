@@ -433,13 +433,13 @@ body {
    TẦNG 2: KHAY HỘP TỰ CHỌN TƯƠNG TÁC (BOX BUILDER TRUYỀN THỐNG)
    ========================================================================= */
 .khung-khay-hop {
-    background-size: cover;
-    background-position: center;
+    background: radial-gradient(circle at center, #7A1215 0%, #58090C 65%, #3D0507 100%) !important;
+    background-image: radial-gradient(circle at center, #7A1215 0%, #58090C 65%, #3D0507 100%) !important;
     border: 2.5px solid var(--mau-vang-dong-co);
     border-radius: 16px;
-    padding: 10px;
-    box-shadow: inset 0 0 28px rgba(74, 7, 9, 0.35), 0 8px 20px rgba(110, 13, 16, 0.1);
-    min-height: 200px;
+    padding: 14px 16px;
+    box-shadow: inset 0 0 28px rgba(42, 3, 5, 0.45), 0 8px 20px rgba(110, 13, 16, 0.12);
+    min-height: 276px;
     overflow: hidden;
     width: 100%;
     box-sizing: border-box;
@@ -448,32 +448,37 @@ body {
 .luoi-hop-2x2 {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 14px;
     width: 100%;
-    max-width: 320px;
+    max-width: 100%;
+    height: 100%;
     margin: 0 auto;
 }
 
 .luoi-hop-3x2 {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 12px;
     width: 100%;
-    max-width: 360px;
+    max-width: 100%;
+    height: 100%;
     margin: 0 auto;
 }
 
 .o-banh-slot {
-    height: 92px;
-    min-height: 88px;
-    max-height: 96px;
+    min-height: 125px;
+    height: 100%;
+    max-height: 146px;
     min-width: 0;
     width: 100%;
     overflow: hidden;
     box-sizing: border-box;
-    background: rgba(253, 248, 238, 0.92);
+    background: rgba(253, 248, 238, 0.95);
     border: 2px dashed var(--mau-vang-dong-co);
     border-radius: 12px;
+    padding: 8px 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -484,21 +489,88 @@ body {
     color: var(--mau-chu-nau-tram);
 }
 
+.o-banh-slot.da-co-banh {
+    border-style: solid;
+    border-color: var(--mau-vang-dong-co);
+    background: #FFFFFF;
+}
+
 .o-banh-slot:hover,
 .o-banh-slot.dang-chon {
     border-style: solid;
     border-color: var(--mau-do-son-mai);
     background: #FFFFFF;
-    transform: scale(1.02);
-    box-shadow: 0 6px 18px rgba(110, 13, 16, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(110, 13, 16, 0.18);
 }
 
 .o-banh-slot img {
-    max-width: 68%;
-    max-height: 56px;
+    width: 50px;
+    height: 50px;
+    max-width: 52px;
+    max-height: 52px;
     object-fit: contain;
-    filter: drop-shadow(0 4px 8px rgba(44, 24, 16, 0.26));
+    flex-shrink: 0;
+    filter: drop-shadow(0 4px 8px rgba(44, 24, 16, 0.24));
     animation: thaBanhVaoO 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.ten-banh-trong-o {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #2C1810;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-align: center;
+    margin-top: 4px;
+    width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.nhan-phu-trong-o {
+    font-size: 0.7rem;
+    color: #7A1215;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-top: 2px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.btn-xoa-banh-o {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid rgba(110, 13, 16, 0.25);
+    background: rgba(253, 248, 238, 0.95);
+    color: #6E0D10;
+    font-size: 0.92rem;
+    font-weight: 700;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0 1px 0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.btn-xoa-banh-o:hover {
+    background: #6E0D10;
+    color: #FAF0CA;
+    border-color: #6E0D10;
 }
 
 /* =========================================================================
@@ -610,6 +682,14 @@ body {
 }
 
 .item-banh-khay {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: 10px 12px;
     background: var(--mau-nen-giay-do);
     border: 1px solid var(--mau-vien-vang-dong);
     border-radius: 12px;
@@ -620,6 +700,27 @@ body {
     background: #FFFFFF;
     border-color: var(--mau-vang-dong-co);
     box-shadow: 0 4px 12px rgba(110, 13, 16, 0.06);
+}
+
+.thong-tin-banh-khay {
+    flex: 1 1 auto;
+    min-width: 0;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.ten-banh-khay {
+    display: block;
+    font-size: 0.8rem;
+    line-height: 1.25;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+
+.btn-chon-banh-khay {
+    flex: 0 0 auto;
+    white-space: nowrap;
 }
 
 /* Huy hiệu dinh dưỡng & lễ hộp */
@@ -705,12 +806,12 @@ body {
 
     .studio-phoi-hop-row,
     .studio-phoi-hop-col {
-        max-height: calc(100vh - 196px) !important;
-        height: calc(100vh - 196px);
+        max-height: calc(100vh - 180px) !important;
+        height: calc(100vh - 180px);
     }
 
     .studio-phoi-hop-col>.card-hoang-gia {
-        max-height: calc(100vh - 196px) !important;
+        max-height: calc(100vh - 180px) !important;
         height: 100%;
         overflow: hidden;
     }
@@ -840,26 +941,77 @@ body {
     }
 }
 
-/* Nút nổi góc phải Tư Vấn Chọn Hộp Quà */
+/* Nút nổi góc phải Tư Vấn Chọn Hộp Quà (Tự động thu gọn thành nút tròn 52x52px sau 10 giây) */
 .floating-quiz-btn {
     position: fixed;
     bottom: 24px;
     right: 24px;
-    z-index: 1040;
+    z-index: 1030;
+    height: 52px;
+    min-width: 52px;
+    max-width: 320px;
     border-radius: 50px;
-    padding: 11px 22px;
+    padding: 0 20px;
     background: linear-gradient(135deg, #6E0D10 0%, #4A0709 100%);
     color: var(--mau-kem-vang);
     font-weight: 700;
     border: 1.5px solid var(--mau-vang-anh-kim);
     box-shadow: 0 8px 25px rgba(110, 13, 16, 0.35);
-    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.floating-quiz-btn:hover {
-    transform: translateY(-3px);
+.floating-quiz-btn .icon-trang-ram-tu-van {
+    font-size: 1.35rem;
+    line-height: 1;
+    flex: 0 0 auto;
+    filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.55));
+}
+
+.floating-quiz-btn .chu-nut-tu-van {
+    display: inline-block;
+    max-width: 240px;
+    opacity: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    transition: max-width 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+}
+
+.floating-quiz-btn.thu-gon-nut-tu-van {
+    width: 52px;
+    max-width: 52px;
+    height: 52px;
+    padding: 0;
+    border-radius: 50%;
+    gap: 0;
+}
+
+.floating-quiz-btn.thu-gon-nut-tu-van .chu-nut-tu-van {
+    max-width: 0;
+    opacity: 0;
+}
+
+.floating-quiz-btn:hover,
+.floating-quiz-btn.thu-gon-nut-tu-van:hover {
+    width: auto;
+    max-width: 320px;
+    border-radius: 50px;
+    padding: 0 20px;
+    gap: 10px;
+    transform: translateY(-2px);
     color: #FFFFFF;
     box-shadow: 0 12px 28px rgba(110, 13, 16, 0.5);
+}
+
+.floating-quiz-btn.thu-gon-nut-tu-van:hover .chu-nut-tu-van {
+    max-width: 240px;
+    opacity: 1;
 }
 
 /* Bảng B2B truyền thống trên nền sáng */

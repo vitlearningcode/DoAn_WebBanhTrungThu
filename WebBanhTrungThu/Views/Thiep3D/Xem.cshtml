@@ -2,12 +2,6 @@
 @{
     ViewData["Title"] = $"Thiệp Chúc Mừng QR 3D - Kính Gửi {Model.TenNguoiNhan}";
     string tenNguoiGui = Model.MaDhNavigation?.HoTenNguoiMua ?? "Quý Khách Nguyệt Cát";
-    string maDonHang = Model.MaDhNavigation?.MaTraCuuDh ?? "TT2026";
-    string tenMauGiaoDien = Model.MauGiaoDienThiep == "TRANG_RAM_HIEN_DAI"
-        ? "Trăng Rằm Hiện Đại"
-        : Model.MauGiaoDienThiep == "SUM_VAY_AM_AP"
-            ? "Sum Vầy Ấm Áp"
-            : "Cổ Phong Hoàng Gia";
 }
 
 <style>
@@ -100,15 +94,10 @@
 <section class="py-5">
     <div class="container text-center">
         <div class="mb-4">
-            <span class="badge badge-thuong-hang px-3 py-2 rounded-pill mb-2">
-                ✨ THIỆP ĐIỆN TỬ QR 3D • GIAO DIỆN: @tenMauGiaoDien.ToUpper()
+            <span class="badge badge-thuong-hang px-3 py-2 rounded-pill mb-2" style="letter-spacing: 1.2px;">
+                THƯ CHÚC TẾT TRUNG THU ĐOÀN VIÊN
             </span>
-            <h1 class="font-co-phong display-5 fw-bold chu-vang-kim">Tuyệt Tác Tâm Giao Mùa Trăng Rằm</h1>
-            <p class="small text-secondary mb-0">
-                Mã Token: <strong class="text-warning">@Model.MaTokenThiepQr</strong> •
-                Đơn hàng: <strong class="text-light">#@maDonHang</strong> •
-                Đã mở xem: <strong id="lblSoLanMo" class="text-info">@Model.SoLanMoThiep lần</strong>
-            </p>
+            <h1 class="font-co-phong display-5 fw-bold chu-vang-kim mb-0">Tuyệt Tác Tâm Giao Mùa Trăng Rằm</h1>
         </div>
 
         <!-- SÂN KHẤU LẬT THIỆP 3D -->
@@ -165,17 +154,16 @@
                     </div>
 
                     <div class="w-100">
-                        <div class="d-flex flex-wrap justify-content-between align-items-center small text-secondary border-top border-secondary pt-3 mb-3">
-                            <span><i class="bi bi-calendar-check text-warning me-1"></i>Ngày hẹn giao quà: <strong class="text-light">@Model.NgayHenGiao.ToString("dd/MM/yyyy") (@Model.KhungGioGiao)</strong></span>
-                            <span><i class="bi bi-eye-fill text-info me-1"></i>Lượt mở thiệp: <strong class="text-info">@Model.SoLanMoThiep lần</strong></span>
+                        <div class="d-flex flex-wrap justify-content-center align-items-center small text-secondary border-top border-secondary pt-3 mb-3">
+                            <span>Ngày hẹn giao quà: <strong class="text-light">@Model.NgayHenGiao.ToString("dd/MM/yyyy") (@Model.KhungGioGiao)</strong></span>
                         </div>
 
                         <div class="d-flex justify-content-center gap-3">
                             <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-4" onclick="dongThiep3D()">
-                                <i class="bi bi-arrow-counterclockwise me-1"></i>Khép Lại Phong Bì
+                                Khép Lại Phong Bì
                             </button>
                             <a asp-controller="Home" asp-action="Index" class="btn btn-sm btn-vang-kim rounded-pill px-4">
-                                <i class="bi bi-gift-fill me-1"></i>Khám Phá Bộ Sưu Tập Nguyệt Cát
+                                Khám Phá Bộ Sưu Tập Nguyệt Cát
                             </a>
                         </div>
                     </div>
@@ -202,4 +190,3 @@
         }
     </script>
 }
-
