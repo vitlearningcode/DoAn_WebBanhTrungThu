@@ -398,16 +398,16 @@
                                         <span class="kv-tag-mini">B2C</span>
                                     }
                                 </td>
-                                <td class="text-end">@dh.TongTienHang.ToString("N0")</td>
-                                <td class="text-end text-muted">@(tongGiam > 0 ? tongGiam.ToString("N0") : "0")</td>
-                                <td class="text-end fw-semibold" style="color: #0070F4;">@dh.TongThanhToanCuoi.ToString("N0")</td>
+                                <td class="text-end so-tien">@dh.TongTienHang.ToString("N0")</td>
+                                <td class="text-end text-muted so-tien">@(tongGiam > 0 ? tongGiam.ToString("N0") : "0")</td>
+                                <td class="text-end fw-semibold so-tien" style="color: #0070F4;">@dh.TongThanhToanCuoi.ToString("N0")</td>
                                 <td>
-                                    <span class="fw-medium @(trangThaiChuan == "HOAN_TAT" ? "text-success" : trangThaiChuan == "DA_HUY" ? "text-danger" : trangThaiChuan == "CHO_LAY_HANG" ? "text-warning" : "text-primary")">
+                                    <span class="badge @(trangThaiChuan == "HOAN_TAT" ? "bg-success-subtle text-success border border-success-subtle" : trangThaiChuan == "DA_HUY" ? "bg-danger-subtle text-danger border border-danger-subtle" : trangThaiChuan == "CHO_LAY_HANG" ? "bg-warning-subtle text-warning-emphasis border border-warning-subtle" : "bg-primary-subtle text-primary border border-primary-subtle")">
                                         @dh.TenTrangThaiDhHienThi
                                     </span>
-                                    <div>
+                                    <div class="mt-1">
                                         <small class="@(dh.TrangThaiTt == "DA_TT" ? "text-success" : dh.TrangThaiTt == "DA_HOAN_TIEN" ? "text-danger" : "text-muted")">
-                                            @dh.PhuongThucTt • @dh.TenTrangThaiTtHienThi
+                                            @dh.TenTrangThaiTtHienThi
                                         </small>
                                     </div>
                                 </td>
@@ -599,8 +599,8 @@
                                                 </button>
 
                                                 <button type="button" class="btn-kv-blue d-inline-flex align-items-center gap-1"
-                                                        onclick="window.open('/Admin/DonHangAdmin/InHoaDon/@dh.MaDh', 'InHoaDonKiot', 'width=920,height=760');">
-                                                    <i class="bi bi-printer"></i> In hóa đơn
+                                                        onclick="window.open('/Admin/DonHangAdmin/InHoaDon/@dh.MaDh', 'InHoaDonKiot', 'width=460,height=780');">
+                                                    🖨️ In Hóa Đơn K80
                                                 </button>
                                             </div>
                                         </div>
@@ -638,7 +638,7 @@
                     </div>
                     <div>
                         Phương thức: <strong id="lblMdCnPhuongThuc" class="text-primary">---</strong> •
-                        Cần thu: <strong id="lblMdCnTongTien" class="text-danger">0 đ</strong>
+                        Cần thu: <strong id="lblMdCnTongTien" class="text-danger so-tien">0 đ</strong>
                     </div>
                 </div>
 
@@ -647,25 +647,21 @@
                     <div class="kv-step-item" id="stepItem_CHO_XAC_NHAN">
                         <div class="kv-step-circle">1</div>
                         <div class="kv-step-label">Chờ xác nhận</div>
-                        <small class="text-muted" style="font-size:10px;">CHO_XAC_NHAN</small>
                     </div>
                     <div class="kv-step-arrow"><i class="bi bi-arrow-right"></i></div>
                     <div class="kv-step-item" id="stepItem_CHO_LAY_HANG">
                         <div class="kv-step-circle">2</div>
-                        <div class="kv-step-label">Chờ lấy hàng</div>
-                        <small class="text-muted" style="font-size:10px;">CHO_LAY_HANG</small>
+                        <div class="kv-step-label">Đang đóng gói / Chờ lấy</div>
                     </div>
                     <div class="kv-step-arrow"><i class="bi bi-arrow-right"></i></div>
                     <div class="kv-step-item" id="stepItem_DANG_GIAO">
                         <div class="kv-step-circle">3</div>
                         <div class="kv-step-label">Đang giao hàng</div>
-                        <small class="text-muted" style="font-size:10px;">DANG_GIAO</small>
                     </div>
                     <div class="kv-step-arrow"><i class="bi bi-arrow-right"></i></div>
                     <div class="kv-step-item" id="stepItem_HOAN_TAT">
                         <div class="kv-step-circle">4</div>
                         <div class="kv-step-label">Hoàn tất</div>
-                        <small class="text-muted" style="font-size:10px;">HOAN_TAT</small>
                     </div>
                 </div>
 
@@ -675,7 +671,7 @@
                         <strong style="color: #065F46; font-size: 13.5px;">
                             <i class="bi bi-qr-code-scan me-1"></i> Khu vực 1 - Xác nhận Thanh toán Chuyển khoản QR (Thu ngân / Webhook API)
                         </strong>
-                        <span class="badge bg-warning text-dark">Đang chờ thanh toán (CHUA_TT)</span>
+                        <span class="badge bg-warning text-dark">Đang chờ thanh toán</span>
                     </div>
                     <p class="small text-muted mb-2">
                         Khi khách hàng quét mã chuyển khoản thành công, bấm nút dưới đây để ghi nhận <code>DA_TT</code> vào Sổ Quỹ và tự động chuyển đơn sang trạng thái <strong>Chờ lấy hàng (<code>CHO_LAY_HANG</code>)</strong> cho bộ phận giao vận.

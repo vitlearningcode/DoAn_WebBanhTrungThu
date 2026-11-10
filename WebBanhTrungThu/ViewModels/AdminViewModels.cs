@@ -1,4 +1,5 @@
 using WebBanhTrungThu.Models.Entities;
+using WebBanhTrungThu.Services;
 
 namespace WebBanhTrungThu.ViewModels
 {
@@ -19,6 +20,7 @@ namespace WebBanhTrungThu.ViewModels
         public List<LoSanXuatBanh> DanhSachLoCanDate { get; set; } = new();
         public List<MauVoHop> DanhSachVoHopTonKho { get; set; } = new();
         public List<DonHang> DanhSachDonHangMoiNhat { get; set; } = new();
+        public CauHinhThanhToanQr CauHinhQr { get; set; } = new();
     }
 
     public class TopBanhBanChayItem
@@ -292,5 +294,7 @@ namespace WebBanhTrungThu.ViewModels
         public decimal TonQuyCuoiKy => QuyDauKy + TongThuTrongKy - TongTienHoanKhach;
         public List<DonHang> DanhSachPhieuThuDonHang { get; set; } = new();
         public List<DonHang> DanhSachPhieuHoanTien { get; set; } = new();
+        public CauHinhThanhToanQr CauHinhQr { get; set; } = new();
+        public List<PhieuThuChiKiot> DanhSachPhieuThuChiWebhook { get; set; } = new();
     }
 }

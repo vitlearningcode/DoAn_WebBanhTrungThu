@@ -176,12 +176,22 @@
                        oninput="locSoQuyClient()" />
             </div>
 
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button type="button" class="btn-kv-primary" data-bs-toggle="modal" data-bs-target="#modalCauHinhQrMoMo">
+                    ⚙️ Cấu hình Tài khoản QR / MoMo nhận tiền (@Model.CauHinhQr.SoDienThoaiHienThi)
+                </button>
                 <button type="button" class="btn-kv-outline" onclick="window.print();">
                     <i class="bi bi-download"></i> Xuất file
                 </button>
             </div>
         </div>
+
+        @if (TempData["ThongBaoAdmin"] != null)
+        {
+            <div class="alert alert-success py-2 px-3 small mb-3">
+                <i class="bi bi-check-circle-fill me-1"></i>@TempData["ThongBaoAdmin"]
+            </div>
+        }
 
         <div class="kv-card overflow-hidden">
             <div class="table-responsive">
@@ -225,9 +235,9 @@
                                     <small class="text-danger fw-medium">STK: @(dhHoan.SoTaiKhoanHoan ?? "---") • @(dhHoan.TenChuTkHoan ?? dhHoan.HoTenNguoiMua)</small>
                                 </td>
                                 <td>
-                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Đã hoàn tiền (DA_HOAN_TIEN)</span>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Đã hoàn tiền</span>
                                 </td>
-                                <td class="text-end fw-bold text-danger">-@dhHoan.TongThanhToanCuoi.ToString("N0")</td>
+                                <td class="text-end fw-bold text-danger so-tien">-@dhHoan.TongThanhToanCuoi.ToString("N0")</td>
                             </tr>
                         }
 
@@ -236,30 +246,41 @@
                         {
                             string searchKey = $"TTH{dh.MaDh:D5} {dh.MaTraCuuDh} {dh.HoTenNguoiMua} {dh.SdtnguoiMua}".ToLowerInvariant();
                             decimal giaVonDon = Math.Round(dh.TongTienHang * 0.54m, 0);
+                            string tenPhuongThucSq = (dh.PhuongThucTt ?? "").ToUpperInvariant() switch
+                            {
+                                "COD" => "Tiền mặt (COD)",
+                                "TIEN_MAT" => "Tiền mặt tại quầy",
+                                 "VIETQR" or "CHUYEN_KHOAN" => "Chuyển khoản VietQR",
+                                 "MOMO" or "MOMO_QR" => $"Ví MoMo / QR ({Model.CauHinhQr.SoDienThoaiHienThi})",
+                                 "VNPAY" => "Ví VNPay",
+                                 "THE_NGAN_HANG" => "Quẹt thẻ ngân hàng",
+                                 _ => dh.PhuongThucTt ?? "Tiền mặt"
+                             };
+                             bool daThuTien = dh.TrangThaiTt == "DA_TT" || dh.TrangThaiTt == "DA_THANH_TOAN";
 
-                            <!-- Dòng Phiếu thu đơn hàng -->
-                            <tr class="border-bottom"
-                                data-loaict="PHIEU_THU"
-                                data-pt="@dh.PhuongThucTt"
-                                data-search="@searchKey">
-                                <td class="fw-medium" style="color: #0070F4;">TTH@(dh.MaDh.ToString("D5"))</td>
-                                <td>@dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</td>
-                                <td>
-                                    Thu tiền khách trả
-                                    (<a href="/Admin/DonHangAdmin/Index?tuKhoa=@dh.MaTraCuuDh" class="text-decoration-none" style="color: #0070F4;">#@dh.MaTraCuuDh</a>)
-                                </td>
-                                <td>
-                                    <div class="fw-medium text-dark">@dh.HoTenNguoiMua</div>
-                                    <small class="text-muted">@dh.SdtnguoiMua</small>
-                                </td>
-                                <td>@dh.PhuongThucTt</td>
-                                <td>
-                                    <span class="@(dh.TrangThaiTt == "DA_TT" ? "text-success fw-medium" : "text-warning fw-medium")">
-                                        @(dh.TrangThaiTt == "DA_TT" ? "Đã thanh toán (DA_TT)" : "Chờ thanh toán (CHUA_TT)")
-                                    </span>
-                                </td>
-                                <td class="text-end fw-semibold" style="color: #0070F4;">+@dh.TongThanhToanCuoi.ToString("N0")</td>
-                            </tr>
+                             <!-- Dòng Phiếu thu đơn hàng -->
+                             <tr class="border-bottom"
+                                 data-loaict="PHIEU_THU"
+                                 data-pt="@dh.PhuongThucTt"
+                                 data-search="@searchKey">
+                                 <td class="fw-medium" style="color: #0070F4;">TTH@(dh.MaDh.ToString("D5"))</td>
+                                 <td>@dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</td>
+                                 <td>
+                                     Thu tiền khách trả
+                                     (<a href="/Admin/DonHangAdmin/Index?tuKhoa=@dh.MaTraCuuDh" class="text-decoration-none" style="color: #0070F4;">#@dh.MaTraCuuDh</a>)
+                                 </td>
+                                 <td>
+                                     <div class="fw-medium text-dark">@dh.HoTenNguoiMua</div>
+                                     <small class="text-muted">@dh.SdtnguoiMua</small>
+                                 </td>
+                                 <td>@tenPhuongThucSq</td>
+                                 <td>
+                                     <span class="badge @(daThuTien ? "bg-success-subtle text-success border border-success-subtle" : "bg-warning-subtle text-warning-emphasis border border-warning-subtle")">
+                                         @(daThuTien ? "Đã thanh toán" : dh.TenTrangThaiThanhToanHienThi)
+                                     </span>
+                                 </td>
+                                 <td class="text-end fw-semibold so-tien" style="color: #0070F4;">+@dh.TongThanhToanCuoi.ToString("N0")</td>
+                             </tr>
 
                             <!-- Dòng Giá vốn lô bánh tương ứng (hiển thị khi chọn Tất cả hoặc Giá vốn lô bánh) -->
                             <tr class="border-bottom"
@@ -305,7 +326,7 @@
                 if (hien && pt !== 'ALL') {
                     const rowPt = tr.getAttribute('data-pt') || '';
                     if (pt === 'VI_DIEN_TU') {
-                        if (rowPt !== 'MOMO' && rowPt !== 'VNPAY') hien = false;
+                        if (rowPt !== 'MOMO' && rowPt !== 'MOMO_QR' && rowPt !== 'VNPAY') hien = false;
                     } else if (rowPt !== pt) {
                         hien = false;
                     }
@@ -315,3 +336,53 @@
         }
     </script>
 }
+
+<!-- MODAL CẤU HÌNH TÀI KHOẢN QR / MOMO NHẬN TIỀN -->
+<div class="modal fade" id="modalCauHinhQrMoMo" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form asp-area="Admin" asp-controller="SoQuyAdmin" asp-action="CapNhatCauHinhQrMoMo" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="/Admin/SoQuy" />
+                <div class="modal-header bg-primary text-white py-2">
+                    <h6 class="modal-title fw-bold mb-0">⚙️ Cấu hình Tài khoản QR / MoMo nhận tiền</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Số điện thoại / Số tài khoản MoMo nhận tiền *</label>
+                        <input type="text" name="soTaiKhoanMoMo" class="form-control form-control-sm fw-bold"
+                               value="@Model.CauHinhQr.SoTaiKhoanMoMo" required placeholder="VD: 0814585526" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Tên chủ tài khoản (In hoa không dấu) *</label>
+                        <input type="text" name="tenChuTaiKhoan" class="form-control form-control-sm text-uppercase fw-bold"
+                               value="@Model.CauHinhQr.TenChuTaiKhoan" required placeholder="VD: LE MINH DUC" />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Ví / Ngân hàng</label>
+                            <input type="text" name="maNganHang" class="form-control form-control-sm"
+                                   value="@Model.CauHinhQr.MaNganHang" placeholder="MOMO" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Mã BIN VietQR</label>
+                            <input type="text" name="maBinVietQr" class="form-control form-control-sm"
+                                   value="@Model.CauHinhQr.MaBinVietQr" placeholder="970422" />
+                        </div>
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label small fw-bold">Cú pháp nội dung chuyển khoản tự động</label>
+                        <input type="text" name="mauNoiDungCk" class="form-control form-control-sm"
+                               value="@Model.CauHinhQr.MauNoiDungCk" placeholder="NGUYETCAT {MaTraCuuDh}" />
+                        <small class="text-muted" style="font-size: 11.5px;">Webhook <code>/api/webhook/momo</code> sẽ tự động đối soát theo mã đơn.</small>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-sm btn-primary fw-bold">Lưu cấu hình QR / MoMo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

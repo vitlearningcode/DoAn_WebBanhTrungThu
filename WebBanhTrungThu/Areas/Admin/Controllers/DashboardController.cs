@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
+using WebBanhTrungThu.Services;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Areas.Admin.Controllers
@@ -11,10 +12,12 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     public class DashboardController : Controller
     {
         private readonly CSDLBanhTrungThuContext _db;
+        private readonly DichVuKiotVietMetadata _kiotMeta;
 
-        public DashboardController(CSDLBanhTrungThuContext db)
+        public DashboardController(CSDLBanhTrungThuContext db, DichVuKiotVietMetadata kiotMeta)
         {
             _db = db;
+            _kiotMeta = kiotMeta;
         }
 
         [HttpGet]
@@ -158,7 +161,8 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
                 DanhSachHoatDong = hoatDongs,
                 DanhSachLoCanDate = loCanDate,
                 DanhSachVoHopTonKho = voHopTonKho,
-                DanhSachDonHangMoiNhat = danhSachDon.Take(6).ToList()
+                DanhSachDonHangMoiNhat = danhSachDon.Take(6).ToList(),
+                CauHinhQr = _kiotMeta.LayCauHinhQr()
             };
 
             return View(vm);

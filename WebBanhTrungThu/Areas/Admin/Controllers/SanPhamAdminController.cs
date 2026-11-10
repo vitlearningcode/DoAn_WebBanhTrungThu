@@ -1420,5 +1420,39 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
             }
             return RedirectToAction(nameof(ThietLapGia));
         }
+
+        [HttpPost]
+        public async Task<IActionResult> KichHoatXaKhoNhanh(int maLo, int mucGiam = 30)
+        {
+            var lo = await _db.LoSanXuatBanhs
+                .Include(l => l.MaBanhNavigation)
+                .FirstOrDefaultAsync(l => l.MaLo == maLo);
+
+            if (lo == null)
+            {
+                return Json(new { thanhCong = false, thongBao = "Không tìm thấy lô sản xuất cần kích hoạt xả kho!" });
+            }
+
+            int phanTram = Math.Clamp(mucGiam, 1, 90);
+            lo.PhanTramGiamCanDate = phanTram;
+            lo.TrangThaiLo = "XA_CAN_DATE";
+            await _db.SaveChangesAsync();
+
+            decimal giaGoc = lo.MaBanhNavigation?.DonGiaLe ?? 0m;
+            decimal giaMoi = Math.Round(giaGoc * (100m - phanTram) / 100m, 0);
+
+            return Json(new
+            {
+                thanhCong = true,
+                thongBao = "Đã kích hoạt ưu đãi xả kho -30% cho lô cận date!",
+                maLo = lo.MaLo,
+                maLoCode = lo.MaLoCode,
+                maBanh = lo.MaBanh,
+                tenBanh = lo.MaBanhNavigation?.TenBanh ?? "",
+                mucGiam = phanTram,
+                giaGoc = Math.Round(giaGoc, 0),
+                giaMoi = giaMoi
+            });
+        }
     }
 }

@@ -41,3 +41,43 @@
   1. Tuyệt đối không dùng các khung viền neon/gradient công nghệ sến sẩm, không lạm dụng icon/emoji ở đầu mỗi dòng text.
   2. Ưu tiên sự tinh tế của Typography, căn chỉnh lưới (grid alignment) sắc sảo, độ tương phản màu sắc thực tế (Editorial / E-commerce chuẩn thương mại).
   3. Mọi thành phần UI phải phục vụ trực tiếp cho thao tác của người dùng thực tế, loại bỏ hoàn toàn các dòng chữ giải thích kỹ thuật thừa thãi trên mặt tiền.
+
+  ---
+# HỆ THỐNG KỸ NĂNG GIAO DIỆN & CHUYỂN ĐỘNG TỔNG HỢP (4 SKILL PACKS)
+Khi thực hiện bất kỳ tác vụ Frontend, UI/UX, Razor Views (`.cshtml`), CSS (`site.css`) hoặc JavaScript (`site.js`) nào trong dự án **Nguyệt Cát**, Agent BẮT BUỘC phải áp dụng đồng thời 4 bộ kỹ năng đã được cài đặt tại `.agent/skills/` dưới đây:
+
+## 1. [Taste-Skill v2.5] Art Direction & Bố cục Khung nhìn (`.agent/skills/taste-skill`)
+- **Định danh loại trang (`page kind: product / shop`):** Nguyệt Cát là thương hiệu quà biếu Trung Thu truyền thống cao cấp.
+  + **CẤM dùng hiệu ứng công nghệ/gaming:** Tuyệt đối không dùng nền đen xanh công nghệ, viền neon, hay hiệu ứng WebGL/Shader rối mắt.
+  + **Tập trung vào chất liệu thực tế:** Hình ảnh sản phẩm sắc nét, Typography phân cấp rõ ràng, bảng màu phẳng ấm áp (Đỏ Sơn Mài `#7A1215`, Kem Giấy Dó `#FDF8EE`, Trắng Ngà `#FFFFFF`, Vàng Đồng Cổ `#C89B3C`, Nâu Trầm `#2C1810`).
+- **Kỷ luật bố cục (`One Section Per Screen` & `Equal Content Edges`):**
+  + Trên Desktop (`>= 992px`), mỗi phân khu trên Trang chủ phải nằm gọn khít trong đúng 1 khung nhìn (`calc(100vh - 68px)`), hai lề trái và phải (`padding-inline`) luôn cân xứng tuyệt đối.
+  + Không bao giờ để nội dung của tầng trên tràn hoặc lòi đuôi sang tầng dưới.
+- **Copy Lint (Ngôn từ thực tế):** Chỉ sử dụng ngôn ngữ thương mại và thưởng trà tinh tế. Không bao giờ dùng từ ngữ sáo rỗng kiểu AI hay phơi bày thuật ngữ lập trình ra mặt tiền.
+
+## 2. [Impeccable] Chống "AI Slop" & Tinh chỉnh 24 Chế độ (`.agent/skills/impeccable`)
+Tự động thực thi các chuẩn `critique`, `audit`, `polish`, `quieter`, `distill`, `typeset`, `layout`, và `harden` trước khi hoàn tất bất kỳ file giao diện nào:
+- **Bộ lọc 62 Quy tắc Chống AI Slop (`impeccable detect`):**
+  + **CẤM lạm dụng Icon/Emoji:** Không gắn icon hoặc emoji ở đầu mỗi mục menu dropdown, tiêu đề phụ hay danh sách thông số. Chỉ dùng icon ở nơi thực sự giúp nhận diện thao tác.
+  + **CẤM phơi mã kỹ thuật (`distill`):** Tuyệt đối không hiển thị mã phiên `KVL-...`, mã băm `#VH1_...`, mã trạng thái `CHO_DONG_GOI`, `Mã Token: QR-...`, hay số lượt mở thiệp trên giao diện khách hàng.
+  + **CẤM Thẻ lồng thẻ (Nested Cards trong Cards):** Không đóng khung viền chồng chéo nhiều lớp. Ưu tiên dùng khoảng trắng (`whitespace`), nền phân tách nhẹ (`#F7F7F7` vs `#FFFFFF`) và đường kẻ mảnh `1px dashed/solid` (như bố cục 2 cột trong Giỏ hàng và trang Thanh toán Shondo).
+  + **Chống che khuất tương tác (`audit` & `harden`):** Không bao giờ để các nút nổi (Floating Action Button như nút Trợ lý Mặt Trăng) đè lên thanh nút `ĐẶT HÀNG` cố định ở đáy màn hình (`bottom` của nút nổi phải `>= 96px`). Không bao giờ đặt chữ sáng màu trên nền sáng.
+
+## 3. [Emil Kowalski Skills] Design Engineering, Motion & Stress-Test UI (`.agent/skills/emil-*`, `animate`, `choreograph`, `break-ui`)
+Tuân thủ nghiêm ngặt quy tắc từ `.agent/skills/emil-ui-cheatsheet.md` và `.agent/skills/emil-performance-cheatsheet.md`:
+- **Đường cong gia tốc chuẩn (`animate` & `emil-design-eng`):**
+  + Mọi thành phần xuất hiện vào màn hình (Dropdown menu xổ xuống, Modal, Offcanvas, chuyển tầng Fullpage) BẮT BUỘC dùng đường cong giảm tốc `ease-out`: `cubic-bezier(0.16, 1, 0.3, 1)` hoặc `cubic-bezier(0.22, 1, 0.36, 1)`.
+  + Tuyệt đối KHÔNG dùng `ease-in` hoặc `linear` cho chuyển động tương tác UI.
+  + Thời gian phản hồi micro-interaction (hover, nút bấm, dropdown): `180ms - 260ms`. Thời gian chuyển cảnh toàn màn hình (Fullpage Slide): `750ms - 850ms`.
+- **Hiệu năng 60fps (`animation-performance` & `remove-animations`):**
+  + Chỉ animate 2 thuộc tính chạy trên GPU Compositor: `transform` (`translate3d`, `scale`) và `opacity`. Tuyệt đối KHÔNG dùng `transition: all` trên các phần tử bố cục lớn.
+  + Loại bỏ mọi hiệu ứng nhấp nháy vô nghĩa gây mỏi mắt (`remove-animations`).
+- **Kiểm thử Dữ liệu Khắc nghiệt (`break-ui`):**
+  + Mọi thành phần UI phải chịu được dữ liệu dài thực tế: Tên bánh dài 60–80 ký tự (như *"Thập Cẩm Bào Ngư Thượng Hạng (2 Trứng)"*), địa chỉ dài, số tiền hàng chục triệu đồng.
+  + Bắt buộc dùng `min-width: 0; flex: 1;` cho khối chữ và `flex-shrink: 0; white-space: nowrap;` cho các nút thao tác (`+ Chọn`, `+ Mua lẻ`, `Xếp vào hộp`, `Áp dụng`) để nút KHÔNG BAO GIỜ bị đẩy văng ra khỏi khung thẻ!
+
+## 4. [GSAP Skills] Hoạt ảnh Chuyên sâu & Điều phối Timeline (`.agent/skills/gsap-skills`)
+Khi sử dụng GSAP hoặc các chuỗi chuyển động phức tạp (`choreograph` / Thiệp QR 3D / Chuyển cảnh):
+- Luôn ưu tiên `transform: translate3d` (`x`, `y`, `xPercent`, `yPercent`, `autoAlpha`) thay vì thay đổi `top`, `left`, `width`, `height` gây reflow DOM.
+- Điều phối thứ tự xuất hiện (`stagger: 0.06` đến `0.08`) có nhịp điệu: tiêu đề dẫn hướng trước, nội dung chính theo sau, nút hành động chốt cuối.
+- Quản lý trạng thái khóa chuyển cảnh chặt chẽ (`dangChuyenCanh` / `isAnimating`) để khi người dùng lăn chuột hoặc click liên tục không bị chồng chéo timeline.

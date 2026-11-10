@@ -1,16 +1,106 @@
 @model WebBanhTrungThu.ViewModels.AdminDashboardViewModel
 @{
     ViewData["Title"] = "Tổng quan - KiotViet";
+    var homNay = DateOnly.FromDateTime(DateTime.Today);
+    var mocCanhBaoFefo = DateOnly.FromDateTime(DateTime.Today.AddDays(10));
+
+    var danhSachLoCanhBaoFefo = Model.DanhSachLoCanDate
+        .Where(l => l.SlconLai > 0 && (l.HanSuDung <= mocCanhBaoFefo || l.PhanTramGiamCanDate > 0 || l.TrangThaiLo == "XA_CAN_DATE"))
+        .OrderBy(l => l.HanSuDung)
+        .ToList();
+
+    if (!danhSachLoCanhBaoFefo.Any())
+    {
+        danhSachLoCanhBaoFefo = Model.DanhSachLoCanDate
+            .Where(l => l.SlconLai > 0)
+            .OrderBy(l => l.HanSuDung)
+            .Take(2)
+            .ToList();
+    }
+
+    (string TenTrangThaiLo, string LopBadgeLo) AnhXaTrangThaiLo(WebBanhTrungThu.Models.Entities.LoSanXuatBanh lo)
+    {
+        if (lo.HanSuDung < homNay || string.Equals(lo.TrangThaiLo, "HET_HAN", StringComparison.OrdinalIgnoreCase))
+        {
+            return ("Đã hết hạn", "bg-danger-subtle text-danger border border-danger-subtle");
+        }
+        if (lo.PhanTramGiamCanDate > 0 || string.Equals(lo.TrangThaiLo, "XA_CAN_DATE", StringComparison.OrdinalIgnoreCase) || lo.HanSuDung <= mocCanhBaoFefo)
+        {
+            return ("Xả kho cận Date", "bg-warning-subtle text-warning-emphasis border border-warning-subtle");
+        }
+        return ("Đang bán", "bg-success-subtle text-success border border-success-subtle");
+    }
+}
+
+@if (danhSachLoCanhBaoFefo.Any())
+{
+    <!-- THANH CẢNH BÁO LÔ CẬN DATE TỰ ĐỘNG & XẢ KHO -30% 1-CLICK (SMART FEFO BANNER - NHÁNH 5.0.2) -->
+    <div class="banner-canh-bao-fefo" id="bannerCanhBaoFefoDashboard">
+        <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-2">
+            <div class="fw-bold" style="font-size: 13.5px;">
+                <i class="bi bi-exclamation-triangle-fill me-1" style="color: #D97706;"></i>
+                Cảnh báo FEFO: Phát hiện @danhSachLoCanhBaoFefo.Count lô bánh cần ưu tiên xuất kho / kích hoạt xả kho cận Date
+            </div>
+            <a href="/Admin/SanPhamAdmin/KiemKho" class="text-decoration-none fw-semibold" style="font-size: 12.5px; color: #92400E;">
+                Quản lý toàn bộ lô bánh →
+            </a>
+        </div>
+        <div>
+            @foreach (var loCb in danhSachLoCanhBaoFefo)
+            {
+                int soNgayCon = Math.Max(0, loCb.HanSuDung.DayNumber - homNay.DayNumber);
+                bool daApGiaXa30 = loCb.PhanTramGiamCanDate >= 30;
+                <div class="dong-lo-canh-bao-fefo">
+                    <div>
+                        <strong style="color: #78350F;">@loCb.MaLoCode</strong>
+                        <span class="mx-1">•</span>
+                        <span class="fw-semibold">@(loCb.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu")</span>
+                        <span class="mx-1">•</span>
+                        <span class="ton-kho">Tồn kho: <strong>@loCb.SlconLai.ToString("N0")</strong> bánh</span>
+                        <span class="mx-1">•</span>
+                        <span class="ton-kho">Còn <strong>@soNgayCon</strong> ngày sử dụng (HSD: @loCb.HanSuDung.ToString("dd/MM/yyyy"))</span>
+                    </div>
+                    <div>
+                        @if (daApGiaXa30)
+                        {
+                            <button type="button" class="nut-kich-hoat-xa-kho-nhanh da-ap-gia-xa" disabled>
+                                ✓ Đã áp giá xả kho -@(loCb.PhanTramGiamCanDate.ToString("N0"))%
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="nut-kich-hoat-xa-kho-nhanh"
+                                    onclick="kichHoatXaKhoNhanhDashboard(@loCb.MaLo, this)">
+                                ⚡ Kích hoạt xả kho -30%
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
 }
 
 <!-- HÀNG 1: KẾT QUẢ BÁN HÀNG HÔM NAY -->
 <div class="kv-card p-3 mb-3">
-    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3 flex-wrap gap-2">
         <span class="fw-bold text-dark" style="font-size: 14px;">
             KẾT QUẢ BÁN HÀNG HÔM NAY
         </span>
-        <span class="text-muted small">Dữ liệu thời gian thực từ SQL Server</span>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn-kv-primary py-1 px-2" style="font-size: 12.5px;" data-bs-toggle="modal" data-bs-target="#modalCauHinhQrMoMoDashboard">
+                ⚙️ Cấu hình Tài khoản QR / MoMo nhận tiền (@Model.CauHinhQr.SoDienThoaiHienThi)
+            </button>
+            <span class="text-muted small">Dữ liệu thời gian thực từ SQL Server</span>
+        </div>
     </div>
+
+    @if (TempData["ThongBaoAdmin"] != null)
+    {
+        <div class="alert alert-success py-2 px-3 small mb-3">
+            <i class="bi bi-check-circle-fill me-1"></i>@TempData["ThongBaoAdmin"]
+        </div>
+    }
 
     <div class="row g-3">
         <!-- Chỉ số 1: Doanh thu thuần -->
@@ -21,7 +111,7 @@
                 </div>
                 <div>
                     <div class="text-muted small">@Model.TongSoDonHang Hóa đơn</div>
-                    <div class="fs-5 fw-bold text-primary">@Model.TongDoanhThuThucTe.ToString("N0")</div>
+                    <div class="fs-5 fw-bold text-primary kpi-value so-tien">@Model.TongDoanhThuThucTe.ToString("N0")</div>
                     <small class="text-muted">Doanh thu thuần (@Model.SoDonB2B đơn B2B)</small>
                 </div>
             </div>
@@ -35,7 +125,7 @@
                 </div>
                 <div>
                     <div class="text-muted small">Phân loại khách đặt</div>
-                    <div class="fs-5 fw-bold text-dark">@Model.SoDonMember Member / @Model.SoDonGuest Guest</div>
+                    <div class="fs-5 fw-bold text-dark kpi-value">@Model.SoDonMember Member / @Model.SoDonGuest Guest</div>
                     <small class="text-muted">Đơn hàng kép B2C & B2B</small>
                 </div>
             </div>
@@ -49,7 +139,7 @@
                 </div>
                 <div>
                     <div class="text-muted small">Hộp quà tự chọn & Thiệp QR</div>
-                    <div class="fs-5 fw-bold text-dark">@Model.TongSoHopTuChonDaTao Hộp</div>
+                    <div class="fs-5 fw-bold text-dark kpi-value">@Model.TongSoHopTuChonDaTao Hộp</div>
                     <small class="text-muted">Lượt quét Thiệp 3D: @Model.TongLuotMoThiepQr3D lần</small>
                 </div>
             </div>
@@ -63,7 +153,7 @@
                 </div>
                 <div>
                     <div class="text-muted small">Lô hạn sử dụng (FEFO)</div>
-                    <div class="fs-5 fw-bold text-danger">@Model.SoLoSapHetHan Lô cận Date</div>
+                    <div class="fs-5 fw-bold text-danger kpi-value">@Model.SoLoSapHetHan Lô cận Date</div>
                     <small>
                         <a href="/Admin/SanPhamAdmin/Index" class="text-decoration-none" style="color: #0070F4;">
                             Kiểm tra hàng hóa →
@@ -132,14 +222,15 @@
                     <tbody>
                         @foreach (var lo in Model.DanhSachLoCanDate)
                         {
-                            <tr class="border-bottom">
+                            var ttLo = AnhXaTrangThaiLo(lo);
+                            <tr class="border-bottom" id="dongLoDashboard_@lo.MaLo">
                                 <td class="text-primary fw-medium">@lo.MaLoCode</td>
                                 <td class="fw-medium">@(lo.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu")</td>
                                 <td>@lo.HanSuDung.ToString("dd/MM/yyyy")</td>
-                                <td class="text-end">@lo.SlconLai.ToString("N0") / @lo.SlnhapBanDau.ToString("N0")</td>
-                                <td class="text-end">@lo.PhanTramGiamCanDate.ToString("N0")%</td>
-                                <td>
-                                    <span class="text-muted small">@lo.TrangThaiLo</span>
+                                <td class="text-end ton-kho">@lo.SlconLai.ToString("N0") / @lo.SlnhapBanDau.ToString("N0")</td>
+                                <td class="text-end so-tien" id="oGiamLoDashboard_@lo.MaLo">@lo.PhanTramGiamCanDate.ToString("N0")%</td>
+                                <td id="oTrangThaiLoDashboard_@lo.MaLo">
+                                    <span class="badge @ttLo.LopBadgeLo">@ttLo.TenTrangThaiLo</span>
                                 </td>
                             </tr>
                         }
@@ -176,6 +267,92 @@
                     </div>
                 }
             </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        async function kichHoatXaKhoNhanhDashboard(maLo, nutBam) {
+            if (!nutBam) return;
+            nutBam.disabled = true;
+            nutBam.innerText = "Đang áp giá -30%...";
+
+            try {
+                const res = await fetch(`/Admin/BanHangPos/KichHoatXaKhoNhanh?maLo=${maLo}&mucGiam=30`, {
+                    method: "POST"
+                });
+                const data = await res.json();
+                if (data && data.thanhCong) {
+                    nutBam.classList.add("da-ap-gia-xa");
+                    nutBam.innerText = "✓ Đã áp giá xả kho -30%";
+
+                    const oGiam = document.getElementById("oGiamLoDashboard_" + maLo);
+                    if (oGiam) oGiam.innerText = "30%";
+
+                    const oTrangThai = document.getElementById("oTrangThaiLoDashboard_" + maLo);
+                    if (oTrangThai) {
+                        oTrangThai.innerHTML = `<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Xả kho cận Date</span>`;
+                    }
+                } else {
+                    nutBam.disabled = false;
+                    nutBam.innerText = "⚡ Kích hoạt xả kho -30%";
+                    alert((data && data.thongBao) || "Không thể kích hoạt xả kho!");
+                }
+            } catch (err) {
+                nutBam.disabled = false;
+                nutBam.innerText = "⚡ Kích hoạt xả kho -30%";
+                alert("Lỗi kết nối máy chủ khi kích hoạt xả kho!");
+            }
+        }
+    </script>
+}
+
+<!-- MODAL CẤU HÌNH TÀI KHOẢN QR / MOMO NHẬN TIỀN TẠI DASHBOARD -->
+<div class="modal fade" id="modalCauHinhQrMoMoDashboard" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form asp-area="Admin" asp-controller="SoQuyAdmin" asp-action="CapNhatCauHinhQrMoMo" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="/Admin/Dashboard/Index" />
+                <div class="modal-header bg-primary text-white py-2">
+                    <h6 class="modal-title fw-bold mb-0">⚙️ Cấu hình Tài khoản QR / MoMo nhận tiền</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Số điện thoại / Số tài khoản MoMo nhận tiền *</label>
+                        <input type="text" name="soTaiKhoanMoMo" class="form-control form-control-sm fw-bold"
+                               value="@Model.CauHinhQr.SoTaiKhoanMoMo" required placeholder="VD: 0814585526" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Tên chủ tài khoản (In hoa không dấu) *</label>
+                        <input type="text" name="tenChuTaiKhoan" class="form-control form-control-sm text-uppercase fw-bold"
+                               value="@Model.CauHinhQr.TenChuTaiKhoan" required placeholder="VD: LE MINH DUC" />
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Ví / Ngân hàng</label>
+                            <input type="text" name="maNganHang" class="form-control form-control-sm"
+                                   value="@Model.CauHinhQr.MaNganHang" placeholder="MOMO" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Mã BIN VietQR</label>
+                            <input type="text" name="maBinVietQr" class="form-control form-control-sm"
+                                   value="@Model.CauHinhQr.MaBinVietQr" placeholder="970422" />
+                        </div>
+                    </div>
+                    <div class="mb-1">
+                        <label class="form-label small fw-bold">Cú pháp nội dung chuyển khoản tự động</label>
+                        <input type="text" name="mauNoiDungCk" class="form-control form-control-sm"
+                               value="@Model.CauHinhQr.MauNoiDungCk" placeholder="NGUYETCAT {MaTraCuuDh}" />
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-sm btn-primary fw-bold">Lưu cấu hình QR / MoMo</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

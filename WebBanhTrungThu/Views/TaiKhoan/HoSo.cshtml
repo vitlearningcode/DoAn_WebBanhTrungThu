@@ -3,396 +3,573 @@
     ViewData["Title"] = $"Hồ Sơ Thành Viên - {Model.NguoiDung.HoTen}";
     var nd = Model.NguoiDung;
     string tabMacDinh = ViewBag.TabMacDinh as string ?? "DON_HANG";
+    if (tabMacDinh != "DON_HANG" && tabMacDinh != "DIA_CHI" && tabMacDinh != "HOP_TU_CHON")
+    {
+        tabMacDinh = "DON_HANG";
+    }
+
+    // Chữ cái đầu của tên gọi (từ cuối trong họ tên Tiếng Việt) để làm Avatar hội viên
+    string tenGoi = (nd.HoTen ?? "").Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? "N";
+    string chuCaiDauTen = tenGoi.Length > 0 ? tenGoi.Substring(0, 1).ToUpperInvariant() : "N";
+
+    int soDonHang = Model.LichSuDonHang.Count;
+    int soDiaChi = Model.DanhSachSoDiaChi.Count;
+    int soHopTuChon = Model.DanhSachHopTuChon.Count;
+
+    // Ánh xạ mã trạng thái đơn hàng / đợt giao sang Tiếng Việt lịch sự kèm lớp màu huy hiệu (không in mã kỹ thuật)
+    (string TenHienThi, string LopHuyHieu) AnhXaTrangThaiDonHang(string? maTrangThai)
+    {
+        switch ((maTrangThai ?? "").Trim().ToUpperInvariant())
+        {
+            case "CHO_XAC_NHAN":
+                return ("Chờ xác nhận", "huy-hieu-cho-xac-nhan");
+            case "DA_XAC_NHAN":
+            case "CHO_DONG_GOI":
+            case "DANG_DONG_GOI_HOP":
+                return ("Đang chuẩn bị lễ hộp", "huy-hieu-dang-chuan-bi");
+            case "CHO_LAY_HANG":
+                return ("Chờ bàn giao vận chuyển", "huy-hieu-cho-ban-giao");
+            case "DANG_GIAO":
+                return ("Đang giao quà", "huy-hieu-dang-giao");
+            case "DA_GIAO":
+            case "HOAN_TAT":
+                return ("Giao thành công", "huy-hieu-giao-thanh-cong");
+            case "DA_HUY":
+                return ("Đã hủy", "huy-hieu-da-huy");
+            default:
+                return ("Đang xử lý", "huy-hieu-cho-xac-nhan");
+        }
+    }
+
+    // Hiển thị hình thức thanh toán thân thiện
+    string AnhXaHinhThucThanhToan(string? maPhuongThuc)
+    {
+        return string.Equals((maPhuongThuc ?? "").Trim(), "COD", StringComparison.OrdinalIgnoreCase)
+            ? "Thanh toán khi nhận (COD)"
+            : "Chuyển khoản QR";
+    }
+
+    // Tính tiến trình thăng hạng VIP dựa trên DiemTichLuy hiện tại
+    int diemHienTai = Math.Max(0, nd.DiemTichLuy);
+    string tenHangTiepTheo;
+    int diemConThieu = 0;
+    int phanTramTienTrinhVip;
+    bool daDatDinhVip = false;
+
+    if (diemHienTai < 100)
+    {
+        tenHangTiepTheo = "Hạng Bạc (100 điểm - Ưu đãi giảm 3%)";
+        diemConThieu = 100 - diemHienTai;
+        phanTramTienTrinhVip = Math.Clamp((int)Math.Round(diemHienTai * 100.0 / 100.0), 4, 99);
+    }
+    else if (diemHienTai < 300)
+    {
+        tenHangTiepTheo = "Hạng Vàng (300 điểm - Ưu đãi giảm 5%)";
+        diemConThieu = 300 - diemHienTai;
+        phanTramTienTrinhVip = Math.Clamp((int)Math.Round((diemHienTai - 100) * 100.0 / 200.0), 6, 99);
+    }
+    else if (diemHienTai < 600)
+    {
+        tenHangTiepTheo = "Hạng Kim Cương (600 điểm - Ưu đãi giảm 10% + Quà VIP)";
+        diemConThieu = 600 - diemHienTai;
+        phanTramTienTrinhVip = Math.Clamp((int)Math.Round((diemHienTai - 300) * 100.0 / 300.0), 6, 99);
+    }
+    else
+    {
+        tenHangTiepTheo = "Hạng Kim Cương Hoàng Gia (100%)";
+        diemConThieu = 0;
+        phanTramTienTrinhVip = 100;
+        daDatDinhVip = true;
+    }
+
+    // Xác định bước tiến trình 4 bước của đơn hàng (0 = Đã hủy, 1..4 = Các bước hoàn thành)
+    int XacDinhBuocTienTrinhDon(string? maTrangThai)
+    {
+        switch ((maTrangThai ?? "").Trim().ToUpperInvariant())
+        {
+            case "DA_HUY":
+                return 0;
+            case "CHO_XAC_NHAN":
+                return 1;
+            case "DA_XAC_NHAN":
+            case "CHO_DONG_GOI":
+            case "DANG_DONG_GOI_HOP":
+            case "CHO_LAY_HANG":
+                return 2;
+            case "DANG_GIAO":
+                return 3;
+            case "DA_GIAO":
+            case "HOAN_TAT":
+                return 4;
+            default:
+                return 1;
+        }
+    }
 }
 
-<section class="py-5" style="min-height: 85vh;">
-    <div class="container">
+<section class="trang-ho-so-thanh-vien">
+    <div class="container py-4 khung-ho-so-thanh-vien">
         @if (TempData["ThongBaoHoSo"] != null)
         {
-            <div class="alert alert-warning alert-dismissible fade show border border-warning bg-dark text-warning mb-4" role="alert">
-                <i class="bi bi-stars me-2"></i><strong>@TempData["ThongBaoHoSo"]</strong>
-                <a href="/ThanhToan" class="btn btn-sm btn-vang-kim rounded-pill ms-3 px-3">Đi tới Thanh Toán →</a>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>
+            <div class="thong-bao-ho-so alert alert-dismissible fade show" role="alert">
+                <div class="thong-bao-ho-so-noi-dung">
+                    <i class="bi bi-check2-circle" aria-hidden="true"></i>
+                    <span>@TempData["ThongBaoHoSo"]</span>
+                </div>
+                <a href="/ThanhToan" class="btn-lien-ket-thong-bao">Đi tới thanh toán</a>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng thông báo"></button>
             </div>
         }
 
-        <!-- ========================================================================= -->
-        <!-- KHỐI 1: THẺ THÀNH VIÊN VIP HOÀNG GIA (LOYALTY CARD)                        -->
-        <!-- ========================================================================= -->
-        <div class="card-hoang-gia p-4 mb-4 position-relative overflow-hidden">
-            <div class="row align-items-center g-4">
-                <div class="col-lg-7">
-                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2"
-                         style="background: rgba(212,175,55,0.18); border: 1px solid var(--mau-vang-anh-kim);">
-                        <span class="chu-vang-kim small fw-bold">👑 THẺ THÀNH VIÊN NGUYỆT CÁT VIP</span>
-                        <span class="badge badge-thuong-hang rounded-pill">Hạng @nd.HangTv</span>
-                    </div>
-
-                    <h2 class="font-co-phong display-6 fw-bold chu-vang-kim mb-1">@nd.HoTen</h2>
-                    <div class="text-light opacity-75 small mb-3">
-                        <span class="me-3"><i class="bi bi-telephone-fill chu-vang-kim me-1"></i>@nd.Sdt</span>
-                        <span class="me-3"><i class="bi bi-envelope-fill chu-vang-kim me-1"></i>@nd.Email</span>
-                        <span><i class="bi bi-calendar-check chu-vang-kim me-1"></i>Thành viên từ @nd.NgayTao.ToString("dd/MM/yyyy")</span>
-                    </div>
-
-                    <div class="d-flex flex-wrap gap-2">
-                        <a href="/#tang-tu-chon-hop" class="btn btn-sm btn-vang-kim rounded-pill px-3">
-                            <i class="bi bi-box2-heart-fill me-1"></i>Tự Phối Hộp Quà Mới
-                        </a>
-                        <a href="/ThanhToan" class="btn btn-sm btn-vien-vang rounded-pill px-3">
-                            <i class="bi bi-bag-check-fill me-1"></i>Thanh Toán Giỏ Hàng Hiện Tại
-                        </a>
-                    </div>
-                </div>
-
-                <div class="col-lg-5">
-                    <div class="p-3 rounded border border-warning" style="background: rgba(11, 19, 43, 0.85);">
-                        <div class="row text-center g-2">
-                            <div class="col-4 border-end border-secondary">
-                                <small class="text-secondary d-block">Điểm tích lũy</small>
-                                <strong class="fs-4 chu-vang-kim">@nd.DiemTichLuy.ToString("N0")</strong>
-                                <small class="d-block text-warning" style="font-size: 0.7rem;">≈ @Model.GiaTriQuyDoiDiem.ToString("N0") đ</small>
+        <div class="row g-4">
+            <!-- ================================================================= -->
+            <!-- CỘT TRÁI: THẺ ĐỊNH DANH HỘI VIÊN & MENU ĐIỀU HƯỚNG DỌC              -->
+            <!-- ================================================================= -->
+            <aside class="col-lg-4 col-xl-3">
+                <div class="cot-trai-ho-so">
+                    <!-- Khối đầu: Thẻ Hội Viên Nguyệt Cát -->
+                    <div class="the-hoi-vien-nguyet-cat">
+                        <div class="dau-the-hoi-vien">
+                            <div class="avatar-hoi-vien" aria-hidden="true">@chuCaiDauTen</div>
+                            <div class="ten-hang-hoi-vien">
+                                <h1 class="ten-hoi-vien" title="@nd.HoTen">@nd.HoTen</h1>
+                                <span class="huy-hieu-hang-hoi-vien">Hạng @nd.HangTv</span>
                             </div>
-                            <div class="col-4 border-end border-secondary">
-                                <small class="text-secondary d-block">Đơn đã đặt</small>
-                                <strong class="fs-4 text-info">@Model.LichSuDonHang.Count</strong>
-                                <small class="d-block text-secondary" style="font-size: 0.7rem;">Hóa đơn</small>
+                        </div>
+
+                        <ul class="lien-he-hoi-vien">
+                            <li>
+                                <i class="bi bi-telephone" aria-hidden="true"></i>
+                                <span>@nd.Sdt</span>
+                            </li>
+                            <li>
+                                <i class="bi bi-envelope" aria-hidden="true"></i>
+                                <span class="chu-ngat-dong">@nd.Email</span>
+                            </li>
+                            <li>
+                                <i class="bi bi-calendar3" aria-hidden="true"></i>
+                                <span>Gia nhập @nd.NgayTao.ToString("dd/MM/yyyy")</span>
+                            </li>
+                        </ul>
+
+                        <div class="dai-chi-so-hoi-vien">
+                            <div class="o-chi-so-hoi-vien">
+                                <span class="nhan-chi-so">Điểm tích lũy</span>
+                                <strong class="gia-tri-chi-so">@nd.DiemTichLuy.ToString("N0")</strong>
+                                <span class="phu-chi-so">~@Model.GiaTriQuyDoiDiem.ToString("N0")đ</span>
                             </div>
-                            <div class="col-4">
-                                <small class="text-secondary d-block">Hộp tự phối</small>
-                                <strong class="fs-4 text-success">@Model.DanhSachHopTuChon.Count</strong>
-                                <small class="d-block text-secondary" style="font-size: 0.7rem;">Mẫu độc bản</small>
+                            <div class="o-chi-so-hoi-vien">
+                                <span class="nhan-chi-so">Đơn hàng</span>
+                                <strong class="gia-tri-chi-so">@soDonHang</strong>
+                                <span class="phu-chi-so">đơn</span>
+                            </div>
+                            <div class="o-chi-so-hoi-vien">
+                                <span class="nhan-chi-so">Hộp tự phối</span>
+                                <strong class="gia-tri-chi-so">@soHopTuChon</strong>
+                                <span class="phu-chi-so">mẫu</span>
+                            </div>
+                        </div>
+
+                        <!-- Thanh tiến trình thăng hạng VIP (Tier Progress Bar) -->
+                        <div class="khung-tien-trinh-vip-ho-so mt-3 pt-2">
+                            <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.74rem;">
+                                <span class="fw-semibold" style="color: #F3D078;">Tiến trình hạng VIP</span>
+                                <span class="fw-bold" style="color: #FFFDF9; font-variant-numeric: tabular-nums;">@phanTramTienTrinhVip%</span>
+                            </div>
+                            <div class="thanh-tien-trinh-vip-nen">
+                                <div class="thanh-tien-trinh-vip-vang" style="width: @(phanTramTienTrinhVip)%;"></div>
+                            </div>
+                            <div class="nhac-thang-hang-vip mt-1">
+                                @if (daDatDinhVip)
+                                {
+                                    <span>✨ Đã đạt đỉnh <strong>@tenHangTiepTheo</strong> (Ưu đãi giảm 10% + Quà VIP)</span>
+                                }
+                                else
+                                {
+                                    <span>Còn thiếu <strong>@diemConThieu.ToString("N0")</strong> điểm nữa để thăng hạng <strong>@tenHangTiepTheo</strong></span>
+                                }
                             </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- ========================================================================= -->
-        <!-- THANH ĐIỀU HƯỚNG 3 TAB TIỆN ÍCH THÀNH VIÊN                                -->
-        <!-- ========================================================================= -->
-        <ul class="nav nav-pills nav-fill mb-4 p-2 rounded card-hoang-gia" id="tabHoSoThanhVien" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link rounded-pill fw-semibold @(tabMacDinh == "DON_HANG" ? "active bg-warning text-dark" : "text-light")"
-                        id="btn-tab-donhang" data-bs-toggle="pill" data-bs-target="#pane-donhang" type="button" role="tab">
-                    <i class="bi bi-receipt-cutoff me-1"></i>1. Lịch Sử Đơn Hàng & Thiệp QR 3D (@Model.LichSuDonHang.Count)
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link rounded-pill fw-semibold @(tabMacDinh == "DIA_CHI" ? "active bg-warning text-dark" : "text-light")"
-                        id="btn-tab-diachi" data-bs-toggle="pill" data-bs-target="#pane-diachi" type="button" role="tab">
-                    <i class="bi bi-geo-alt-fill me-1"></i>2. Sổ Địa Chỉ Biếu Tặng Đa Điểm (@Model.DanhSachSoDiaChi.Count)
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link rounded-pill fw-semibold @(tabMacDinh == "HOP_TU_CHON" ? "active bg-warning text-dark" : "text-light")"
-                        id="btn-tab-hoptuchon" data-bs-toggle="pill" data-bs-target="#pane-hoptuchon" type="button" role="tab">
-                    <i class="bi bi-box2-heart-fill me-1"></i>3. Bộ Sưu Tập Hộp Quà Tự Phối Của Tôi (@Model.DanhSachHopTuChon.Count)
-                </button>
-            </li>
-        </ul>
-
-        <div class="tab-content">
-            <!-- ===================================================================== -->
-            <!-- TAB 1: LỊCH SỬ ĐƠN HÀNG & THIỆP QR 3D                                 -->
-            <!-- ===================================================================== -->
-            <div class="tab-pane fade @(tabMacDinh == "DON_HANG" ? "show active" : "")" id="pane-donhang" role="tabpanel">
-                @if (!Model.LichSuDonHang.Any())
-                {
-                    <div class="card-hoang-gia p-5 text-center">
-                        <h5 class="chu-vang-kim mb-2">Bạn chưa có đơn hàng nào</h5>
-                        <p class="text-secondary small mb-3">Hãy trải nghiệm Studio Tự Phối Hộp 3D và gửi tặng Thiệp QR âm nhạc tới người thân!</p>
-                        <div>
-                            <a href="/#tang-tu-chon-hop" class="btn btn-vang-kim rounded-pill px-4">Khám Phá Ngay</a>
+                    <!-- Khối dưới: Menu điều hướng hồ sơ dọc -->
+                    <nav class="menu-ho-so-doc" aria-label="Điều hướng hồ sơ thành viên">
+                        <div class="danh-sach-tab-ho-so" role="tablist" aria-orientation="vertical" id="danhSachTabHoSo">
+                            <button type="button" role="tab"
+                                    class="nut-tab-ho-so @(tabMacDinh == "DON_HANG" ? "active" : "")"
+                                    id="nut-tab-don-hang" data-tab-ho-so="DON_HANG" data-muc-tieu="#tab-don-hang"
+                                    aria-controls="tab-don-hang" aria-selected="@(tabMacDinh == "DON_HANG" ? "true" : "false")"
+                                    onclick="chuyenTabHoSo(this)">
+                                <span>Đơn hàng &amp; Thiệp chúc</span>
+                                <span class="dem-tab-ho-so">@soDonHang</span>
+                            </button>
+                            <button type="button" role="tab"
+                                    class="nut-tab-ho-so @(tabMacDinh == "DIA_CHI" ? "active" : "")"
+                                    id="nut-tab-so-dia-chi" data-tab-ho-so="DIA_CHI" data-muc-tieu="#tab-so-dia-chi"
+                                    aria-controls="tab-so-dia-chi" aria-selected="@(tabMacDinh == "DIA_CHI" ? "true" : "false")"
+                                    onclick="chuyenTabHoSo(this)">
+                                <span>Sổ địa chỉ nhận quà</span>
+                                <span class="dem-tab-ho-so">@soDiaChi</span>
+                            </button>
+                            <button type="button" role="tab"
+                                    class="nut-tab-ho-so @(tabMacDinh == "HOP_TU_CHON" ? "active" : "")"
+                                    id="nut-tab-hop-tu-chon" data-tab-ho-so="HOP_TU_CHON" data-muc-tieu="#tab-hop-tu-chon"
+                                    aria-controls="tab-hop-tu-chon" aria-selected="@(tabMacDinh == "HOP_TU_CHON" ? "true" : "false")"
+                                    onclick="chuyenTabHoSo(this)">
+                                <span>Bộ sưu tập hộp tự phối</span>
+                                <span class="dem-tab-ho-so">@soHopTuChon</span>
+                            </button>
                         </div>
+
+                        <div class="lien-ket-tien-ich-ho-so">
+                            <a href="/#tang-tu-chon-hop">← Tự phối hộp quà mới</a>
+                            <a href="/ThanhToan">Thanh toán giỏ hàng hiện tại</a>
+                        </div>
+                    </nav>
+                </div>
+            </aside>
+
+            <!-- ================================================================= -->
+            <!-- CỘT PHẢI: KHÔNG GIAN NỘI DUNG TỪNG TAB                              -->
+            <!-- ================================================================= -->
+            <div class="col-lg-8 col-xl-9">
+                <!-- ============================================================= -->
+                <!-- TAB 1: ĐƠN HÀNG & THIỆP CHÚC                                   -->
+                <!-- ============================================================= -->
+                <div class="pane-ho-so @(tabMacDinh == "DON_HANG" ? "dang-hien" : "")" id="tab-don-hang" role="tabpanel" aria-labelledby="nut-tab-don-hang">
+                    <div class="dau-pane-ho-so">
+                        <h2 class="tieu-de-pane-ho-so">Đơn hàng &amp; Thiệp chúc</h2>
+                        <p class="mo-ta-pane-ho-so">Theo dõi tiến độ từng lễ hộp và mở lại thiệp chúc 3D đã gửi người nhận.</p>
                     </div>
-                }
-                else
-                {
-                    @foreach (var dh in Model.LichSuDonHang)
+
+                    @if (!Model.LichSuDonHang.Any())
                     {
-                        string mauTrangThai = dh.TrangThaiDh == "HOAN_TAT"
-                            ? "bg-success"
-                            : dh.TrangThaiDh == "DA_HUY"
-                                ? "bg-danger"
-                                : "bg-warning text-dark";
-
-                        <div class="card-hoang-gia p-4 mb-3">
-                            <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom border-secondary pb-3 mb-3 gap-2">
-                                <div>
-                                    <span class="badge @mauTrangThai rounded-pill px-3 py-1 me-2">@dh.TenTrangThaiDhHienThi (@dh.TrangThaiDh)</span>
-                                    <strong class="fs-5 chu-vang-kim">Mã đơn: #@dh.MaTraCuuDh</strong>
-                                    <span class="text-secondary small ms-2">• Đặt ngày @dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</span>
-                                </div>
-                                <div class="text-end">
-                                    <span class="text-secondary small me-2">@dh.PhuongThucTt (@dh.TenTrangThaiTtHienThi)</span>
-                                    <strong class="fs-5 chu-vang-kim">@dh.TongThanhToanCuoi.ToString("N0") đ</strong>
-                                    <a href="/ThanhToan/ThanhCong?maDon=@dh.MaTraCuuDh" class="btn btn-sm btn-vien-vang rounded-pill ms-2 px-3">
-                                        Xem Biên Lai & QR
-                                    </a>
-                                </div>
-                            </div>
-
-                            <div class="row g-3">
-                                <!-- Cột trái: Danh sách món & sơ đồ ô bánh -->
-                                <div class="col-lg-7">
-                                    <h6 class="text-warning small fw-bold text-uppercase mb-2">Chi tiết lễ hộp & bánh đã đặt:</h6>
-                                    @foreach (var ct in dh.ChiTietDonHangs)
-                                    {
-                                        <div class="p-2 mb-2 rounded bg-dark border border-secondary">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <strong class="text-light small">@ct.TenSanPhamLuuCung (x@(ct.SoLuong))</strong>
-                                                <span class="chu-vang-kim small fw-bold">@ct.ThanhTien.ToString("N0") đ</span>
-                                            </div>
-                                            @if (!string.IsNullOrWhiteSpace(ct.CauHinhHopJson))
-                                            {
-                                                try
-                                                {
-                                                    var mangO = Newtonsoft.Json.Linq.JArray.Parse(ct.CauHinhHopJson);
-                                                    <div class="d-flex flex-wrap gap-1 mt-1">
-                                                        @foreach (var o in mangO)
-                                                        {
-                                                            int viTri = o.Value<int?>("ViTriOTrongHop") ?? 1;
-                                                            string tenBanh = o.Value<string>("TenBanh") ?? "Bánh Trung Thu";
-                                                            decimal donGia = o.Value<decimal?>("DonGia") ?? 0m;
-                                                            <span class="badge bg-secondary text-light fw-normal" style="font-size: 0.7rem;">
-                                                                [Ô @viTri: @tenBanh - @donGia.ToString("N0")đ]
-                                                            </span>
-                                                        }
-                                                    </div>
-                                                }
-                                                catch { }
-                                            }
-                                        </div>
-                                    }
-                                </div>
-
-                                <!-- Cột phải: Các đợt giao đa điểm & nút mở Thiệp QR 3D -->
-                                <div class="col-lg-5">
-                                    <h6 class="text-info small fw-bold text-uppercase mb-2">Điểm nhận quà & Thiệp QR 3D (@dh.DotGiaoHangDaDiems.Count điểm):</h6>
-                                    @foreach (var dot in dh.DotGiaoHangDaDiems)
-                                    {
-                                        <div class="p-2 mb-2 rounded bg-dark border border-secondary small">
-                                            <div class="d-flex justify-content-between">
-                                                <strong class="text-warning">📍 @dot.TenNguoiNhan (@dot.SdtnguoiNhan)</strong>
-                                                <span class="badge bg-dark border border-info text-info">@dot.TrangThaiGiao</span>
-                                            </div>
-                                            <div class="text-secondary">@dot.DiaChiGiaoChiTiet</div>
-                                            <div class="text-secondary">Hẹn giao: @dot.NgayHenGiao.ToString("dd/MM/yyyy") (@dot.KhungGioGiao)</div>
-
-                                            @if (dot.CoKemThiepQr && !string.IsNullOrEmpty(dot.MaTokenThiepQr))
-                                            {
-                                                <div class="mt-2 pt-2 border-top border-secondary d-flex justify-content-between align-items-center">
-                                                    <span class="text-light fst-italic" style="font-size: 0.75rem;">
-                                                        💌 Đã mở xem: <strong>@dot.SoLanMoThiep lần</strong>
-                                                    </span>
-                                                    <a href="/Thiep3D/Xem/@dot.MaTokenThiepQr" target="_blank" class="btn btn-sm btn-vang-kim rounded-pill py-0 px-3">
-                                                        🌕 Mở Thiệp QR 3D
-                                                    </a>
-                                                </div>
-                                            }
-                                        </div>
-                                    }
-                                </div>
-                            </div>
+                        <div class="khung-trong-ho-so">
+                            <i class="bi bi-receipt" aria-hidden="true"></i>
+                            <h3>Bạn chưa có đơn hàng nào</h3>
+                            <p>Tự tay phối một lễ hộp và gửi kèm thiệp chúc 3D cho người thân.</p>
+                            <a href="/#tang-tu-chon-hop" class="btn btn-do-son-mai rounded-pill px-4">Tự phối hộp quà</a>
                         </div>
                     }
-                }
-            </div>
-
-            <!-- ===================================================================== -->
-            <!-- TAB 2: SỔ ĐỊA CHỈ BIẾU TẶNG ĐA ĐIỂM (SoDiaChi)                        -->
-            <!-- ===================================================================== -->
-            <div class="tab-pane fade @(tabMacDinh == "DIA_CHI" ? "show active" : "")" id="pane-diachi" role="tabpanel">
-                <div class="row g-4">
-                    <!-- Danh sách địa chỉ đã lưu -->
-                    <div class="col-lg-7">
-                        <div class="card-hoang-gia p-4 h-100">
-                            <h5 class="font-co-phong fs-4 chu-vang-kim border-bottom border-secondary pb-2 mb-3">
-                                <i class="bi bi-journal-bookmark-fill me-2"></i>Danh Sách Địa Chỉ Biếu Tặng Của Tôi
-                            </h5>
-
-                            @if (!Model.DanhSachSoDiaChi.Any())
+                    else
+                    {
+                        <div class="danh-sach-don-ho-so">
+                            @foreach (var dh in Model.LichSuDonHang)
                             {
-                                <div class="text-center text-secondary py-4">
-                                    Chưa có địa chỉ nào trong sổ. Hãy thêm địa chỉ người thân/đối tác ở khung bên phải để chọn nhanh khi thanh toán đa điểm!
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="d-flex flex-column gap-3">
-                                    @foreach (var dc in Model.DanhSachSoDiaChi)
+                                var trangThaiDon = AnhXaTrangThaiDonHang(dh.TrangThaiDh);
+                                int buocTienTrinh = XacDinhBuocTienTrinhDon(dh.TrangThaiDh);
+
+                                <article class="the-don-hang-ho-so">
+                                    <header class="dau-the-don-hang">
+                                        <div class="thong-tin-ma-don">
+                                            <strong class="ma-don-ho-so">#@dh.MaTraCuuDh</strong>
+                                            <span class="ngay-dat-ho-so">@dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</span>
+                                            <span class="huy-hieu-trang-thai-don @trangThaiDon.LopHuyHieu">@trangThaiDon.TenHienThi</span>
+                                        </div>
+                                        <div class="thong-tin-thanh-toan-don">
+                                            <span class="hinh-thuc-tt-ho-so">@AnhXaHinhThucThanhToan(dh.PhuongThucTt)</span>
+                                            <strong class="tong-tien-ho-so">@dh.TongThanhToanCuoi.ToString("N0") đ</strong>
+                                            <button type="button" class="nut-vien-ho-so nut-dat-lai-don-ho-so" onclick="datLaiDonHangCu(@dh.MaDh, this)">
+                                                ↻ Đặt lại đơn này
+                                            </button>
+                                            <a href="/ThanhToan/ThanhCong?maDon=@dh.MaTraCuuDh" class="nut-vien-ho-so">Xem biên lai &amp; QR</a>
+                                        </div>
+                                    </header>
+
+                                    @if (buocTienTrinh == 0)
                                     {
-                                        <div class="p-3 rounded bg-dark border @(dc.LaMacDinh ? "border-warning" : "border-secondary") d-flex justify-content-between align-items-start gap-3">
-                                            <div>
-                                                <div class="d-flex align-items-center gap-2 mb-1">
-                                                    <span class="badge bg-warning text-dark rounded-pill">🏷️ @(dc.NhanDiaChi ?? "Địa chỉ biếu tặng")</span>
-                                                    <strong class="text-light">@dc.TenNguoiNhan (@dc.SdtnguoiNhan)</strong>
-                                                    @if (dc.LaMacDinh)
+                                        <div class="timeline-don-hang-4-buoc timeline-don-da-huy">
+                                            <span class="nhan-don-da-huy"><i class="bi bi-x-circle me-1"></i>Đơn hàng đã hủy</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="timeline-don-hang-4-buoc" aria-label="Tiến độ đơn hàng 4 bước">
+                                            <div class="buoc-timeline @(buocTienTrinh >= 1 ? "da-hoan-thanh" : "")">
+                                                <span class="cham-buoc-timeline">@(buocTienTrinh >= 1 ? "✓" : "1")</span>
+                                                <span class="ten-buoc-timeline">1. Đặt đơn</span>
+                                            </div>
+                                            <div class="duong-noi-timeline @(buocTienTrinh >= 2 ? "da-hoan-thanh" : "")"></div>
+                                            <div class="buoc-timeline @(buocTienTrinh >= 2 ? "da-hoan-thanh" : "")">
+                                                <span class="cham-buoc-timeline">@(buocTienTrinh >= 2 ? "✓" : "2")</span>
+                                                <span class="ten-buoc-timeline">2. Chuẩn bị lễ hộp</span>
+                                            </div>
+                                            <div class="duong-noi-timeline @(buocTienTrinh >= 3 ? "da-hoan-thanh" : "")"></div>
+                                            <div class="buoc-timeline @(buocTienTrinh >= 3 ? "da-hoan-thanh" : "")">
+                                                <span class="cham-buoc-timeline">@(buocTienTrinh >= 3 ? "✓" : "3")</span>
+                                                <span class="ten-buoc-timeline">3. Đang giao quà</span>
+                                            </div>
+                                            <div class="duong-noi-timeline @(buocTienTrinh >= 4 ? "da-hoan-thanh" : "")"></div>
+                                            <div class="buoc-timeline @(buocTienTrinh >= 4 ? "da-hoan-thanh" : "")">
+                                                <span class="cham-buoc-timeline">@(buocTienTrinh >= 4 ? "✓" : "4")</span>
+                                                <span class="ten-buoc-timeline">4. Hoàn tất</span>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <div class="than-the-don-hang">
+                                        <div class="row g-3">
+                                            <!-- Cột trái: Sản phẩm đã đặt -->
+                                            <div class="col-md-7">
+                                                <h3 class="nhan-cot-don-hang">Sản phẩm đã đặt</h3>
+                                                <div class="d-flex flex-column gap-2">
+                                                    @foreach (var ct in dh.ChiTietDonHangs)
                                                     {
-                                                        <span class="badge badge-thuong-hang rounded-pill">Mặc định</span>
+                                                        <div class="mon-don-hang-ho-so">
+                                                            <div class="dong-ten-mon-don">
+                                                                <span class="ten-mon-don-ho-so">@ct.TenSanPhamLuuCung <span class="so-luong-mon-don">× @ct.SoLuong</span></span>
+                                                                <span class="gia-mon-don-ho-so">@ct.ThanhTien.ToString("N0") đ</span>
+                                                            </div>
+                                                            @if (!string.IsNullOrWhiteSpace(ct.CauHinhHopJson))
+                                                            {
+                                                                Newtonsoft.Json.Linq.JArray? mangO = null;
+                                                                try
+                                                                {
+                                                                    mangO = Newtonsoft.Json.Linq.JArray.Parse(ct.CauHinhHopJson);
+                                                                }
+                                                                catch { mangO = null; }
+
+                                                                if (mangO != null && mangO.Count > 0)
+                                                                {
+                                                                    <div class="bang-thanh-phan-hop-2-cot">
+                                                                        @foreach (var o in mangO.OrderBy(x => x.Value<int?>("ViTriOTrongHop") ?? 0))
+                                                                        {
+                                                                            int viTri = o.Value<int?>("ViTriOTrongHop") ?? 1;
+                                                                            string tenBanh = o.Value<string>("TenBanh") ?? "Bánh Trung Thu";
+                                                                            <div class="dong-thanh-phan-hop">
+                                                                                <span class="cot-o-banh">Ô @viTri</span>
+                                                                                <span class="cot-ten-banh">@tenBanh</span>
+                                                                            </div>
+                                                                        }
+                                                                    </div>
+                                                                }
+                                                            }
+                                                        </div>
                                                     }
-                                                </div>
-                                                <div class="small text-secondary">
-                                                    @dc.DiaChiCuThe, @dc.PhuongXa, @dc.QuanHuyen, @dc.TinhThanh
                                                 </div>
                                             </div>
 
+                                            <!-- Cột phải: Thông tin nhận quà & Thiệp 3D -->
+                                            <div class="col-md-5">
+                                                <h3 class="nhan-cot-don-hang">Thông tin nhận quà</h3>
+                                                <div class="d-flex flex-column gap-2">
+                                                    @foreach (var dot in dh.DotGiaoHangDaDiems)
+                                                    {
+                                                        var trangThaiDot = AnhXaTrangThaiDonHang(dot.TrangThaiGiao);
+
+                                                        <div class="diem-nhan-qua-ho-so">
+                                                            <div class="dong-nguoi-nhan-qua">
+                                                                <strong class="ten-nguoi-nhan-qua">@dot.TenNguoiNhan</strong>
+                                                                <span class="huy-hieu-trang-thai-don huy-hieu-nho @trangThaiDot.LopHuyHieu">@trangThaiDot.TenHienThi</span>
+                                                            </div>
+                                                            <div class="sdt-nguoi-nhan-qua">@dot.SdtnguoiNhan</div>
+                                                            <div class="dia-chi-nhan-qua">@dot.DiaChiGiaoChiTiet</div>
+                                                            <div class="lich-hen-nhan-qua">
+                                                                <i class="bi bi-clock" aria-hidden="true"></i>
+                                                                Hẹn giao @dot.NgayHenGiao.ToString("dd/MM/yyyy")@(string.IsNullOrWhiteSpace(dot.KhungGioGiao) ? "" : $" • {dot.KhungGioGiao}")
+                                                            </div>
+
+                                                            @if (dh.ThiepChucMung3Ds.Any() && dot.CoKemThiepQr && !string.IsNullOrWhiteSpace(dot.MaTokenThiepQr))
+                                                            {
+                                                                <a href="/Thiep3D/Xem/@dot.MaTokenThiepQr" target="_blank" rel="noopener" class="nut-mo-thiep-ho-so">
+                                                                    Mở Thiệp QR 3D
+                                                                </a>
+                                                            }
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- ============================================================= -->
+                <!-- TAB 2: SỔ ĐỊA CHỈ NHẬN QUÀ                                     -->
+                <!-- ============================================================= -->
+                <div class="pane-ho-so @(tabMacDinh == "DIA_CHI" ? "dang-hien" : "")" id="tab-so-dia-chi" role="tabpanel" aria-labelledby="nut-tab-so-dia-chi">
+                    <div class="dau-pane-ho-so dau-pane-co-nut">
+                        <div>
+                            <h2 class="tieu-de-pane-ho-so">Sổ địa chỉ nhận quà</h2>
+                            <p class="mo-ta-pane-ho-so">Lưu sẵn địa chỉ người thân, đối tác để chọn nhanh khi giao quà nhiều điểm.</p>
+                        </div>
+                        <button type="button" class="btn btn-do-son-mai rounded-pill px-3 nut-khong-ep"
+                                data-bs-toggle="collapse" data-bs-target="#khungFormThemDiaChi"
+                                aria-expanded="@(soDiaChi == 0 ? "true" : "false")" aria-controls="khungFormThemDiaChi">
+                            + Thêm địa chỉ nhận quà mới
+                        </button>
+                    </div>
+
+                    <div class="collapse @(soDiaChi == 0 ? "show" : "")" id="khungFormThemDiaChi">
+                        <div class="khung-form-dia-chi-ho-so">
+                            <form asp-controller="TaiKhoan" asp-action="ThemDiaChiMoi" method="post">
+                                @Html.AntiForgeryToken()
+
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="nhan-input-ho-so" for="txtNhanDiaChi">Nhãn gợi nhớ</label>
+                                        <input type="text" id="txtNhanDiaChi" name="nhanDiaChi" class="form-control input-ho-so"
+                                               placeholder="VD: Nhà riêng, Công ty, Biếu Ông Bà Nội" required />
+                                    </div>
+                                    <div class="col-md-7">
+                                        <label class="nhan-input-ho-so" for="txtTenNguoiNhan">Họ tên người nhận</label>
+                                        <input type="text" id="txtTenNguoiNhan" name="tenNguoiNhan" class="form-control input-ho-so"
+                                               placeholder="Nhập tên người nhận" required />
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label class="nhan-input-ho-so" for="txtSdtNguoiNhan">Số điện thoại</label>
+                                        <input type="tel" id="txtSdtNguoiNhan" name="sdtNguoiNhan" class="form-control input-ho-so"
+                                               placeholder="09xx xxx xxx" required />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="nhan-input-ho-so" for="txtTinhThanh">Tỉnh / Thành</label>
+                                        <input type="text" id="txtTinhThanh" name="tinhThanh" class="form-control input-ho-so"
+                                               value="TP. Hồ Chí Minh" required />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="nhan-input-ho-so" for="txtQuanHuyen">Quận / Huyện</label>
+                                        <input type="text" id="txtQuanHuyen" name="quanHuyen" class="form-control input-ho-so"
+                                               placeholder="Quận 1" required />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="nhan-input-ho-so" for="txtPhuongXa">Phường / Xã</label>
+                                        <input type="text" id="txtPhuongXa" name="phuongXa" class="form-control input-ho-so"
+                                               placeholder="Phường Bến Nghé" required />
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="nhan-input-ho-so" for="txtDiaChiCuThe">Số nhà, tên đường</label>
+                                        <input type="text" id="txtDiaChiCuThe" name="diaChiCuThe" class="form-control input-ho-so"
+                                               placeholder="VD: 128 Nguyễn Huệ" required />
+                                    </div>
+                                </div>
+
+                                <div class="dong-cuoi-form-dia-chi">
+                                    <div class="form-check mb-0">
+                                        <input class="form-check-input" type="checkbox" name="laMacDinh" value="true" id="chkDiaChiMacDinh" />
+                                        <label class="form-check-label" for="chkDiaChiMacDinh">Đặt làm địa chỉ mặc định</label>
+                                    </div>
+                                    <button type="submit" class="btn btn-do-son-mai rounded-pill px-4 nut-khong-ep">
+                                        Lưu vào sổ địa chỉ
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    @if (!Model.DanhSachSoDiaChi.Any())
+                    {
+                        <div class="khung-trong-ho-so khung-trong-gon">
+                            <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                            <h3>Sổ địa chỉ đang trống</h3>
+                            <p>Thêm địa chỉ đầu tiên ở biểu mẫu phía trên để chọn nhanh khi thanh toán.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row g-3">
+                            @foreach (var dc in Model.DanhSachSoDiaChi)
+                            {
+                                <div class="col-md-6">
+                                    <div class="the-dia-chi-ho-so @(dc.LaMacDinh ? "la-mac-dinh" : "")">
+                                        <div class="dau-the-dia-chi">
+                                            <div class="nhom-nhan-dia-chi">
+                                                <span class="nhan-goi-nho-dia-chi">@(dc.NhanDiaChi ?? "Địa chỉ biếu tặng")</span>
+                                                @if (dc.LaMacDinh)
+                                                {
+                                                    <span class="huy-hieu-mac-dinh">Mặc định</span>
+                                                }
+                                            </div>
                                             <form asp-controller="TaiKhoan" asp-action="XoaDiaChi" method="post"
                                                   onsubmit="return confirm('Xóa địa chỉ này khỏi Sổ địa chỉ?');">
                                                 @Html.AntiForgeryToken()
                                                 <input type="hidden" name="maDc" value="@dc.MaDc" />
-                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" title="Xóa địa chỉ">
-                                                    <i class="bi bi-trash3"></i>
+                                                <button type="submit" class="nut-xoa-dia-chi" aria-label="Xóa địa chỉ @dc.TenNguoiNhan">
+                                                    Xóa
                                                 </button>
                                             </form>
                                         </div>
-                                    }
+                                        <div class="ten-sdt-dia-chi">
+                                            <strong>@dc.TenNguoiNhan</strong>
+                                            <span>@dc.SdtnguoiNhan</span>
+                                        </div>
+                                        <div class="dia-chi-chi-tiet-ho-so">
+                                            @dc.DiaChiCuThe, @dc.PhuongXa, @dc.QuanHuyen, @dc.TinhThanh
+                                        </div>
+                                    </div>
                                 </div>
                             }
                         </div>
-                    </div>
-
-                    <!-- Form thêm địa chỉ biếu tặng mới -->
-                    <div class="col-lg-5">
-                        <div class="card-hoang-gia p-4">
-                            <h5 class="font-co-phong fs-4 chu-vang-kim border-bottom border-secondary pb-2 mb-3">
-                                <i class="bi bi-plus-circle-fill me-2"></i>Thêm Địa Chỉ Nhận Quà Mới
-                            </h5>
-
-                            <form asp-controller="TaiKhoan" asp-action="ThemDiaChiMoi" method="post">
-                                @Html.AntiForgeryToken()
-
-                                <div class="mb-2">
-                                    <label class="form-label small text-warning">Nhãn gợi nhớ (VD: Biếu Ông Bà Nội, Biếu Sếp Bảo)</label>
-                                    <input type="text" name="nhanDiaChi" class="form-control bg-dark text-light border-secondary"
-                                           placeholder="VD: Biếu Ông Bà Nội" required />
-                                </div>
-
-                                <div class="row g-2 mb-2">
-                                    <div class="col-md-7">
-                                        <label class="form-label small text-warning">Họ tên người nhận *</label>
-                                        <input type="text" name="tenNguoiNhan" class="form-control bg-dark text-light border-secondary"
-                                               placeholder="Nhập tên người nhận..." required />
-                                    </div>
-                                    <div class="col-md-5">
-                                        <label class="form-label small text-warning">SĐT người nhận *</label>
-                                        <input type="text" name="sdtNguoiNhan" class="form-control bg-dark text-light border-secondary"
-                                               placeholder="09xx..." required />
-                                    </div>
-                                </div>
-
-                                <div class="row g-2 mb-2">
-                                    <div class="col-md-4">
-                                        <label class="form-label small text-warning">Tỉnh / Thành</label>
-                                        <input type="text" name="tinhThanh" class="form-control bg-dark text-light border-secondary"
-                                               value="TP. Hồ Chí Minh" required />
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label small text-warning">Quận / Huyện</label>
-                                        <input type="text" name="quanHuyen" class="form-control bg-dark text-light border-secondary"
-                                               placeholder="Quận 1" required />
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label small text-warning">Phường / Xã</label>
-                                        <input type="text" name="phuongXa" class="form-control bg-dark text-light border-secondary"
-                                               placeholder="Phường Bến Nghé" required />
-                                    </div>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label small text-warning">Số nhà, tên đường cụ thể *</label>
-                                    <input type="text" name="diaChiCuThe" class="form-control bg-dark text-light border-secondary"
-                                           placeholder="VD: 128 Nguyễn Huệ" required />
-                                </div>
-
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="checkbox" name="laMacDinh" value="true" id="chkDiaChiMacDinh" />
-                                    <label class="form-check-label small text-light" for="chkDiaChiMacDinh">
-                                        Đặt làm địa chỉ nhận quà mặc định
-                                    </label>
-                                </div>
-
-                                <button type="submit" class="btn btn-vang-kim w-100 rounded-pill py-2">
-                                    <i class="bi bi-save2-fill me-1"></i>Lưu Vào Sổ Địa Chỉ Biếu Tặng
-                                </button>
-                            </form>
-                        </div>
-                    </div>
+                    }
                 </div>
-            </div>
 
-            <!-- ===================================================================== -->
-            <!-- TAB 3: BỘ SƯU TẬP HỘP QUÀ TỰ PHỐI CỦA TÔI (HopQuaTuChon)              -->
-            <!-- ===================================================================== -->
-            <div class="tab-pane fade @(tabMacDinh == "HOP_TU_CHON" ? "show active" : "")" id="pane-hoptuchon" role="tabpanel">
-                @if (!Model.DanhSachHopTuChon.Any())
-                {
-                    <div class="card-hoang-gia p-5 text-center">
-                        <h5 class="chu-vang-kim mb-2">Bạn chưa lưu mẫu hộp quà tự phối nào</h5>
-                        <p class="text-secondary small mb-3">Mọi hộp quà bạn tự tay phối ở Tầng 3 (kể cả khi phối lúc chưa đăng nhập rồi gộp giỏ) đều được lưu tại đây để tái sử dụng nhanh!</p>
-                        <div>
-                            <a href="/#tang-tu-chon-hop" class="btn btn-vang-kim rounded-pill px-4">Tự Phối Hộp Quà Ngay</a>
-                        </div>
+                <!-- ============================================================= -->
+                <!-- TAB 3: BỘ SƯU TẬP HỘP TỰ PHỐI                                  -->
+                <!-- ============================================================= -->
+                <div class="pane-ho-so @(tabMacDinh == "HOP_TU_CHON" ? "dang-hien" : "")" id="tab-hop-tu-chon" role="tabpanel" aria-labelledby="nut-tab-hop-tu-chon">
+                    <div class="dau-pane-ho-so">
+                        <h2 class="tieu-de-pane-ho-so">Bộ sưu tập hộp tự phối</h2>
+                        <p class="mo-ta-pane-ho-so">Những lễ hộp bạn đã tự tay phối. Đặt lại chỉ với một lần bấm.</p>
                     </div>
-                }
-                else
-                {
-                    <div class="row g-4">
-                        @foreach (var hop in Model.DanhSachHopTuChon)
-                        {
-                            <div class="col-md-6">
-                                <div class="card-hoang-gia p-4 h-100 d-flex flex-column justify-content-between">
-                                    <div>
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <div>
-                                                <span class="badge bg-warning text-dark rounded-pill mb-1">
-                                                    🎁 @(hop.MaVhNavigation?.TenVoHop ?? "Hộp Quà Nghệ Thuật")
-                                                </span>
-                                                <h5 class="font-co-phong fs-4 chu-vang-kim mb-0">@hop.TenHopKhachDat</h5>
-                                            </div>
-                                            <span class="badge bg-dark border border-warning text-warning">@hop.MaBamCauHinh</span>
-                                        </div>
 
-                                        <div class="small text-secondary mb-3">
-                                            Thiết kế ngày @hop.NgayTao.ToString("dd/MM/yyyy HH:mm") • Tổng năng lượng: <strong class="text-info">@hop.TongCaloHop.ToString("N0") Kcal</strong>
-                                        </div>
-
-                                        <div class="p-3 rounded bg-dark border border-secondary mb-3">
-                                            <small class="text-warning fw-bold d-block mb-2">Sơ đồ các vị bánh trong khay:</small>
-                                            <div class="d-flex flex-wrap gap-1">
-                                                @foreach (var ctHop in hop.ChiTietHopTuChons.OrderBy(c => c.ViTriOtrongHop))
-                                                {
-                                                    <span class="badge bg-secondary text-light px-2 py-1">
-                                                        [Ô @ctHop.ViTriOtrongHop: @(ctHop.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu") - @ctHop.DonGiaBanhLucChon.ToString("N0")đ]
-                                                    </span>
-                                                }
+                    @if (!Model.DanhSachHopTuChon.Any())
+                    {
+                        <div class="khung-trong-ho-so">
+                            <i class="bi bi-box2-heart" aria-hidden="true"></i>
+                            <h3>Bạn chưa lưu mẫu hộp tự phối nào</h3>
+                            <p>Mỗi hộp bạn phối ở trang chủ sẽ được lưu tại đây để đặt lại nhanh.</p>
+                            <a href="/#tang-tu-chon-hop" class="btn btn-do-son-mai rounded-pill px-4">Tự phối hộp quà</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row g-3">
+                            @foreach (var hop in Model.DanhSachHopTuChon)
+                            {
+                                <div class="col-md-6">
+                                    <div class="the-hop-tu-phoi-ho-so">
+                                        <div class="dau-the-hop-tu-phoi">
+                                            <span class="loai-vo-hop-ho-so">@(hop.MaVhNavigation?.TenVoHop ?? "Hộp Quà Nghệ Thuật")</span>
+                                            <h3 class="ten-hop-tu-phoi-ho-so">@hop.TenHopKhachDat</h3>
+                                            <div class="thong-so-hop-tu-phoi">
+                                                <span>Phối ngày @hop.NgayTao.ToString("dd/MM/yyyy")</span>
+                                                <span class="cham-ngan-cach" aria-hidden="true">•</span>
+                                                <span>@hop.TongCaloHop.ToString("N0") Kcal</span>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div class="d-flex justify-content-between align-items-center pt-3 border-top border-secondary">
-                                        <div>
-                                            <small class="text-secondary d-block">Đơn giá trọn hộp:</small>
-                                            <strong class="fs-5 chu-vang-kim">@hop.TongGiaMotHop.ToString("N0") đ</strong>
+                                        <div class="bang-thanh-phan-hop-2-cot">
+                                            @foreach (var ctHop in hop.ChiTietHopTuChons.OrderBy(c => c.ViTriOtrongHop))
+                                            {
+                                                <div class="dong-thanh-phan-hop">
+                                                    <span class="cot-o-banh">Ô @ctHop.ViTriOtrongHop</span>
+                                                    <span class="cot-ten-banh">@(ctHop.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu")</span>
+                                                </div>
+                                            }
                                         </div>
 
-                                        <form asp-controller="TaiKhoan" asp-action="DatLaiHopTuChon" method="post">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="maHopTc" value="@hop.MaHopTc" />
-                                            <button type="submit" class="btn btn-vang-kim rounded-pill px-3">
-                                                🛒 Đặt lại mẫu hộp này vào giỏ
-                                            </button>
-                                        </form>
+                                        <div class="chan-the-hop-tu-phoi">
+                                            <div class="gia-hop-tu-phoi">
+                                                <span>Giá trọn hộp</span>
+                                                <strong>@hop.TongGiaMotHop.ToString("N0") đ</strong>
+                                            </div>
+                                            <form asp-controller="TaiKhoan" asp-action="DatLaiHopTuChon" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="maHopTc" value="@hop.MaHopTc" />
+                                                <button type="submit" class="btn btn-do-son-mai rounded-pill px-3 nut-khong-ep">
+                                                    Đặt lại mẫu hộp này
+                                                </button>
+                                            </form>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        }
-                    </div>
-                }
+                            }
+                        </div>
+                    }
+                </div>
             </div>
         </div>
     </div>
 </section>
-

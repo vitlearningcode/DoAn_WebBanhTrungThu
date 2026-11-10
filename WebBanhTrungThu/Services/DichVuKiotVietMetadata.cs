@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using WebBanhTrungThu.Models.Entities;
 
 namespace WebBanhTrungThu.Services
@@ -61,11 +62,97 @@ namespace WebBanhTrungThu.Services
 
         public Dictionary<string, KiotItemMeta> Items { get; set; } = new();
         public Dictionary<int, KiotDonHangMeta> DonHangs { get; set; } = new();
+        public CauHinhThanhToanQr CauHinhQr { get; set; } = new();
+        public List<PhieuThuChiKiot> DanhSachPhieuThuChi { get; set; } = new();
+    }
+
+    public class CauHinhThanhToanQr
+    {
+        public string SoTaiKhoanMoMo { get; set; } = "0814585526";
+        public string SoDienThoaiHienThi { get; set; } = "0814 585 526";
+        public string TenChuTaiKhoan { get; set; } = "LE MINH DUC";
+        public string TenNganHangVi { get; set; } = "MOMO";
+        public string MaBinNganHang { get; set; } = "970422";
+        public string CuPhapChuyenKhoan { get; set; } = "NGUYETCAT {MaTraCuuDh}";
+        public int ThoiGianChoPhut { get; set; } = 15;
+
+        [JsonIgnore]
+        public string MaNganHang
+        {
+            get => TenNganHangVi;
+            set => TenNganHangVi = value;
+        }
+
+        [JsonIgnore]
+        public string MaBinVietQr
+        {
+            get => MaBinNganHang;
+            set => MaBinNganHang = value;
+        }
+
+        [JsonIgnore]
+        public string MauNoiDungCk
+        {
+            get => CuPhapChuyenKhoan;
+            set => CuPhapChuyenKhoan = value;
+        }
+    }
+
+    public class PhieuThuChiKiot
+    {
+        public string MaPhieu { get; set; } = string.Empty;
+        public int? MaDh { get; set; }
+        public string MaTraCuuDh { get; set; } = string.Empty;
+        public string LoaiPhieu { get; set; } = "THU";
+        public string PhuongThuc { get; set; } = "MOMO_QR";
+        public decimal SoTien { get; set; }
+        public string NoiDung { get; set; } = string.Empty;
+        public string NguoiNopNhan { get; set; } = string.Empty;
+        public string SdtNguoiNopNhan { get; set; } = string.Empty;
+        public DateTime ThoiGianTao { get; set; } = DateTime.Now;
+
+        [JsonIgnore]
+        public int? MaDonHang
+        {
+            get => MaDh;
+            set => MaDh = value;
+        }
+
+        [JsonIgnore]
+        public DateTime ThoiGian
+        {
+            get => ThoiGianTao;
+            set => ThoiGianTao = value;
+        }
+    }
+
+    public class NhatKyTruLoFefo
+    {
+        public int MaLo { get; set; }
+        public int MaBanh { get; set; }
+        public int SoLuongDaTru { get; set; }
+    }
+
+    public class NhatKyTruVoHop
+    {
+        public int MaVh { get; set; }
+        public int SoLuongDaTru { get; set; }
+    }
+
+    public class ThongTinThiep3DMeta
+    {
+        public string MaTokenThiepQr { get; set; } = string.Empty;
+        public string TenNguoiNhanThiep { get; set; } = string.Empty;
+        public string TenNguoiGuiThiep { get; set; } = string.Empty;
+        public string? LoiChucThiep { get; set; }
+        public string? MauGiaoDienThiep { get; set; }
     }
 
     public class KiotDonHangMeta
     {
         public int MaDh { get; set; }
+        public string KenhBan { get; set; } = "WEB_ONLINE";
+        public decimal? SoTienKhachDaTra { get; set; }
         public string? MaNganHangHoan { get; set; }
         public string? SoTaiKhoanHoan { get; set; }
         public string? TenChuTkHoan { get; set; }
@@ -73,6 +160,18 @@ namespace WebBanhTrungThu.Services
         public string? GhiChuDieuChinhAdmin { get; set; }
         public string? ThoiGianCapNhatCuoi { get; set; }
         public string? NguoiCapNhatCuoi { get; set; }
+        public DateTime? HanThanhToan { get; set; }
+        public bool DaRollbackKho { get; set; }
+        public List<NhatKyTruLoFefo> DanhSachLoDaTru { get; set; } = new();
+        public List<NhatKyTruVoHop> DanhSachVoHopDaTru { get; set; } = new();
+        public Dictionary<string, ThongTinThiep3DMeta> Thiep3DTheoToken { get; set; } = new();
+
+        [JsonIgnore]
+        public bool DaHoanKhoDoHetHan
+        {
+            get => DaRollbackKho;
+            set => DaRollbackKho = value;
+        }
     }
 
     public class DichVuKiotVietMetadata
@@ -255,8 +354,9 @@ namespace WebBanhTrungThu.Services
             }
         }
 
-        public void GanMetadataChoDonHang(DonHang dh, KiotMetadataStore store)
+        public void GanMetadataChoDonHang(DonHang dh, KiotMetadataStore? store = null)
         {
+            store ??= DocDuLieu();
             if (store.DonHangs != null && store.DonHangs.TryGetValue(dh.MaDh, out var meta))
             {
                 dh.MaNganHangHoan = meta.MaNganHangHoan;
@@ -266,7 +366,35 @@ namespace WebBanhTrungThu.Services
                 dh.GhiChuDieuChinhAdmin = meta.GhiChuDieuChinhAdmin;
                 dh.ThoiGianCapNhatCuoi = meta.ThoiGianCapNhatCuoi;
                 dh.NguoiCapNhatCuoi = meta.NguoiCapNhatCuoi;
+                dh.HanThanhToan = meta.HanThanhToan ?? dh.NgayDat.AddMinutes(15);
+
+                if (dh.DotGiaoHangDaDiems != null && meta.Thiep3DTheoToken != null)
+                {
+                    foreach (var dot in dh.DotGiaoHangDaDiems)
+                    {
+                        if (!string.IsNullOrWhiteSpace(dot.MaTokenThiepQr) &&
+                            meta.Thiep3DTheoToken.TryGetValue(dot.MaTokenThiepQr, out var thiepMeta))
+                        {
+                            dot.TenNguoiNhanThiep = thiepMeta.TenNguoiNhanThiep;
+                            dot.TenNguoiGuiThiep = thiepMeta.TenNguoiGuiThiep;
+                        }
+                    }
+                }
             }
+            else
+            {
+                dh.HanThanhToan = dh.NgayDat.AddMinutes(15);
+            }
+        }
+
+        public KiotDonHangMeta LayMetadataDonHang(int maDh)
+        {
+            var store = DocDuLieu();
+            if (store.DonHangs != null && store.DonHangs.TryGetValue(maDh, out var meta))
+            {
+                return meta;
+            }
+            return new KiotDonHangMeta { MaDh = maDh };
         }
 
         public void CapNhatMetadataDonHang(int maDh, Action<KiotDonHangMeta> capNhat)
@@ -281,6 +409,98 @@ namespace WebBanhTrungThu.Services
             capNhat(meta);
             LuuDuLieu(store);
         }
+
+        public CauHinhThanhToanQr LayCauHinhQr()
+        {
+            var store = DocDuLieu();
+            if (store.CauHinhQr == null || string.IsNullOrWhiteSpace(store.CauHinhQr.SoTaiKhoanMoMo))
+            {
+                store.CauHinhQr = new CauHinhThanhToanQr();
+                LuuDuLieu(store);
+            }
+            return store.CauHinhQr;
+        }
+
+        public void CapNhatCauHinhQr(Action<CauHinhThanhToanQr> capNhat)
+        {
+            var store = DocDuLieu();
+            store.CauHinhQr ??= new CauHinhThanhToanQr();
+            capNhat(store.CauHinhQr);
+            LuuDuLieu(store);
+        }
+
+        public CauHinhThanhToanQr CapNhatCauHinhQr(string? soTaiKhoanMoMo, string? tenChuTaiKhoan, string? tenNganHangVi, string? maBinNganHang = null, string? cuPhap = null)
+        {
+            var store = DocDuLieu();
+            store.CauHinhQr ??= new CauHinhThanhToanQr();
+
+            string stkSach = (soTaiKhoanMoMo ?? "0814585526").Replace(" ", "").Trim();
+            if (string.IsNullOrWhiteSpace(stkSach)) stkSach = "0814585526";
+
+            string sdtHienThi = stkSach.Length == 10
+                ? $"{stkSach[..4]} {stkSach.Substring(4, 3)} {stkSach.Substring(7, 3)}"
+                : stkSach;
+
+            store.CauHinhQr.SoTaiKhoanMoMo = stkSach;
+            store.CauHinhQr.SoDienThoaiHienThi = sdtHienThi;
+            store.CauHinhQr.TenChuTaiKhoan = string.IsNullOrWhiteSpace(tenChuTaiKhoan) ? "LE MINH DUC" : tenChuTaiKhoan.Trim().ToUpperInvariant();
+            store.CauHinhQr.TenNganHangVi = string.IsNullOrWhiteSpace(tenNganHangVi) ? "MOMO" : tenNganHangVi.Trim().ToUpperInvariant();
+            if (!string.IsNullOrWhiteSpace(maBinNganHang))
+            {
+                store.CauHinhQr.MaBinNganHang = maBinNganHang.Trim();
+            }
+            if (!string.IsNullOrWhiteSpace(cuPhap))
+            {
+                store.CauHinhQr.CuPhapChuyenKhoan = cuPhap.Trim();
+            }
+
+            LuuDuLieu(store);
+            return store.CauHinhQr;
+        }
+
+        public void GhiNhanPhieuThuChi(PhieuThuChiKiot phieu)
+        {
+            var store = DocDuLieu();
+            store.DanhSachPhieuThuChi ??= new List<PhieuThuChiKiot>();
+            if (string.IsNullOrWhiteSpace(phieu.MaPhieu))
+            {
+                phieu.MaPhieu = $"PTH-{DateTime.Now:yyMMddHHmmss}";
+            }
+            if (phieu.MaDh.HasValue && store.DanhSachPhieuThuChi.Any(p => p.MaDh == phieu.MaDh.Value && p.LoaiPhieu == phieu.LoaiPhieu))
+            {
+                return;
+            }
+            store.DanhSachPhieuThuChi.Insert(0, phieu);
+            LuuDuLieu(store);
+        }
+
+        public ThongTinThiep3DMeta? LayThongTinThiepTheoToken(string? maToken)
+        {
+            if (string.IsNullOrWhiteSpace(maToken)) return null;
+            var store = DocDuLieu();
+            if (store.DonHangs == null) return null;
+            foreach (var meta in store.DonHangs.Values)
+            {
+                if (meta.Thiep3DTheoToken != null && meta.Thiep3DTheoToken.TryGetValue(maToken.Trim(), out var thiep))
+                {
+                    return thiep;
+                }
+            }
+            return null;
+        }
+
+        public ThongTinThiep3DMeta? LayThongTinThiepTheoToken(int maDh, string? maToken)
+        {
+            if (string.IsNullOrWhiteSpace(maToken)) return null;
+            var store = DocDuLieu();
+            if (store.DonHangs != null && store.DonHangs.TryGetValue(maDh, out var meta))
+            {
+                if (meta.Thiep3DTheoToken != null && meta.Thiep3DTheoToken.TryGetValue(maToken.Trim(), out var thiep))
+                {
+                    return thiep;
+                }
+            }
+            return LayThongTinThiepTheoToken(maToken);
+        }
     }
 }
-

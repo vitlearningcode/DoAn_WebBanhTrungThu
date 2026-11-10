@@ -31,7 +31,24 @@ namespace WebBanhTrungThu.Controllers
             {
                 gioHang = await _db.GioHangs
                     .Include(g => g.ChiTietGioHangs)
+                        .ThenInclude(ct => ct.MaBanhNavigation)
+                            .ThenInclude(b => b!.LoSanXuatBanhs)
+                    .Include(g => g.ChiTietGioHangs)
+                        .ThenInclude(ct => ct.MaCbNavigation)
+                            .ThenInclude(cb => cb!.MaVhNavigation)
+                    .Include(g => g.ChiTietGioHangs)
+                        .ThenInclude(ct => ct.MaCbNavigation)
+                            .ThenInclude(cb => cb!.ChiTietComboMaus)
+                                .ThenInclude(ctcb => ctcb.MaBanhNavigation)
+                                    .ThenInclude(b => b!.LoSanXuatBanhs)
+                    .Include(g => g.ChiTietGioHangs)
                         .ThenInclude(ct => ct.MaHopTcNavigation)
+                            .ThenInclude(h => h!.MaVhNavigation)
+                    .Include(g => g.ChiTietGioHangs)
+                        .ThenInclude(ct => ct.MaHopTcNavigation)
+                            .ThenInclude(h => h!.ChiTietHopTuChons)
+                                .ThenInclude(cth => cth.MaBanhNavigation)
+                                    .ThenInclude(b => b!.LoSanXuatBanhs)
                     .FirstOrDefaultAsync(g => g.MaNd == maNd.Value);
 
                 if (gioHang == null)
@@ -78,7 +95,24 @@ namespace WebBanhTrungThu.Controllers
 
                 gioHang = await _db.GioHangs
                     .Include(g => g.ChiTietGioHangs)
+                        .ThenInclude(ct => ct.MaBanhNavigation)
+                            .ThenInclude(b => b!.LoSanXuatBanhs)
+                    .Include(g => g.ChiTietGioHangs)
+                        .ThenInclude(ct => ct.MaCbNavigation)
+                            .ThenInclude(cb => cb!.MaVhNavigation)
+                    .Include(g => g.ChiTietGioHangs)
+                        .ThenInclude(ct => ct.MaCbNavigation)
+                            .ThenInclude(cb => cb!.ChiTietComboMaus)
+                                .ThenInclude(ctcb => ctcb.MaBanhNavigation)
+                                    .ThenInclude(b => b!.LoSanXuatBanhs)
+                    .Include(g => g.ChiTietGioHangs)
                         .ThenInclude(ct => ct.MaHopTcNavigation)
+                            .ThenInclude(h => h!.MaVhNavigation)
+                    .Include(g => g.ChiTietGioHangs)
+                        .ThenInclude(ct => ct.MaHopTcNavigation)
+                            .ThenInclude(h => h!.ChiTietHopTuChons)
+                                .ThenInclude(cth => cth.MaBanhNavigation)
+                                    .ThenInclude(b => b!.LoSanXuatBanhs)
                     .FirstOrDefaultAsync(g => g.MaPhienKvl == maPhienKvl);
 
                 if (gioHang == null)
@@ -97,6 +131,60 @@ namespace WebBanhTrungThu.Controllers
             }
 
             return gioHang;
+        }
+
+        /// <summary>
+        /// Tính lại đơn giá thực tế của từng dòng giỏ hàng trực tiếp từ CSDL (Anti-Tampering 100%)
+        /// </summary>
+        private static decimal TinhDonGiaThucTeTuCsdl(ChiTietGioHang ct)
+        {
+            if (ct.LoaiSanPham == 1 && ct.MaBanhNavigation != null)
+            {
+                return Math.Round(ct.MaBanhNavigation.DonGiaThucTe, 0);
+            }
+            if (ct.LoaiSanPham == 2 && ct.MaCbNavigation != null)
+            {
+                return Math.Round(ct.MaCbNavigation.GiaUuDaiCombo, 0);
+            }
+            if (ct.LoaiSanPham == 3 && ct.MaHopTcNavigation != null)
+            {
+                decimal giaVoHop = ct.MaHopTcNavigation.MaVhNavigation?.GiaVoHopRieng ?? 85000m;
+                decimal tongGiaBanh = ct.MaHopTcNavigation.ChiTietHopTuChons.Sum(x =>
+                    x.MaBanhNavigation != null ? x.MaBanhNavigation.DonGiaThucTe : x.DonGiaBanhLucChon);
+                return Math.Round((giaVoHop * 0.95m) + tongGiaBanh, 0);
+            }
+            return Math.Round(ct.DonGiaTamTinh, 0);
+        }
+
+        private async Task DamBaoMaKhuyenMaiMauConHanAsync()
+        {
+            var mocHetHan = new DateTime(2027, 12, 31, 23, 59, 59);
+            var kmTrangTron = await _db.MaKhuyenMais.FirstOrDefaultAsync(k => k.CodeKm == "TRANGTRON2026");
+            if (kmTrangTron == null)
+            {
+                _db.MaKhuyenMais.Add(new MaKhuyenMai
+                {
+                    CodeKm = "TRANGTRON2026",
+                    TenChuongTrinh = "Ưu Đãi Đêm Trăng Đoàn Viên (-10%)",
+                    LoaiGiam = "PHAN_TRAM",
+                    GiaTriGiam = 10m,
+                    GiamToiDa = 150000m,
+                    DonToiThieu = 200000m,
+                    SltoiDa = 500,
+                    SldaDung = 0,
+                    ChoPhepKhachVangLai = true,
+                    NgayBatDau = new DateTime(2026, 1, 1),
+                    NgayKetThuc = mocHetHan
+                });
+                await _db.SaveChangesAsync();
+            }
+            else if (kmTrangTron.NgayKetThuc < mocHetHan || kmTrangTron.NgayBatDau > DateTime.Now)
+            {
+                if (kmTrangTron.NgayBatDau > DateTime.Now) kmTrangTron.NgayBatDau = new DateTime(2026, 1, 1);
+                if (kmTrangTron.NgayKetThuc < mocHetHan) kmTrangTron.NgayKetThuc = mocHetHan;
+                if (kmTrangTron.SltoiDa <= kmTrangTron.SldaDung) kmTrangTron.SltoiDa = kmTrangTron.SldaDung + 100;
+                await _db.SaveChangesAsync();
+            }
         }
 
         // =========================================================================
@@ -418,6 +506,8 @@ namespace WebBanhTrungThu.Controllers
         [HttpPost]
         public async Task<IActionResult> ApDungVoucher([FromBody] ApDungVoucherRequest? req, [FromQuery] string? codeKm)
         {
+            await DamBaoMaKhuyenMaiMauConHanAsync();
+
             string maNhap = (req?.CodeKm ?? codeKm ?? string.Empty).Trim().ToUpper();
             var gioHang = await LayHoacTaoGioHangAsync();
 
@@ -440,14 +530,27 @@ namespace WebBanhTrungThu.Controllers
                 return Json(new { thanhCong = false, thongBao = $"Mã giảm giá '{maNhap}' không tồn tại trong hệ thống!" });
             }
 
-            if (km.NgayKetThuc < DateTime.Now)
+            // Điều kiện 1: TrangThaiKichHoat == true
+            if (!km.TrangThaiKichHoat)
             {
-                return Json(new { thanhCong = false, thongBao = $"Mã giảm giá '{maNhap}' đã hết hạn sử dụng!" });
+                return Json(new { thanhCong = false, thongBao = $"Mã ưu đãi '{maNhap}' hiện đang tạm ngưng kích hoạt!" });
             }
 
-            if (km.SldaDung >= km.SltoiDa)
+            // Điều kiện 2: DateTime.Now >= NgayBatDau && DateTime.Now <= NgayKetThuc
+            DateTime bayGio = DateTime.Now;
+            if (bayGio < km.NgayBatDau)
             {
-                return Json(new { thanhCong = false, thongBao = $"Mã giảm giá '{maNhap}' đã hết lượt sử dụng!" });
+                return Json(new { thanhCong = false, thongBao = $"Mã ưu đãi '{maNhap}' chỉ có hiệu lực từ ngày {km.NgayBatDau:dd/MM/yyyy}!" });
+            }
+            if (bayGio > km.NgayKetThuc)
+            {
+                return Json(new { thanhCong = false, thongBao = $"Mã ưu đãi đã hết hạn vào ngày {km.NgayKetThuc:dd/MM/yyyy}" });
+            }
+
+            // Điều kiện 3: SoLuotDaDung < SoLuotToiDa
+            if (km.SoLuotDaDung >= km.SoLuotToiDa)
+            {
+                return Json(new { thanhCong = false, thongBao = $"Mã giảm giá '{maNhap}' đã hết lượt sử dụng ({km.SoLuotDaDung}/{km.SoLuotToiDa})!" });
             }
 
             int? maNd = ThongTinPhienHelper.LayMaNguoiDung(HttpContext);
@@ -460,13 +563,20 @@ namespace WebBanhTrungThu.Controllers
                 });
             }
 
+            // Tính lại TongTienHang 100% từ CSDL
+            foreach (var ct in gioHang.ChiTietGioHangs)
+            {
+                ct.DonGiaTamTinh = TinhDonGiaThucTeTuCsdl(ct);
+            }
             decimal tongTamTinh = gioHang.ChiTietGioHangs.Sum(ct => ct.SoLuong * ct.DonGiaTamTinh);
-            if (tongTamTinh < km.DonToiThieu)
+
+            // Điều kiện 4: TongTienHang >= GiaTriDonToiThieu
+            if (tongTamTinh < km.GiaTriDonToiThieu)
             {
                 return Json(new
                 {
                     thanhCong = false,
-                    thongBao = $"Mã '{maNhap}' yêu cầu đơn hàng tối thiểu {km.DonToiThieu:N0} đ (Hiện tại: {tongTamTinh:N0} đ)!"
+                    thongBao = $"Mã '{maNhap}' yêu cầu đơn hàng tối thiểu {km.GiaTriDonToiThieu:N0} đ (Hiện tại: {tongTamTinh:N0} đ)!"
                 });
             }
 
@@ -478,8 +588,9 @@ namespace WebBanhTrungThu.Controllers
             return Json(new
             {
                 thanhCong = true,
-                thongBao = $"Áp dụng mã '{km.CodeKm}' ({km.TenChuongTrinh}) thành công! Giảm {tienGiam:N0} đ.",
+                thongBao = $"Áp dụng mã '{km.CodeKm}' ({km.TenChuongTrinh} • HSD: {km.NgayKetThuc:dd/MM/yyyy}) thành công! Giảm {tienGiam:N0} đ.",
                 codeKmDangDung = km.CodeKm,
+                hanSuDungVoucher = km.NgayKetThuc.ToString("dd/MM/yyyy"),
                 tienGiamVoucher = tienGiam,
                 tongThanhToanSauGiam = Math.Max(0, tongTamTinh - tienGiam)
             });
@@ -513,11 +624,170 @@ namespace WebBanhTrungThu.Controllers
         // =========================================================================
         // 5. API LẤY THÔNG TIN GIỎ HÀNG JSON (ĐỒNG BỘ OFFCANVAS & BADGE REALTIME)
         // =========================================================================
+        // Nhánh 3.2.4: Đặt lại đơn hàng cũ 1-Click
+        [HttpPost]
+        public async Task<IActionResult> DatLaiDonHang([FromBody] int maDonHang)
+        {
+            if (maDonHang <= 0)
+            {
+                return Json(new { thanhCong = false, thongBao = "Mã đơn hàng không hợp lệ!" });
+            }
+
+            var chiTietDonCu = await _db.ChiTietDonHangs
+                .AsNoTracking()
+                .Where(ct => ct.MaDh == maDonHang)
+                .ToListAsync();
+
+            if (!chiTietDonCu.Any())
+            {
+                return Json(new { thanhCong = false, thongBao = "Không tìm thấy chi tiết sản phẩm của đơn hàng cũ!" });
+            }
+
+            int? maNd = ThongTinPhienHelper.LayMaNguoiDung(HttpContext);
+            var gioHang = await LayHoacTaoGioHangAsync();
+            string? maPhienKvl = maNd.HasValue ? null : gioHang.MaPhienKvl;
+
+            foreach (var ct in chiTietDonCu)
+            {
+                int soLuongThem = Math.Max(1, ct.SoLuong);
+
+                if (ct.LoaiSanPham == 1 && ct.MaBanh.HasValue)
+                {
+                    var banh = await _db.SanPhamBanhs
+                        .AsNoTracking()
+                        .Include(b => b.LoSanXuatBanhs)
+                        .FirstOrDefaultAsync(b => b.MaBanh == ct.MaBanh.Value);
+
+                    decimal donGiaHienTai = banh != null
+                        ? Math.Round(banh.DonGiaThucTe, 0)
+                        : ct.DonGiaLucMua;
+
+                    var dongGio = gioHang.ChiTietGioHangs
+                        .FirstOrDefault(x => x.LoaiSanPham == 1 && x.MaBanh == ct.MaBanh.Value);
+
+                    if (dongGio != null)
+                    {
+                        dongGio.SoLuong += soLuongThem;
+                        dongGio.DonGiaTamTinh = donGiaHienTai;
+                        dongGio.NgayThem = DateTime.Now;
+                    }
+                    else
+                    {
+                        _db.ChiTietGioHangs.Add(new ChiTietGioHang
+                        {
+                            MaGh = gioHang.MaGh,
+                            LoaiSanPham = 1,
+                            MaBanh = ct.MaBanh.Value,
+                            SoLuong = soLuongThem,
+                            DonGiaTamTinh = donGiaHienTai,
+                            NgayThem = DateTime.Now
+                        });
+                    }
+                }
+                else if (ct.LoaiSanPham == 2 && ct.MaCb.HasValue)
+                {
+                    var combo = await _db.ComboMauCoSans
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(c => c.MaCb == ct.MaCb.Value);
+
+                    decimal donGiaCombo = combo != null
+                        ? combo.GiaUuDaiCombo
+                        : ct.DonGiaLucMua;
+
+                    var dongGio = gioHang.ChiTietGioHangs
+                        .FirstOrDefault(x => x.LoaiSanPham == 2 && x.MaCb == ct.MaCb.Value);
+
+                    if (dongGio != null)
+                    {
+                        dongGio.SoLuong += soLuongThem;
+                        dongGio.DonGiaTamTinh = donGiaCombo;
+                        dongGio.NgayThem = DateTime.Now;
+                    }
+                    else
+                    {
+                        _db.ChiTietGioHangs.Add(new ChiTietGioHang
+                        {
+                            MaGh = gioHang.MaGh,
+                            LoaiSanPham = 2,
+                            MaCb = ct.MaCb.Value,
+                            SoLuong = soLuongThem,
+                            DonGiaTamTinh = donGiaCombo,
+                            NgayThem = DateTime.Now
+                        });
+                    }
+                }
+                else if (ct.LoaiSanPham == 3 && ct.MaHopTc.HasValue)
+                {
+                    var hopCu = await _db.HopQuaTuChons
+                        .AsNoTracking()
+                        .Include(h => h.ChiTietHopTuChons)
+                        .FirstOrDefaultAsync(h => h.MaHopTc == ct.MaHopTc.Value);
+
+                    if (hopCu != null)
+                    {
+                        var hopMoi = new HopQuaTuChon
+                        {
+                            MaVh = hopCu.MaVh,
+                            MaNd = maNd,
+                            MaPhienKvl = maPhienKvl,
+                            TenHopKhachDat = hopCu.TenHopKhachDat,
+                            MaBamCauHinh = hopCu.MaBamCauHinh,
+                            TongCaloHop = hopCu.TongCaloHop,
+                            TongGiaMotHop = hopCu.TongGiaMotHop,
+                            DaLuuMauYeuThich = false,
+                            NgayTao = DateTime.Now
+                        };
+
+                        _db.HopQuaTuChons.Add(hopMoi);
+                        await _db.SaveChangesAsync();
+
+                        foreach (var oBanhCu in hopCu.ChiTietHopTuChons.OrderBy(o => o.ViTriOtrongHop))
+                        {
+                            _db.ChiTietHopTuChons.Add(new ChiTietHopTuChon
+                            {
+                                MaHopTc = hopMoi.MaHopTc,
+                                MaBanh = oBanhCu.MaBanh,
+                                ViTriOtrongHop = oBanhCu.ViTriOtrongHop,
+                                DonGiaBanhLucChon = oBanhCu.DonGiaBanhLucChon
+                            });
+                        }
+
+                        _db.ChiTietGioHangs.Add(new ChiTietGioHang
+                        {
+                            MaGh = gioHang.MaGh,
+                            LoaiSanPham = 3,
+                            MaHopTc = hopMoi.MaHopTc,
+                            SoLuong = soLuongThem,
+                            DonGiaTamTinh = hopMoi.TongGiaMotHop,
+                            NgayThem = DateTime.Now
+                        });
+                    }
+                }
+            }
+
+            gioHang.NgayCapNhat = DateTime.Now;
+            await _db.SaveChangesAsync();
+
+            return Json(new
+            {
+                thanhCong = true,
+                thongBao = "Đã thêm toàn bộ sản phẩm của đơn cũ vào giỏ quà!"
+            });
+        }
+
+        // 5. API LẤY THÔNG TIN GIỎ HÀNG JSON
         [HttpGet]
         public async Task<IActionResult> LayThongTinGioHangJson()
         {
+            await DamBaoMaKhuyenMaiMauConHanAsync();
+
             int? maNd = ThongTinPhienHelper.LayMaNguoiDung(HttpContext);
             string? maPhienKvl = ThongTinPhienHelper.LayMaPhienKVL(HttpContext);
+
+            var kmGoiY = await _db.MaKhuyenMais.AsNoTracking().FirstOrDefaultAsync(k => k.CodeKm == "TRANGTRON2026");
+            string thongTinVoucherGoiY = kmGoiY != null
+                ? $"HSD: {kmGoiY.NgayKetThuc:dd/MM/yyyy} • Đơn từ {(kmGoiY.DonToiThieu / 1000m):N0}k"
+                : "HSD: 31/12/2027 • Đơn từ 200k";
 
             GioHang? gioHang = null;
 
@@ -529,11 +799,18 @@ namespace WebBanhTrungThu.Controllers
                         .ThenInclude(ct => ct.MaBanhNavigation)
                             .ThenInclude(b => b!.ThongSoDinhDuong)
                     .Include(g => g.ChiTietGioHangs)
+                        .ThenInclude(ct => ct.MaBanhNavigation)
+                            .ThenInclude(b => b!.LoSanXuatBanhs)
+                    .Include(g => g.ChiTietGioHangs)
                         .ThenInclude(ct => ct.MaCbNavigation)
+                    .Include(g => g.ChiTietGioHangs)
+                        .ThenInclude(ct => ct.MaHopTcNavigation)
+                            .ThenInclude(h => h!.MaVhNavigation)
                     .Include(g => g.ChiTietGioHangs)
                         .ThenInclude(ct => ct.MaHopTcNavigation)
                             .ThenInclude(h => h!.ChiTietHopTuChons)
                                 .ThenInclude(cth => cth.MaBanhNavigation)
+                                    .ThenInclude(b => b!.LoSanXuatBanhs)
                     .FirstOrDefaultAsync(g => g.MaNd == maNd.Value);
             }
             else if (!string.IsNullOrEmpty(maPhienKvl))
@@ -544,11 +821,18 @@ namespace WebBanhTrungThu.Controllers
                         .ThenInclude(ct => ct.MaBanhNavigation)
                             .ThenInclude(b => b!.ThongSoDinhDuong)
                     .Include(g => g.ChiTietGioHangs)
+                        .ThenInclude(ct => ct.MaBanhNavigation)
+                            .ThenInclude(b => b!.LoSanXuatBanhs)
+                    .Include(g => g.ChiTietGioHangs)
                         .ThenInclude(ct => ct.MaCbNavigation)
+                    .Include(g => g.ChiTietGioHangs)
+                        .ThenInclude(ct => ct.MaHopTcNavigation)
+                            .ThenInclude(h => h!.MaVhNavigation)
                     .Include(g => g.ChiTietGioHangs)
                         .ThenInclude(ct => ct.MaHopTcNavigation)
                             .ThenInclude(h => h!.ChiTietHopTuChons)
                                 .ThenInclude(cth => cth.MaBanhNavigation)
+                                    .ThenInclude(b => b!.LoSanXuatBanhs)
                     .FirstOrDefaultAsync(g => g.MaPhienKvl == maPhienKvl);
             }
 
@@ -560,6 +844,7 @@ namespace WebBanhTrungThu.Controllers
                     tongSoLuong = 0,
                     tongTamTinh = 0m,
                     codeKmDangDung = (string?)null,
+                    thongTinVoucherGoiY = thongTinVoucherGoiY,
                     tienGiamVoucher = 0m,
                     tongThanhToanSauGiam = 0m,
                     danhSachMon = new List<object>()
@@ -574,6 +859,7 @@ namespace WebBanhTrungThu.Controllers
                     string? maBamCauHinh = null;
                     int tongCalo = 0;
                     var danhSachViBanh = new List<string>();
+                    decimal donGiaCsdl = TinhDonGiaThucTeTuCsdl(ct);
 
                     if (ct.LoaiSanPham == 1 && ct.MaBanhNavigation != null)
                     {
@@ -604,8 +890,8 @@ namespace WebBanhTrungThu.Controllers
                         tongCalo = tongCalo,
                         danhSachViBanh = danhSachViBanh,
                         soLuong = ct.SoLuong,
-                        donGia = ct.DonGiaTamTinh,
-                        thanhTien = ct.SoLuong * ct.DonGiaTamTinh
+                        donGia = donGiaCsdl,
+                        thanhTien = ct.SoLuong * donGiaCsdl
                     };
                 })
                 .ToList();
@@ -620,9 +906,9 @@ namespace WebBanhTrungThu.Controllers
             {
                 var km = await _db.MaKhuyenMais
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(k => k.CodeKm == codeKmDangDung && k.NgayKetThuc >= DateTime.Now && k.SldaDung < k.SltoiDa);
+                    .FirstOrDefaultAsync(k => k.CodeKm == codeKmDangDung && k.NgayBatDau <= DateTime.Now && k.NgayKetThuc >= DateTime.Now && k.SldaDung < k.SltoiDa);
 
-                if (km != null && (maNd.HasValue || km.ChoPhepKhachVangLai) && tongTamTinh >= km.DonToiThieu)
+                if (km != null && km.TrangThaiKichHoat && (maNd.HasValue || km.ChoPhepKhachVangLai) && tongTamTinh >= km.DonToiThieu)
                 {
                     tienGiamVoucher = TinhTienGiamVoucher(km, tongTamTinh);
                 }
@@ -640,9 +926,189 @@ namespace WebBanhTrungThu.Controllers
                 tongSoLuong = tongSoLuong,
                 tongTamTinh = tongTamTinh,
                 codeKmDangDung = codeKmDangDung,
+                thongTinVoucherGoiY = thongTinVoucherGoiY,
                 tienGiamVoucher = tienGiamVoucher,
                 tongThanhToanSauGiam = tongThanhToanSauGiam,
                 danhSachMon = danhSachMon
+            });
+        }
+
+        // =========================================================================
+        // 6. LỚP 1 - API KIỂM TRA TỒN KHO THỰC TẾ CÒN HẠN KHI MỞ NGĂN KÉO GIỎ HÀNG
+        // =========================================================================
+        [HttpGet]
+        public async Task<IActionResult> KiemTraTonKhoThucTe()
+        {
+            var gioHang = await LayHoacTaoGioHangAsync();
+            if (gioHang == null || !gioHang.ChiTietGioHangs.Any())
+            {
+                return Json(new
+                {
+                    thanhCong = true,
+                    hopLe = true,
+                    danhSachLoiTheoMon = new Dictionary<int, string>(),
+                    danhSachCanhBao = new List<object>()
+                });
+            }
+
+            var homNay = DateOnly.FromDateTime(DateTime.Today);
+            var nhuCauBanh = new Dictionary<int, (string TenBanh, int SoLuongCan, List<int> DanhSachMaCtgh)>();
+            var nhuCauVoHop = new Dictionary<int, (string TenVoHop, int SoLuongCan, int TonKhoVo, List<int> DanhSachMaCtgh)>();
+
+            foreach (var ct in gioHang.ChiTietGioHangs)
+            {
+                if (ct.LoaiSanPham == 1 && ct.MaBanhNavigation != null)
+                {
+                    int maBanh = ct.MaBanhNavigation.MaBanh;
+                    if (!nhuCauBanh.TryGetValue(maBanh, out var item))
+                    {
+                        item = (ct.MaBanhNavigation.TenBanh, 0, new List<int>());
+                    }
+                    item.SoLuongCan += ct.SoLuong;
+                    if (!item.DanhSachMaCtgh.Contains(ct.MaCtgh)) item.DanhSachMaCtgh.Add(ct.MaCtgh);
+                    nhuCauBanh[maBanh] = item;
+                }
+                else if (ct.LoaiSanPham == 2 && ct.MaCbNavigation != null)
+                {
+                    if (ct.MaCbNavigation.MaVhNavigation != null)
+                    {
+                        var vh = ct.MaCbNavigation.MaVhNavigation;
+                        if (!nhuCauVoHop.TryGetValue(vh.MaVh, out var itemVo))
+                        {
+                            itemVo = (vh.TenVoHop, 0, vh.SltonKhoVo, new List<int>());
+                        }
+                        itemVo.SoLuongCan += ct.SoLuong;
+                        if (!itemVo.DanhSachMaCtgh.Contains(ct.MaCtgh)) itemVo.DanhSachMaCtgh.Add(ct.MaCtgh);
+                        nhuCauVoHop[vh.MaVh] = itemVo;
+                    }
+                    foreach (var ctCb in ct.MaCbNavigation.ChiTietComboMaus)
+                    {
+                        if (ctCb.MaBanhNavigation != null)
+                        {
+                            int maBanh = ctCb.MaBanhNavigation.MaBanh;
+                            if (!nhuCauBanh.TryGetValue(maBanh, out var item))
+                            {
+                                item = (ctCb.MaBanhNavigation.TenBanh, 0, new List<int>());
+                            }
+                            item.SoLuongCan += ctCb.SoLuong * ct.SoLuong;
+                            if (!item.DanhSachMaCtgh.Contains(ct.MaCtgh)) item.DanhSachMaCtgh.Add(ct.MaCtgh);
+                            nhuCauBanh[maBanh] = item;
+                        }
+                    }
+                }
+                else if (ct.LoaiSanPham == 3 && ct.MaHopTcNavigation != null)
+                {
+                    if (ct.MaHopTcNavigation.MaVhNavigation != null)
+                    {
+                        var vh = ct.MaHopTcNavigation.MaVhNavigation;
+                        if (!nhuCauVoHop.TryGetValue(vh.MaVh, out var itemVo))
+                        {
+                            itemVo = (vh.TenVoHop, 0, vh.SltonKhoVo, new List<int>());
+                        }
+                        itemVo.SoLuongCan += ct.SoLuong;
+                        if (!itemVo.DanhSachMaCtgh.Contains(ct.MaCtgh)) itemVo.DanhSachMaCtgh.Add(ct.MaCtgh);
+                        nhuCauVoHop[vh.MaVh] = itemVo;
+                    }
+                    foreach (var ctHop in ct.MaHopTcNavigation.ChiTietHopTuChons)
+                    {
+                        if (ctHop.MaBanhNavigation != null)
+                        {
+                            int maBanh = ctHop.MaBanhNavigation.MaBanh;
+                            if (!nhuCauBanh.TryGetValue(maBanh, out var item))
+                            {
+                                item = (ctHop.MaBanhNavigation.TenBanh, 0, new List<int>());
+                            }
+                            item.SoLuongCan += ct.SoLuong;
+                            if (!item.DanhSachMaCtgh.Contains(ct.MaCtgh)) item.DanhSachMaCtgh.Add(ct.MaCtgh);
+                            nhuCauBanh[maBanh] = item;
+                        }
+                    }
+                }
+            }
+
+            var danhSachMaBanhCanKiemTra = nhuCauBanh.Keys.ToList();
+            var tonKhoLoTheoBanh = await _db.LoSanXuatBanhs
+                .AsNoTracking()
+                .Where(l => danhSachMaBanhCanKiemTra.Contains(l.MaBanh) &&
+                            l.HanSuDung > homNay &&
+                            (l.TrangThaiLo == "DANG_BAN" || l.TrangThaiLo == "XA_CAN_DATE") &&
+                            l.SlconLai > 0)
+                .GroupBy(l => l.MaBanh)
+                .Select(g => new { MaBanh = g.Key, TongTonConHan = g.Sum(x => x.SlconLai) })
+                .ToDictionaryAsync(x => x.MaBanh, x => x.TongTonConHan);
+
+            var tonKhoSanPhamBanh = await _db.SanPhamBanhs
+                .AsNoTracking()
+                .Where(b => danhSachMaBanhCanKiemTra.Contains(b.MaBanh))
+                .ToDictionaryAsync(b => b.MaBanh, b => b.TrangThaiBan ? b.TongTonKho : 0);
+
+            var danhSachLoiTheoMon = new Dictionary<int, string>();
+            var danhSachCanhBao = new List<object>();
+
+            foreach (var kvp in nhuCauBanh)
+            {
+                int maBanh = kvp.Key;
+                var info = kvp.Value;
+                int tonLo = tonKhoLoTheoBanh.TryGetValue(maBanh, out int slLo) ? slLo : 0;
+                int tonSp = tonKhoSanPhamBanh.TryGetValue(maBanh, out int slSp) ? slSp : 0;
+                int tonThucTe = Math.Min(tonSp, tonLo);
+
+                if (tonThucTe < info.SoLuongCan)
+                {
+                    string thongBao = tonThucTe <= 0
+                        ? $"Vị bánh \"{info.TenBanh}\" vừa hết hàng trong kho (cần {info.SoLuongCan} bánh)."
+                        : $"Vị bánh \"{info.TenBanh}\" chỉ còn {tonThucTe} bánh còn hạn trong kho (đang chọn {info.SoLuongCan} bánh).";
+
+                    danhSachCanhBao.Add(new
+                    {
+                        maBanh = maBanh,
+                        tenBanh = info.TenBanh,
+                        soLuongCan = info.SoLuongCan,
+                        tonKhoThucTe = tonThucTe,
+                        thongBao = thongBao
+                    });
+
+                    foreach (int maCtgh in info.DanhSachMaCtgh)
+                    {
+                        if (danhSachLoiTheoMon.ContainsKey(maCtgh))
+                            danhSachLoiTheoMon[maCtgh] += " • " + thongBao;
+                        else
+                            danhSachLoiTheoMon[maCtgh] = thongBao;
+                    }
+                }
+            }
+
+            foreach (var kvpVo in nhuCauVoHop)
+            {
+                var infoVo = kvpVo.Value;
+                if (infoVo.TonKhoVo < infoVo.SoLuongCan)
+                {
+                    string thongBao = $"Mẫu vỏ hộp \"{infoVo.TenVoHop}\" chỉ còn {infoVo.TonKhoVo} vỏ trong kho (cần {infoVo.SoLuongCan} hộp).";
+                    danhSachCanhBao.Add(new
+                    {
+                        maBanh = 0,
+                        tenBanh = infoVo.TenVoHop,
+                        soLuongCan = infoVo.SoLuongCan,
+                        tonKhoThucTe = infoVo.TonKhoVo,
+                        thongBao = thongBao
+                    });
+
+                    foreach (int maCtgh in infoVo.DanhSachMaCtgh)
+                    {
+                        if (danhSachLoiTheoMon.ContainsKey(maCtgh))
+                            danhSachLoiTheoMon[maCtgh] += " • " + thongBao;
+                        else
+                            danhSachLoiTheoMon[maCtgh] = thongBao;
+                    }
+                }
+            }
+
+            return Json(new
+            {
+                thanhCong = true,
+                hopLe = danhSachCanhBao.Count == 0,
+                danhSachLoiTheoMon = danhSachLoiTheoMon,
+                danhSachCanhBao = danhSachCanhBao
             });
         }
     }

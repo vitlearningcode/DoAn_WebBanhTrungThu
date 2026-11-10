@@ -358,6 +358,7 @@
                         <label class="form-label small fw-semibold chu-nau-tram">Số điện thoại đặt mua</label>
                         <input type="text" id="txtSdtTraCuu" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="0909..." />
                     </div>
+                    <div id="danh-sach-don-vua-dat-nhanh" class="mb-3 d-none"></div>
                     <button type="button" class="btn btn-do-son-mai w-100 rounded-pill py-2" onclick="traCuuDonHangGuest()">Kiểm Tra Đơn Hàng</button>
                     <div id="ketQuaTraCuuBox" class="mt-3 d-none p-3 rounded" style="background: var(--mau-nen-giay-do); border: 1px solid var(--mau-vang-dong-co);"></div>
                 </div>
@@ -388,10 +389,15 @@
                             <label for="txtMaVoucherGioHang" class="small fw-bold chu-do-son-mai mb-0 text-nowrap">
                                 <i class="bi bi-ticket-perforated-fill me-1"></i>Mã ưu đãi:
                             </label>
-                            <button type="button" class="btn btn-sm btn-vien-vang rounded-pill py-0 px-2 text-nowrap" style="font-size: 0.72rem;"
-                                    onclick="chonNhanhVoucher('TRANGTRON2026')">
-                                Áp mã TRANGTRON2026 (-10%)
-                            </button>
+                            <div class="d-inline-flex align-items-center gap-1 flex-wrap">
+                                <button type="button" class="btn btn-sm btn-vien-vang rounded-pill py-0 px-2 text-nowrap" style="font-size: 0.72rem;"
+                                        onclick="chonNhanhVoucher('TRANGTRON2026')">
+                                    Áp mã TRANGTRON2026 (-10%)
+                                </button>
+                                <span id="lblHsdVoucherGioHang" class="badge rounded-pill px-2 py-0" style="background: #FEF3C7; color: #92400E; font-size: 0.66rem;">
+                                    HSD: 31/12/2027 • Đơn từ 200k
+                                </span>
+                            </div>
                         </div>
                         <div class="nhom-nhap-ma-uu-dai">
                             <input type="text" id="txtMaVoucherGioHang" class="form-control form-control-sm"
@@ -416,7 +422,9 @@
                         <span id="lblTongThanhToanSauGiam" class="fs-4 fw-bold chu-do-son-mai">0 đ</span>
                     </div>
 
-                    <a href="/ThanhToan/Index" onclick="return chuyenDenTrangThanhToan(event)" class="btn btn-do-son-mai w-100 py-2 rounded-pill shadow">
+                    <div id="canhBaoTonKhoOffcanvas" class="alert alert-danger py-2 px-3 small mb-2 d-none" style="font-size: 0.78rem;"></div>
+
+                    <a href="/ThanhToan/Index" id="btnTienHanhThanhToanOffcanvas" onclick="return chuyenDenTrangThanhToan(event)" class="btn btn-do-son-mai w-100 py-2 rounded-pill shadow">
                         Tiến Hành Đặt Quà &amp; Tạo Thiệp QR 3D <i class="bi bi-arrow-right-circle ms-1"></i>
                     </a>
                 </div>

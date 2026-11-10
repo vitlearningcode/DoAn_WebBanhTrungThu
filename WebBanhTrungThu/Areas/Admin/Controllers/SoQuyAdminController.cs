@@ -45,14 +45,16 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
                 .Where(d => d.TrangThaiTt == "DA_HOAN_TIEN")
                 .ToList();
 
-            // Tổng thu tính theo các đơn hiệu lực (ưu tiên đơn DA_TT hoặc đơn đang vận hành)
-            var donDaThu = danhSachDonHieuLuc.Where(d => d.TrangThaiTt == "DA_TT").ToList();
+            // Tổng thu tính theo các đơn hiệu lực (ưu tiên đơn DA_TT / DA_THANH_TOAN hoặc đơn đang vận hành)
+            var donDaThu = danhSachDonHieuLuc
+                .Where(d => d.TrangThaiTt == "DA_TT" || d.TrangThaiTt == "DA_THANH_TOAN")
+                .ToList();
             var tapTinhThu = donDaThu.Any() ? donDaThu : danhSachDonHieuLuc;
 
             decimal tongThu = tapTinhThu.Sum(d => d.TongThanhToanCuoi);
             decimal thuCod = tapTinhThu.Where(d => d.PhuongThucTt == "COD").Sum(d => d.TongThanhToanCuoi);
             decimal thuVietQr = tapTinhThu.Where(d => d.PhuongThucTt == "VIETQR").Sum(d => d.TongThanhToanCuoi);
-            decimal thuMoMo = tapTinhThu.Where(d => d.PhuongThucTt == "MOMO").Sum(d => d.TongThanhToanCuoi);
+            decimal thuMoMo = tapTinhThu.Where(d => d.PhuongThucTt == "MOMO" || d.PhuongThucTt == "MOMO_QR").Sum(d => d.TongThanhToanCuoi);
             decimal thuVnPay = tapTinhThu.Where(d => d.PhuongThucTt == "VNPAY").Sum(d => d.TongThanhToanCuoi);
 
             decimal tongHoanTien = danhSachDonHoanTien.Sum(d => d.TongThanhToanCuoi);
@@ -82,10 +84,49 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
                 TongTienHoanKhach = tongHoanTien,
                 LoiNhuanGop = loiNhuanGop,
                 DanhSachPhieuThuDonHang = dsHienThi,
-                DanhSachPhieuHoanTien = danhSachDonHoanTien
+                DanhSachPhieuHoanTien = danhSachDonHoanTien,
+                CauHinhQr = _kiotMeta.LayCauHinhQr(),
+                DanhSachPhieuThuChiWebhook = store.DanhSachPhieuThuChi ?? new List<PhieuThuChiKiot>()
             };
 
             return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult CapNhatCauHinhQrMoMo(
+            string soTaiKhoanMoMo,
+            string tenChuTaiKhoan,
+            string maNganHang,
+            string maBinVietQr,
+            string mauNoiDungCk,
+            string? returnUrl)
+        {
+            string stkChuan = string.IsNullOrWhiteSpace(soTaiKhoanMoMo)
+                ? "0814585526"
+                : soTaiKhoanMoMo.Replace(" ", "").Trim();
+
+            string sdtHienThi = stkChuan.Length == 10
+                ? $"{stkChuan[..4]} {stkChuan.Substring(4, 3)} {stkChuan.Substring(7, 3)}"
+                : stkChuan;
+
+            _kiotMeta.CapNhatCauHinhQr(cfg =>
+            {
+                cfg.SoTaiKhoanMoMo = stkChuan;
+                cfg.SoDienThoaiHienThi = sdtHienThi;
+                cfg.TenChuTaiKhoan = string.IsNullOrWhiteSpace(tenChuTaiKhoan) ? "LE MINH DUC" : tenChuTaiKhoan.Trim().ToUpperInvariant();
+                cfg.MaNganHang = string.IsNullOrWhiteSpace(maNganHang) ? "MOMO" : maNganHang.Trim().ToUpperInvariant();
+                cfg.MaBinVietQr = string.IsNullOrWhiteSpace(maBinVietQr) ? "970422" : maBinVietQr.Trim();
+                cfg.MauNoiDungCk = string.IsNullOrWhiteSpace(mauNoiDungCk) ? "NGUYETCAT {MaTraCuuDh}" : mauNoiDungCk.Trim();
+            });
+
+            TempData["ThongBaoAdmin"] = $"Đã cập nhật cấu hình Tài khoản QR / MoMo nhận tiền: {sdtHienThi} ({(string.IsNullOrWhiteSpace(tenChuTaiKhoan) ? "LE MINH DUC" : tenChuTaiKhoan.Trim().ToUpperInvariant())})!";
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+            return RedirectToAction(nameof(Index));
         }
     }
 }

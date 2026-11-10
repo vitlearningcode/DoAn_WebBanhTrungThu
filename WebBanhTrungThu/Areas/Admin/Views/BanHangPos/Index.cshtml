@@ -81,6 +81,24 @@
         giamToiDa = Math.Round(k.GiamToiDa, 0),
         donToiThieu = Math.Round(k.DonToiThieu, 0)
     }), jsonOptions);
+
+    var homNayPos = DateOnly.FromDateTime(DateTime.Today);
+    var mocCanhBaoPos = DateOnly.FromDateTime(DateTime.Today.AddDays(10));
+    var tatCaLoPos = Model.DanhSachBanh
+        .SelectMany(b => b.LoSanXuatBanhs.Select(l => { l.MaBanhNavigation = b; return l; }))
+        .Where(l => l.SlconLai > 0)
+        .OrderBy(l => l.HanSuDung)
+        .ToList();
+
+    var danhSachLoCanhBaoPos = tatCaLoPos
+        .Where(l => l.HanSuDung <= mocCanhBaoPos || l.PhanTramGiamCanDate > 0 || l.TrangThaiLo == "XA_CAN_DATE")
+        .Take(3)
+        .ToList();
+
+    if (!danhSachLoCanhBaoPos.Any())
+    {
+        danhSachLoCanhBaoPos = tatCaLoPos.Take(2).ToList();
+    }
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -679,6 +697,115 @@
         .pos-cust-option:hover {
             background: #EBF5FF;
         }
+
+        /* Chuẩn hóa số liệu thẳng hàng dọc tuyệt đối (Nhánh 5.0.1) */
+        td, th, .so-tien, .ton-kho, .kpi-value, .pos-price-final, .pos-stock-pill {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Banner cảnh báo lô cận Date FEFO trên POS (Nhánh 5.0.2) */
+        .banner-canh-bao-fefo-pos {
+            background: #FFFBEB;
+            border-bottom: 1px solid #F59E0B;
+            color: #92400E;
+            padding: 6px 12px;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .dong-fefo-pos {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .nut-xa-kho-pos {
+            background: #D97706;
+            color: #FFFFFF;
+            border: 1px solid #B45309;
+            border-radius: 5px;
+            padding: 2px 8px;
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .nut-xa-kho-pos:hover:not(:disabled) {
+            background: #B45309;
+        }
+
+        .nut-xa-kho-pos.da-ap-gia-xa {
+            background: #059669;
+            border-color: #047857;
+            color: #FFFFFF;
+            cursor: default;
+        }
+
+        /* Mẫu in hóa đơn nhiệt K80 (80mm) chuẩn thương mại (Nhánh 5.0.3) */
+        .hoa-don-nhiet-k80 {
+            width: 80mm;
+            max-width: 100%;
+            margin: 0 auto;
+            background: #FFFFFF;
+            color: #000000;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            padding: 6px 4px;
+        }
+
+        .hoa-don-nhiet-k80 .duong-ke-net-dut {
+            border-top: 1px dashed #111827;
+            margin: 6px 0;
+        }
+
+        .hoa-don-nhiet-k80 table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+        }
+
+        .hoa-don-nhiet-k80 th {
+            border-bottom: 1px solid #111827;
+            padding: 4px 2px;
+            font-weight: 700;
+        }
+
+        .hoa-don-nhiet-k80 td {
+            padding: 4px 2px;
+            vertical-align: top;
+            border-bottom: 1px dashed #D1D5DB;
+            font-variant-numeric: tabular-nums;
+        }
+
+        @@media print {
+            body * {
+                visibility: hidden !important;
+            }
+            #modalPhieuInPos,
+            #modalPhieuInPos #areaInHoaDonPos,
+            #modalPhieuInPos #areaInHoaDonPos * {
+                visibility: visible !important;
+            }
+            #modalPhieuInPos {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 80mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #FFFFFF !important;
+            }
+            .modal-header, .modal-footer {
+                display: none !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -749,6 +876,42 @@
 
             <!-- PHẦN DƯỚI: LƯỚI CHỌN NHANH HÀNG HÓA & COMBO -->
             <div class="pos-catalog-panel">
+                @if (danhSachLoCanhBaoPos.Any())
+                {
+                    <!-- Thanh cảnh báo lô cận Date FEFO & Xả kho -30% 1-Click (Nhánh 5.0.2) -->
+                    <div class="banner-canh-bao-fefo-pos" id="bannerCanhBaoFefoPos">
+                        @foreach (var loPos in danhSachLoCanhBaoPos)
+                        {
+                            int soNgayConPos = Math.Max(0, loPos.HanSuDung.DayNumber - homNayPos.DayNumber);
+                            bool daApGiaPos = loPos.PhanTramGiamCanDate >= 30;
+                            <div class="dong-fefo-pos">
+                                <div>
+                                    <i class="bi bi-exclamation-triangle-fill me-1" style="color: #D97706;"></i>
+                                    <strong>@loPos.MaLoCode</strong> •
+                                    <span class="fw-semibold">@(loPos.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu")</span> •
+                                    <span class="ton-kho">Tồn kho: <strong>@loPos.SlconLai.ToString("N0")</strong> bánh</span> •
+                                    <span class="ton-kho">Còn <strong>@soNgayConPos</strong> ngày sử dụng</span>
+                                </div>
+                                <div>
+                                    @if (daApGiaPos)
+                                    {
+                                        <button type="button" class="nut-xa-kho-pos da-ap-gia-xa" disabled>
+                                            ✓ Đã áp giá xả kho -@(loPos.PhanTramGiamCanDate.ToString("N0"))%
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="nut-xa-kho-pos"
+                                                onclick="kichHoatXaKhoNhanhPos(@loPos.MaLo, @loPos.MaBanh, this)">
+                                            ⚡ Kích hoạt xả kho -30%
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
                 <!-- Thanh lọc pill ngang -->
                 <div class="pos-pill-bar" id="barLocPillPos">
                     <button type="button" class="pos-filter-pill active" onclick="chonPillLocPos(this, 'ALL')">Tất cả</button>
@@ -1100,92 +1263,107 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- MODAL 3: 🖨️ PHIẾU IN HÓA ĐƠN BÁN LẺ KIOTVIET POS SAU KHI CHỐT ĐƠN         -->
+    <!-- MODAL 3: 🖨️ MẪU IN HÓA ĐƠN NHIỆT K80 (80MM) KÈM MÃ QR (NHÁNH 5.0.3)      -->
     <!-- ========================================================================= -->
     <div class="modal fade" id="modalPhieuInPos" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 390px;">
             <div class="modal-content border-0 shadow-lg">
                 <div class="modal-header py-2 px-3" style="background: #00B63E; color: #fff;">
                     <h6 class="modal-title fw-bold mb-0">
-                        <i class="bi bi-check-circle-fill me-1"></i> Thanh toán thành công - Phiếu in KiotViet POS
+                        <i class="bi bi-check-circle-fill me-1"></i> Hóa đơn nhiệt K80 - KiotViet POS
                     </h6>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-3" id="areaInHoaDonPos">
-                    <div class="text-center border-bottom pb-2 mb-2">
-                        <div class="fw-bold fs-6">THƯƠNG HIỆU BÁNH TRUNG THU NGUYỆT CÁT</div>
-                        <div class="small text-muted">Quầy POS Trung Tâm • Hotline: 1900 8888</div>
-                        <div class="fw-bold text-primary mt-1" style="font-size: 15px;">
-                            PHIẾU THANH TOÁN: <span id="rcpMaDon">POS26-00000</span>
+                    <div class="hoa-don-nhiet-k80">
+                        <!-- 1. Phần Đầu Hóa Đơn (Header) -->
+                        <div class="text-center">
+                            <div class="fw-bold" style="font-size: 13.5px; letter-spacing: 0.2px;">NGUYỆT CÁT – TINH HOA TRĂNG RẰM</div>
+                            <div style="font-size: 11px;">128 Nguyễn Huệ, Quận 1, TP.HCM • Hotline: 1900 6886</div>
                         </div>
-                        <div class="small text-muted" id="rcpNgayDat">---</div>
-                    </div>
+                        <div class="duong-ke-net-dut"></div>
+                        <div class="text-center">
+                            <div class="fw-bold" style="font-size: 13px;">HÓA ĐƠN BÁN HÀNG / PHIẾU GIAO QUÀ</div>
+                            <div style="font-size: 11px;">
+                                Số HĐ: <strong id="rcpMaDon">POS26-00000</strong> • <span id="rcpNgayDat">---</span>
+                            </div>
+                        </div>
+                        <div class="mt-1" style="font-size: 11.5px;">
+                            <div>Khách hàng: <strong id="rcpKhachHang">Khách lẻ tại quầy</strong></div>
+                            <div>Hình thức: <strong id="rcpHinhThuc">Nhận hàng ngay tại quầy</strong></div>
+                        </div>
+                        <div class="duong-ke-net-dut"></div>
 
-                    <div class="small mb-2">
-                        <div>Khách hàng: <strong id="rcpKhachHang">Khách lẻ tại quầy</strong></div>
-                        <div>Hình thức: <strong id="rcpHinhThuc">Nhận hàng ngay tại quầy</strong></div>
-                    </div>
+                        <!-- 2. Bảng Chi Tiết Hàng Hóa -->
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="text-start">Tên món</th>
+                                    <th class="text-center" style="width: 34px;">SL</th>
+                                    <th class="text-end" style="width: 78px;">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rcpTbodyItems"></tbody>
+                        </table>
 
-                    <table class="table table-sm table-bordered mb-2" style="font-size: 12px;">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Tên món</th>
-                                <th class="text-center">SL</th>
-                                <th class="text-end">Đơn giá</th>
-                                <th class="text-end">Thành tiền</th>
-                            </tr>
-                        </thead>
-                        <tbody id="rcpTbodyItems"></tbody>
-                    </table>
+                        <!-- 3. Phần Tổng Kết Thanh Toán -->
+                        <div class="mt-2" style="font-size: 11.5px;">
+                            <div class="d-flex justify-content-between">
+                                <span>Tổng tiền hàng:</span>
+                                <strong class="so-tien" id="rcpTongTienHang">0 đ</strong>
+                            </div>
+                            <div class="d-flex justify-content-between" id="rcpRowCkB2B" style="display:none;">
+                                <span>Chiết khấu sỉ B2B:</span>
+                                <strong class="so-tien" id="rcpTienCkB2B">-0 đ</strong>
+                            </div>
+                            <div class="d-flex justify-content-between" id="rcpRowVoucher" style="display:none;">
+                                <span>Chiết khấu / Voucher:</span>
+                                <strong class="so-tien" id="rcpTienVoucher">-0 đ</strong>
+                            </div>
+                            <div class="d-flex justify-content-between" id="rcpRowShip" style="display:none;">
+                                <span>Phí giao hàng:</span>
+                                <strong class="so-tien" id="rcpPhiPhuThu">0 đ</strong>
+                            </div>
+                            <div class="duong-ke-net-dut"></div>
+                            <div class="d-flex justify-content-between fw-bold" style="font-size: 14px;">
+                                <span>TỔNG THANH TOÁN:</span>
+                                <span class="so-tien" id="rcpTongThanhToan">0 đ</span>
+                            </div>
+                            <div class="d-flex justify-content-between mt-1" style="font-size: 11px;">
+                                <span>Khách thanh toán (<span id="rcpPhuongThuc">Tiền mặt</span>):</span>
+                                <strong class="so-tien" id="rcpTienKhachDua">0 đ</strong>
+                            </div>
+                            <div class="d-flex justify-content-between" style="font-size: 11px;">
+                                <span>Tiền thừa trả khách:</span>
+                                <strong class="so-tien" id="rcpTienThua">0 đ</strong>
+                            </div>
+                        </div>
 
-                    <div class="small border-top pt-2">
-                        <div class="d-flex justify-content-between">
-                            <span>Tổng tiền hàng:</span>
-                            <strong id="rcpTongTienHang">0 đ</strong>
-                        </div>
-                        <div class="d-flex justify-content-between text-success" id="rcpRowCkB2B" style="display:none;">
-                            <span>Chiết khấu sỉ B2B:</span>
-                            <strong id="rcpTienCkB2B">-0 đ</strong>
-                        </div>
-                        <div class="d-flex justify-content-between text-success" id="rcpRowVoucher" style="display:none;">
-                            <span>Giảm giá Voucher:</span>
-                            <strong id="rcpTienVoucher">-0 đ</strong>
-                        </div>
-                        <div class="d-flex justify-content-between" id="rcpRowShip" style="display:none;">
-                            <span>Phí vận chuyển / Logo:</span>
-                            <strong id="rcpPhiPhuThu">0 đ</strong>
-                        </div>
-                        <div class="d-flex justify-content-between fs-6 fw-bold text-primary border-top pt-1 mt-1">
-                            <span>TỔNG THANH TOÁN:</span>
-                            <span id="rcpTongThanhToan">0 đ</span>
-                        </div>
-                        <div class="d-flex justify-content-between mt-1">
-                            <span>Tiền khách đưa (<span id="rcpPhuongThuc">TIEN_MAT</span>):</span>
-                            <strong id="rcpTienKhachDua">0 đ</strong>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Tiền thừa trả khách:</span>
-                            <strong class="text-danger" id="rcpTienThua">0 đ</strong>
-                        </div>
-                    </div>
+                        <div class="duong-ke-net-dut"></div>
 
-                    <!-- Khối QR Thiệp 3D nếu đơn đặt giao hàng kèm thiệp -->
-                    <div id="rcpBoxThiepQr" class="mt-2 p-2 rounded border bg-light text-center" style="display: none;">
-                        <div class="small fw-bold text-primary">🎁 Mã Thiệp Chúc Mừng QR 3D Đính Kèm Hộp Quà</div>
-                        <div class="small text-muted mb-1">Mã Token: <code id="rcpMaTokenQr">---</code></div>
-                        <a id="rcpLinkThiepQr" href="#" target="_blank" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 11.5px;">
-                            <i class="bi bi-box-arrow-up-right"></i> Mở xem Thiệp 3D
-                        </a>
+                        <!-- 4. Chân Hóa Đơn Kèm Mã QR (Footer 110x110px) -->
+                        <div class="text-center mt-2">
+                            <div class="d-inline-block p-1 border rounded bg-white mb-1">
+                                <img id="rcpQrImgK80" src="" width="110" height="110" alt="Mã QR Hóa Đơn K80" />
+                            </div>
+                            <div id="rcpBoxThiepQr" class="mb-1" style="display: none; font-size: 11px;">
+                                <span class="fw-semibold">Token Thiệp 3D: <code id="rcpMaTokenQr">---</code></span>
+                                <a id="rcpLinkThiepQr" href="#" target="_blank" class="ms-1 text-decoration-none">[Mở Thiệp 3D]</a>
+                            </div>
+                            <div class="fst-italic" style="font-size: 10.5px; line-height: 1.35;">
+                                "Quét mã QR để mở Thiệp Chúc Trung Thu 3D &amp; Tra cứu hành trình đơn hàng. Cảm ơn Quý khách!"
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer py-2 px-3 bg-light justify-content-between">
                     <a id="btnMoTrangInChuanKiot" href="#" target="_blank" class="btn btn-outline-primary btn-sm">
-                        <i class="bi bi-file-earmark-text"></i> Bản in khổ A5/K80
+                        <i class="bi bi-printer"></i> Mở trang in K80 riêng
                     </a>
                     <div class="d-flex gap-2">
                         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
                         <button type="button" class="btn btn-success btn-sm fw-bold px-3" onclick="window.print()">
-                            <i class="bi bi-printer-fill me-1"></i> In phiếu ngay
+                            🖨️ In Hóa Đơn K80
                         </button>
                     </div>
                 </div>
@@ -2057,10 +2235,10 @@
                     return;
                 }
 
-                // Đổ dữ liệu lên Modal Phiếu In Hóa Đơn Bán Lẻ KiotViet
+                // Đổ dữ liệu lên Modal Phiếu In Hóa Đơn Nhiệt K80 (80mm)
                 document.getElementById('rcpMaDon').innerText = res.maDon;
-                document.getElementById('rcpNgayDat').innerText = `Ngày giờ: ${res.ngayDat} • Thu ngân: @Html.Raw(Model.TenThuNgan.Replace("'", "\\'"))`;
-                document.getElementById('rcpKhachHang').innerText = `${res.hoTenKhach} (${res.sdtKhach})${res.diemCong > 0 ? ` [Tích +${res.diemCong} điểm]` : ''}`;
+                document.getElementById('rcpNgayDat').innerText = res.ngayDat;
+                document.getElementById('rcpKhachHang').innerText = `${res.hoTenKhach} - ${res.sdtKhach}${res.diemCong > 0 ? ` (+${res.diemCong} điểm)` : ''}`;
                 document.getElementById('rcpHinhThuc').innerText = res.cheDoMua === 'GIAO_HANG_QR'
                     ? 'Đặt giao hàng tận nơi & Thiệp QR 3D'
                     : 'Khách nhận hàng ngay tại quầy';
@@ -2068,15 +2246,25 @@
                 const rcpTbody = document.getElementById('rcpTbodyItems');
                 rcpTbody.innerHTML = '';
                 tab.items.forEach(item => {
+                    let dongConHtml = '';
+                    if (item.loaiSanPham === 3 && Array.isArray(item.danhSachMaBanhTrongHop) && item.danhSachMaBanhTrongHop.length > 0) {
+                        item.danhSachMaBanhTrongHop.forEach((mb, idxO) => {
+                            const banhO = DS_BANH_POS.find(b => b.maBanh === mb);
+                            const tenBanhO = banhO ? banhO.ten : `Bánh #${mb}`;
+                            dongConHtml += `<div class="text-muted" style="font-size: 10.5px; padding-left: 8px;">- Ô ${idxO + 1}: ${tenBanhO}</div>`;
+                        });
+                    } else if (item.chiTietPhu) {
+                        dongConHtml = `<div class="text-muted" style="font-size: 10.5px; padding-left: 8px;">${item.chiTietPhu}</div>`;
+                    }
+
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>
                             <div class="fw-semibold">${item.tenHang}</div>
-                            ${item.chiTietPhu ? `<small class="text-muted">${item.chiTietPhu}</small>` : ''}
+                            ${dongConHtml}
                         </td>
                         <td class="text-center">${item.soLuong}</td>
-                        <td class="text-end">${dinhDangN0(item.donGia)}</td>
-                        <td class="text-end fw-semibold">${dinhDangN0(item.donGia * item.soLuong)}</td>
+                        <td class="text-end fw-semibold so-tien">${dinhDangN0(item.donGia * item.soLuong)} đ</td>
                     `;
                     rcpTbody.appendChild(tr);
                 });
@@ -2109,18 +2297,31 @@
                 }
 
                 document.getElementById('rcpTongThanhToan').innerText = dinhDangN0(res.tongThanhToan) + ' đ';
-                document.getElementById('rcpPhuongThuc').innerText = res.phuongThucTt;
+                const mapPtTen = {
+                    'TIEN_MAT': 'Tiền mặt',
+                    'CHUYEN_KHOAN': 'Chuyển khoản VietQR',
+                    'THE_NGAN_HANG': 'Quẹt thẻ ngân hàng'
+                };
+                document.getElementById('rcpPhuongThuc').innerText = mapPtTen[res.phuongThucTt] || res.phuongThucTt;
 
                 const tienDua = Math.max(res.tongThanhToan, payload.tienKhachDua || res.tongThanhToan);
                 const tienThua = Math.max(0, tienDua - res.tongThanhToan);
                 document.getElementById('rcpTienKhachDua').innerText = dinhDangN0(tienDua) + ' đ';
                 document.getElementById('rcpTienThua').innerText = dinhDangN0(tienThua) + ' đ';
 
+                const urlQrMucTieu = res.maTokenQr
+                    ? `${window.location.origin}/Thiep3D/Xem/${res.maTokenQr}`
+                    : `${window.location.origin}/ThanhToan/ThanhCong?maDon=${encodeURIComponent(res.maDon)}`;
+                const rcpQrImg = document.getElementById('rcpQrImgK80');
+                if (rcpQrImg) {
+                    rcpQrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(urlQrMucTieu)}`;
+                }
+
                 const boxQr = document.getElementById('rcpBoxThiepQr');
                 if (res.maTokenQr) {
                     boxQr.style.display = 'block';
                     document.getElementById('rcpMaTokenQr').innerText = res.maTokenQr;
-                    document.getElementById('rcpLinkThiepQr').href = `/ThiepChucMung/Xem/${res.maTokenQr}`;
+                    document.getElementById('rcpLinkThiepQr').href = `/Thiep3D/Xem/${res.maTokenQr}`;
                 } else {
                     boxQr.style.display = 'none';
                 }
@@ -2137,6 +2338,55 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-printer-fill"></i> THANH TOÁN (F9)';
+            }
+        }
+
+        // Kích hoạt xả kho nhanh -30% cho lô cận Date ngay trên màn hình POS (Nhánh 5.0.2)
+        async function kichHoatXaKhoNhanhPos(maLo, maBanh, nutBam) {
+            if (!nutBam) return;
+            nutBam.disabled = true;
+            nutBam.innerText = 'Đang áp giá -30%...';
+
+            try {
+                const resp = await fetch(`/Admin/BanHangPos/KichHoatXaKhoNhanh?maLo=${maLo}&mucGiam=30`, {
+                    method: 'POST'
+                });
+                const data = await resp.json();
+                if (data && data.thanhCong) {
+                    nutBam.classList.add('da-ap-gia-xa');
+                    nutBam.innerText = '✓ Đã áp giá xả kho -30%';
+
+                    // Cập nhật ngay giá bán của bánh trong bộ nhớ DS_BANH_POS & giỏ hàng hiện tại
+                    const banhPos = DS_BANH_POS.find(b => b.maBanh === maBanh);
+                    if (banhPos) {
+                        banhPos.phanTramCanDate = data.mucGiam || 30;
+                        banhPos.dangXaCanDate = true;
+                        banhPos.giaBan = data.giaMoi || Math.round(banhPos.giaGoc * 0.7);
+                    }
+
+                    if (Array.isArray(dsTabsPos)) {
+                        dsTabsPos.forEach(t => {
+                            if (Array.isArray(t.items)) {
+                                t.items.forEach(it => {
+                                    if (it.loaiSanPham === 1 && it.maBanh === maBanh && banhPos) {
+                                        it.donGia = banhPos.giaBan;
+                                    }
+                                });
+                            }
+                        });
+                    }
+
+                    locSanPhamPos();
+                    renderBangGioHangPos();
+                } else {
+                    nutBam.disabled = false;
+                    nutBam.innerText = '⚡ Kích hoạt xả kho -30%';
+                    alert((data && data.thongBao) || 'Không thể kích hoạt xả kho!');
+                }
+            } catch (err) {
+                nutBam.disabled = false;
+                nutBam.innerText = '⚡ Kích hoạt xả kho -30%';
+                alert('Lỗi kết nối máy chủ khi kích hoạt xả kho!');
             }
         }
 

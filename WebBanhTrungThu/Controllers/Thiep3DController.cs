@@ -2,16 +2,19 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
+using WebBanhTrungThu.Services;
 
 namespace WebBanhTrungThu.Controllers
 {
     public class Thiep3DController : Controller
     {
         private readonly CSDLBanhTrungThuContext _db;
+        private readonly DichVuKiotVietMetadata _kiotMeta;
 
-        public Thiep3DController(CSDLBanhTrungThuContext db)
+        public Thiep3DController(CSDLBanhTrungThuContext db, DichVuKiotVietMetadata kiotMeta)
         {
             _db = db;
+            _kiotMeta = kiotMeta;
         }
 
         [HttpGet]
@@ -25,10 +28,17 @@ namespace WebBanhTrungThu.Controllers
             string tokenChuan = id.Trim();
             var dotGiao = await _db.DotGiaoHangDaDiems
                 .Include(d => d.MaDhNavigation)
-                .FirstOrDefaultAsync(d => d.MaTokenThiepQr == tokenChuan);
+                .FirstOrDefaultAsync(d => d.MaTokenThiepQr == tokenChuan && d.CoKemThiepQr);
 
             if (dotGiao != null)
             {
+                var metaThiep = _kiotMeta.LayThongTinThiepTheoToken(dotGiao.MaDh, dotGiao.MaTokenThiepQr);
+                if (metaThiep != null)
+                {
+                    dotGiao.TenNguoiNhanThiep = metaThiep.TenNguoiNhanThiep;
+                    dotGiao.TenNguoiGuiThiep = metaThiep.TenNguoiGuiThiep;
+                }
+
                 dotGiao.SoLanMoThiep += 1;
                 await _db.SaveChangesAsync();
                 return View(dotGiao);
@@ -39,6 +49,8 @@ namespace WebBanhTrungThu.Controllers
             {
                 MaTokenThiepQr = tokenChuan,
                 TenNguoiNhan = "Quý Khách & Gia Đình",
+                TenNguoiNhanThiep = "Quý Khách & Gia Đình",
+                TenNguoiGuiThiep = "Con Lê Minh Đức",
                 SdtnguoiNhan = "0909888999",
                 DiaChiGiaoChiTiet = "Khu Biệt Thự Vinhomes Central Park, TP.HCM",
                 NgayHenGiao = DateOnly.FromDateTime(DateTime.Now.AddDays(2)),
@@ -58,4 +70,3 @@ namespace WebBanhTrungThu.Controllers
         }
     }
 }
-

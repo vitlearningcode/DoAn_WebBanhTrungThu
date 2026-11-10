@@ -294,7 +294,60 @@
             align-items: center;
         }
 
-        /* BẢNG DỮ LIỆU KIOTVIET TỐI GIẢN (KHÔNG DÙNG TRANSFORM/TRANSITION TRÊN TR GÂY GIẬT) */
+        /* BẢNG DỮ LIỆU KIOTVIET TỐI GIẢN & THẲNG HÀNG SỐ LIỆU TABULAR-NUMS (NHÁNH 5.0.1) */
+        td, th, .so-tien, .ton-kho, .kpi-value, .kv-table td, .kv-table th {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* BANNER CẢNH BÁO LÔ CẬN DATE FEFO & XẢ KHO 1-CLICK (NHÁNH 5.0.2) */
+        .banner-canh-bao-fefo {
+            background: #FFFBEB;
+            border: 1px solid #F59E0B;
+            color: #92400E;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 14px;
+        }
+
+        .dong-lo-canh-bao-fefo {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 5px 0;
+            border-top: 1px dashed rgba(245, 158, 11, 0.35);
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+
+        .dong-lo-canh-bao-fefo:first-of-type {
+            border-top: none;
+        }
+
+        .nut-kich-hoat-xa-kho-nhanh {
+            background: #D97706;
+            color: #FFFFFF;
+            border: 1px solid #B45309;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            white-space: nowrap;
+        }
+
+        .nut-kich-hoat-xa-kho-nhanh:hover:not(:disabled) {
+            background: #B45309;
+        }
+
+        .nut-kich-hoat-xa-kho-nhanh.da-ap-gia-xa {
+            background: #059669;
+            border-color: #047857;
+            color: #FFFFFF;
+            cursor: default;
+        }
+
         .kv-table {
             width: 100%;
             border-collapse: collapse;

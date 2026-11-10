@@ -3,10 +3,11 @@
     ViewData["Title"] = "Thanh Toán Đơn Hàng - Nguyệt Cát";
     int tongSoMon = Model.DanhSachMon.Sum(x => x.SoLuong);
     int tongSoLuongSanPham = Model.GioHang?.ChiTietGioHangs?.Sum(x => x.SoLuong) ?? tongSoMon;
-    decimal tongTienSauGiamBanDau = Math.Max(0m, Model.TongTienHang - Model.TienChietKhauB2B - Model.TienGiamVoucher);
-    bool duMienPhiShip = tongTienSauGiamBanDau >= 349000m;
+    decimal tienHangSauGiamBanDau = Math.Max(0m, Model.TongTienHang - Model.TienChietKhauB2B - Model.TienGiamVoucher);
+    bool duMienPhiShip = tienHangSauGiamBanDau >= 500000m;
+    decimal soTienCanMuaThemBanDau = Math.Max(0m, 500000m - tienHangSauGiamBanDau);
     decimal phiShipMacDinh = duMienPhiShip ? 0m : 30000m;
-    decimal tongThanhToanBanDau = Math.Max(0m, tongTienSauGiamBanDau + phiShipMacDinh);
+    decimal tongThanhToanBanDau = Math.Max(0m, tienHangSauGiamBanDau + phiShipMacDinh);
     string ngayHenMacDinh = DateTime.Now.AddDays(2).ToString("yyyy-MM-dd");
 
     var diaChiMacDinh = Model.DanhSachSoDiaChi.FirstOrDefault();
@@ -18,6 +19,9 @@
     string diaChiGhepBanDau = diaChiMacDinh != null
         ? $"{diaChiMacDinh.DiaChiCuThe}, {diaChiMacDinh.PhuongXa}, {diaChiMacDinh.QuanHuyen}, {diaChiMacDinh.TinhThanh}"
         : "";
+
+    string? tenBanhHetHangBanDau = TempData["TenBanhHetHang"] as string ?? ViewBag.TenBanhHetHangKhiTaiTrang as string;
+    string? thongBaoHetHangBanDau = TempData["LoiThanhToan"] as string ?? ViewBag.ThongBaoHetHangKhiTaiTrang as string;
 
     string LayAnhDaiDienMon(object? entity, string anhMacDinh = "/images/default/banh-mac-dinh.png")
     {
@@ -45,6 +49,9 @@
                 </div>
             }
             @Html.AntiForgeryToken()
+            <input type="hidden" name="TocDoGiaoHang" id="hidTocDoGiaoHang" value="GIAO_TIEU_CHUAN" />
+            <input type="hidden" name="CoThiep3D" id="hidCoThiep3D" value="false" />
+            <input type="hidden" name="DanhSachDotGiao[0].TinhThanhPho" id="dot0_TinhThanhPho" value="@tinhThanhBanDau" />
 
             <div class="row g-4 align-items-start">
                 <!-- =========================================================================
@@ -112,6 +119,19 @@
                             </label>
                         </div>
 
+                        <!-- THANH THÔNG BÁO MỐC FREESHIP 500.000 Đ (NGAY PHÍA TRÊN PHƯƠNG THỨC VẬN CHUYỂN) -->
+                        <div id="khungThongBaoFreeshipCotTrai" class="p-2 px-3 rounded-3 mb-3 small fw-semibold"
+                             style="background: @(duMienPhiShip ? "#ECFDF5" : "#FFFBEB"); border: 1px solid @(duMienPhiShip ? "#10B981" : "#F59E0B"); color: @(duMienPhiShip ? "#065F46" : "#92400E");">
+                            @if (duMienPhiShip)
+                            {
+                                <span>🎉 Đơn hàng của bạn đã đủ điều kiện Miễn phí giao hàng tiêu chuẩn!</span>
+                            }
+                            else
+                            {
+                                <span>🚚 Miễn phí giao tiêu chuẩn cho đơn từ 500.000 đ — Mua thêm <strong>@soTienCanMuaThemBanDau.ToString("N0") đ</strong> để được Freeship!</span>
+                            }
+                        </div>
+
                         <!-- KHỐI LỰA CHỌN 1A: PHƯƠNG THỨC VẬN CHUYỂN (HIỂN THỊ KHI GIAO TẬN NƠI) -->
                         <div id="khungPhuongThucVanChuyen" class="mb-3">
                             <label class="small fw-bold text-uppercase mb-2 d-block" style="color: #4B5563; letter-spacing: 0.4px;">
@@ -119,9 +139,9 @@
                             </label>
 
                             <!-- Dòng 1: Giao tiêu chuẩn -->
-                            <label class="dong-van-chuyen-shondo dang-chon">
+                            <label class="dong-van-chuyen-shondo dang-chon" id="lblDongGiaoTieuChuan">
                                 <div class="d-flex align-items-center gap-2">
-                                    <input type="radio" name="GoiTocDoGiao" value="TIEU_CHUAN" checked class="form-check-input mt-0"
+                                    <input type="radio" name="GoiTocDoGiao" id="radGiaoTieuChuan" value="GIAO_TIEU_CHUAN" checked class="form-check-input mt-0"
                                            style="accent-color: #10B981;" onchange="capNhatBangTinhThanhToan()" />
                                     <div>
                                         <span class="fw-semibold d-block" style="color: #111827; font-size: 0.9rem;">
@@ -131,33 +151,41 @@
                                     </div>
                                 </div>
                                 <strong id="lblGiaShipTieuChuan" class="text-nowrap" style="color: @(duMienPhiShip ? "#059669" : "#111827"); font-size: 0.9rem;">
-                                    @(duMienPhiShip ? "Miễn phí" : "30.000 đ")
+                                    @(duMienPhiShip ? "0 đ (Miễn phí)" : "30.000 đ")
                                 </strong>
                             </label>
 
                             <!-- Dòng 2: Trong 6 giờ (Hỏa tốc) -->
-                            <label class="dong-van-chuyen-shondo">
+                            <label class="dong-van-chuyen-shondo" id="lblDongGiaoHoaToc">
                                 <div class="d-flex align-items-center gap-2">
-                                    <input type="radio" name="GoiTocDoGiao" value="HOA_TOC_6H" class="form-check-input mt-0"
+                                    <input type="radio" name="GoiTocDoGiao" id="radGiaoHoaToc" value="GIAO_HOA_TOC" class="form-check-input mt-0"
                                            style="accent-color: #10B981;" onchange="capNhatBangTinhThanhToan()" />
                                     <div>
                                         <span class="fw-semibold d-block" style="color: #111827; font-size: 0.9rem;">
-                                            Trong 6 giờ (Hỏa tốc nội thành từ T2-T7)
+                                            Giao tận nơi - Hỏa tốc trong 6 giờ (Từ T2 - T7)
                                         </span>
-                                        <small class="text-muted" style="font-size: 0.76rem;">Ưu tiên giao nhanh cho đơn quà biếu cần gấp trong ngày</small>
+                                        <small id="lblMoTaPhuHoaToc" class="text-muted d-block" style="font-size: 0.76rem;">
+                                            @(duMienPhiShip ? "Đã hỗ trợ 50% phí hỏa tốc cho đơn từ 500.000 đ" : "Ưu tiên giao nhanh cho đơn quà biếu cần gấp trong ngày")
+                                        </small>
                                     </div>
                                 </div>
-                                <span class="badge rounded-pill px-2 py-1 text-nowrap" style="background: #F3F4F6; color: #374151; font-weight: 600;">
-                                    Nhân viên sẽ liên hệ bạn
-                                </span>
+                                <strong id="lblGiaShipHoaToc" class="text-nowrap" style="color: #7A1215; font-size: 0.9rem;">
+                                    @(duMienPhiShip ? "30.000 đ" : "60.000 đ")
+                                </strong>
                             </label>
+
+                            <!-- Thông báo giới hạn địa bàn Hỏa tốc khi chọn Tỉnh/TP ngoài TP.HCM & An Giang -->
+                            <div id="thongBaoGioiHanHoaToc" class="mt-1 px-2 py-1 rounded small"
+                                 style="display: none; background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; font-size: 0.78rem;">
+                                <i class="bi bi-exclamation-circle-fill me-1"></i>Hỏa tốc trong 6 giờ hiện chỉ hỗ trợ tại TP. Hồ Chí Minh và TP. Long Xuyên (An Giang)
+                            </div>
                         </div>
 
                         <!-- KHỐI LỰA CHỌN 2: NHẬN TẠI CỬA HÀNG (MẶC ĐỊNH ẨN, HIỆN KHI CHỌN NHẬN TẠI CỬA HÀNG) -->
                         <div id="khungNhanTaiCuaHang" class="mb-3" style="display: none;">
                             <div class="thong-bao-cua-hang-xanh mb-3">
                                 <i class="bi bi-check-circle-fill me-1"></i>
-                                Sản phẩm <strong>CÓ</strong> ở cửa hàng. Nhân viên sẽ xác nhận qua điện thoại và giữ hàng 24h.
+                                Sản phẩm <strong>CÓ</strong> ở cửa hàng. Nhân viên sẽ xác nhận qua điện thoại và giữ hàng 24h (Miễn phí vận chuyển 0 đ).
                             </div>
 
                             <label class="small fw-bold text-uppercase mb-2 d-block" style="color: #4B5563; letter-spacing: 0.4px;">
@@ -178,7 +206,7 @@
                                     </div>
                                 </div>
                                 <span class="badge rounded-pill text-nowrap" style="background: #EEFCF6; color: #059669; border: 1px solid #10B981;">
-                                    Còn hàng
+                                    Còn hàng • 0 đ
                                 </span>
                             </label>
 
@@ -196,7 +224,7 @@
                                     </div>
                                 </div>
                                 <span class="badge rounded-pill text-nowrap" style="background: #EEFCF6; color: #059669; border: 1px solid #10B981;">
-                                    Còn hàng
+                                    Còn hàng • 0 đ
                                 </span>
                             </label>
 
@@ -214,12 +242,12 @@
                                     </div>
                                 </div>
                                 <span class="badge rounded-pill text-nowrap" style="background: #EEFCF6; color: #059669; border: 1px solid #10B981;">
-                                    Còn hàng
+                                    Còn hàng • 0 đ
                                 </span>
                             </label>
                         </div>
 
-                        <!-- KHỐI THÔNG TIN LIÊN HỆ (HIỂN THỊ CHO CẢ GIAO TẬN NƠI & NHẬN TẠI CỬA HÀNG) -->
+                        <!-- KHỐI THÔNG TIN LIÊN HỆ -->
                         <div class="mb-3">
                             <label class="small fw-bold text-uppercase mb-2 d-block" style="color: #4B5563; letter-spacing: 0.4px;">
                                 Thông tin liên hệ
@@ -227,7 +255,7 @@
                             <div class="row g-2">
                                 <div class="col-md-6">
                                     <div class="khung-input-floating-shondo">
-                                        <label for="txtHoTenNguoiMua" class="nhan-floating-nho">Họ tên <span class="text-danger">*</span></label>
+                                        <label for="txtHoTenNguoiMua" class="nhan-floating-nho">Họ tên người mua <span class="text-danger">*</span></label>
                                         <input type="text" name="HoTenNguoiMua" id="txtHoTenNguoiMua" required
                                                value="@Model.HoTenNguoiMua"
                                                placeholder="Nhập họ và tên của bạn..."
@@ -279,7 +307,7 @@
                                         <label for="txtDiaChiSoNha" class="nhan-floating-nho">Địa chỉ <span class="text-danger">*</span> (Số nhà, tên đường)</label>
                                         <input type="text" id="txtDiaChiSoNha"
                                                value="@soNhaBanDau"
-                                               placeholder="VD: 128 Nguyễn Huệ / Tòa nhà Bitexco..."
+                                               placeholder="VD: 128 Nguyễn Huệ / 45 Trần Hưng Đạo..."
                                                oninput="dongBoDiaChiGiaoChinh()" />
                                     </div>
                                 </div>
@@ -287,10 +315,10 @@
                                 <div class="col-md-6">
                                     <div class="khung-input-floating-shondo">
                                         <label for="ddlTinhThanh" class="nhan-floating-nho">Chọn tỉnh, thành phố <span class="text-danger">*</span></label>
-                                        <select id="ddlTinhThanh" onchange="dongBoDiaChiGiaoChinh()">
+                                        <select id="ddlTinhThanh" onchange="dongBoDiaChiGiaoChinh(); kiemTraTinhThanhVaCapNhatHoaToc();">
                                             <option value="TP. Hồ Chí Minh" selected="@(tinhThanhBanDau.Contains("Hồ Chí Minh"))">TP. Hồ Chí Minh</option>
+                                            <option value="An Giang" selected="@(tinhThanhBanDau.Contains("An Giang"))">An Giang (TP. Long Xuyên)</option>
                                             <option value="Hà Nội" selected="@(tinhThanhBanDau.Contains("Hà Nội"))">Hà Nội</option>
-                                            <option value="An Giang" selected="@(tinhThanhBanDau.Contains("An Giang"))">An Giang</option>
                                             <option value="Đà Nẵng" selected="@(tinhThanhBanDau.Contains("Đà Nẵng"))">Đà Nẵng</option>
                                             <option value="Cần Thơ" selected="@(tinhThanhBanDau.Contains("Cần Thơ"))">Cần Thơ</option>
                                             <option value="Bình Dương" selected="@(tinhThanhBanDau.Contains("Bình Dương"))">Bình Dương</option>
@@ -316,55 +344,52 @@
                                         </datalist>
                                     </div>
                                 </div>
+
+                                <div class="col-md-6">
+                                    <div class="khung-input-floating-shondo">
+                                        <label class="nhan-floating-nho">Ngày hẹn giao quà</label>
+                                        <input type="date" name="DanhSachDotGiao[0].NgayHenGiao" value="@ngayHenMacDinh" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="khung-input-floating-shondo">
+                                        <label class="nhan-floating-nho">Khung giờ hẹn giao</label>
+                                        <select name="DanhSachDotGiao[0].KhungGioGiao">
+                                            <option value="Sáng (08:00 - 11:30)">Sáng (08:00 - 11:30)</option>
+                                            <option value="Chiều (13:30 - 17:00)">Chiều (13:30 - 17:00)</option>
+                                            <option value="Tối Đoàn Viên (18:00 - 20:30)">Tối Đoàn Viên (18:00 - 20:30)</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- Trường ẩn / đồng bộ chính xác DiaChiGiaoChiTiet gửi về ThanhToanController.DatHang -->
+                            <!-- Trường ẩn đồng bộ DiaChiGiaoChiTiet gửi về ThanhToanController.DatHang -->
                             <input type="hidden" name="DanhSachDotGiao[0].DiaChiGiaoChiTiet" id="dot0_DiaChi" value="@diaChiGhepBanDau" />
                         </div>
 
                         <!-- =========================================================================
-                             4. BA TÙY CHỌN MỞ RỘNG THU GỌN BẰNG CHECKBOX TRÒN (MẶC ĐỊNH ĐÓNG GỌN)
+                             4. BA TÙY CHỌN MỞ RỘNG (THIỆP QR 3D MẶC ĐỊNH UNCHECKED, ĐA ĐIỂM NHẬN, B2B)
                              ========================================================================= -->
                         <div class="mt-3 mb-4">
-                            <!-- TÙY CHỌN MỞ RỘNG 1: GHI CHÚ KHÁC & KÈM THIỆP CHÚC TẾT ĐOÀN VIÊN QR 3D -->
+                            <!-- TÙY CHỌN MỞ RỘNG 1: ĐÍNH KÈM THIỆP CHÚC TẾT ĐOÀN VIÊN QR 3D (MẶC ĐỊNH CHECKED = FALSE) -->
                             <div class="khung-tuy-chon-mo-rong-shondo">
                                 <div class="form-check d-flex align-items-center gap-2 m-0">
-                                    <input class="form-check-input chk-tron-shondo" type="checkbox" id="chkMoRongThiepQr"
-                                           onchange="batTatKhungTuyChonMoRong('chkMoRongThiepQr', 'khungChiTietThiepQr')">
-                                    <label class="form-check-label fw-semibold" for="chkMoRongThiepQr" style="cursor: pointer; color: #1F2937; font-size: 0.92rem;">
-                                        Ghi chú khác &amp; Kèm Thiệp Chúc Tết Đoàn Viên QR 3D
+                                    <input class="form-check-input chk-tron-shondo" type="checkbox" id="chkThiepQr_0"
+                                           name="DanhSachDotGiao[0].CoKemThiepQr" value="true"
+                                           onchange="xuLyBatTatThiepQrChinh(this)">
+                                    <label class="form-check-label fw-semibold" for="chkThiepQr_0" style="cursor: pointer; color: #1F2937; font-size: 0.92rem;">
+                                        🌕 Đính kèm Thiệp Chúc Tết Đoàn Viên QR 3D (Miễn phí)
                                     </label>
                                 </div>
 
                                 <div id="khungChiTietThiepQr" class="mt-3 pt-3 border-top" style="display: none; border-color: #E5E7EB !important;">
-                                    <div class="row g-2 mb-2">
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-semibold text-muted mb-1">Ngày hẹn giao quà</label>
-                                            <input type="date" name="DanhSachDotGiao[0].NgayHenGiao" value="@ngayHenMacDinh"
-                                                   class="form-control form-control-sm" />
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label small fw-semibold text-muted mb-1">Khung giờ hẹn giao</label>
-                                            <select name="DanhSachDotGiao[0].KhungGioGiao" class="form-select form-select-sm">
-                                                <option value="Sáng (08:00 - 11:30)">Sáng (08:00 - 11:30)</option>
-                                                <option value="Chiều (13:30 - 17:00)">Chiều (13:30 - 17:00)</option>
-                                                <option value="Tối Đoàn Viên (18:00 - 20:30)">Tối Đoàn Viên (18:00 - 20:30)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div class="khung-thiep-qr-vang">
-                                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
-                                            <div class="form-check m-0">
-                                                <input class="form-check-input" type="checkbox" id="chkThiepQr_0"
-                                                       name="DanhSachDotGiao[0].CoKemThiepQr" value="true" checked
-                                                       onchange="batTatKhungThiepQr(this)">
-                                                <label class="form-check-label small fw-bold chu-do-son-mai" for="chkThiepQr_0" style="cursor: pointer;">
-                                                    ✨ Kích hoạt Thiệp Điện Tử QR 3D (Miễn phí)
-                                                </label>
-                                            </div>
+                                    <div class="khung-thiep-qr-vang p-3 rounded-3" style="background: #FFFDF7; border: 1px solid #E6D5B8;">
+                                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2 pb-2 border-bottom" style="border-color: #EFE6D5 !important;">
+                                            <span class="small fw-bold chu-do-son-mai">
+                                                ✨ Thiết kế Thiệp Chúc Tết Đoàn Viên QR 3D
+                                            </span>
                                             <div class="d-flex align-items-center gap-2">
-                                                <small class="text-muted">Mẫu thiệp:</small>
+                                                <small class="text-muted fw-semibold">Mẫu giao diện thiệp:</small>
                                                 <select name="DanhSachDotGiao[0].MauGiaoDienThiep" class="form-select form-select-sm w-auto">
                                                     <option value="CO_PHONG_HOANG_GIA">🏯 Cổ Phong Hoàng Gia</option>
                                                     <option value="TRANG_RAM_HIEN_DAI">🌕 Trăng Rằm Hiện Đại</option>
@@ -372,8 +397,39 @@
                                                 </select>
                                             </div>
                                         </div>
+
+                                        <div class="row g-2 mb-2">
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold mb-1" style="color: #7A1215;">
+                                                    Kính gửi (Tên người nhận in trên thiệp) <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="text" name="DanhSachDotGiao[0].TenNguoiNhanThiep" id="txtKinhGuiTrenThiep_0"
+                                                       class="form-control form-control-sm"
+                                                       placeholder="VD: Ông Bà Nội / Anh Minh Giám Đốc / Gia đình Bạn Tuấn"
+                                                       oninput="kiemTraTrungTenThiep3D()" />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label small fw-bold mb-1" style="color: #1F2937;">
+                                                    Tên người gửi in trên thiệp <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="text" name="DanhSachDotGiao[0].TenNguoiGuiThiep" id="txtNguoiGuiTrenThiep_0"
+                                                       class="form-control form-control-sm"
+                                                       value="@Model.HoTenNguoiMua"
+                                                       placeholder="VD: Con Minh Đức / Tập thể Công ty ABC"
+                                                       oninput="kiemTraTrungTenThiep3D()" />
+                                            </div>
+                                        </div>
+
+                                        <div id="canhBaoTrungTenThiep3D" class="p-2 mb-2 rounded small"
+                                             style="display: none; background: #FFFBEB; color: #B45309; border: 1px solid #F59E0B; font-size: 0.78rem;">
+                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Lưu ý: Tên <strong>Kính gửi (Người nhận)</strong> và <strong>Người gửi</strong> trên thiệp đang trùng nhau. Quý khách vui lòng kiểm tra lại để thiệp chúc hiển thị trang trọng nhất!
+                                        </div>
+
                                         <div class="noi-dung-loi-chuc-qr">
-                                            <textarea name="DanhSachDotGiao[0].LoiChucThiep" rows="2" class="form-control form-control-sm"
+                                            <label class="form-label small fw-bold mb-1" style="color: #1F2937;">
+                                                Lời chúc Tết Đoàn Viên <span class="text-danger">*</span>
+                                            </label>
+                                            <textarea name="DanhSachDotGiao[0].LoiChucThiep" id="txtLoiChucThiep_0" rows="2" class="form-control form-control-sm"
                                                       placeholder="Nhập lời chúc Trung Thu gửi tới người nhận...">Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên, Hạnh Phúc &amp; Vạn Sự An Khang!</textarea>
                                         </div>
                                     </div>
@@ -416,7 +472,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- Đồng bộ dự phòng cho DiemNhanQuas[0] -->
                                     <input type="hidden" name="DiemNhanQuas[0].TenNguoiNhan" id="diem0_TenNguoiNhan" value="@(diaChiMacDinh?.TenNguoiNhan ?? Model.HoTenNguoiMua)" />
                                     <input type="hidden" name="DiemNhanQuas[0].SdtNguoiNhan" id="diem0_SdtNguoiNhan" value="@(diaChiMacDinh?.SdtnguoiNhan ?? Model.SdtNguoiMua)" />
 
@@ -491,7 +546,7 @@
                         </div>
 
                         <!-- =========================================================================
-                             5. KHỐI HÌNH THỨC THANH TOÁN (TINH GỌN ĐÚNG 2 LỰA CHỌN THỰC TẾ)
+                             5. KHỐI HÌNH THỨC THANH TOÁN (COD & VÍ MOMO / CHUYỂN KHOẢN QR)
                              ========================================================================= -->
                         <div>
                             <h5 class="fw-bold mb-1" style="color: #111827; font-size: 1.15rem;">Hình thức thanh toán</h5>
@@ -506,23 +561,23 @@
                                     <div class="d-flex align-items-center gap-2 flex-grow-1">
                                         <span class="fs-5 text-secondary"><i class="bi bi-truck"></i></span>
                                         <div>
-                                            <strong class="d-block" style="color: #111827; font-size: 0.95rem;">Thanh toán khi nhận hàng</strong>
+                                            <strong class="d-block" style="color: #111827; font-size: 0.95rem;">Thanh toán khi nhận hàng (COD)</strong>
                                             <small class="text-muted" style="font-size: 0.78rem;">Kiểm tra lễ hộp nguyên niêm phong trước khi thanh toán tiền mặt</small>
                                         </div>
                                     </div>
                                 </label>
 
-                                <!-- Thẻ Radio 2: Ví Momo / Chuyển khoản QR -->
+                                <!-- Thẻ Radio 2: Ví MoMo / Chuyển khoản QR -->
                                 <label class="the-kenh-thanh-toan-shondo">
-                                    <input type="radio" name="PhuongThucTt" value="VIETQR"
+                                    <input type="radio" name="PhuongThucTt" value="MOMO_QR"
                                            class="form-check-input mt-1" style="accent-color: #111827;"
                                            onchange="capNhatTrangThaiPhuongThucTt()" />
                                     <div class="d-flex align-items-start gap-2 flex-grow-1">
                                         <span class="logo-momo-badge mt-1">momo</span>
                                         <div>
-                                            <strong class="d-block" style="color: #111827; font-size: 0.95rem;">Ví Momo / Chuyển khoản QR</strong>
+                                            <strong class="d-block" style="color: #111827; font-size: 0.95rem;">Ví MoMo / Chuyển khoản QR (0814 585 526)</strong>
                                             <small class="text-muted d-block" style="font-size: 0.78rem;">
-                                                Được phép quét trực tiếp từ app Ngân Hàng, VNPay, ZaloPay
+                                                Quét mã QR MoMo hoặc ứng dụng Ngân hàng • Tự động xác nhận đơn trong 3 giây
                                             </small>
                                         </div>
                                     </div>
@@ -530,7 +585,7 @@
                             </div>
 
                             <small class="d-block text-muted mt-2" style="font-size: 0.76rem;">
-                                <i class="bi bi-clock-history me-1"></i>Thanh toán online trong 15 phút. Hết hạn đơn sẽ là "Thanh toán không thành công".
+                                <i class="bi bi-clock-history me-1"></i>Đơn QR MoMo giữ chỗ sản phẩm trong 15 phút. Quá 15 phút chưa thanh toán, hệ thống tự động hủy đơn và hoàn trả sản phẩm về kho.
                             </small>
                         </div>
                     </div>
@@ -542,12 +597,25 @@
                 <div class="col-lg-5 cot-phai-shondo">
                     <div class="khung-cot-phai-shondo sticky-top" style="top: 84px;">
                         <!-- 1. TIÊU ĐỀ CHI TIẾT ĐƠN HÀNG -->
-                        <h5 class="fw-bold mb-3 pb-2 border-bottom" style="color: #111827; border-color: #E5E7EB !important;">
+                        <h5 class="fw-bold mb-2 pb-2 border-bottom" style="color: #111827; border-color: #E5E7EB !important;">
                             Chi tiết đơn hàng (@tongSoMon)
                         </h5>
 
+                        <!-- THANH THÔNG BÁO MỐC FREESHIP 500.000 Đ TRONG KHUNG TÓM TẮT ĐƠN HÀNG BÊN PHẢI -->
+                        <div id="khungThongBaoFreeshipCotPhai" class="p-2 px-3 rounded-3 mb-3 small fw-semibold"
+                             style="background: @(duMienPhiShip ? "#ECFDF5" : "#FFFBEB"); border: 1px solid @(duMienPhiShip ? "#10B981" : "#F59E0B"); color: @(duMienPhiShip ? "#065F46" : "#92400E"); font-size: 0.8rem;">
+                            @if (duMienPhiShip)
+                            {
+                                <span>🎉 Đơn hàng của bạn đã đủ điều kiện Miễn phí giao hàng tiêu chuẩn!</span>
+                            }
+                            else
+                            {
+                                <span>🚚 Miễn phí giao tiêu chuẩn cho đơn từ 500.000 đ — Mua thêm <strong>@soTienCanMuaThemBanDau.ToString("N0") đ</strong> để được Freeship!</span>
+                            }
+                        </div>
+
                         <!-- 2. DANH SÁCH SẢN PHẨM TRONG ĐƠN -->
-                        <div class="overflow-auto pe-1 mb-3" style="max-height: 360px;">
+                        <div class="overflow-auto pe-1 mb-3" style="max-height: 320px;">
                             @foreach (var item in Model.DanhSachMon)
                             {
                                 string tenMon = item.LoaiSanPham == 3
@@ -599,7 +667,7 @@
                             }
                         </div>
 
-                        <!-- 3. KHUNG NHẬP MÃ GIẢM GIÁ NẰM GỌN NGAY DƯỚI DANH SÁCH MÓN -->
+                        <!-- 3. KHUNG NHẬP MÃ GIẢM GIÁ KÈM HẠN SỬ DỤNG THỰC TẾ TỪ CSDL -->
                         <div class="mb-3">
                             <div class="d-flex gap-2">
                                 <input type="text" id="txtMaGiamGiaCheckout" class="form-control form-control-sm"
@@ -612,18 +680,24 @@
                                     Áp dụng
                                 </button>
                             </div>
-                            <div class="d-flex justify-content-between align-items-center mt-1">
+                            <div class="d-flex flex-wrap justify-content-between align-items-center mt-1 gap-1">
                                 <small id="lblKetQuaVoucherCheckout" class="text-success fw-medium" style="font-size: 0.75rem;">
                                     @if (!string.IsNullOrEmpty(Model.CodeKmDangDung))
                                     {
                                         <span><i class="bi bi-check-circle-fill me-1"></i>Đang áp dụng mã <strong>@Model.CodeKmDangDung</strong></span>
                                     }
                                 </small>
-                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none"
-                                        style="font-size: 0.74rem; color: #7A1215; font-weight: 600;"
-                                        onclick="chonNhanhMaCheckout('TRANGTRON2026')">
-                                    + Dùng mã TRANGTRON2026 (-10%)
-                                </button>
+                                <div class="d-inline-flex align-items-center gap-1 flex-wrap">
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none"
+                                            style="font-size: 0.74rem; color: #7A1215; font-weight: 700;"
+                                            onclick="chonNhanhMaCheckout('TRANGTRON2026')">
+                                        + Dùng mã TRANGTRON2026 (-10%)
+                                    </button>
+                                    <span id="lblHsdVoucherCheckout" class="badge rounded-pill px-2 py-0"
+                                          style="background: #FEF3C7; color: #92400E; font-size: 0.68rem; font-weight: 600;">
+                                        @Model.ThongTinVoucherGoiY
+                                    </span>
+                                </div>
                             </div>
                         </div>
 
@@ -674,19 +748,58 @@
                             <div class="d-flex justify-content-between py-1 small">
                                 <span class="text-muted">Phí giao hàng (<span id="lblSoDiemGiaoCheckout">1</span> điểm)</span>
                                 <strong id="lblPhiShipCheckout" class="@(duMienPhiShip ? "text-success" : "")" style="color: @(duMienPhiShip ? "#059669" : "#111827");">
-                                    @(duMienPhiShip ? "Miễn phí" : "30.000 đ")
+                                    @(duMienPhiShip ? "0 đ (Miễn phí)" : "30.000 đ")
                                 </strong>
                             </div>
 
                             <hr class="my-2" style="border-color: #D1D5DB;" />
 
-                            <div class="d-flex justify-content-between align-items-center pt-1">
+                            <div class="d-flex justify-content-between align-items-center pt-1 mb-3">
                                 <span class="fw-bold" style="color: #111827; font-size: 1.02rem;">Tổng thanh toán</span>
                                 <span id="lblTongThanhToanCuoiCheckout"
                                       style="font-size: 1.25rem; font-weight: 800; text-decoration: underline; color: #111827;">
                                     @tongThanhToanBanDau.ToString("N0") đ
                                 </span>
                             </div>
+
+                            <!-- 6. KHUNG CAPTCHA XÁC THỰC BẢO MẬT & KIỂM TRA TỒN KHO LỚP 3 (NGAY PHÍA TRÊN NÚT ĐẶT HÀNG) -->
+                            <div class="p-3 rounded-3 mb-2" style="background: #FFFFFF; border: 1.5px solid #D4AF37;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="small fw-bold" style="color: #7A1215;">
+                                        <i class="bi bi-shield-lock-fill me-1"></i>Xác thực bảo mật &amp; Kiểm tra kho
+                                    </span>
+                                    <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none small"
+                                            style="color: #4B5563; font-size: 0.75rem;" onclick="taiMaCaptchaMoi()">
+                                        <i class="bi bi-arrow-clockwise"></i> Đổi mã
+                                    </button>
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2 mb-2">
+                                    <img id="imgCaptchaThanhToan" src="" alt="Mã Captcha"
+                                         style="height: 40px; width: 138px; border-radius: 6px; border: 1px solid #E5E7EB; background: #FDFBF7;" />
+                                    <input type="text" id="txtMaCaptchaNhap" name="MaCaptcha"
+                                           class="form-control form-control-sm text-uppercase fw-bold"
+                                           placeholder="Nhập mã (tùy chọn)" maxlength="6"
+                                           style="letter-spacing: 2px; border-color: #D1D5DB;" />
+                                </div>
+
+                                <div class="form-check d-flex align-items-center gap-2 m-0 pt-1">
+                                    <input class="form-check-input" type="checkbox" id="chkXacThucCaptchaKho"
+                                           style="width: 1.15rem; height: 1.15rem; cursor: pointer; accent-color: #059669;"
+                                           onchange="xuLyTichCaptchaVaKiemTraKho(this)" />
+                                    <label class="form-check-label small fw-semibold" for="chkXacThucCaptchaKho" style="cursor: pointer; color: #111827;">
+                                        Tôi không phải là người máy (Xác thực bảo mật &amp; Kiểm tra kho)
+                                    </label>
+                                </div>
+                                <small id="lblTrangThaiCaptchaKho" class="d-block mt-1" style="font-size: 0.75rem; color: #6B7280;">
+                                    Tích chọn để kiểm tra tồn kho thực tế trước khi hoàn tất đặt hàng.
+                                </small>
+                            </div>
+
+                            <button type="submit" class="btn w-100 py-2 fw-bold text-white shadow-sm"
+                                    style="background: #7A1215; border-radius: 8px; font-size: 0.98rem;">
+                                ĐẶT HÀNG NGAY
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -697,11 +810,19 @@
                  ========================================================================= -->
             <div class="thanh-chot-don-sticky-bottom">
                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span class="badge-freeship-shondo">
-                        <i class="bi bi-truck"></i> freeship
+                    <span id="badgeTrangThaiShipSticky" class="badge-freeship-shondo"
+                          style="@(duMienPhiShip ? "" : "background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B;")">
+                        @if (duMienPhiShip)
+                        {
+                            <i class="bi bi-truck"></i> @:FREESHIP
+                        }
+                        else
+                        {
+                            <i class="bi bi-truck"></i> @:Phí giao: +@phiShipMacDinh.ToString("N0") đ
+                        }
                     </span>
                     <span id="lblNhacNhoThongTinSticky" class="small fw-medium" style="color: #4B5563;">
-                        Đơn từ 349.000đ hoặc Nhận tại cửa hàng được Miễn phí vận chuyển
+                        Miễn phí giao tiêu chuẩn cho đơn từ 500.000 đ hoặc Nhận tại cửa hàng
                     </span>
                 </div>
 
@@ -713,7 +834,7 @@
                         </strong>
                     </div>
 
-                    <button type="submit" class="btn-dat-hang-sticky-shondo">
+                    <button type="submit" id="btnDatHangSticky" class="btn-dat-hang-sticky-shondo">
                         ĐẶT HÀNG
                     </button>
                 </div>
@@ -721,6 +842,67 @@
         </form>
     </div>
 </section>
+
+<!-- =========================================================================
+     MODAL 1: THÔNG BÁO HẾT HÀNG TRANG TRỌNG (LỚP 2 & LỚP 3 TIMING GATE)
+     ========================================================================= -->
+<div class="modal fade" id="modalThongBaoHetHang" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header text-white border-0 py-3" style="background: linear-gradient(135deg, #7A1215, #4A080A);">
+                <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-octagon-fill text-warning"></i>
+                    Thông Báo Tình Trạng Tồn Kho Nguyệt Cát
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body p-4" style="background: #FFFDF9;">
+                <p id="noiDungModalHetHang" class="mb-3 fw-medium" style="color: #1F2937; line-height: 1.6; font-size: 0.96rem;">
+                    Rất tiếc! Sản phẩm trong giỏ quà của Quý khách vừa hết hàng hoặc không còn đủ số lượng tại kho. Nguyệt Cát chân thành xin lỗi Quý khách vì sự bất tiện này. Vui lòng điều chỉnh lại số lượng hoặc chọn vị bánh khác.
+                </p>
+                <div class="p-3 rounded-3 small" style="background: #FEF2F2; color: #991B1B; border: 1px solid #FECACA;">
+                    <i class="bi bi-shield-check me-1"></i>Hệ thống kiểm tra tồn kho thực tế theo lô sản xuất (FEFO) để đảm bảo mọi lễ hộp giao đến tay Quý khách đều mới nhất.
+                </div>
+            </div>
+            <div class="modal-footer border-0 bg-light px-4 py-3 d-flex justify-content-between">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">
+                    Đóng lại
+                </button>
+                <button type="button" class="btn text-white rounded-pill px-4 fw-bold" style="background: #7A1215;"
+                        onclick=" bootstrap.Modal.getInstance(document.getElementById('modalThongBaoHetHang'))?.hide(); moNganKeoGioHang();">
+                    <i class="bi bi-bag-check me-1"></i>Điều chỉnh Giỏ quà ngay
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL 2: CẢNH BÁO MẠNG GIÁN ĐOẠN (NETWORK ERROR / TIMEOUT)
+     ========================================================================= -->
+<div class="modal fade" id="modalCanhBaoMang" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px; overflow: hidden;">
+            <div class="modal-header text-white border-0 py-3" style="background: #92400E;">
+                <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+                    <i class="bi bi-wifi-off"></i>
+                    Cảnh Báo Kết Nối Mạng
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p id="noiDungModalCanhBaoMang" class="mb-0 fw-medium" style="color: #1F2937; line-height: 1.6;">
+                    Kết nối Internet bị gián đoạn! Quý khách vui lòng kiểm tra lại đường truyền mạng và tiến hành xác thực thanh toán lại.
+                </p>
+            </div>
+            <div class="modal-footer border-0 bg-light px-4 py-2">
+                <button type="button" class="btn btn-dark rounded-pill px-4" data-bs-dismiss="modal">
+                    Đã hiểu &amp; Thử lại
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 @section Scripts {
     <script>
@@ -731,14 +913,187 @@
         const PHI_LOGO_MAC_DINH = @Model.PhiInLogoMacDinh;
         const NGAY_HEN_MAC_DINH = "@ngayHenMacDinh";
         const tongSoLuongSanPham = @tongSoLuongSanPham;
+        const MOC_FREESHIP_TIEU_CHUAN = 500000;
+        let daXacThucCaptchaHopLe = false;
+        let dangGuiDonHang = false;
 
         document.addEventListener("DOMContentLoaded", function () {
             capNhatGiaoDienNguoiKhacNhan();
             dongBoNguoiMuaSangNguoiNhan();
             dongBoDiaChiGiaoChinh();
+            kiemTraTinhThanhVaCapNhatHoaToc();
             capNhatBangTinhThanhToan();
             kiemTraNhacNhoStickyBar();
+            taiMaCaptchaMoi();
+
+            @if (!string.IsNullOrWhiteSpace(tenBanhHetHangBanDau))
+            {
+                <text>
+                hienThiModalHetHang(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(tenBanhHetHangBanDau)), @Html.Raw(System.Text.Json.JsonSerializer.Serialize(thongBaoHetHangBanDau)));
+                </text>
+            }
         });
+
+        function hienThiModalHetHang(tenBanh, thongBaoTuyChinh) {
+            const noiDungEl = document.getElementById("noiDungModalHetHang");
+            if (noiDungEl) {
+                noiDungEl.textContent = thongBaoTuyChinh
+                    || `Rất tiếc! Sản phẩm ${tenBanh || "Bánh Trung Thu"} trong giỏ quà của Quý khách vừa hết hàng hoặc không còn đủ số lượng tại kho. Nguyệt Cát chân thành xin lỗi Quý khách vì sự bất tiện này. Vui lòng điều chỉnh lại số lượng hoặc chọn vị bánh khác.`;
+            }
+            const modalEl = document.getElementById("modalThongBaoHetHang");
+            if (modalEl && window.bootstrap) {
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            }
+        }
+
+        function hienThiModalCanhBaoMang() {
+            const modalEl = document.getElementById("modalCanhBaoMang");
+            if (modalEl && window.bootstrap) {
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            }
+        }
+
+        // Sinh mã Captcha mới từ Server
+        async function taiMaCaptchaMoi() {
+            try {
+                const res = await fetch("/ThanhToan/LayMaCaptchaMoi");
+                const data = await res.json();
+                if (data && data.thanhCong) {
+                    const img = document.getElementById("imgCaptchaThanhToan");
+                    if (img) img.src = data.anhCaptchaSvg;
+                }
+            } catch (e) {
+                // Bỏ qua nếu đang tải trang
+            }
+        }
+
+        // Mốc Timing Gate: Khi khách tích chọn Captcha xác thực bảo mật & kiểm tra kho
+        async function xuLyTichCaptchaVaKiemTraKho(chk) {
+            const lbl = document.getElementById("lblTrangThaiCaptchaKho");
+            if (!chk.checked) {
+                daXacThucCaptchaHopLe = false;
+                if (lbl) {
+                    lbl.style.color = "#6B7280";
+                    lbl.textContent = "Tích chọn để kiểm tra tồn kho thực tế trước khi hoàn tất đặt hàng.";
+                }
+                return;
+            }
+
+            if (lbl) {
+                lbl.style.color = "#B45309";
+                lbl.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Đang xác thực bảo mật & đối chiếu tồn kho thực tế...`;
+            }
+
+            const hopLe = await goiApiXacThucCaptchaVaKho();
+            if (!hopLe) {
+                chk.checked = false;
+                daXacThucCaptchaHopLe = false;
+            } else {
+                daXacThucCaptchaHopLe = true;
+                if (lbl) {
+                    lbl.style.color = "#059669";
+                    lbl.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Đã xác thực bảo mật & kiểm tra kho thành công! Đủ hàng giao ngay.`;
+                }
+            }
+        }
+
+        async function goiApiXacThucCaptchaVaKho() {
+            const maCaptcha = document.getElementById("txtMaCaptchaNhap")?.value.trim() || "";
+            const lbl = document.getElementById("lblTrangThaiCaptchaKho");
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+            try {
+                const res = await fetch("/ThanhToan/XacThucCaptchaVaKiemTraKho", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ maCaptcha: maCaptcha }),
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if (!res.ok) {
+                    throw new Error("Network response was not ok");
+                }
+
+                const data = await res.json();
+                if (data.thanhCong) {
+                    return true;
+                }
+
+                if (data.loaiLoi === "CAPTCHA") {
+                    if (lbl) {
+                        lbl.style.color = "#DC2626";
+                        lbl.innerHTML = `<i class="bi bi-exclamation-circle-fill me-1"></i>${data.thongBao}`;
+                    }
+                    taiMaCaptchaMoi();
+                    return false;
+                }
+
+                // Hết hàng hoặc không đủ tồn kho
+                if (lbl) {
+                    lbl.style.color = "#DC2626";
+                    lbl.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i>Kho không đủ số lượng cho sản phẩm ${data.tenBanh || "trong giỏ"}!`;
+                }
+                hienThiModalHetHang(data.tenBanh, data.thongBao);
+                return false;
+            } catch (err) {
+                clearTimeout(timeoutId);
+                if (lbl) {
+                    lbl.style.color = "#DC2626";
+                    lbl.innerHTML = `<i class="bi bi-wifi-off me-1"></i>Kết nối Internet bị gián đoạn!`;
+                }
+                hienThiModalCanhBaoMang();
+                return false;
+            }
+        }
+
+        // Kiểm tra Tỉnh/Thành phố có hỗ trợ Giao hỏa tốc 6h (chỉ TP. Hồ Chí Minh và An Giang)
+        function laTinhHoTroHoaToc(tinhThanh) {
+            if (!tinhThanh) return false;
+            const t = tinhThanh.toLowerCase();
+            return t.includes("hồ chí minh") || t.includes("an giang") || t.includes("long xuyên");
+        }
+
+        function kiemTraTinhThanhVaCapNhatHoaToc() {
+            const tinhThanh = document.getElementById("ddlTinhThanh")?.value || "TP. Hồ Chí Minh";
+            const dot0Tinh = document.getElementById("dot0_TinhThanhPho");
+            if (dot0Tinh) dot0Tinh.value = tinhThanh;
+
+            const radHoaToc = document.getElementById("radGiaoHoaToc");
+            const radTieuChuan = document.getElementById("radGiaoTieuChuan");
+            const lblDongHoaToc = document.getElementById("lblDongGiaoHoaToc");
+            const thongBaoHoaToc = document.getElementById("thongBaoGioiHanHoaToc");
+
+            const hoTro = laTinhHoTroHoaToc(tinhThanh);
+
+            if (!hoTro) {
+                if (radHoaToc) {
+                    if (radHoaToc.checked && radTieuChuan) {
+                        radTieuChuan.checked = true;
+                    }
+                    radHoaToc.disabled = true;
+                }
+                if (lblDongHoaToc) {
+                    lblDongHoaToc.style.opacity = "0.55";
+                    lblDongHoaToc.style.cursor = "not-allowed";
+                }
+                if (thongBaoHoaToc) {
+                    thongBaoHoaToc.style.display = "block";
+                }
+            } else {
+                if (radHoaToc) radHoaToc.disabled = false;
+                if (lblDongHoaToc) {
+                    lblDongHoaToc.style.opacity = "1";
+                    lblDongHoaToc.style.cursor = "pointer";
+                }
+                if (thongBaoHoaToc) {
+                    thongBaoHoaToc.style.display = "none";
+                }
+            }
+
+            capNhatBangTinhThanhToan();
+        }
 
         // Chuyển đổi giữa "Giao tận nơi" và "Nhận tại cửa hàng"
         function chuyenDoiHinhThucNhanHang() {
@@ -769,7 +1124,6 @@
             const btnThem = document.getElementById("btnThemDiemNhanQua");
 
             if (laNhanTaiCuaHang) {
-                // Trường hợp 1: Khách chọn Nhận tại cửa hàng
                 if (lblChk) lblChk.textContent = "Nhờ người khác đến cửa hàng nhận thay (nếu có)";
                 if (lblTen0) lblTen0.innerHTML = 'Họ tên người nhận thay <span class="text-danger">*</span>';
                 if (lblSdt0) lblSdt0.innerHTML = 'Số điện thoại người nhận thay <span class="text-danger">*</span>';
@@ -779,7 +1133,6 @@
                 }
                 if (btnThem) btnThem.style.display = "none";
             } else if (tongSoLuongSanPham <= 1) {
-                // Trường hợp 2: Khách chọn Giao tận nơi nhưng chỉ mua 1 sản phẩm (tongSoLuongSanPham <= 1)
                 if (lblChk) lblChk.textContent = "Gọi người khác nhận hàng (nếu có)";
                 if (lblTen0) lblTen0.innerHTML = 'Tên người nhận <span class="text-danger">*</span>';
                 if (lblSdt0) lblSdt0.innerHTML = 'SĐT người nhận <span class="text-danger">*</span>';
@@ -789,7 +1142,6 @@
                 }
                 if (btnThem) btnThem.style.display = "none";
             } else {
-                // Trường hợp 3: Khách chọn Giao tận nơi và mua từ 2 sản phẩm trở lên (tongSoLuongSanPham >= 2)
                 if (lblChk) lblChk.textContent = `Gọi người khác nhận hàng / Giao nhiều địa chỉ (tối đa ${tongSoLuongSanPham} điểm nhận)`;
                 if (lblTen0) lblTen0.innerHTML = 'Tên người nhận quà #1 <span class="text-danger">*</span>';
                 if (lblSdt0) lblSdt0.innerHTML = 'SĐT người nhận #1 <span class="text-danger">*</span>';
@@ -836,7 +1188,14 @@
 
             if (soNhaEl) soNhaEl.value = opt.value;
             if (phuongQuanEl && opt.dataset.phuongquan) phuongQuanEl.value = opt.dataset.phuongquan;
-            if (tinhThanhEl && opt.dataset.tinhthanh) tinhThanhEl.value = opt.dataset.tinhthanh;
+            if (tinhThanhEl && opt.dataset.tinhthanh) {
+                for (let i = 0; i < tinhThanhEl.options.length; i++) {
+                    if (tinhThanhEl.options[i].value.includes(opt.dataset.tinhthanh) || opt.dataset.tinhthanh.includes(tinhThanhEl.options[i].value)) {
+                        tinhThanhEl.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
 
             if (opt.dataset.ten && document.getElementById("dot0_TenNguoiNhan")) {
                 document.getElementById("dot0_TenNguoiNhan").value = opt.dataset.ten;
@@ -846,10 +1205,10 @@
             }
 
             dongBoDiaChiGiaoChinh();
+            kiemTraTinhThanhVaCapNhatHoaToc();
             hienThiThongBaoGioHang("Đã điền nhanh địa chỉ giao hàng đã lưu!", true);
         }
 
-        // Bật / tắt các khung tùy chọn mở rộng bằng checkbox tròn
         function batTatKhungTuyChonMoRong(idCheckbox, idKhung) {
             const chk = document.getElementById(idCheckbox);
             const khung = document.getElementById(idKhung);
@@ -858,13 +1217,47 @@
             }
         }
 
+        // Xử lý bật/tắt Thiệp Chúc Tết Đoàn Viên QR 3D (mặc định checked = false)
+        function xuLyBatTatThiepQrChinh(chk) {
+            const khung = document.getElementById("khungChiTietThiepQr");
+            const hidCoThiep = document.getElementById("hidCoThiep3D");
+            const txtKinhGui = document.getElementById("txtKinhGuiTrenThiep_0");
+            const txtNguoiGui = document.getElementById("txtNguoiGuiTrenThiep_0");
+            const txtLoiChuc = document.getElementById("txtLoiChucThiep_0");
+
+            const batThiep = Boolean(chk && chk.checked);
+            if (khung) khung.style.display = batThiep ? "block" : "none";
+            if (hidCoThiep) hidCoThiep.value = batThiep ? "true" : "false";
+
+            if (txtKinhGui) txtKinhGui.required = batThiep;
+            if (txtNguoiGui) {
+                txtNguoiGui.required = batThiep;
+                if (batThiep && !txtNguoiGui.value.trim()) {
+                    txtNguoiGui.value = document.getElementById("txtHoTenNguoiMua")?.value.trim() || "";
+                }
+            }
+            if (txtLoiChuc) txtLoiChuc.required = batThiep;
+            kiemTraTrungTenThiep3D();
+        }
+
+        function kiemTraTrungTenThiep3D() {
+            const chk = document.getElementById("chkThiepQr_0");
+            const canhBao = document.getElementById("canhBaoTrungTenThiep3D");
+            if (!chk || !chk.checked || !canhBao) {
+                if (canhBao) canhBao.style.display = "none";
+                return;
+            }
+            const kinhGui = (document.getElementById("txtKinhGuiTrenThiep_0")?.value || "").trim().toLowerCase();
+            const nguoiGui = (document.getElementById("txtNguoiGuiTrenThiep_0")?.value || "").trim().toLowerCase();
+            canhBao.style.display = (kinhGui.length > 0 && kinhGui === nguoiGui) ? "block" : "none";
+        }
+
         function xuLyBatTatNguoiKhacNhan() {
             batTatKhungTuyChonMoRong("chkGoiNguoiKhacNhan", "khungNguoiKhacNhanHang");
             capNhatGiaoDienNguoiKhacNhan();
             dongBoNguoiMuaSangNguoiNhan();
         }
 
-        // Tự động copy HoTenNguoiMua & SdtNguoiMua sang người nhận #1 khi không tích "Gọi người khác nhận hàng"
         function dongBoNguoiMuaSangNguoiNhan() {
             const chkNguoiKhac = document.getElementById("chkGoiNguoiKhacNhan");
             const hoTenMua = document.getElementById("txtHoTenNguoiMua")?.value.trim() || "";
@@ -883,10 +1276,14 @@
             if (elDiemTen0) elDiemTen0.value = elTenNhan0?.value || hoTenMua;
             if (elDiemSdt0) elDiemSdt0.value = elSdtNhan0?.value || sdtMua;
 
+            const txtNguoiGuiThiep = document.getElementById("txtNguoiGuiTrenThiep_0");
+            if (txtNguoiGuiThiep && !txtNguoiGuiThiep.dataset.daSuaTay) {
+                txtNguoiGuiThiep.value = hoTenMua;
+            }
+
             kiemTraNhacNhoStickyBar();
         }
 
-        // Cập nhật dòng nhắc nhở bên trái Sticky Bottom Bar
         function kiemTraNhacNhoStickyBar() {
             const lblNhac = document.getElementById("lblNhacNhoThongTinSticky");
             if (!lblNhac) return;
@@ -940,7 +1337,8 @@
                 return;
             }
 
-            const idx = soDiemPhuHienTai + 1; // Điểm chính là index 0
+            const idx = soDiemPhuHienTai + 1;
+            const tenNguoiMua = document.getElementById("txtHoTenNguoiMua")?.value.trim() || "";
 
             const div = document.createElement("div");
             div.className = "item-dot-giao khung-dia-chi-giao mt-2";
@@ -984,10 +1382,10 @@
                 <div class="khung-thiep-qr-vang mt-2">
                     <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
                         <div class="form-check m-0">
-                            <input class="form-check-input" type="checkbox" name="DanhSachDotGiao[${idx}].CoKemThiepQr" value="true" checked
+                            <input class="form-check-input" type="checkbox" name="DanhSachDotGiao[${idx}].CoKemThiepQr" value="true"
                                    onchange="batTatKhungThiepQr(this)">
                             <label class="form-check-label small fw-bold chu-do-son-mai">
-                                Kèm Thiệp QR 3D riêng
+                                Đính kèm Thiệp Chúc Tết Đoàn Viên QR 3D riêng (Miễn phí)
                             </label>
                         </div>
                         <select name="DanhSachDotGiao[${idx}].MauGiaoDienThiep" class="form-select form-select-sm w-auto">
@@ -996,7 +1394,17 @@
                             <option value="SUM_VAY_AM_AP">🏮 Sum Vầy Ấm Áp</option>
                         </select>
                     </div>
-                    <div class="noi-dung-loi-chuc-qr">
+                    <div class="noi-dung-loi-chuc-qr" style="display: none;">
+                        <div class="row g-2 mb-2 mt-1">
+                            <div class="col-md-6">
+                                <input type="text" name="DanhSachDotGiao[${idx}].TenNguoiNhanThiep"
+                                       class="form-control form-control-sm" placeholder="Kính gửi (Tên in trên thiệp) *" />
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" name="DanhSachDotGiao[${idx}].TenNguoiGuiThiep" value="${tenNguoiMua}"
+                                       class="form-control form-control-sm" placeholder="Tên người gửi in trên thiệp *" />
+                            </div>
+                        </div>
                         <textarea name="DanhSachDotGiao[${idx}].LoiChucThiep" rows="2" class="form-control form-control-sm"
                                   placeholder="Lời chúc riêng cho điểm nhận này...">Kính chúc Quý Đối tác &amp; Gia đình mùa Tết Trung Thu Đoàn Viên, Thịnh Vượng!</textarea>
                     </div>
@@ -1022,7 +1430,7 @@
         function danhSoLaiCacDotGiao() {
             const items = document.querySelectorAll("#danhSachCacDotGiaoContainer .item-dot-giao");
             items.forEach((item, i) => {
-                const index = i + 1; // Điểm chính là index 0
+                const index = i + 1;
                 item.dataset.index = index;
                 const titleEl = item.querySelector(".tieu-de-dot-giao");
                 if (titleEl) {
@@ -1121,14 +1529,71 @@
             const laNhanTaiCuaHang = document.getElementById("radNhanTaiCuaHang")?.checked === true;
             const soDiemPhu = laNhanTaiCuaHang ? 0 : document.querySelectorAll("#danhSachCacDotGiaoContainer .item-dot-giao").length;
             const soDiemGiao = 1 + soDiemPhu;
-            const tongTienSauGiam = Math.max(0, TONG_TIEN_HANG - TIEN_CK_B2B - TIEN_GIAM_VOUCHER);
 
-            let tongPhiShip = 0;
-            if (!laNhanTaiCuaHang && tongTienSauGiam < 349000) {
-                tongPhiShip = soDiemGiao * 30000;
+            const tienHangSauGiam = Math.max(0, TONG_TIEN_HANG - TIEN_CK_B2B - TIEN_GIAM_VOUCHER);
+            const duMocFreeship = tienHangSauGiam >= MOC_FREESHIP_TIEU_CHUAN;
+            const canMuaThem = Math.max(0, MOC_FREESHIP_TIEU_CHUAN - tienHangSauGiam);
+
+            // Cập nhật 2 thanh thông báo Freeship (cột trái & cột phải)
+            const htmlFreeship = duMocFreeship
+                ? `<span>🎉 Đơn hàng của bạn đã đủ điều kiện Miễn phí giao hàng tiêu chuẩn!</span>`
+                : `<span>🚚 Miễn phí giao tiêu chuẩn cho đơn từ 500.000 đ — Mua thêm <strong>${canMuaThem.toLocaleString("vi-VN")} đ</strong> để được Freeship!</span>`;
+
+            ["khungThongBaoFreeshipCotTrai", "khungThongBaoFreeshipCotPhai"].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.innerHTML = htmlFreeship;
+                    el.style.background = duMocFreeship ? "#ECFDF5" : "#FFFBEB";
+                    el.style.borderColor = duMocFreeship ? "#10B981" : "#F59E0B";
+                    el.style.color = duMocFreeship ? "#065F46" : "#92400E";
+                }
+            });
+
+            // Cập nhật hiển thị giá trên 2 dòng Radio Phương thức vận chuyển
+            const phiTieuChuan = duMocFreeship ? 0 : (30000 * soDiemGiao);
+            const phiHoaToc = (duMocFreeship ? 30000 : 60000) * soDiemGiao;
+
+            const lblGiaShipTieuChuan = document.getElementById("lblGiaShipTieuChuan");
+            if (lblGiaShipTieuChuan) {
+                lblGiaShipTieuChuan.innerText = duMocFreeship ? "0 đ (Miễn phí)" : `${phiTieuChuan.toLocaleString("vi-VN")} đ`;
+                lblGiaShipTieuChuan.style.color = duMocFreeship ? "#059669" : "#111827";
             }
 
-            const tongCuoi = Math.max(0, tongTienSauGiam + phiLogo + tongPhiShip);
+            const lblGiaShipHoaToc = document.getElementById("lblGiaShipHoaToc");
+            if (lblGiaShipHoaToc) {
+                lblGiaShipHoaToc.innerText = duMocFreeship
+                    ? `${phiHoaToc.toLocaleString("vi-VN")} đ (Đã hỗ trợ 50%)`
+                    : `${phiHoaToc.toLocaleString("vi-VN")} đ`;
+            }
+
+            const lblMoTaPhuHoaToc = document.getElementById("lblMoTaPhuHoaToc");
+            if (lblMoTaPhuHoaToc) {
+                lblMoTaPhuHoaToc.textContent = duMocFreeship
+                    ? "Đã hỗ trợ 50% phí hỏa tốc cho đơn từ 500.000 đ"
+                    : "Ưu tiên giao nhanh trong 6 giờ tại TP.HCM & TP. Long Xuyên (An Giang)";
+            }
+
+            const radHoaToc = document.getElementById("radGiaoHoaToc");
+            const laGiaoHoaToc = !laNhanTaiCuaHang && Boolean(radHoaToc && radHoaToc.checked && !radHoaToc.disabled);
+
+            document.getElementById("lblDongGiaoTieuChuan")?.classList.toggle("dang-chon", !laGiaoHoaToc);
+            document.getElementById("lblDongGiaoHoaToc")?.classList.toggle("dang-chon", laGiaoHoaToc);
+
+            const hidTocDo = document.getElementById("hidTocDoGiaoHang");
+            if (hidTocDo) {
+                hidTocDo.value = laNhanTaiCuaHang ? "NHAN_TAI_CUA_HANG" : (laGiaoHoaToc ? "GIAO_HOA_TOC" : "GIAO_TIEU_CHUAN");
+            }
+
+            let tongPhiShip = 0;
+            if (laNhanTaiCuaHang) {
+                tongPhiShip = 0;
+            } else if (laGiaoHoaToc) {
+                tongPhiShip = phiHoaToc;
+            } else {
+                tongPhiShip = phiTieuChuan;
+            }
+
+            const tongCuoi = Math.max(0, tienHangSauGiam + phiLogo + tongPhiShip);
 
             const lblSoDiem = document.getElementById("lblSoDiemGiaoCheckout");
             if (lblSoDiem) lblSoDiem.innerText = soDiemGiao;
@@ -1136,11 +1601,29 @@
             const lblPhiShip = document.getElementById("lblPhiShipCheckout");
             if (lblPhiShip) {
                 if (tongPhiShip === 0) {
-                    lblPhiShip.innerText = "Miễn phí";
+                    lblPhiShip.innerText = "0 đ (Miễn phí)";
                     lblPhiShip.className = "text-success fw-bold";
+                    lblPhiShip.style.color = "#059669";
                 } else {
-                    lblPhiShip.innerText = `${tongPhiShip.toLocaleString("vi-VN")} đ`;
-                    lblPhiShip.className = "";
+                    lblPhiShip.innerText = `+${tongPhiShip.toLocaleString("vi-VN")} đ`;
+                    lblPhiShip.className = "fw-bold";
+                    lblPhiShip.style.color = "#111827";
+                }
+            }
+
+            // Đồng bộ Badge trên Sticky Bar dưới đáy màn hình: CHỈ hiện FREESHIP khi PhiVanChuyen == 0
+            const badgeSticky = document.getElementById("badgeTrangThaiShipSticky");
+            if (badgeSticky) {
+                if (tongPhiShip === 0) {
+                    badgeSticky.innerHTML = `<i class="bi bi-truck"></i> FREESHIP`;
+                    badgeSticky.style.background = "#10B981";
+                    badgeSticky.style.color = "#FFFFFF";
+                    badgeSticky.style.border = "none";
+                } else {
+                    badgeSticky.innerHTML = `<i class="bi bi-truck"></i> Phí giao: +${tongPhiShip.toLocaleString("vi-VN")} đ`;
+                    badgeSticky.style.background = "#FEF3C7";
+                    badgeSticky.style.color = "#92400E";
+                    badgeSticky.style.border = "1px solid #F59E0B";
                 }
             }
 
@@ -1152,8 +1635,11 @@
             if (lblTongSticky) lblTongSticky.innerText = chuoiTongTien;
         }
 
-        // Trước khi submit form: tự động đồng bộ người mua sang người nhận #1 và ghép địa chỉ
-        function chuanBiTruocKhiGuiDon(e) {
+        // Trước khi submit form: Kiểm tra thông tin, Thiệp 3D, và gọi Timing Gate kiểm tra tồn kho Lớp 3
+        async function chuanBiTruocKhiGuiDon(e) {
+            if (dangGuiDonHang) return true;
+            if (e) e.preventDefault();
+
             dongBoNguoiMuaSangNguoiNhan();
             dongBoDiaChiGiaoChinh();
 
@@ -1162,19 +1648,53 @@
             const diaChi = document.getElementById("dot0_DiaChi")?.value.trim() || "";
 
             if (!hoTen || !sdt) {
-                if (e) e.preventDefault();
                 hienThiThongBaoGioHang("Vui lòng nhập đầy đủ Họ tên và Số điện thoại liên hệ!", false);
                 document.getElementById("txtHoTenNguoiMua")?.focus();
                 return false;
             }
 
             if (!diaChi) {
-                if (e) e.preventDefault();
                 hienThiThongBaoGioHang("Vui lòng nhập Địa chỉ giao hàng (Số nhà, tên đường) hoặc chọn Cửa hàng nhận!", false);
                 document.getElementById("txtDiaChiSoNha")?.focus();
                 return false;
             }
 
+            // Kiểm tra nếu khách có tích chọn Thiệp Chúc Tết Đoàn Viên QR 3D
+            const chkThiep0 = document.getElementById("chkThiepQr_0");
+            if (chkThiep0 && chkThiep0.checked) {
+                const kinhGui = document.getElementById("txtKinhGuiTrenThiep_0")?.value.trim() || "";
+                const nguoiGui = document.getElementById("txtNguoiGuiTrenThiep_0")?.value.trim() || "";
+                const loiChuc = document.getElementById("txtLoiChucThiep_0")?.value.trim() || "";
+
+                if (!kinhGui) {
+                    hienThiThongBaoGioHang("Vui lòng nhập mục 'Kính gửi (Tên người nhận in trên thiệp)'!", false);
+                    document.getElementById("txtKinhGuiTrenThiep_0")?.focus();
+                    return false;
+                }
+                if (!nguoiGui) {
+                    hienThiThongBaoGioHang("Vui lòng nhập 'Tên người gửi in trên thiệp'!", false);
+                    document.getElementById("txtNguoiGuiTrenThiep_0")?.focus();
+                    return false;
+                }
+                if (!loiChuc) {
+                    hienThiThongBaoGioHang("Vui lòng nhập 'Lời chúc Tết Đoàn Viên'!", false);
+                    document.getElementById("txtLoiChucThiep_0")?.focus();
+                    return false;
+                }
+            }
+
+            // Kiểm tra Captcha & Tồn kho thực tế thêm 1 lần nữa ngay lúc bấm ĐẶT HÀNG
+            const chkCaptcha = document.getElementById("chkXacThucCaptchaKho");
+            if (chkCaptcha) chkCaptcha.checked = true;
+
+            const hopLeKho = await goiApiXacThucCaptchaVaKho();
+            if (!hopLeKho) {
+                if (chkCaptcha) chkCaptcha.checked = false;
+                return false;
+            }
+
+            dangGuiDonHang = true;
+            document.getElementById("formDatHangTrungThu").submit();
             return true;
         }
     </script>

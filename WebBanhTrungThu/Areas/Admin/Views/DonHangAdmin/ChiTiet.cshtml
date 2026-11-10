@@ -2,6 +2,18 @@
 @{
     ViewData["Title"] = $"Chi Tiết Hóa Đơn #{Model.DonHang.MaTraCuuDh} & Sơ Đồ Đóng Khay Hộp";
     var dh = Model.DonHang;
+
+    string AnhXaTrangThaiGiao(string? maTtGiao)
+    {
+        return (maTtGiao ?? "").Trim().ToUpperInvariant() switch
+        {
+            "CHO_DONG_GOI" => "Đang đóng gói",
+            "DANG_GIAO" => "Đang giao",
+            "DA_GIAO" or "HOAN_TAT" => "Đã giao hoàn tất",
+            "DA_HUY" => "Đã hủy",
+            _ => "Chờ xác nhận"
+        };
+    }
 }
 
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -10,7 +22,7 @@
     </a>
     <div class="d-flex gap-2">
         <a href="/Admin/DonHangAdmin/InHoaDon/@dh.MaDh" target="_blank" class="btn btn-kv-green btn-sm">
-            🖨️ In Hóa Đơn & Phiếu Đóng Gói
+            🖨️ In Hóa Đơn K80
         </a>
     </div>
 </div>
@@ -22,7 +34,7 @@
             <h5 class="fw-bold text-primary mb-1">Hóa đơn #@dh.MaTraCuuDh • Khách mua: @dh.HoTenNguoiMua (@dh.SdtnguoiMua)</h5>
             <div class="small text-muted">
                 Ngày đặt: @dh.NgayDat.ToString("dd/MM/yyyy HH:mm") •
-                Tổng thanh toán: <strong class="text-danger fs-6">@dh.TongThanhToanCuoi.ToString("N0") đ</strong>
+                Tổng thanh toán: <strong class="text-danger fs-6 so-tien">@dh.TongThanhToanCuoi.ToString("N0") đ</strong>
             </div>
         </div>
 
@@ -33,23 +45,23 @@
                 <input type="hidden" name="returnUrl" value="/Admin/DonHangAdmin/ChiTiet/@dh.MaDh" />
 
                 <div class="col-md-5">
-                    <label class="form-label small fw-semibold mb-1">Trạng thái xử lý (TrangThaiDh)</label>
+                    <label class="form-label small fw-semibold mb-1">Trạng thái xử lý đơn hàng</label>
                     <select name="trangThaiDh" class="form-select form-select-sm">
-                        <option value="CHO_XAC_NHAN" selected="@(dh.TrangThaiDh == "CHO_XAC_NHAN")">1. CHO_XAC_NHAN</option>
-                        <option value="CHO_LAY_HANG" selected="@(dh.TrangThaiDh == "CHO_LAY_HANG" || dh.TrangThaiDh == "DANG_DONG_GOI_HOP")">2. CHO_LAY_HANG (Chờ lấy hàng)</option>
-                        <option value="DANG_GIAO" selected="@(dh.TrangThaiDh == "DANG_GIAO")">3. DANG_GIAO</option>
-                        <option value="HOAN_TAT" selected="@(dh.TrangThaiDh == "HOAN_TAT")">4. HOAN_TAT</option>
-                        <option value="DA_HUY" selected="@(dh.TrangThaiDh == "DA_HUY")">5. DA_HUY</option>
+                        <option value="CHO_XAC_NHAN" selected="@(dh.TrangThaiDh == "CHO_XAC_NHAN")">1. Chờ xác nhận</option>
+                        <option value="CHO_LAY_HANG" selected="@(dh.TrangThaiDh == "CHO_LAY_HANG" || dh.TrangThaiDh == "DANG_DONG_GOI_HOP")">2. Đang đóng gói / Chờ lấy hàng</option>
+                        <option value="DANG_GIAO" selected="@(dh.TrangThaiDh == "DANG_GIAO")">3. Đang giao</option>
+                        <option value="HOAN_TAT" selected="@(dh.TrangThaiDh == "HOAN_TAT")">4. Hoàn tất</option>
+                        <option value="DA_HUY" selected="@(dh.TrangThaiDh == "DA_HUY")">5. Đã hủy</option>
                     </select>
                 </div>
 
                 <div class="col-md-4">
-                    <label class="form-label small fw-semibold mb-1">Thanh toán (TrangThaiTt)</label>
+                    <label class="form-label small fw-semibold mb-1">Trạng thái thanh toán</label>
                     <select name="trangThaiTt" class="form-select form-select-sm">
-                        <option value="CHUA_TT" selected="@(dh.TrangThaiTt == "CHUA_TT")">CHUA_TT</option>
-                        <option value="CHO_XAC_MINH_CK" selected="@(dh.TrangThaiTt == "CHO_XAC_MINH_CK")">CHO_XAC_MINH_CK</option>
-                        <option value="DA_TT" selected="@(dh.TrangThaiTt == "DA_TT")">DA_TT</option>
-                        <option value="DA_HOAN_TIEN" selected="@(dh.TrangThaiTt == "DA_HOAN_TIEN")">DA_HOAN_TIEN</option>
+                        <option value="CHUA_TT" selected="@(dh.TrangThaiTt == "CHUA_TT")">Chờ thanh toán</option>
+                        <option value="CHO_XAC_MINH_CK" selected="@(dh.TrangThaiTt == "CHO_XAC_MINH_CK")">Chờ xác minh chuyển khoản</option>
+                        <option value="DA_TT" selected="@(dh.TrangThaiTt == "DA_TT")">Đã thanh toán</option>
+                        <option value="DA_HOAN_TIEN" selected="@(dh.TrangThaiTt == "DA_HOAN_TIEN")">Đã hoàn tiền</option>
                     </select>
                 </div>
 
@@ -74,7 +86,7 @@
                 <strong class="text-dark fs-6">@ct.TenSanPhamLuuCung</strong>
                 <div>
                     <span class="badge bg-primary me-2">Số lượng: x @ct.SoLuong</span>
-                    <strong class="text-primary">@ct.ThanhTien.ToString("N0") đ</strong>
+                    <strong class="text-primary so-tien">@ct.ThanhTien.ToString("N0") đ</strong>
                 </div>
             </div>
 
@@ -93,7 +105,7 @@
                                 <div class="p-2 rounded border border-primary bg-white text-center shadow-sm">
                                     <span class="badge bg-primary mb-1">VỊ TRÍ Ô SỐ @viTri</span>
                                     <strong class="d-block text-dark small">@tenBanh</strong>
-                                    <small class="text-muted">@donGia.ToString("N0") đ</small>
+                                    <small class="text-muted so-tien">@donGia.ToString("N0") đ</small>
                                 </div>
                             </div>
                         }
@@ -119,7 +131,7 @@
             <div class="col-md-6">
                 <div class="p-3 rounded border bg-white d-flex justify-content-between align-items-center gap-3">
                     <div>
-                        <span class="badge bg-primary mb-1">Điểm giao #@(i + 1) • @dot.TrangThaiGiao</span>
+                        <span class="badge bg-primary mb-1">Điểm giao #@(i + 1) • @AnhXaTrangThaiGiao(dot.TrangThaiGiao)</span>
                         <div class="fw-bold text-dark">Người nhận: @dot.TenNguoiNhan (@dot.SdtnguoiNhan)</div>
                         <div class="small text-muted">@dot.DiaChiGiaoChiTiet</div>
                         <div class="small text-primary">Hẹn giao: @dot.NgayHenGiao.ToString("dd/MM/yyyy") (@dot.KhungGioGiao)</div>

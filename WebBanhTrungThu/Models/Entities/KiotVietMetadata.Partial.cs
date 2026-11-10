@@ -77,5 +77,35 @@ namespace WebBanhTrungThu.Models.Entities
         [NotMapped]
         public int TrongLuongGram { get; set; } = 600;
     }
+
+    public partial class MaKhuyenMai
+    {
+        [NotMapped]
+        public bool TrangThaiKichHoat { get; set; } = true;
+
+        [NotMapped]
+        public int SoLuotDaDung => SldaDung;
+
+        [NotMapped]
+        public int SoLuotToiDa => SltoiDa;
+
+        [NotMapped]
+        public decimal GiaTriDonToiThieu => DonToiThieu;
+    }
+
+    public partial class LoSanXuatBanh
+    {
+        [NotMapped]
+        public DateTime NgayHetHan => HanSuDung.ToDateTime(TimeOnly.MinValue);
+    }
+
+    public partial class DotGiaoHangDaDiem
+    {
+        [NotMapped]
+        public string? TenNguoiNhanThiep { get; set; }
+
+        [NotMapped]
+        public string? TenNguoiGuiThiep { get; set; }
+    }
 }
 

@@ -162,6 +162,12 @@
                                 <span class="chu-nau-phu">Tổng năng lượng:</span>
                                 <strong id="lblTongCalo" class="text-success">0 Kcal</strong>
                             </li>
+                            <li class="py-1" id="khung-do-chi-so-gi">
+                                <div class="thanh-do-gi-nen" style="height: 8px; border-radius: 999px; background: #EAE0D5; overflow: hidden;">
+                                    <div id="thanh-mau-gi" style="width: 0%; height: 100%; border-radius: 999px; background-color: #10B981; transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.35s ease;"></div>
+                                </div>
+                                <div id="nhan-xet-dinh-duong-gi" class="chu-nau-phu mt-1 text-truncate" style="font-size: 0.7rem; font-weight: 600;">Chưa có bánh trong khay</div>
+                            </li>
                             <li class="d-flex justify-content-between py-0">
                                 <span class="chu-nau-phu">Bánh Thượng Hạng:</span>
                                 <strong id="lblSoBanhVip" class="chu-nau-tram">0 bánh</strong>
@@ -266,11 +272,12 @@
                                         data-tenbanh="@b.TenBanh"
                                         data-dongia="@Math.Round(b.DonGiaThucTe, 0)"
                                         data-calo="@calo"
+                                        data-gi="@gi"
                                         data-lavip="@(b.LaBanhThuongHang ? "true" : "false")"
                                         data-anhslot="@anhSlot"
                                         data-diung="@diUng"
                                         data-thuonghieu="@b.ThuongHieu"
-                                        onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaThucTe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhSlot', '@diUng', '@b.ThuongHieu')">
+                                        onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaThucTe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhSlot', '@diUng', '@b.ThuongHieu', @gi)">
                                     + Chọn
                                 </button>
                             </div>
@@ -392,7 +399,7 @@
                                             🛒 Mua lẻ
                                         </button>
                                         <a href="#tang-tu-chon-hop" class="btn btn-sm btn-do-son-mai rounded-pill px-2 py-1 text-nowrap" style="font-size: 0.74rem;"
-                                           onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaThucTe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhBanh', '@(b.ThongSoDinhDuong?.CanhBaoDiUng)', '@b.ThuongHieu')">
+                                           onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaThucTe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhBanh', '@(b.ThongSoDinhDuong?.CanhBaoDiUng)', '@b.ThuongHieu', @gi)">
                                             Xếp vào hộp ↑
                                         </a>
                                     </div>
@@ -567,7 +574,7 @@
                             ? (item.MaCbNavigation?.TenCombo ?? "Combo Trung Thu")
                             : (item.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu");
 
-                    <div class="p-3 mb-2 rounded card-hoang-gia">
+                    <div class="p-3 mb-2 rounded card-hoang-gia" data-ma-ctgh="@item.MaCtgh">
                         <div class="d-flex justify-content-between align-items-start gap-2">
                             <strong class="chu-do-son-mai">@tenMon</strong>
                             <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2"
@@ -585,6 +592,7 @@
                                 </div>
                             }
                         }
+                        <div class="canh-bao-ton-kho-mon text-danger small fw-semibold mt-1 d-none" style="font-size: 0.75rem;"></div>
                         <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
                             <div class="btn-group btn-group-sm" role="group">
                                 <button type="button" class="btn btn-vien-vang px-2 py-0"
@@ -622,12 +630,17 @@
 
             <!-- Khu vực nhập Mã Giảm Giá / Voucher -->
             <div class="p-2 mb-3 rounded" style="background: #FFFFFF; border: 1px solid var(--mau-vien-vang-dong);">
-                <div class="d-flex justify-content-between align-items-center mb-1">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-1 gap-1">
                     <small class="chu-do-son-mai fw-bold"><i class="bi bi-ticket-perforated-fill me-1"></i>Mã Ưu Đãi Lễ Hội:</small>
-                    <button type="button" class="badge badge-thuong-hang border-0" style="cursor:pointer;"
-                            onclick="chonNhanhVoucher('TRANGTRON2026')">
-                        ⚡ Áp mã TRANGTRON2026 (-10%)
-                    </button>
+                    <div class="d-inline-flex align-items-center gap-1 flex-wrap">
+                        <button type="button" class="badge badge-thuong-hang border-0" style="cursor:pointer;"
+                                onclick="chonNhanhVoucher('TRANGTRON2026')">
+                            ⚡ Áp mã TRANGTRON2026 (-10%)
+                        </button>
+                        <span id="lblHsdVoucherGioHang" class="badge rounded-pill px-2 py-0" style="background: #FEF3C7; color: #92400E; font-size: 0.66rem;">
+                            HSD: 31/12/2027 • Đơn từ 200k
+                        </span>
+                    </div>
                 </div>
                 <div class="input-group input-group-sm">
                     <input type="text" id="txtMaVoucherGioHang" class="form-control text-uppercase" style="border-color: var(--mau-vien-vang-dong);"
@@ -651,6 +664,7 @@
                 <span class="chu-nau-tram">Tổng thanh toán:</span>
                 <span id="lblTongThanhToanSauGiam" class="chu-do-son-mai">@Model.TongTamTinhGioHang.ToString("N0") đ</span>
             </div>
+            <div id="canhBaoTonKhoOffcanvas" class="alert alert-danger py-2 px-3 small mb-2 d-none" style="font-size: 0.78rem;"></div>
             <a href="/ThanhToan/Index" id="btnTienHanhThanhToanOffcanvas"
                class="btn btn-do-son-mai w-100 py-2 rounded-pill text-decoration-none d-block text-center"
                onclick="return chuyenDenTrangThanhToan(event)">

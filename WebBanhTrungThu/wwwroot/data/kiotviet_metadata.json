@@ -386,23 +386,138 @@
   "DonHangs": {
     "2": {
       "MaDh": 2,
+      "KenhBan": "WEB_ONLINE",
+      "SoTienKhachDaTra": null,
       "MaNganHangHoan": null,
       "SoTaiKhoanHoan": null,
       "TenChuTkHoan": null,
       "LyDoHuyHoan": null,
       "GhiChuDieuChinhAdmin": null,
       "ThoiGianCapNhatCuoi": "01-11-2026 18:00",
-      "NguoiCapNhatCuoi": "Lê Minh Đức (Admin)"
+      "NguoiCapNhatCuoi": "Lê Minh Đức (Admin)",
+      "HanThanhToan": null,
+      "DaRollbackKho": false,
+      "DanhSachLoDaTru": [],
+      "DanhSachVoHopDaTru": [],
+      "Thiep3DTheoToken": {}
     },
     "3": {
       "MaDh": 3,
+      "KenhBan": "WEB_ONLINE",
+      "SoTienKhachDaTra": null,
       "MaNganHangHoan": "VCB",
       "SoTaiKhoanHoan": "1029384756",
       "TenChuTkHoan": "LE DEMO",
       "LyDoHuyHoan": "Khách yêu cầu hủy đơn & hoàn kho",
       "GhiChuDieuChinhAdmin": null,
       "ThoiGianCapNhatCuoi": "01-11-2026 18:02",
-      "NguoiCapNhatCuoi": "Lê Minh Đức (Admin)"
+      "NguoiCapNhatCuoi": "Lê Minh Đức (Admin)",
+      "HanThanhToan": null,
+      "DaRollbackKho": false,
+      "DanhSachLoDaTru": [],
+      "DanhSachVoHopDaTru": [],
+      "Thiep3DTheoToken": {}
+    },
+    "11": {
+      "MaDh": 11,
+      "KenhBan": "WEB_ONLINE",
+      "SoTienKhachDaTra": 534600,
+      "MaNganHangHoan": null,
+      "SoTaiKhoanHoan": null,
+      "TenChuTkHoan": null,
+      "LyDoHuyHoan": null,
+      "GhiChuDieuChinhAdmin": null,
+      "ThoiGianCapNhatCuoi": null,
+      "NguoiCapNhatCuoi": null,
+      "HanThanhToan": "2026-11-10T16:38:17.344309+07:00",
+      "DaRollbackKho": false,
+      "DanhSachLoDaTru": [
+        {
+          "MaLo": 1,
+          "MaBanh": 1,
+          "SoLuongDaTru": 4
+        }
+      ],
+      "DanhSachVoHopDaTru": [],
+      "Thiep3DTheoToken": {}
+    },
+    "12": {
+      "MaDh": 12,
+      "KenhBan": "WEB_ONLINE",
+      "SoTienKhachDaTra": 835200,
+      "MaNganHangHoan": null,
+      "SoTaiKhoanHoan": null,
+      "TenChuTkHoan": null,
+      "LyDoHuyHoan": null,
+      "GhiChuDieuChinhAdmin": null,
+      "ThoiGianCapNhatCuoi": null,
+      "NguoiCapNhatCuoi": null,
+      "HanThanhToan": "2026-11-10T16:57:24.3873023+07:00",
+      "DaRollbackKho": false,
+      "DanhSachLoDaTru": [
+        {
+          "MaLo": 2,
+          "MaBanh": 2,
+          "SoLuongDaTru": 3
+        },
+        {
+          "MaLo": 1,
+          "MaBanh": 1,
+          "SoLuongDaTru": 1
+        },
+        {
+          "MaLo": 3,
+          "MaBanh": 3,
+          "SoLuongDaTru": 1
+        },
+        {
+          "MaLo": 4,
+          "MaBanh": 4,
+          "SoLuongDaTru": 1
+        }
+      ],
+      "DanhSachVoHopDaTru": [
+        {
+          "MaVh": 2,
+          "SoLuongDaTru": 1
+        }
+      ],
+      "Thiep3DTheoToken": {}
     }
-  }
+  },
+  "CauHinhQr": {
+    "SoTaiKhoanMoMo": "0814585526",
+    "SoDienThoaiHienThi": "0814 585 526",
+    "TenChuTaiKhoan": "LE MINH DUC",
+    "TenNganHangVi": "MOMO",
+    "MaBinNganHang": "970422",
+    "CuPhapChuyenKhoan": "NGUYETCAT {MaTraCuuDh}",
+    "ThoiGianChoPhut": 15
+  },
+  "DanhSachPhieuThuChi": [
+    {
+      "MaPhieu": "PTH-261110164426",
+      "MaDh": 12,
+      "MaTraCuuDh": "TT2026-8431",
+      "LoaiPhieu": "THU",
+      "PhuongThuc": "MOMO_QR",
+      "SoTien": 835200,
+      "NoiDung": "Thu tự động Webhook MoMo: NGUYETCAT TT2026-8431",
+      "NguoiNopNhan": "Nguyễn Minh Châu",
+      "SdtNguoiNopNhan": "",
+      "ThoiGianTao": "2026-11-10T16:44:26.6378713+07:00"
+    },
+    {
+      "MaPhieu": "PTH-261110162347",
+      "MaDh": 11,
+      "MaTraCuuDh": "TT2026-8451",
+      "LoaiPhieu": "THU",
+      "PhuongThuc": "MOMO_QR",
+      "SoTien": 534600,
+      "NoiDung": "Thu tự động Webhook MoMo: NGUYETCAT TT2026-8451",
+      "NguoiNopNhan": "HAO",
+      "SdtNguoiNopNhan": "",
+      "ThoiGianTao": "2026-11-10T16:23:47.2098343+07:00"
+    }
+  ]
 }

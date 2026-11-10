@@ -38,6 +38,8 @@ document.addEventListener("DOMContentLoaded", function () {
     khoiTaoLienKetNeoMuot();
     khoiTaoTuDongThuGonNutTuVan();
     xuLyTuDongXepBanhTuUrl();
+    khoiTaoLichSuTraCuuDonNhanh();
+    khoiTaoSuKienKiemTraKhoOffcanvas();
 });
 
 // =========================================================================
@@ -468,24 +470,78 @@ function doiMauVoHop(radio) {
     renderKhayHop();
 }
 
-function datBanhVaoOTrong(maBanh, tenBanh, donGia, calo, laVip, anhSlot, diUng, thuongHieu = "") {
+let viTriOVuaChon = -1;
+
+function layChiSoGiTheoMaBanh(maBanh, giTruyenVao) {
+    if (typeof giTruyenVao === "number" && !isNaN(giTruyenVao) && giTruyenVao > 0) {
+        return giTruyenVao;
+    }
+    const nutDom = document.querySelector(`.btn-chon-banh-khay[data-mabanh="${maBanh}"]`);
+    if (nutDom && nutDom.dataset.gi) {
+        const giDom = parseInt(nutDom.dataset.gi, 10);
+        if (!isNaN(giDom) && giDom > 0) return giDom;
+    }
+    return 52;
+}
+
+function datBanhVaoOTrong(maBanh, tenBanh, donGia, calo, laVip, anhSlot, diUng, thuongHieu = "", chiSoGi = null) {
     const viTriTrong = cauHinhHop.cacO.findIndex(o => o === null);
     if (viTriTrong === -1) {
         hienThiThongBaoGioHang("Khay lễ hộp đã đầy! Bạn có thể chạm vào 1 ô trên khay để đổi vị bánh hoặc chọn mẫu hộp 6 bánh.", false);
         return;
     }
 
-    cauHinhHop.cacO[viTriTrong] = { maBanh, tenBanh, donGia, calo, laVip, anhSlot, diUng, thuongHieu };
+    const giChuan = layChiSoGiTheoMaBanh(maBanh, chiSoGi !== null ? parseInt(chiSoGi, 10) : null);
+    viTriOVuaChon = viTriTrong;
+    cauHinhHop.cacO[viTriTrong] = { maBanh, tenBanh, donGia, calo, laVip, anhSlot, diUng, thuongHieu, chiSoGi: giChuan };
     renderKhayHop();
 }
 
 function xoaBanhKhoiO(index) {
+    viTriOVuaChon = -1;
     cauHinhHop.cacO[index] = null;
     renderKhayHop();
 }
 
 function lamTrongKhayHop() {
+    viTriOVuaChon = -1;
     cauHinhHop.cacO = new Array(cauHinhHop.sucChua).fill(null);
+    renderKhayHop();
+}
+
+function capNhatThanhDoChiSoGi(soBanhDaXep, tongChiSoGi) {
+    const thanhMauGi = document.getElementById("thanh-mau-gi");
+    const nhanXetGi = document.getElementById("nhan-xet-dinh-duong-gi");
+    if (!thanhMauGi || !nhanXetGi) return;
+
+    if (soBanhDaXep <= 0) {
+        thanhMauGi.style.width = "0%";
+        thanhMauGi.style.backgroundColor = "#10B981";
+        nhanXetGi.innerText = "Chưa có bánh trong khay";
+        nhanXetGi.style.color = "var(--mau-chu-nau-phu)";
+        return;
+    }
+
+    const chiSoGiTrungBinh = Math.round(tongChiSoGi / soBanhDaXep);
+    if (chiSoGiTrungBinh <= 35) {
+        thanhMauGi.style.width = "35%";
+        thanhMauGi.style.backgroundColor = "#10B981";
+        nhanXetGi.innerText = "Thanh đạm • Chuẩn ăn kiêng Isomalt (GI thấp: " + chiSoGiTrungBinh + ")";
+        nhanXetGi.style.color = "#059669";
+    } else if (chiSoGiTrungBinh <= 55) {
+        thanhMauGi.style.width = "68%";
+        thanhMauGi.style.backgroundColor = "#D97706";
+        nhanXetGi.innerText = "Cân bằng • Hòa quyện vị truyền thống (GI TB: " + chiSoGiTrungBinh + ")";
+        nhanXetGi.style.color = "#B45309";
+    } else {
+        thanhMauGi.style.width = "95%";
+        thanhMauGi.style.backgroundColor = "#B91C1C";
+        nhanXetGi.innerText = "Giàu năng lượng • Đậm đà thượng hạng (GI TB: " + chiSoGiTrungBinh + ")";
+        nhanXetGi.style.color = "#B91C1C";
+    }
+}
+
+function capNhatGiaoDienKhayBanh() {
     renderKhayHop();
 }
 
@@ -496,6 +552,7 @@ function renderKhayHop() {
 
     let soBanhDaXep = 0;
     let tongCalo = 0;
+    let tongChiSoGi = 0;
     let soBanhVip = 0;
     let tongTienBanh = 0;
     let tapHopDiUng = new Set();
@@ -504,10 +561,14 @@ function renderKhayHop() {
     cauHinhHop.cacO.forEach((banh, idx) => {
         const div = document.createElement("div");
         div.className = banh ? "o-banh-slot da-co-banh" : "o-banh-slot";
+        if (banh && idx === viTriOVuaChon) {
+            div.classList.add("o-banh-vua-chon");
+        }
 
         if (banh) {
             soBanhDaXep++;
             tongCalo += banh.calo;
+            tongChiSoGi += layChiSoGiTheoMaBanh(banh.maBanh, banh.chiSoGi);
             tongTienBanh += banh.donGia;
             if (banh.laVip) soBanhVip++;
             if (banh.diUng && banh.diUng !== "Không") tapHopDiUng.add(banh.diUng);
@@ -532,6 +593,9 @@ function renderKhayHop() {
         }
         luoi.appendChild(div);
     });
+
+    viTriOVuaChon = -1;
+    capNhatThanhDoChiSoGi(soBanhDaXep, tongChiSoGi);
 
     // Tính giá: Vỏ hộp giảm 5% khi tự phối + Tổng giá bánh lẻ
     let tongGiaHop = (cauHinhHop.giaVo * 0.95) + tongTienBanh;
@@ -711,14 +775,19 @@ function chuanHoaKhungVoucherOffcanvas() {
 
     khungVoucher.dataset.daChuanHoaVoucher = "true";
     khungVoucher.innerHTML = `
-        <div class="hang-nhan-ma-uu-dai" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap; white-space: nowrap; gap: 8px; margin-bottom: 6px;">
-            <label for="txtMaVoucherGioHang" class="small fw-bold chu-do-son-mai mb-0 text-nowrap" style="white-space: nowrap;">
+        <div class="hang-nhan-ma-uu-dai" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 6px;">
+            <label for="txtMaVoucherGioHang" class="small fw-bold chu-do-son-mai mb-0 text-nowrap">
                 <i class="bi bi-ticket-perforated-fill me-1"></i>Mã ưu đãi:
             </label>
-            <button type="button" class="btn btn-sm btn-vien-vang rounded-pill py-0 px-2 text-nowrap" style="font-size: 0.72rem; white-space: nowrap;"
-                    onclick="chonNhanhVoucher('TRANGTRON2026')">
-                Áp mã TRANGTRON2026 (-10%)
-            </button>
+            <div class="d-inline-flex align-items-center gap-1 flex-wrap">
+                <button type="button" class="btn btn-sm btn-vien-vang rounded-pill py-0 px-2 text-nowrap" style="font-size: 0.72rem;"
+                        onclick="chonNhanhVoucher('TRANGTRON2026')">
+                    Áp mã TRANGTRON2026 (-10%)
+                </button>
+                <span id="lblHsdVoucherGioHang" class="badge rounded-pill px-2 py-0" style="background: #FEF3C7; color: #92400E; font-size: 0.65rem; font-weight: 600;">
+                    HSD: 31/12/2027 • Đơn từ 200k
+                </span>
+            </div>
         </div>
         <div class="nhom-nhap-ma-uu-dai" style="display: flex; align-items: stretch; gap: 6px;">
             <input type="text" id="txtMaVoucherGioHang" class="form-control form-control-sm"
@@ -805,6 +874,10 @@ async function taiLaiGioHangOffcanvas() {
 
         const txtVoucher = document.getElementById("txtMaVoucherGioHang");
         const lblThongBaoVoucher = document.getElementById("lblThongBaoVoucher");
+        const lblHsdVoucher = document.getElementById("lblHsdVoucherGioHang");
+        if (lblHsdVoucher && data.thongTinVoucherGoiY) {
+            lblHsdVoucher.innerText = data.thongTinVoucherGoiY;
+        }
         if (data.codeKmDangDung) {
             if (txtVoucher) txtVoucher.value = data.codeKmDangDung;
             if (lblThongBaoVoucher) {
@@ -846,7 +919,7 @@ async function taiLaiGioHangOffcanvas() {
             }
 
             html += `
-                <div class="p-3 mb-2 rounded card-hoang-gia">
+                <div class="p-3 mb-2 rounded card-hoang-gia" data-ma-ctgh="${item.maCtgh}">
                     <div class="d-flex justify-content-between align-items-start gap-2">
                         <strong class="chu-do-son-mai">${item.tenMon}</strong>
                         <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2"
@@ -855,6 +928,7 @@ async function taiLaiGioHangOffcanvas() {
                         </button>
                     </div>
                     ${thongTinPhu}
+                    <div class="canh-bao-ton-kho-mon text-danger small fw-semibold mt-1 d-none" style="font-size: 0.75rem;"></div>
                     <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
                         <div class="btn-group btn-group-sm" role="group">
                             <button type="button" class="btn btn-vien-vang px-2 py-0"
@@ -874,8 +948,85 @@ async function taiLaiGioHangOffcanvas() {
         });
 
         khungDanhSach.innerHTML = html;
+        await kiemTraTonKhoThucTeOffcanvas();
     } catch (err) {
         console.error("Không thể đồng bộ giỏ quà:", err);
+    }
+}
+
+let gioHangDuTonKhoOffcanvas = true;
+
+function khoiTaoSuKienKiemTraKhoOffcanvas() {
+    const elOffcanvas = document.getElementById("nganKeoGioHang");
+    if (!elOffcanvas) return;
+    elOffcanvas.addEventListener("show.bs.offcanvas", function () {
+        kiemTraTonKhoThucTeOffcanvas();
+    });
+}
+
+// Lớp 1: Kiểm tra tồn kho thực tế từ bảng LoSanXuat mỗi khi mở Ngăn kéo Giỏ hàng (Offcanvas)
+async function kiemTraTonKhoThucTeOffcanvas() {
+    try {
+        const res = await fetch("/GioHang/KiemTraTonKhoThucTe");
+        const data = await res.json();
+        if (!data || !data.thanhCong) return true;
+
+        gioHangDuTonKhoOffcanvas = Boolean(data.hopLe);
+
+        // Xóa cảnh báo cũ trên từng món
+        document.querySelectorAll("#danhSachMonTrongGio [data-ma-ctgh]").forEach(card => {
+            const boxLoi = card.querySelector(".canh-bao-ton-kho-mon");
+            if (boxLoi) {
+                boxLoi.innerHTML = "";
+                boxLoi.classList.add("d-none");
+            }
+            card.style.borderColor = "";
+        });
+
+        if (Array.isArray(data.danhSachMon)) {
+            data.danhSachMon.forEach(mon => {
+                if (!mon.duTonKho && mon.canhBaoLoi) {
+                    const card = document.querySelector(`#danhSachMonTrongGio [data-ma-ctgh="${mon.maCtgh}"]`);
+                    if (card) {
+                        card.style.borderColor = "#DC2626";
+                        const boxLoi = card.querySelector(".canh-bao-ton-kho-mon");
+                        if (boxLoi) {
+                            boxLoi.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i>${mon.canhBaoLoi}`;
+                            boxLoi.classList.remove("d-none");
+                        }
+                    }
+                }
+            });
+        }
+
+        const hopCanhBaoChung = document.getElementById("canhBaoTonKhoOffcanvas");
+        const btnThanhToan = document.getElementById("btnTienHanhThanhToanOffcanvas");
+
+        if (!gioHangDuTonKhoOffcanvas) {
+            if (hopCanhBaoChung) {
+                hopCanhBaoChung.innerHTML = `<i class="bi bi-exclamation-octagon-fill me-1"></i>Một số sản phẩm trong giỏ vượt quá tồn kho thực tế còn hạn. Vui lòng giảm số lượng trước khi thanh toán!`;
+                hopCanhBaoChung.classList.remove("d-none");
+            }
+            if (btnThanhToan) {
+                btnThanhToan.classList.add("disabled");
+                btnThanhToan.style.pointerEvents = "none";
+                btnThanhToan.style.opacity = "0.55";
+            }
+        } else {
+            if (hopCanhBaoChung) {
+                hopCanhBaoChung.innerHTML = "";
+                hopCanhBaoChung.classList.add("d-none");
+            }
+            if (btnThanhToan) {
+                btnThanhToan.classList.remove("disabled");
+                btnThanhToan.style.pointerEvents = "auto";
+                btnThanhToan.style.opacity = "1";
+            }
+        }
+
+        return gioHangDuTonKhoOffcanvas;
+    } catch (err) {
+        return true;
     }
 }
 
@@ -893,6 +1044,11 @@ function chuyenDenTrangThanhToan(e) {
     if (soLuong <= 0) {
         if (e) e.preventDefault();
         hienThiThongBaoGioHang("Giỏ quà đang trống! Hãy chọn bánh lẻ hoặc tự phối lễ hộp trước khi đặt quà.", false);
+        return false;
+    }
+    if (!gioHangDuTonKhoOffcanvas) {
+        if (e) e.preventDefault();
+        hienThiThongBaoGioHang("Có sản phẩm trong giỏ vượt quá tồn kho thực tế! Vui lòng giảm số lượng trước khi sang trang Thanh toán.", false);
         return false;
     }
     window.location.href = "/ThanhToan/Index";
@@ -1156,6 +1312,7 @@ function chuanHoaThongTinBanhGoiY(item) {
     let tenBanh = item.tenBanh || "";
     let donGia = parseFloat(item.donGia || 0);
     let calo = parseInt(item.calo || 400);
+    let chiSoGi = parseInt(item.chiSoGI || item.chiSoGi || 52);
     let laVip = Boolean(item.laVip || item.laBanhThuongHang);
     let anhSlot = item.anhBanh || "/images/default/banh-mac-dinh.png";
     let diUng = item.diUng || "Không";
@@ -1179,13 +1336,14 @@ function chuanHoaThongTinBanhGoiY(item) {
         tenBanh = nutDom.dataset.tenbanh || tenBanh;
         donGia = parseFloat(nutDom.dataset.dongia || donGia);
         calo = parseInt(nutDom.dataset.calo || calo);
+        chiSoGi = parseInt(nutDom.dataset.gi || chiSoGi);
         laVip = nutDom.dataset.lavip === "true";
         anhSlot = nutDom.dataset.anhslot || anhSlot;
         diUng = nutDom.dataset.diung || diUng;
         thuongHieu = nutDom.dataset.thuonghieu || thuongHieu;
     }
 
-    return { maBanh, tenBanh, donGia, calo, laVip, anhSlot, diUng, thuongHieu };
+    return { maBanh, tenBanh, donGia, calo, chiSoGi, laVip, anhSlot, diUng, thuongHieu };
 }
 
 async function chayThuatToanGoiY() {
@@ -1339,6 +1497,106 @@ function xuLyTuDongXepBanhTuUrl() {
     }, 220);
 }
 
+function khoiTaoLichSuTraCuuDonNhanh() {
+    hienThiDanhSachDonVuaDatNhanh();
+    const modalTraCuu = document.getElementById("modalTraCuuDon");
+    if (modalTraCuu) {
+        modalTraCuu.addEventListener("show.bs.modal", function () {
+            hienThiDanhSachDonVuaDatNhanh();
+        });
+    }
+}
+
+function hienThiDanhSachDonVuaDatNhanh() {
+    const khungNhanh = document.getElementById("danh-sach-don-vua-dat-nhanh");
+    if (!khungNhanh) return;
+
+    let danhSachDon = [];
+    try {
+        const chuoiLuu = localStorage.getItem("nguyetCat_DonGanDay");
+        if (chuoiLuu) {
+            const parsed = JSON.parse(chuoiLuu);
+            if (Array.isArray(parsed)) {
+                danhSachDon = parsed.filter(d => d && d.maTraCuuDh && d.sdtNguoiMua).slice(0, 5);
+            }
+        }
+    } catch (err) {
+        danhSachDon = [];
+    }
+
+    if (danhSachDon.length === 0) {
+        khungNhanh.innerHTML = "";
+        khungNhanh.classList.add("d-none");
+        return;
+    }
+
+    khungNhanh.classList.remove("d-none");
+    let nutChipsHtml = "";
+    danhSachDon.forEach(don => {
+        const maDonAnToan = String(don.maTraCuuDh).replace(/'/g, "");
+        const sdtAnToan = String(don.sdtNguoiMua).replace(/'/g, "");
+        const soTienText = typeof don.tongThanhToan === "number"
+            ? `${Math.round(don.tongThanhToan).toLocaleString("vi-VN")}đ`
+            : String(don.tongThanhToan || "");
+
+        nutChipsHtml += `
+            <button type="button" class="chip-don-vua-dat"
+                    onclick="chonDonVuaDatNhanh('${maDonAnToan}', '${sdtAnToan}')">
+                <span class="fw-bold">#${maDonAnToan}</span>
+                ${soTienText ? `<span class="opacity-75">• ${soTienText}</span>` : ""}
+            </button>
+        `;
+    });
+
+    khungNhanh.innerHTML = `
+        <div class="chu-nau-phu mb-1" style="font-size: 0.76rem; font-weight: 600;">
+            Đơn vừa đặt trên thiết bị của bạn (chạm để tra cứu ngay):
+        </div>
+        <div class="d-flex flex-wrap gap-1">
+            ${nutChipsHtml}
+        </div>
+    `;
+}
+
+function chonDonVuaDatNhanh(maTraCuu, sdtNguoiMua) {
+    const oMa = document.getElementById("txtMaTraCuu");
+    const oSdt = document.getElementById("txtSdtTraCuu");
+    if (oMa) oMa.value = maTraCuu;
+    if (oSdt) oSdt.value = sdtNguoiMua;
+    traCuuDonHangGuest();
+}
+
+async function datLaiDonHangCu(maDonHang, nutBam = null) {
+    const noiDungCu = nutBam ? nutBam.innerHTML : "";
+    if (nutBam) {
+        nutBam.disabled = true;
+        nutBam.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Đang thêm...`;
+    }
+
+    try {
+        const res = await fetch("/GioHang/DatLaiDonHang", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(parseInt(maDonHang, 10))
+        });
+        const data = await res.json();
+        if (data && data.thanhCong) {
+            hienThiThongBaoGioHang(data.thongBao || "Đã thêm toàn bộ sản phẩm của đơn cũ vào giỏ quà!", true);
+            await taiLaiGioHangOffcanvas();
+            moNganKeoGioHang();
+        } else {
+            hienThiThongBaoGioHang((data && data.thongBao) || "Không thể đặt lại đơn hàng này!", false);
+        }
+    } catch (err) {
+        hienThiThongBaoGioHang("Lỗi kết nối máy chủ khi đặt lại đơn hàng!", false);
+    } finally {
+        if (nutBam) {
+            nutBam.disabled = false;
+            nutBam.innerHTML = noiDungCu;
+        }
+    }
+}
+
 async function traCuuDonHangGuest() {
     const ma = document.getElementById("txtMaTraCuu").value;
     const sdt = document.getElementById("txtSdtTraCuu").value;
@@ -1363,6 +1621,59 @@ async function traCuuDonHangGuest() {
         `;
     }
 }
+
+// =========================================================================
+// 5. CHUYỂN TAB TRANG HỒ SƠ THÀNH VIÊN (/TaiKhoan/HoSo)
+// =========================================================================
+function chuyenTabHoSo(nutTab) {
+    if (!nutTab) return;
+    const boChon = nutTab.getAttribute("data-muc-tieu");
+    const paneDich = boChon ? document.querySelector(boChon) : null;
+    if (!paneDich || nutTab.classList.contains("active")) return;
+
+    document.querySelectorAll(".nut-tab-ho-so").forEach(btn => {
+        const laNutDich = btn === nutTab;
+        btn.classList.toggle("active", laNutDich);
+        btn.setAttribute("aria-selected", laNutDich ? "true" : "false");
+    });
+
+    // Gỡ class rồi gắn lại để keyframes hienPaneHoSo (240ms) chạy lại mỗi lần chuyển tab
+    document.querySelectorAll(".pane-ho-so").forEach(pane => pane.classList.remove("dang-hien"));
+    void paneDich.offsetWidth;
+    paneDich.classList.add("dang-hien");
+
+    // Đồng bộ tham số ?tab= trên thanh địa chỉ để tải lại trang vẫn giữ đúng tab
+    const maTab = nutTab.getAttribute("data-tab-ho-so");
+    if (maTab && window.history && typeof window.history.replaceState === "function") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("tab", maTab);
+        window.history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+    }
+
+    // Trên di động: cuộn tới đầu vùng nội dung tab vừa mở
+    if (window.innerWidth < 992) {
+        const chieuCaoMenu = layChieuCaoThanhMenu();
+        window.scrollTo({ top: Math.max(0, paneDich.getBoundingClientRect().top + window.scrollY - chieuCaoMenu - 12), behavior: "smooth" });
+    }
+}
+
+// Hỗ trợ phím mũi tên Lên / Xuống để di chuyển giữa 3 tab hồ sơ
+document.addEventListener("keydown", function (e) {
+    const nutDangFocus = document.activeElement;
+    if (!nutDangFocus || !nutDangFocus.classList || !nutDangFocus.classList.contains("nut-tab-ho-so")) return;
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+
+    const danhSachNut = Array.from(document.querySelectorAll(".nut-tab-ho-so"));
+    const viTri = danhSachNut.indexOf(nutDangFocus);
+    if (viTri === -1) return;
+    e.preventDefault();
+
+    const viTriMoi = e.key === "ArrowDown"
+        ? (viTri + 1) % danhSachNut.length
+        : (viTri - 1 + danhSachNut.length) % danhSachNut.length;
+    danhSachNut[viTriMoi].focus();
+    chuyenTabHoSo(danhSachNut[viTriMoi]);
+});
 
 function khoiChayDongHoDemNguoc() {
     const el = document.getElementById("cd-giay");
