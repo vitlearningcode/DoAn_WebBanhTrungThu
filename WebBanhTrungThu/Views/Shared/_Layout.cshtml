@@ -422,6 +422,64 @@
                 </div>
             </div>
         </div>
+
+        <!-- MODAL NGHỆ NHÂN TƯ VẤN CHỌN VỊ BÁNH THEO GU THƯỞNG THỨC (DÙNG CHUNG CÁC TRANG CON) -->
+        <div class="modal fade" id="modalTroLyChonBanh" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content card-hoang-gia">
+                    <div class="modal-header nen-le-hoi-son-mai border-bottom" style="border-color: var(--mau-vang-dong-co) !important; border-radius: 15px 15px 0 0;">
+                        <h5 class="modal-title font-co-phong fs-2 fw-bold chu-vang-kim">
+                            ✨ Nghệ Nhân Tư Vấn Chọn Vị Bánh Theo Gu Thưởng Thức
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold chu-do-son-mai">1. Bạn muốn biếu tặng ai?</label>
+                                <select id="quizDoiTuong" class="form-select" style="border-color: var(--mau-vien-vang-dong);">
+                                    <option value="ONG_BA">Ông Bà / Cha Mẹ (Người lớn tuổi)</option>
+                                    <option value="SEP_VIP">Cấp trên / Đối tác Trọng thị</option>
+                                    <option value="BAN_BE">Bạn bè / Đồng nghiệp thân thiết</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold chu-do-son-mai">2. Ưu tiên chế độ dinh dưỡng?</label>
+                                <select id="quizSucKhoe" class="form-select" style="border-color: var(--mau-vien-vang-dong);">
+                                    <option value="TIEU_DUONG">Ăn kiêng / Tiểu đường (Ưu tiên đường Isomalt GI thấp)</option>
+                                    <option value="AN_CHAY">Thuần chay thanh tịnh 100%</option>
+                                    <option value="BINH_THUONG">Truyền thống đậm đà</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold chu-do-son-mai">3. Gu thưởng thức yêu thích?</label>
+                                <select id="quizHuongVi" class="form-select" style="border-color: var(--mau-vien-vang-dong);">
+                                    <option value="NGOT_HIENDAI">Ngọt thanh hạt sen / Đậu xanh</option>
+                                    <option value="THUONG_HANG">Mặn thượng hạng (Bào ngư, Hải sản)</option>
+                                    <option value="LAVA_CHAY">Nhân chảy Kim sa Lava</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold chu-do-son-mai">4. Ngân sách dự kiến cho hộp 4 bánh?</label>
+                                <select id="quizNganSach" class="form-select" style="border-color: var(--mau-vien-vang-dong);">
+                                    <option value="500000">Dưới 500.000 đ</option>
+                                    <option value="800000" selected>Khoảng 500.000đ – 800.000 đ</option>
+                                    <option value="1500000">Cao cấp trên 800.000 đ</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button class="btn btn-do-son-mai px-5 py-2 rounded-pill" onclick="chayThuatToanGoiY()">
+                                <i class="bi bi-stars me-1"></i> Xem Gợi Ý Quà Tặng Phù Hợp
+                            </button>
+                        </div>
+
+                        <div id="ketQuaQuizContainer" class="row g-3 mt-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
 
     <!-- FOOTER ĐỎ SƠN MÀI TRẦM TRUYỀN THỐNG -->

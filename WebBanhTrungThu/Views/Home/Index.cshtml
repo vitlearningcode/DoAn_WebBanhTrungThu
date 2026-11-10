@@ -262,6 +262,14 @@
                                     </div>
                                 </div>
                                 <button type="button" class="btn btn-sm btn-do-son-mai rounded-pill px-2 py-1 btn-chon-banh-khay" style="font-size: 0.74rem;"
+                                        data-mabanh="@b.MaBanh"
+                                        data-tenbanh="@b.TenBanh"
+                                        data-dongia="@Math.Round(b.DonGiaThucTe, 0)"
+                                        data-calo="@calo"
+                                        data-lavip="@(b.LaBanhThuongHang ? "true" : "false")"
+                                        data-anhslot="@anhSlot"
+                                        data-diung="@diUng"
+                                        data-thuonghieu="@b.ThuongHieu"
                                         onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaThucTe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhSlot', '@diUng', '@b.ThuongHieu')">
                                     + Chọn
                                 </button>

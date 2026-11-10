@@ -34,3 +34,10 @@
 # Skill: Codebase Architecture Graph (Graphify)
 - **Architecture First:** Trước khi trả lời câu hỏi về kiến trúc hoặc viết/sửa code liên quan đến nhiều tầng (Controller, Service, DbContext, ViewModels), LUÔN đọc file `graphify-out/GRAPH_REPORT.md` trước để nắm toàn cảnh các node kết nối trong dự án.
 - **Graph Navigation:** Nếu cần tra cứu sâu hơn mối quan hệ phụ thuộc giữa các file C# và Razor Views, hãy kiểm tra cấu trúc trong `graphify-out/graph.json` thay vì đọc mò từng file thô. Lưu ý: Với cấu hình DI trong Program.cs và giao diện .cshtml, hãy đọc trực tiếp file gốc vì AST của Graphify bỏ qua top-level statements và Razor syntax.
+# Skill: Baoyu High-Craft UI/UX Design System (Anti-AI-Slop Rules)
+- **Design Reference:** Khi thực hiện các tác vụ thiết kế hoặc tinh chỉnh giao diện (Frontend/UI), hãy tham khảo quy chuẩn thẩm mỹ trong `.agent/baoyu-design/archive/baoyu-design` và `.agent/baoyu-design/skills/claude-design-system` (hoặc `dataviz` khi làm biểu đồ Admin).
+- **ASP.NET Core Razor Adaptation:** Áp dụng trực tiếp các nguyên tắc bố cục, phân cấp thị giác (visual hierarchy), khoảng thở (whitespace), và chuyển động vi mô (micro-interactions) của `baoyu-design` vào các file `.cshtml` và `wwwroot/css/site.css` của dự án (KHÔNG tự ý tách thành dự án Node.js rời trừ khi được yêu cầu tạo Slide thuyết trình bằng `claude-slides`).
+- **Strict Anti-AI-Slop Rules:**
+  1. Tuyệt đối không dùng các khung viền neon/gradient công nghệ sến sẩm, không lạm dụng icon/emoji ở đầu mỗi dòng text.
+  2. Ưu tiên sự tinh tế của Typography, căn chỉnh lưới (grid alignment) sắc sảo, độ tương phản màu sắc thực tế (Editorial / E-commerce chuẩn thương mại).
+  3. Mọi thành phần UI phải phục vụ trực tiếp cho thao tác của người dùng thực tế, loại bỏ hoàn toàn các dòng chữ giải thích kỹ thuật thừa thãi trên mặt tiền.

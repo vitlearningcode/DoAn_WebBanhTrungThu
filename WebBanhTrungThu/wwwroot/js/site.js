@@ -37,6 +37,7 @@ document.addEventListener("DOMContentLoaded", function () {
     khoiTaoBoMayChuyenCanhRoiRac();
     khoiTaoLienKetNeoMuot();
     khoiTaoTuDongThuGonNutTuVan();
+    xuLyTuDongXepBanhTuUrl();
 });
 
 // =========================================================================
@@ -613,7 +614,7 @@ async function xacNhanThemHopTuChon() {
 // =========================================================================
 // 1C. CÁC HÀM AJAX GIỎ QUÀ & ĐỒNG BỘ NGĂN KÉO GIỎ HÀNG
 // =========================================================================
-async function themBanhLeVaoGio(maBanh, soLuong = 1) {
+async function themBanhLeVaoGio(maBanh, soLuong = 1, nutBam = null) {
     try {
         const res = await fetch("/GioHang/ThemBanhHoacCombo", {
             method: "POST",
@@ -627,9 +628,21 @@ async function themBanhLeVaoGio(maBanh, soLuong = 1) {
 
         const data = await res.json();
         if (data.thanhCong) {
+            if (nutBam instanceof HTMLElement) {
+                const nhanGoc = nutBam.dataset.nhanGoc || nutBam.innerHTML;
+                nutBam.dataset.nhanGoc = nhanGoc;
+                nutBam.innerText = "✓ Đã thêm vào giỏ";
+                nutBam.classList.add("da-them-gio");
+                setTimeout(() => {
+                    nutBam.innerHTML = nhanGoc;
+                    nutBam.classList.remove("da-them-gio");
+                }, 1200);
+            }
             hienThiThongBaoGioHang(data.thongBao, true);
             await taiLaiGioHangOffcanvas();
-            moNganKeoGioHang();
+            if (!document.querySelector(".modal.show")) {
+                moNganKeoGioHang();
+            }
         } else {
             hienThiThongBaoGioHang(data.thongBao || "Không thể thêm bánh vào giỏ!", false);
         }
@@ -1126,6 +1139,55 @@ function tinhGiaSiB2B(soHop) {
 // =========================================================================
 // 4. NGHỆ NHÂN TƯ VẤN CHỌN QUÀ HỢP Ý & TRA CỨU ĐƠN HÀNG
 // =========================================================================
+let danhSachBanhGoiYHienTai = [];
+
+// Đóng Modal Tư Vấn Chọn Quà khi người dùng chuyển sang thao tác xếp hộp
+function dongModalTuVanQua() {
+    const modalEl = document.getElementById("modalTroLyChonBanh");
+    if (modalEl && typeof bootstrap !== "undefined") {
+        const modalInstance = bootstrap.Modal.getInstance(modalEl) || bootstrap.Modal.getOrCreateInstance(modalEl);
+        modalInstance.hide();
+    }
+}
+
+// Chuẩn hóa thông tin bánh từ kết quả API Gợi Ý kết hợp dữ liệu thực tế trên DOM (nếu đang ở Trang chủ)
+function chuanHoaThongTinBanhGoiY(item) {
+    let maBanh = parseInt(item.maBanh || item.MaBanh || item.id || 0);
+    let tenBanh = item.tenBanh || "";
+    let donGia = parseFloat(item.donGia || 0);
+    let calo = parseInt(item.calo || 400);
+    let laVip = Boolean(item.laVip || item.laBanhThuongHang);
+    let anhSlot = item.anhBanh || "/images/default/banh-mac-dinh.png";
+    let diUng = item.diUng || "Không";
+    let thuongHieu = item.thuongHieu || "";
+
+    let nutDom = null;
+    if (maBanh > 0) {
+        nutDom = document.querySelector(`.btn-chon-banh-khay[data-mabanh="${maBanh}"]`);
+    }
+    if (!nutDom && tenBanh) {
+        const tenChuan = tenBanh.trim().toLowerCase();
+        document.querySelectorAll(".btn-chon-banh-khay").forEach(btn => {
+            if ((btn.dataset.tenbanh || "").trim().toLowerCase() === tenChuan) {
+                nutDom = btn;
+            }
+        });
+    }
+
+    if (nutDom) {
+        maBanh = parseInt(nutDom.dataset.mabanh || maBanh);
+        tenBanh = nutDom.dataset.tenbanh || tenBanh;
+        donGia = parseFloat(nutDom.dataset.dongia || donGia);
+        calo = parseInt(nutDom.dataset.calo || calo);
+        laVip = nutDom.dataset.lavip === "true";
+        anhSlot = nutDom.dataset.anhslot || anhSlot;
+        diUng = nutDom.dataset.diung || diUng;
+        thuongHieu = nutDom.dataset.thuonghieu || thuongHieu;
+    }
+
+    return { maBanh, tenBanh, donGia, calo, laVip, anhSlot, diUng, thuongHieu };
+}
+
 async function chayThuatToanGoiY() {
     const dt = document.getElementById("quizDoiTuong").value;
     const sk = document.getElementById("quizSucKhoe").value;
@@ -1134,24 +1196,147 @@ async function chayThuatToanGoiY() {
 
     const res = await fetch(`/Home/GoiYBanhThongMinh?doiTuong=${dt}&sucKhoe=${sk}&huongVi=${hv}&nganSachMax=${ns}`);
     const data = await res.json();
+    danhSachBanhGoiYHienTai = Array.isArray(data) ? data : [];
 
     const container = document.getElementById("ketQuaQuizContainer");
     container.innerHTML = "";
 
-    data.forEach(item => {
+    danhSachBanhGoiYHienTai.forEach((item, idx) => {
+        const banh = chuanHoaThongTinBanhGoiY(item);
         container.innerHTML += `
             <div class="col-md-4">
-                <div class="p-3 rounded card-hoang-gia h-100 text-center">
-                    <span class="badge badge-thuong-hang mb-2">Độ hợp vị: ${item.doPhuHop}%</span>
+                <div class="p-3 rounded card-hoang-gia h-100 text-center d-flex flex-column">
+                    <span class="badge badge-thuong-hang mb-2 align-self-center">Độ hợp vị: ${item.doPhuHop}%</span>
                     <img src="${item.anhBanh}" width="90" height="90" class="d-block mx-auto my-2 rounded-circle p-1 bg-white" style="border: 1.5px solid var(--mau-vang-dong-co);" />
                     <h6 class="chu-do-son-mai fw-bold">${item.tenBanh}</h6>
                     <div class="small text-success fw-medium mb-1">${item.calo} Kcal • Chỉ số GI: ${item.chiSoGI}</div>
                     <p class="small chu-nau-phu mb-2" style="font-size:0.75rem;">${item.lyDo}</p>
                     <strong class="d-block chu-nau-tram">${item.donGia.toLocaleString("vi-VN")} đ / bánh</strong>
+                    <div class="cum-nut-goi-y-banh" style="display: flex; gap: 6px; margin-top: auto; padding-top: 10px; width: 100%;">
+                        <button type="button" class="btn-goi-y-mua-le" style="flex: 1; font-size: 0.78rem; padding: 6px 8px; border-radius: 6px;"
+                                onclick="themBanhLeVaoGio(${banh.maBanh}, 1, this)">
+                            + Mua lẻ
+                        </button>
+                        <button type="button" class="btn-goi-y-xep-hop" style="flex: 1; font-size: 0.78rem; padding: 6px 8px; border-radius: 6px;"
+                                onclick="xepBanhGoiYVaoHop(${idx})">
+                            Xếp vào hộp
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
     });
+
+    if (danhSachBanhGoiYHienTai.length > 0) {
+        container.innerHTML += `
+            <div class="col-12 text-center mt-2 pt-1">
+                <button type="button" class="btn btn-xep-ca-3-goi-y" onclick="xepCa3ViGoiYVaoHop()">
+                    🎁 Xếp Cả 3 Vị Gợi Ý Vào Khay Hộp Đoàn Viên
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Xếp 1 chiếc bánh từ kết quả gợi ý vào ô trống đầu tiên trong khay hộp
+function xepBanhGoiYVaoHop(chiSoGoiY) {
+    const item = danhSachBanhGoiYHienTai[chiSoGoiY];
+    if (!item) return;
+
+    const banh = chuanHoaThongTinBanhGoiY(item);
+    const tangHop = document.getElementById("tang-tu-chon-hop");
+    const luoiOBanh = document.getElementById("luoiOBanh");
+
+    if (tangHop && luoiOBanh) {
+        dongModalTuVanQua();
+        setTimeout(() => {
+            chuyenDenTang(1);
+            const conOTrong = cauHinhHop.cacO.some(o => o === null);
+            datBanhVaoOTrong(banh.maBanh, banh.tenBanh, banh.donGia, banh.calo, banh.laVip, banh.anhSlot, banh.diUng, banh.thuongHieu);
+            if (conOTrong) {
+                hienThiThongBaoGioHang(`Đã xếp "${banh.tenBanh}" vào khay lễ hộp!`, true);
+            }
+        }, 180);
+    } else {
+        const thamSoBanh = banh.maBanh > 0 ? banh.maBanh : banh.tenBanh;
+        window.location.href = `/?chonBanh=${encodeURIComponent(thamSoBanh)}#tang-tu-chon-hop`;
+    }
+}
+
+// Xếp cả 3 vị bánh gợi ý vào khay lễ hộp Đoàn Viên
+function xepCa3ViGoiYVaoHop() {
+    if (!danhSachBanhGoiYHienTai || danhSachBanhGoiYHienTai.length === 0) return;
+
+    const danhSachBanh = danhSachBanhGoiYHienTai.map(item => chuanHoaThongTinBanhGoiY(item));
+    const tangHop = document.getElementById("tang-tu-chon-hop");
+    const luoiOBanh = document.getElementById("luoiOBanh");
+
+    if (tangHop && luoiOBanh) {
+        dongModalTuVanQua();
+        setTimeout(() => {
+            chuyenDenTang(1);
+            const soOTrong = cauHinhHop.cacO.filter(o => o === null).length;
+            if (soOTrong < danhSachBanh.length) {
+                cauHinhHop.cacO = new Array(cauHinhHop.sucChua).fill(null);
+            }
+            danhSachBanh.forEach(banh => {
+                datBanhVaoOTrong(banh.maBanh, banh.tenBanh, banh.donGia, banh.calo, banh.laVip, banh.anhSlot, banh.diUng, banh.thuongHieu);
+            });
+            hienThiThongBaoGioHang("Đã xếp cả 3 vị bánh gợi ý vào khay lễ hộp Đoàn Viên!", true);
+        }, 180);
+    } else {
+        const chuoiMaBanh = danhSachBanh.map(b => b.maBanh > 0 ? b.maBanh : b.tenBanh).join(",");
+        window.location.href = `/?chonBanh=${encodeURIComponent(chuoiMaBanh)}#tang-tu-chon-hop`;
+    }
+}
+
+// Tự động nhận mã bánh từ URL (/?chonBanh=...#tang-tu-chon-hop) khi điều hướng từ trang khác về Trang chủ
+function xuLyTuDongXepBanhTuUrl() {
+    if (!window.location.search) return;
+    const params = new URLSearchParams(window.location.search);
+    const chonBanhParam = params.get("chonBanh");
+    if (!chonBanhParam) return;
+
+    const tangHop = document.getElementById("tang-tu-chon-hop");
+    const luoiOBanh = document.getElementById("luoiOBanh");
+    if (!tangHop || !luoiOBanh) return;
+
+    const danhSachKhoa = chonBanhParam.split(",").map(s => s.trim()).filter(Boolean);
+    if (danhSachKhoa.length === 0) return;
+
+    setTimeout(() => {
+        chuyenDenTang(1);
+        danhSachKhoa.forEach(khoa => {
+            let nutDom = document.querySelector(`.btn-chon-banh-khay[data-mabanh="${khoa}"]`);
+            if (!nutDom) {
+                const tenChuan = khoa.toLowerCase();
+                document.querySelectorAll(".btn-chon-banh-khay").forEach(btn => {
+                    if ((btn.dataset.tenbanh || "").trim().toLowerCase() === tenChuan) {
+                        nutDom = btn;
+                    }
+                });
+            }
+            if (nutDom) {
+                datBanhVaoOTrong(
+                    parseInt(nutDom.dataset.mabanh),
+                    nutDom.dataset.tenbanh,
+                    parseFloat(nutDom.dataset.dongia),
+                    parseInt(nutDom.dataset.calo),
+                    nutDom.dataset.lavip === "true",
+                    nutDom.dataset.anhslot,
+                    nutDom.dataset.diung,
+                    nutDom.dataset.thuonghieu
+                );
+            }
+        });
+        hienThiThongBaoGioHang("Đã tự động xếp bánh gợi ý vào khay lễ hộp!", true);
+
+        // Xóa tham số chonBanh trên thanh địa chỉ để tránh lặp lại khi tải lại trang
+        params.delete("chonBanh");
+        const queryMoi = params.toString();
+        const urlMoi = window.location.pathname + (queryMoi ? "?" + queryMoi : "") + window.location.hash;
+        window.history.replaceState({}, document.title, urlMoi);
+    }, 220);
 }
 
 async function traCuuDonHangGuest() {
