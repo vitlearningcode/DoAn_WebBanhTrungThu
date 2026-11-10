@@ -1,0 +1,317 @@
+@model WebBanhTrungThu.ViewModels.CongThanhToanMoMoViewModel
+@{
+    Layout = null;
+    ViewData["Title"] = $"Cổng thanh toán MoMo - Đơn hàng #{Model.MaTraCuuDh}";
+    int phutBanDau = Math.Max(0, Model.SoGiayConLai / 60);
+    int giayBanDau = Math.Max(0, Model.SoGiayConLai % 60);
+    string noiDungCkHienThi = !string.IsNullOrWhiteSpace(Model.NoiDungChuyenKhoan)
+        ? Model.NoiDungChuyenKhoan
+        : $"NGUYETCAT {Model.MaTraCuuDh}";
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="trang-cong-momo-doc-lap">
+    <!-- Header nhỏ trên cùng gồm logo momo + chữ Cổng thanh toán MoMo giống hệt thực tế -->
+    <header class="header-cong-momo">
+        <div class="container d-flex align-items-center justify-content-between" style="max-width: 1040px;">
+            <div class="d-flex align-items-center gap-2">
+                <span class="logo-momo-header">momo</span>
+                <span class="tieu-de-header-cong-momo">Cổng thanh toán MoMo</span>
+            </div>
+            <div class="d-none d-sm-flex align-items-center gap-2 small text-muted">
+                <i class="bi bi-shield-lock-fill" style="color: #D82D8B;"></i>
+                <span>Giao dịch được bảo mật 100%</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Nội dung chính 2 cột chuẩn Biti's x MoMo -->
+    <main class="py-4">
+        <div class="container" style="max-width: 1040px;">
+            <div class="khung-chinh-cong-momo">
+                <!-- =========================================================================
+                     1. CỘT TRÁI (THẺ TRẮNG THÔNG TIN ĐƠN HÀNG - RỘNG 320PX)
+                     ========================================================================= -->
+                <aside class="cot-trai-cong-momo">
+                    <div class="the-thong-tin-don-momo">
+                        <h2 class="tieu-de-the-don-momo">Thông tin đơn hàng</h2>
+
+                        <div class="muc-thong-tin-momo">
+                            <span class="nhan-muc-momo">Nhà cung cấp</span>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <span class="logo-nguyet-cat-mini">NC</span>
+                                <strong style="color: #111827; font-size: 0.96rem; letter-spacing: 0.3px;">NGUYỆT CÁT</strong>
+                            </div>
+                        </div>
+
+                        <div class="muc-thong-tin-momo">
+                            <span class="nhan-muc-momo">Mã đơn hàng</span>
+                            <div class="gia-tri-muc-momo fw-bold" style="color: #111827;">@Model.MaTraCuuDh</div>
+                        </div>
+
+                        <div class="muc-thong-tin-momo">
+                            <span class="nhan-muc-momo">Mô tả</span>
+                            <div class="d-flex align-items-center justify-content-between gap-2 mt-1">
+                                <span class="fw-semibold" style="color: #1F2937; font-size: 0.88rem; word-break: break-word;">
+                                    NGUYETCAT @Model.MaTraCuuDh
+                                </span>
+                                <button type="button" class="nut-copy-nho-momo" onclick="saoChepNoiDungMoMo('@noiDungCkHienThi', this)">
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="muc-thong-tin-momo border-bottom-0 pb-1">
+                            <span class="nhan-muc-momo">Số tiền</span>
+                            <div class="mt-1" style="font-size: 1.5rem; font-weight: 800; color: #111827; font-variant-numeric: tabular-nums;">
+                                @Model.TongThanhToan.ToString("N0")đ
+                            </div>
+                        </div>
+
+                        <!-- Khung hồng nhạt đếm ngược 15 phút -->
+                        <div class="khung-dem-nguoc-momo mt-3" style="background: #FDF2F8; border-radius: 10px; padding: 16px; text-align: center;">
+                            <div class="mb-2" style="color: #D82D8B; font-weight: 600; font-size: 0.9rem;">
+                                Đơn hàng sẽ hết hạn sau:
+                            </div>
+                            <div class="d-flex align-items-center justify-content-center gap-3">
+                                <div class="o-vuong-dong-ho-momo">
+                                    <span id="phut-con-lai" class="so-dong-ho-momo">@phutBanDau.ToString("D2")</span>
+                                    <span class="nhan-dong-ho-momo">Phút</span>
+                                </div>
+                                <div class="o-vuong-dong-ho-momo">
+                                    <span id="giay-con-lai" class="so-dong-ho-momo">@giayBanDau.ToString("D2")</span>
+                                    <span class="nhan-dong-ho-momo">Giây</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Liên kết Quay về ở dưới cùng cột trái -->
+                        <div class="text-center mt-4 pt-2">
+                            <a href="/ThanhToan/ThanhCong/@Model.MaTraCuuDh" class="lien-ket-quay-ve-momo">
+                                Quay về
+                            </a>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- =========================================================================
+                     2. CỘT PHẢI (KHUNG LỚN MÀU HỒNG MOMO #D82D8B + NGÂN HÀNG HỖ TRỢ)
+                     ========================================================================= -->
+                <section class="cot-phai-cong-momo">
+                    <!-- Khung Lớn Màu Hồng MoMo #D82D8B, bo góc 12px, padding 32px -->
+                    <div class="khung-hong-qr-momo" style="background: #D82D8B; border-radius: 12px; padding: 32px;">
+                        <!-- Dải huy hiệu trắng phía trên mã QR: Ví Trả Sau | MoMo | VIETQR -->
+                        <div class="dai-huy-hieu-momo mb-4">
+                            <span class="muc-huy-hieu-momo">Ví Trả Sau</span>
+                            <span class="vach-ngan-huy-hieu">|</span>
+                            <span class="muc-huy-hieu-momo fw-extrabold">MoMo</span>
+                            <span class="vach-ngan-huy-hieu">|</span>
+                            <span class="muc-huy-hieu-momo">VIETQR</span>
+                        </div>
+
+                        <!-- Khung trắng chứa Mã QR (260x260px) có 4 góc ngắm và Logo momo màu hồng ở chính tâm -->
+                        <div class="d-flex justify-content-center my-2">
+                            <div class="khung-trang-qr-260">
+                                <span class="goc-ngam-qr goc-tren-trai"></span>
+                                <span class="goc-ngam-qr goc-tren-phai"></span>
+                                <span class="goc-ngam-qr goc-duoi-trai"></span>
+                                <span class="goc-ngam-qr goc-duoi-phai"></span>
+
+                                <img src="@Model.AnhQrThanhToanBase64" alt="Mã QR MoMo @Model.MaTraCuuDh" class="anh-qr-momo-chinh" />
+
+                                <div class="logo-momo-tam-qr">
+                                    <span>momo</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bên dưới mã QR (chữ trắng trên nền hồng) -->
+                        <div class="text-center text-white mt-3">
+                            <div class="fw-semibold d-flex align-items-center justify-content-center gap-2" style="font-size: 0.96rem;">
+                                <i class="bi bi-qr-code-scan"></i>
+                                <span>Sử dụng App MoMo hoặc ứng dụng ngân hàng để quét mã</span>
+                            </div>
+                            <div class="mt-2 small" style="color: rgba(255, 255, 255, 0.92); font-weight: 500;">
+                                SĐT MoMo: <strong>@Model.SoDienThoaiMoMo</strong> • Chủ TK: <strong>@Model.TenChuTaiKhoan</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dải thẻ hiển thị các ngân hàng hỗ trợ -->
+                    <div class="khung-ngan-hang-ho-tro mt-3">
+                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                            <span class="small fw-semibold" style="color: #374151;">
+                                Ngân hàng hỗ trợ quét mã VietQR / MoMo
+                            </span>
+                            <span class="small text-muted" style="font-size: 0.76rem;">40+ ngân hàng nội địa</span>
+                        </div>
+                        <div class="luoi-the-ngan-hang">
+                            <span class="the-ten-ngan-hang">Vietcombank</span>
+                            <span class="the-ten-ngan-hang">Agribank</span>
+                            <span class="the-ten-ngan-hang">MB Bank</span>
+                            <span class="the-ten-ngan-hang">BIDV</span>
+                            <span class="the-ten-ngan-hang">VPBank</span>
+                            <span class="the-ten-ngan-hang">VietinBank</span>
+                            <span class="the-ten-ngan-hang">ACB</span>
+                            <span class="the-ten-ngan-hang">TPBank</span>
+                            <span class="the-ten-ngan-hang">Techcombank</span>
+                            <span class="the-ten-ngan-hang">Sacombank</span>
+                            <span class="the-ten-ngan-hang">VIB</span>
+                            <span class="the-ten-ngan-hang">HDBank</span>
+                        </div>
+
+                        <!-- Nút nhỏ phục vụ chấm đồ án: Giả lập Khách đã quét QR thành công (Test Webhook MoMo) -->
+                        <div class="mt-3 pt-2 border-top text-center" style="border-color: #E5E7EB !important;">
+                            <button type="button" id="btnTestWebhookMoMo" class="nut-gia-lap-webhook-momo"
+                                    onclick="giaLapKhachQuetQrThanhCong()">
+                                ⚡ Giả lập Khách đã quét QR thành công (Test Webhook MoMo)
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const MA_TRA_CUU_DON = "@Model.MaTraCuuDh";
+        const TONG_THANH_TOAN_DON = @Math.Round(Model.TongThanhToan, 0);
+        const NOI_DUNG_CK_CHUAN = "@noiDungCkHienThi";
+        let soGiayConLaiQr = @Model.SoGiayConLai;
+        let boDemGiayQr = null;
+        let boPollingQr = null;
+        let dangChoThanhToanQr = true;
+        let daXuLyHetHan = false;
+
+        function saoChepNoiDungMoMo(noiDung, btn) {
+            if (!navigator.clipboard) return;
+            navigator.clipboard.writeText(noiDung).then(() => {
+                const textCu = btn.innerText;
+                btn.innerText = "Đã chép";
+                setTimeout(() => { btn.innerText = textCu; }, 1500);
+            });
+        }
+
+        function capNhatHienThiDongHo(tongGiay) {
+            const g = Math.max(0, Math.floor(tongGiay));
+            const phut = String(Math.floor(g / 60)).padStart(2, "0");
+            const giay = String(g % 60).padStart(2, "0");
+            const elPhut = document.getElementById("phut-con-lai");
+            const elGiay = document.getElementById("giay-con-lai");
+            if (elPhut) elPhut.textContent = phut;
+            if (elGiay) elGiay.textContent = giay;
+        }
+
+        function chuyenSangTrangBienLaiThanhCong() {
+            if (!dangChoThanhToanQr) return;
+            dangChoThanhToanQr = false;
+            if (boDemGiayQr) clearInterval(boDemGiayQr);
+            if (boPollingQr) clearInterval(boPollingQr);
+            window.location.href = `/ThanhToan/ThanhCong/${encodeURIComponent(MA_TRA_CUU_DON)}`;
+        }
+
+        async function xuLyHetHan15PhutVaHoanKho() {
+            if (daXuLyHetHan || !dangChoThanhToanQr) return;
+            daXuLyHetHan = true;
+            dangChoThanhToanQr = false;
+
+            if (boDemGiayQr) clearInterval(boDemGiayQr);
+            if (boPollingQr) clearInterval(boPollingQr);
+
+            try {
+                const res = await fetch(`/ThanhToan/HuyDonHetHanVaHoanKho?maTraCuu=${encodeURIComponent(MA_TRA_CUU_DON)}`, {
+                    method: "POST"
+                });
+                const data = await res.json();
+                if (data && data.daThanhToan) {
+                    window.location.href = `/ThanhToan/ThanhCong/${encodeURIComponent(MA_TRA_CUU_DON)}`;
+                    return;
+                }
+            } catch (e) {
+                console.warn("Lỗi gọi hoàn kho tự động:", e);
+            }
+
+            window.location.href = "/";
+        }
+
+        async function kiemTraTrangThaiDonDinhKy() {
+            if (!dangChoThanhToanQr) return;
+            try {
+                const res = await fetch(`/ThanhToan/KiemTraTrangThaiDon?maTraCuu=${encodeURIComponent(MA_TRA_CUU_DON)}`);
+                const data = await res.json();
+                if (!data || !data.thanhCong) return;
+
+                if (data.daThanhToan || data.trangThaiTt === "DA_THANH_TOAN") {
+                    chuyenSangTrangBienLaiThanhCong();
+                } else if (data.daHetHan || data.soGiayConLai <= 0) {
+                    await xuLyHetHan15PhutVaHoanKho();
+                }
+            } catch (err) {
+                // Bỏ qua lỗi mạng tạm thời trong lúc polling
+            }
+        }
+
+        async function giaLapKhachQuetQrThanhCong() {
+            const btn = document.getElementById("btnTestWebhookMoMo");
+            if (btn) {
+                btn.disabled = true;
+                btn.innerText = "Đang xác nhận giao dịch từ Webhook MoMo...";
+            }
+
+            try {
+                const res = await fetch("/api/webhook/momo", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        content: NOI_DUNG_CK_CHUAN,
+                        transferAmount: TONG_THANH_TOAN_DON
+                    })
+                });
+                const data = await res.json();
+                if (data && data.thanhCong) {
+                    chuyenSangTrangBienLaiThanhCong();
+                } else {
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerText = "⚡ Giả lập Khách đã quét QR thành công (Test Webhook MoMo)";
+                    }
+                    alert(data?.thongBao || "Không thể xử lý Webhook MoMo.");
+                }
+            } catch (err) {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerText = "⚡ Giả lập Khách đã quét QR thành công (Test Webhook MoMo)";
+                }
+                alert("Lỗi kết nối tới /api/webhook/momo!");
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            capNhatHienThiDongHo(soGiayConLaiQr);
+            if (soGiayConLaiQr <= 0) {
+                xuLyHetHan15PhutVaHoanKho();
+                return;
+            }
+
+            boDemGiayQr = setInterval(() => {
+                soGiayConLaiQr -= 1;
+                capNhatHienThiDongHo(soGiayConLaiQr);
+                if (soGiayConLaiQr <= 0) {
+                    xuLyHetHan15PhutVaHoanKho();
+                }
+            }, 1000);
+
+            boPollingQr = setInterval(kiemTraTrangThaiDonDinhKy, 3000);
+        });
+    </script>
+</body>
+</html>
+

@@ -5,7 +5,6 @@
     int tongSoLuongSanPham = Model.GioHang?.ChiTietGioHangs?.Sum(x => x.SoLuong) ?? tongSoMon;
     decimal tienHangSauGiamBanDau = Math.Max(0m, Model.TongTienHang - Model.TienChietKhauB2B - Model.TienGiamVoucher);
     bool duMienPhiShip = tienHangSauGiamBanDau >= 500000m;
-    decimal soTienCanMuaThemBanDau = Math.Max(0m, 500000m - tienHangSauGiamBanDau);
     decimal phiShipMacDinh = duMienPhiShip ? 0m : 30000m;
     decimal tongThanhToanBanDau = Math.Max(0m, tienHangSauGiamBanDau + phiShipMacDinh);
     string ngayHenMacDinh = DateTime.Now.AddDays(2).ToString("yyyy-MM-dd");
@@ -39,7 +38,7 @@
     }
 }
 
-<section class="py-4 trang-thanh-toan-shondo">
+<section class="py-4 trang-thanh-toan-bitis">
     <div class="container">
         <form asp-controller="ThanhToan" asp-action="DatHang" method="post" id="formDatHangTrungThu" onsubmit="return chuanBiTruocKhiGuiDon(event)">
             @if (TempData["LoiThanhToan"] != null)
@@ -52,147 +51,165 @@
             <input type="hidden" name="TocDoGiaoHang" id="hidTocDoGiaoHang" value="GIAO_TIEU_CHUAN" />
             <input type="hidden" name="CoThiep3D" id="hidCoThiep3D" value="false" />
             <input type="hidden" name="DanhSachDotGiao[0].TinhThanhPho" id="dot0_TinhThanhPho" value="@tinhThanhBanDau" />
+            <input type="hidden" name="DanhSachDotGiao[0].DiaChiGiaoChiTiet" id="dot0_DiaChi" value="@diaChiGhepBanDau" />
+            <input type="hidden" name="DanhSachDotGiao[0].NgayHenGiao" value="@ngayHenMacDinh" />
+            <input type="hidden" name="DanhSachDotGiao[0].KhungGioGiao" value="Sáng (08:00 - 11:30)" />
 
             <div class="row g-4 align-items-start">
                 <!-- =========================================================================
-                     A. CỘT TRÁI (NỀN TRẮNG #FFFFFF, CHIẾM 58% - 60% CHIỀU RỘNG)
+                     A. CỘT TRÁI (55% CHIỀU RỘNG - PHẲNG, SẠCH TRÊN NỀN TRẮNG #FFFFFF NHƯ BITI'S)
                      ========================================================================= -->
-                <div class="col-lg-7 cot-trai-shondo">
-                    <div class="khung-cot-trai-shondo">
-                        <!-- 1. THANH TIẾN TRÌNH 3 BƯỚC (STEPPER) -->
-                        <div class="thanh-tien-trinh-shondo">
-                            <a href="javascript:void(0)" onclick="moNganKeoGioHang()" class="buoc-stepper-shondo da-xong">
-                                <span class="vong-so-buoc"><i class="bi bi-check-lg"></i></span>
-                                <span>Giỏ hàng</span>
-                            </a>
-                            <div class="duong-noi-stepper da-qua"></div>
-                            <div class="buoc-stepper-shondo dang-active">
-                                <span class="vong-so-buoc">2</span>
-                                <span>Thông tin</span>
-                            </div>
-                            <div class="duong-noi-stepper"></div>
-                            <div class="buoc-stepper-shondo">
-                                <span class="vong-so-buoc">3</span>
-                                <span>Thanh toán</span>
-                            </div>
-                        </div>
-
-                        <!-- 2. TIÊU ĐỀ THÔNG TIN VẬN CHUYỂN & LINK ĐĂNG NHẬP -->
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0" style="color: #111827; font-size: 1.15rem;">Thông tin vận chuyển</h5>
+                <div class="col-lg-7 cot-trai-bitis">
+                    <div class="khung-cot-trai-bitis">
+                        <!-- Dòng đầu: Đăng nhập hoặc Xin chào + Chọn nhanh Sổ địa chỉ -->
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                             @if (!Model.DaDangNhap)
                             {
                                 <div class="small" style="color: #4B5563;">
                                     Bạn đã có tài khoản?
                                     <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#modalTaiKhoan"
                                        class="fw-bold text-decoration-underline ms-1" style="color: #111827;">
-                                        Đăng nhập
+                                        Đăng nhập ngay
                                     </a>
                                 </div>
                             }
                             else
                             {
-                                <span class="badge rounded-pill px-3 py-1" style="background: #EEFCF6; color: #065F46; border: 1px solid #10B981;">
-                                    <i class="bi bi-person-check-fill me-1"></i>Hội viên: @Model.HoTenNguoiMua
-                                </span>
+                                <div class="small fw-semibold" style="color: #111827;">
+                                    Xin chào, <strong>@Model.HoTenNguoiMua</strong>
+                                </div>
+                            }
+
+                            @if (Model.DaDangNhap && Model.DanhSachSoDiaChi.Any())
+                            {
+                                <select id="ddlSoDiaChiDaLuu" class="form-select form-select-sm w-auto"
+                                        style="font-size: 0.8rem; border-color: #D1D5DB; color: #111827; font-weight: 500; height: 34px;"
+                                        onchange="chonTuDropdownSoDiaChi(this)">
+                                    <option value="">Chọn nhanh từ Sổ địa chỉ...</option>
+                                    @foreach (var dc in Model.DanhSachSoDiaChi)
+                                    {
+                                        string phuongQuan = $"{dc.PhuongXa}, {dc.QuanHuyen}";
+                                        <option value="@dc.DiaChiCuThe"
+                                                data-ten="@dc.TenNguoiNhan"
+                                                data-sdt="@dc.SdtnguoiNhan"
+                                                data-tinhthanh="@dc.TinhThanh"
+                                                data-phuongquan="@phuongQuan">
+                                            @(dc.NhanDiaChi ?? dc.TenNguoiNhan) - @dc.DiaChiCuThe, @dc.QuanHuyen
+                                        </option>
+                                    }
+                                </select>
                             }
                         </div>
 
-                        <!-- 3. HAI NÚT CHỌN HÌNH THỨC NHẬN HÀNG (2 CARD RADIO NẰM NGANG CẠNH NHAU) -->
-                        <div class="luoi-hinh-thuc-nhan-shondo">
-                            <label class="the-hinh-thuc-nhan dang-chon" id="lblChonGiaoTanNoi">
-                                <span class="d-inline-flex align-items-center gap-2">
-                                    <span class="fs-5">🚚</span>
-                                    <span>Giao tận nơi</span>
-                                </span>
+                        <!-- Tiêu đề lớn: Thông tin giao hàng -->
+                        <h2 style="font-size: 1.25rem; font-weight: 700; color: #111827; margin-bottom: 16px;">
+                            Thông tin giao hàng
+                        </h2>
+
+                        <!-- 2 Tab chọn gọn gàng: [ Giao tận nơi ] | [ Nhận tại cửa hàng ] -->
+                        <div class="tab-hinh-thuc-nhan-bitis mb-3">
+                            <label class="nut-tab-nhan-bitis dang-chon" id="lblChonGiaoTanNoi">
                                 <input type="radio" name="HinhThucNhanHang" id="radGiaoTanNoi" value="GIAO_TAN_NOI" checked
                                        onchange="chuyenDoiHinhThucNhanHang()" />
+                                <span>Giao tận nơi</span>
                             </label>
-
-                            <label class="the-hinh-thuc-nhan" id="lblChonNhanTaiCuaHang">
-                                <span class="d-inline-flex align-items-center gap-2">
-                                    <span class="fs-5">🏪</span>
-                                    <span>Nhận tại cửa hàng</span>
-                                </span>
+                            <label class="nut-tab-nhan-bitis" id="lblChonNhanTaiCuaHang">
                                 <input type="radio" name="HinhThucNhanHang" id="radNhanTaiCuaHang" value="NHAN_TAI_CUA_HANG"
                                        onchange="chuyenDoiHinhThucNhanHang()" />
+                                <span>Nhận tại cửa hàng</span>
                             </label>
                         </div>
 
-                        <!-- THANH THÔNG BÁO MỐC FREESHIP 500.000 Đ (NGAY PHÍA TRÊN PHƯƠNG THỨC VẬN CHUYỂN) -->
-                        <div id="khungThongBaoFreeshipCotTrai" class="p-2 px-3 rounded-3 mb-3 small fw-semibold"
-                             style="background: @(duMienPhiShip ? "#ECFDF5" : "#FFFBEB"); border: 1px solid @(duMienPhiShip ? "#10B981" : "#F59E0B"); color: @(duMienPhiShip ? "#065F46" : "#92400E");">
-                            @if (duMienPhiShip)
-                            {
-                                <span>🎉 Đơn hàng của bạn đã đủ điều kiện Miễn phí giao hàng tiêu chuẩn!</span>
-                            }
-                            else
-                            {
-                                <span>🚚 Miễn phí giao tiêu chuẩn cho đơn từ 500.000 đ — Mua thêm <strong>@soTienCanMuaThemBanDau.ToString("N0") đ</strong> để được Freeship!</span>
-                            }
-                        </div>
+                        <!-- Hệ thống ô nhập liệu phẳng chuẩn Biti's -->
+                        <div class="row g-2 mb-2">
+                            <!-- Hàng 1: Ô Họ và tên * (rộng 100%) -->
+                            <div class="col-12">
+                                <input type="text" name="HoTenNguoiMua" id="txtHoTenNguoiMua" required
+                                       class="input-phang-bitis"
+                                       value="@Model.HoTenNguoiMua"
+                                       placeholder="Họ và tên *"
+                                       oninput="dongBoNguoiMuaSangNguoiNhan()" />
+                            </div>
 
-                        <!-- KHỐI LỰA CHỌN 1A: PHƯƠNG THỨC VẬN CHUYỂN (HIỂN THỊ KHI GIAO TẬN NƠI) -->
-                        <div id="khungPhuongThucVanChuyen" class="mb-3">
-                            <label class="small fw-bold text-uppercase mb-2 d-block" style="color: #4B5563; letter-spacing: 0.4px;">
-                                Phương thức vận chuyển
-                            </label>
-
-                            <!-- Dòng 1: Giao tiêu chuẩn -->
-                            <label class="dong-van-chuyen-shondo dang-chon" id="lblDongGiaoTieuChuan">
-                                <div class="d-flex align-items-center gap-2">
-                                    <input type="radio" name="GoiTocDoGiao" id="radGiaoTieuChuan" value="GIAO_TIEU_CHUAN" checked class="form-check-input mt-0"
-                                           style="accent-color: #10B981;" onchange="capNhatBangTinhThanhToan()" />
-                                    <div>
-                                        <span class="fw-semibold d-block" style="color: #111827; font-size: 0.9rem;">
-                                            Giao tiêu chuẩn (Theo ngày hẹn)
-                                        </span>
-                                        <small class="text-muted" style="font-size: 0.76rem;">Đảm bảo hộp quà nguyên niêm phong và kèm túi lụa</small>
-                                    </div>
-                                </div>
-                                <strong id="lblGiaShipTieuChuan" class="text-nowrap" style="color: @(duMienPhiShip ? "#059669" : "#111827"); font-size: 0.9rem;">
-                                    @(duMienPhiShip ? "0 đ (Miễn phí)" : "30.000 đ")
-                                </strong>
-                            </label>
-
-                            <!-- Dòng 2: Trong 6 giờ (Hỏa tốc) -->
-                            <label class="dong-van-chuyen-shondo" id="lblDongGiaoHoaToc">
-                                <div class="d-flex align-items-center gap-2">
-                                    <input type="radio" name="GoiTocDoGiao" id="radGiaoHoaToc" value="GIAO_HOA_TOC" class="form-check-input mt-0"
-                                           style="accent-color: #10B981;" onchange="capNhatBangTinhThanhToan()" />
-                                    <div>
-                                        <span class="fw-semibold d-block" style="color: #111827; font-size: 0.9rem;">
-                                            Giao tận nơi - Hỏa tốc trong 6 giờ (Từ T2 - T7)
-                                        </span>
-                                        <small id="lblMoTaPhuHoaToc" class="text-muted d-block" style="font-size: 0.76rem;">
-                                            @(duMienPhiShip ? "Đã hỗ trợ 50% phí hỏa tốc cho đơn từ 500.000 đ" : "Ưu tiên giao nhanh cho đơn quà biếu cần gấp trong ngày")
-                                        </small>
-                                    </div>
-                                </div>
-                                <strong id="lblGiaShipHoaToc" class="text-nowrap" style="color: #7A1215; font-size: 0.9rem;">
-                                    @(duMienPhiShip ? "30.000 đ" : "60.000 đ")
-                                </strong>
-                            </label>
-
-                            <!-- Thông báo giới hạn địa bàn Hỏa tốc khi chọn Tỉnh/TP ngoài TP.HCM & An Giang -->
-                            <div id="thongBaoGioiHanHoaToc" class="mt-1 px-2 py-1 rounded small"
-                                 style="display: none; background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; font-size: 0.78rem;">
-                                <i class="bi bi-exclamation-circle-fill me-1"></i>Hỏa tốc trong 6 giờ hiện chỉ hỗ trợ tại TP. Hồ Chí Minh và TP. Long Xuyên (An Giang)
+                            <!-- Hàng 2 (2 cột): Ô Email (bên trái) và Ô Số điện thoại * (bên phải) -->
+                            <div class="col-md-6">
+                                <input type="email" name="EmailNguoiMua" id="txtEmailNguoiMua"
+                                       class="input-phang-bitis"
+                                       value="@Model.EmailNguoiMua"
+                                       placeholder="Email" />
+                            </div>
+                            <div class="col-md-6">
+                                <input type="text" name="SdtNguoiMua" id="txtSdtNguoiMua" required
+                                       class="input-phang-bitis"
+                                       value="@Model.SdtNguoiMua"
+                                       placeholder="Số điện thoại *"
+                                       oninput="dongBoNguoiMuaSangNguoiNhan()" />
                             </div>
                         </div>
 
-                        <!-- KHỐI LỰA CHỌN 2: NHẬN TẠI CỬA HÀNG (MẶC ĐỊNH ẨN, HIỆN KHI CHỌN NHẬN TẠI CỬA HÀNG) -->
+                        <!-- Hàng 3, 4, 5 (Khi chọn Giao tận nơi) -->
+                        <div id="khungDiaChiGiaoTanNoi">
+                            <div class="row g-2 mb-2">
+                                <!-- Hàng 3: Ô Địa chỉ (Số nhà, tên đường) * (rộng 100%) -->
+                                <div class="col-12">
+                                    <input type="text" id="txtDiaChiSoNha"
+                                           class="input-phang-bitis"
+                                           value="@soNhaBanDau"
+                                           placeholder="Địa chỉ (Số nhà, tên đường) *"
+                                           oninput="dongBoDiaChiGiaoChinh()" />
+                                </div>
+
+                                <!-- Hàng 4 (2 cột): Chọn Tỉnh/Thành phố * và Quận/Huyện, Phường/Xã * -->
+                                <div class="col-md-6">
+                                    <select id="ddlTinhThanh" class="input-phang-bitis" onchange="dongBoDiaChiGiaoChinh(); kiemTraTinhThanhVaCapNhatHoaToc();">
+                                        <option value="TP. Hồ Chí Minh" selected="@(tinhThanhBanDau.Contains("Hồ Chí Minh"))">TP. Hồ Chí Minh</option>
+                                        <option value="An Giang" selected="@(tinhThanhBanDau.Contains("An Giang"))">An Giang (TP. Long Xuyên)</option>
+                                        <option value="Hà Nội" selected="@(tinhThanhBanDau.Contains("Hà Nội"))">Hà Nội</option>
+                                        <option value="Đà Nẵng" selected="@(tinhThanhBanDau.Contains("Đà Nẵng"))">Đà Nẵng</option>
+                                        <option value="Cần Thơ" selected="@(tinhThanhBanDau.Contains("Cần Thơ"))">Cần Thơ</option>
+                                        <option value="Bình Dương" selected="@(tinhThanhBanDau.Contains("Bình Dương"))">Bình Dương</option>
+                                        <option value="Đồng Nai" selected="@(tinhThanhBanDau.Contains("Đồng Nai"))">Đồng Nai</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <input type="text" id="txtPhuongXaQuanHuyen" list="goiYPhuongQuan"
+                                           class="input-phang-bitis"
+                                           value="@phuongQuanBanDau"
+                                           placeholder="Quận/Huyện, Phường/Xã *"
+                                           oninput="dongBoDiaChiGiaoChinh()" />
+                                    <datalist id="goiYPhuongQuan">
+                                        <option value="Phường Bến Nghé, Quận 1"></option>
+                                        <option value="Phường Bến Thành, Quận 1"></option>
+                                        <option value="Phường Võ Thị Sáu, Quận 3"></option>
+                                        <option value="Phường Thảo Điền, TP. Thủ Đức"></option>
+                                        <option value="Phường Mỹ Xuyên, TP. Long Xuyên"></option>
+                                        <option value="Phường Mỹ Bình, TP. Long Xuyên"></option>
+                                    </datalist>
+                                </div>
+                            </div>
+
+                            <!-- Hàng 5: Hai nút chọn tốc độ giao nằm gọn trên 1 hàng ngang -->
+                            <div id="khungPhuongThucVanChuyen" class="mb-3">
+                                <div class="hang-toc-do-giao-bitis">
+                                    <label class="o-toc-do-giao-bitis dang-chon" id="lblDongGiaoTieuChuan">
+                                        <input type="radio" name="GoiTocDoGiao" id="radGiaoTieuChuan" value="GIAO_TIEU_CHUAN" checked
+                                               class="form-check-input mt-0" onchange="capNhatBangTinhThanhToan()" />
+                                        <span>Giao tiêu chuẩn (<span id="lblGiaShipTieuChuan">30.000đ</span> / Miễn phí từ 500k)</span>
+                                    </label>
+                                    <label class="o-toc-do-giao-bitis" id="lblDongGiaoHoaToc">
+                                        <input type="radio" name="GoiTocDoGiao" id="radGiaoHoaToc" value="GIAO_HOA_TOC"
+                                               class="form-check-input mt-0" onchange="capNhatBangTinhThanhToan()" />
+                                        <span>Hỏa tốc 6h (<span id="lblGiaShipHoaToc">60.000đ</span> - Nội thành TP.HCM &amp; Long Xuyên)</span>
+                                    </label>
+                                </div>
+                                <div id="thongBaoGioiHanHoaToc" class="mt-1 small" style="display: none; color: #DC2626; font-size: 0.78rem;">
+                                    Hỏa tốc 6h hiện chỉ hỗ trợ tại TP. Hồ Chí Minh và TP. Long Xuyên (An Giang).
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Khối Nhận tại cửa hàng (Khi chọn tab Nhận tại cửa hàng) -->
                         <div id="khungNhanTaiCuaHang" class="mb-3" style="display: none;">
-                            <div class="thong-bao-cua-hang-xanh mb-3">
-                                <i class="bi bi-check-circle-fill me-1"></i>
-                                Sản phẩm <strong>CÓ</strong> ở cửa hàng. Nhân viên sẽ xác nhận qua điện thoại và giữ hàng 24h (Miễn phí vận chuyển 0 đ).
-                            </div>
-
-                            <label class="small fw-bold text-uppercase mb-2 d-block" style="color: #4B5563; letter-spacing: 0.4px;">
-                                Chọn cửa hàng nhận
-                            </label>
-
-                            <!-- Cửa hàng 1 -->
                             <label class="the-cua-hang-nhan">
                                 <div class="d-flex align-items-start gap-2">
                                     <input type="radio" name="CuaHangNhan" class="form-check-input mt-1" checked
@@ -200,17 +217,12 @@
                                            onchange="dongBoDiaChiGiaoChinh()" />
                                     <div>
                                         <strong class="d-block" style="color: #111827; font-size: 0.9rem;">Nguyệt Cát – Quận 1, Nguyễn Huệ</strong>
-                                        <small class="text-muted d-block" style="font-size: 0.78rem;">
-                                            128 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh - 0909 123 456
-                                        </small>
+                                        <small class="text-muted d-block" style="font-size: 0.78rem;">128 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh</small>
                                     </div>
                                 </div>
-                                <span class="badge rounded-pill text-nowrap" style="background: #EEFCF6; color: #059669; border: 1px solid #10B981;">
-                                    Còn hàng • 0 đ
-                                </span>
+                                <span class="small fw-semibold text-success text-nowrap">Miễn phí • 0đ</span>
                             </label>
 
-                            <!-- Cửa hàng 2 -->
                             <label class="the-cua-hang-nhan">
                                 <div class="d-flex align-items-start gap-2">
                                     <input type="radio" name="CuaHangNhan" class="form-check-input mt-1"
@@ -218,17 +230,12 @@
                                            onchange="dongBoDiaChiGiaoChinh()" />
                                     <div>
                                         <strong class="d-block" style="color: #111827; font-size: 0.9rem;">Nguyệt Cát – Quận 3, Pasteur</strong>
-                                        <small class="text-muted d-block" style="font-size: 0.78rem;">
-                                            215 Pasteur, Phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh - 0909 654 321
-                                        </small>
+                                        <small class="text-muted d-block" style="font-size: 0.78rem;">215 Pasteur, Phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh</small>
                                     </div>
                                 </div>
-                                <span class="badge rounded-pill text-nowrap" style="background: #EEFCF6; color: #059669; border: 1px solid #10B981;">
-                                    Còn hàng • 0 đ
-                                </span>
+                                <span class="small fw-semibold text-success text-nowrap">Miễn phí • 0đ</span>
                             </label>
 
-                            <!-- Cửa hàng 3 -->
                             <label class="the-cua-hang-nhan">
                                 <div class="d-flex align-items-start gap-2">
                                     <input type="radio" name="CuaHangNhan" class="form-check-input mt-1"
@@ -236,307 +243,134 @@
                                            onchange="dongBoDiaChiGiaoChinh()" />
                                     <div>
                                         <strong class="d-block" style="color: #111827; font-size: 0.9rem;">Nguyệt Cát – Long Xuyên, An Giang</strong>
-                                        <small class="text-muted d-block" style="font-size: 0.78rem;">
-                                            45 Trần Hưng Đạo, Phường Mỹ Xuyên, TP. Long Xuyên, An Giang - 0909 888 999
-                                        </small>
+                                        <small class="text-muted d-block" style="font-size: 0.78rem;">45 Trần Hưng Đạo, Phường Mỹ Xuyên, TP. Long Xuyên, An Giang</small>
                                     </div>
                                 </div>
-                                <span class="badge rounded-pill text-nowrap" style="background: #EEFCF6; color: #059669; border: 1px solid #10B981;">
-                                    Còn hàng • 0 đ
-                                </span>
+                                <span class="small fw-semibold text-success text-nowrap">Miễn phí • 0đ</span>
                             </label>
                         </div>
 
-                        <!-- KHỐI THÔNG TIN LIÊN HỆ -->
-                        <div class="mb-3">
-                            <label class="small fw-bold text-uppercase mb-2 d-block" style="color: #4B5563; letter-spacing: 0.4px;">
-                                Thông tin liên hệ
-                            </label>
-                            <div class="row g-2">
-                                <div class="col-md-6">
-                                    <div class="khung-input-floating-shondo">
-                                        <label for="txtHoTenNguoiMua" class="nhan-floating-nho">Họ tên người mua <span class="text-danger">*</span></label>
-                                        <input type="text" name="HoTenNguoiMua" id="txtHoTenNguoiMua" required
-                                               value="@Model.HoTenNguoiMua"
-                                               placeholder="Nhập họ và tên của bạn..."
-                                               oninput="dongBoNguoiMuaSangNguoiNhan()" />
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="khung-input-floating-shondo">
-                                        <label for="txtSdtNguoiMua" class="nhan-floating-nho">Số điện thoại <span class="text-danger">*</span></label>
-                                        <input type="text" name="SdtNguoiMua" id="txtSdtNguoiMua" required
-                                               value="@Model.SdtNguoiMua"
-                                               placeholder="Nhập số điện thoại liên hệ..."
-                                               oninput="dongBoNguoiMuaSangNguoiNhan()" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- KHỐI ĐỊA CHỈ GIAO HÀNG (HIỂN THỊ KHI CHỌN GIAO TẬN NƠI) -->
-                        <div id="khungDiaChiGiaoTanNoi" class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <label class="small fw-bold text-uppercase mb-0" style="color: #4B5563; letter-spacing: 0.4px;">
-                                    Địa chỉ giao hàng
-                                </label>
-                                @if (Model.DaDangNhap && Model.DanhSachSoDiaChi.Any())
-                                {
-                                    <select id="ddlSoDiaChiDaLuu" class="form-select form-select-sm w-auto"
-                                            style="font-size: 0.78rem; border-color: #10B981; color: #065F46; font-weight: 600;"
-                                            onchange="chonTuDropdownSoDiaChi(this)">
-                                        <option value="">📍 Chọn nhanh từ Sổ địa chỉ đã lưu...</option>
-                                        @foreach (var dc in Model.DanhSachSoDiaChi)
-                                        {
-                                            string phuongQuan = $"{dc.PhuongXa}, {dc.QuanHuyen}";
-                                            <option value="@dc.DiaChiCuThe"
-                                                    data-ten="@dc.TenNguoiNhan"
-                                                    data-sdt="@dc.SdtnguoiNhan"
-                                                    data-tinhthanh="@dc.TinhThanh"
-                                                    data-phuongquan="@phuongQuan">
-                                                @(dc.NhanDiaChi ?? dc.TenNguoiNhan) - @dc.DiaChiCuThe, @dc.QuanHuyen
-                                            </option>
-                                        }
-                                    </select>
-                                }
-                            </div>
-
-                            <div class="row g-2">
-                                <div class="col-12">
-                                    <div class="khung-input-floating-shondo">
-                                        <label for="txtDiaChiSoNha" class="nhan-floating-nho">Địa chỉ <span class="text-danger">*</span> (Số nhà, tên đường)</label>
-                                        <input type="text" id="txtDiaChiSoNha"
-                                               value="@soNhaBanDau"
-                                               placeholder="VD: 128 Nguyễn Huệ / 45 Trần Hưng Đạo..."
-                                               oninput="dongBoDiaChiGiaoChinh()" />
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="khung-input-floating-shondo">
-                                        <label for="ddlTinhThanh" class="nhan-floating-nho">Chọn tỉnh, thành phố <span class="text-danger">*</span></label>
-                                        <select id="ddlTinhThanh" onchange="dongBoDiaChiGiaoChinh(); kiemTraTinhThanhVaCapNhatHoaToc();">
-                                            <option value="TP. Hồ Chí Minh" selected="@(tinhThanhBanDau.Contains("Hồ Chí Minh"))">TP. Hồ Chí Minh</option>
-                                            <option value="An Giang" selected="@(tinhThanhBanDau.Contains("An Giang"))">An Giang (TP. Long Xuyên)</option>
-                                            <option value="Hà Nội" selected="@(tinhThanhBanDau.Contains("Hà Nội"))">Hà Nội</option>
-                                            <option value="Đà Nẵng" selected="@(tinhThanhBanDau.Contains("Đà Nẵng"))">Đà Nẵng</option>
-                                            <option value="Cần Thơ" selected="@(tinhThanhBanDau.Contains("Cần Thơ"))">Cần Thơ</option>
-                                            <option value="Bình Dương" selected="@(tinhThanhBanDau.Contains("Bình Dương"))">Bình Dương</option>
-                                            <option value="Đồng Nai" selected="@(tinhThanhBanDau.Contains("Đồng Nai"))">Đồng Nai</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="khung-input-floating-shondo">
-                                        <label for="txtPhuongXaQuanHuyen" class="nhan-floating-nho">Chọn xã, phường / quận, huyện <span class="text-danger">*</span></label>
-                                        <input type="text" id="txtPhuongXaQuanHuyen" list="goiYPhuongQuan"
-                                               value="@phuongQuanBanDau"
-                                               placeholder="VD: Phường Bến Nghé, Quận 1"
-                                               oninput="dongBoDiaChiGiaoChinh()" />
-                                        <datalist id="goiYPhuongQuan">
-                                            <option value="Phường Bến Nghé, Quận 1"></option>
-                                            <option value="Phường Bến Thành, Quận 1"></option>
-                                            <option value="Phường Võ Thị Sáu, Quận 3"></option>
-                                            <option value="Phường Thảo Điền, TP. Thủ Đức"></option>
-                                            <option value="Phường Mỹ Xuyên, TP. Long Xuyên"></option>
-                                            <option value="Phường Mỹ Bình, TP. Long Xuyên"></option>
-                                        </datalist>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="khung-input-floating-shondo">
-                                        <label class="nhan-floating-nho">Ngày hẹn giao quà</label>
-                                        <input type="date" name="DanhSachDotGiao[0].NgayHenGiao" value="@ngayHenMacDinh" />
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="khung-input-floating-shondo">
-                                        <label class="nhan-floating-nho">Khung giờ hẹn giao</label>
-                                        <select name="DanhSachDotGiao[0].KhungGioGiao">
-                                            <option value="Sáng (08:00 - 11:30)">Sáng (08:00 - 11:30)</option>
-                                            <option value="Chiều (13:30 - 17:00)">Chiều (13:30 - 17:00)</option>
-                                            <option value="Tối Đoàn Viên (18:00 - 20:30)">Tối Đoàn Viên (18:00 - 20:30)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Trường ẩn đồng bộ DiaChiGiaoChiTiet gửi về ThanhToanController.DatHang -->
-                            <input type="hidden" name="DanhSachDotGiao[0].DiaChiGiaoChiTiet" id="dot0_DiaChi" value="@diaChiGhepBanDau" />
-                        </div>
-
-                        <!-- =========================================================================
-                             4. BA TÙY CHỌN MỞ RỘNG (THIỆP QR 3D MẶC ĐỊNH UNCHECKED, ĐA ĐIỂM NHẬN, B2B)
-                             ========================================================================= -->
-                        <div class="mt-3 mb-4">
-                            <!-- TÙY CHỌN MỞ RỘNG 1: ĐÍNH KÈM THIỆP CHÚC TẾT ĐOÀN VIÊN QR 3D (MẶC ĐỊNH CHECKED = FALSE) -->
-                            <div class="khung-tuy-chon-mo-rong-shondo">
+                        <!-- Các tùy chọn phụ thu gọn thành dòng checkbox mảnh, không bọc khung viền dày -->
+                        <div class="danh-sach-tuy-chon-manh-bitis mb-4">
+                            <!-- Tùy chọn 1: Đính kèm Thiệp Chúc Tết Đoàn Viên QR 3D (Miễn phí) -->
+                            <div class="dong-tuy-chon-manh-bitis">
                                 <div class="form-check d-flex align-items-center gap-2 m-0">
-                                    <input class="form-check-input chk-tron-shondo" type="checkbox" id="chkThiepQr_0"
+                                    <input class="form-check-input" type="checkbox" id="chkThiepQr_0"
                                            name="DanhSachDotGiao[0].CoKemThiepQr" value="true"
                                            onchange="xuLyBatTatThiepQrChinh(this)">
-                                    <label class="form-check-label fw-semibold" for="chkThiepQr_0" style="cursor: pointer; color: #1F2937; font-size: 0.92rem;">
-                                        🌕 Đính kèm Thiệp Chúc Tết Đoàn Viên QR 3D (Miễn phí)
+                                    <label class="form-check-label" for="chkThiepQr_0" style="cursor: pointer; color: #1F2937; font-size: 0.9rem;">
+                                        Đính kèm Thiệp Chúc Tết Đoàn Viên QR 3D (Miễn phí)
                                     </label>
                                 </div>
 
-                                <div id="khungChiTietThiepQr" class="mt-3 pt-3 border-top" style="display: none; border-color: #E5E7EB !important;">
-                                    <div class="khung-thiep-qr-vang p-3 rounded-3" style="background: #FFFDF7; border: 1px solid #E6D5B8;">
-                                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2 pb-2 border-bottom" style="border-color: #EFE6D5 !important;">
-                                            <span class="small fw-bold chu-do-son-mai">
-                                                ✨ Thiết kế Thiệp Chúc Tết Đoàn Viên QR 3D
-                                            </span>
-                                            <div class="d-flex align-items-center gap-2">
-                                                <small class="text-muted fw-semibold">Mẫu giao diện thiệp:</small>
-                                                <select name="DanhSachDotGiao[0].MauGiaoDienThiep" class="form-select form-select-sm w-auto">
-                                                    <option value="CO_PHONG_HOANG_GIA">🏯 Cổ Phong Hoàng Gia</option>
-                                                    <option value="TRANG_RAM_HIEN_DAI">🌕 Trăng Rằm Hiện Đại</option>
-                                                    <option value="SUM_VAY_AM_AP">🏮 Sum Vầy Ấm Áp</option>
-                                                </select>
-                                            </div>
+                                <div id="khungChiTietThiepQr" class="mt-2 pt-2" style="display: none;">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-md-5">
+                                            <input type="text" name="DanhSachDotGiao[0].TenNguoiNhanThiep" id="txtKinhGuiTrenThiep_0"
+                                                   class="input-phang-bitis"
+                                                   placeholder="Kính gửi (Người nhận trên thiệp) *"
+                                                   oninput="kiemTraTrungTenThiep3D()" />
                                         </div>
-
-                                        <div class="row g-2 mb-2">
-                                            <div class="col-md-6">
-                                                <label class="form-label small fw-bold mb-1" style="color: #7A1215;">
-                                                    Kính gửi (Tên người nhận in trên thiệp) <span class="text-danger">*</span>
-                                                </label>
-                                                <input type="text" name="DanhSachDotGiao[0].TenNguoiNhanThiep" id="txtKinhGuiTrenThiep_0"
-                                                       class="form-control form-control-sm"
-                                                       placeholder="VD: Ông Bà Nội / Anh Minh Giám Đốc / Gia đình Bạn Tuấn"
-                                                       oninput="kiemTraTrungTenThiep3D()" />
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label small fw-bold mb-1" style="color: #1F2937;">
-                                                    Tên người gửi in trên thiệp <span class="text-danger">*</span>
-                                                </label>
-                                                <input type="text" name="DanhSachDotGiao[0].TenNguoiGuiThiep" id="txtNguoiGuiTrenThiep_0"
-                                                       class="form-control form-control-sm"
-                                                       value="@Model.HoTenNguoiMua"
-                                                       placeholder="VD: Con Minh Đức / Tập thể Công ty ABC"
-                                                       oninput="kiemTraTrungTenThiep3D()" />
-                                            </div>
+                                        <div class="col-md-4">
+                                            <input type="text" name="DanhSachDotGiao[0].TenNguoiGuiThiep" id="txtNguoiGuiTrenThiep_0"
+                                                   class="input-phang-bitis"
+                                                   value="@Model.HoTenNguoiMua"
+                                                   placeholder="Người gửi *"
+                                                   oninput="kiemTraTrungTenThiep3D()" />
                                         </div>
-
-                                        <div id="canhBaoTrungTenThiep3D" class="p-2 mb-2 rounded small"
-                                             style="display: none; background: #FFFBEB; color: #B45309; border: 1px solid #F59E0B; font-size: 0.78rem;">
-                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Lưu ý: Tên <strong>Kính gửi (Người nhận)</strong> và <strong>Người gửi</strong> trên thiệp đang trùng nhau. Quý khách vui lòng kiểm tra lại để thiệp chúc hiển thị trang trọng nhất!
-                                        </div>
-
-                                        <div class="noi-dung-loi-chuc-qr">
-                                            <label class="form-label small fw-bold mb-1" style="color: #1F2937;">
-                                                Lời chúc Tết Đoàn Viên <span class="text-danger">*</span>
-                                            </label>
-                                            <textarea name="DanhSachDotGiao[0].LoiChucThiep" id="txtLoiChucThiep_0" rows="2" class="form-control form-control-sm"
-                                                      placeholder="Nhập lời chúc Trung Thu gửi tới người nhận...">Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên, Hạnh Phúc &amp; Vạn Sự An Khang!</textarea>
+                                        <div class="col-md-3">
+                                            <select name="DanhSachDotGiao[0].MauGiaoDienThiep" class="input-phang-bitis">
+                                                <option value="CO_PHONG_HOANG_GIA">Cổ Phong Hoàng Gia</option>
+                                                <option value="TRANG_RAM_HIEN_DAI">Trăng Rằm Hiện Đại</option>
+                                                <option value="SUM_VAY_AM_AP">Sum Vầy Ấm Áp</option>
+                                            </select>
                                         </div>
                                     </div>
+                                    <div id="canhBaoTrungTenThiep3D" class="mb-2 small" style="display: none; color: #B45309; font-size: 0.78rem;">
+                                        Lưu ý: Tên Kính gửi và Người gửi trên thiệp đang trùng nhau.
+                                    </div>
+                                    <textarea name="DanhSachDotGiao[0].LoiChucThiep" id="txtLoiChucThiep_0" rows="2"
+                                              class="form-control" style="border: 1px solid #E5E7EB; border-radius: 6px; font-size: 0.9rem;"
+                                              placeholder="Lời chúc Tết Đoàn Viên *">Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên, Hạnh Phúc &amp; Vạn Sự An Khang!</textarea>
                                 </div>
                             </div>
 
-                            <!-- TÙY CHỌN MỞ RỘNG 2: GỌI NGƯỜI KHÁC NHẬN HÀNG / BIẾU TẶNG ĐA ĐIỂM -->
-                            <div class="khung-tuy-chon-mo-rong-shondo">
+                            <!-- Tùy chọn 2: Gọi người khác nhận hàng -->
+                            <div class="dong-tuy-chon-manh-bitis">
                                 <div class="form-check d-flex align-items-center gap-2 m-0">
-                                    <input class="form-check-input chk-tron-shondo" type="checkbox" id="chkGoiNguoiKhacNhan"
+                                    <input class="form-check-input" type="checkbox" id="chkGoiNguoiKhacNhan"
                                            onchange="xuLyBatTatNguoiKhacNhan()">
-                                    <label class="form-check-label fw-semibold" id="lblChkGoiNguoiKhacNhan" for="chkGoiNguoiKhacNhan" style="cursor: pointer; color: #1F2937; font-size: 0.92rem;">
+                                    <label class="form-check-label" id="lblChkGoiNguoiKhacNhan" for="chkGoiNguoiKhacNhan" style="cursor: pointer; color: #1F2937; font-size: 0.9rem;">
                                         @(tongSoLuongSanPham >= 2
-                                            ? $"Gọi người khác nhận hàng / Giao nhiều địa chỉ (tối đa {tongSoLuongSanPham} điểm nhận)"
-                                            : "Gọi người khác nhận hàng (nếu có)")
+                                            ? $"Gọi người khác nhận hàng (Chia điểm nhận tối đa {tongSoLuongSanPham} địa chỉ)"
+                                            : "Gọi người khác nhận hàng")
                                     </label>
                                 </div>
 
-                                <div id="khungNguoiKhacNhanHang" class="mt-3 pt-3 border-top" style="display: none; border-color: #E5E7EB !important;">
-                                    <div class="row g-2 mb-2">
+                                <div id="khungNguoiKhacNhanHang" class="mt-2 pt-2" style="display: none;">
+                                    <div class="row g-2">
                                         <div class="col-md-6">
-                                            <div class="khung-input-floating-shondo">
-                                                <label for="dot0_TenNguoiNhan" id="lblDot0TenNguoiNhan" class="nhan-floating-nho">
-                                                    @(tongSoLuongSanPham >= 2 ? "Tên người nhận quà #1" : "Tên người nhận") <span class="text-danger">*</span>
-                                                </label>
-                                                <input type="text" name="DanhSachDotGiao[0].TenNguoiNhan" id="dot0_TenNguoiNhan" required
-                                                       value="@(diaChiMacDinh?.TenNguoiNhan ?? Model.HoTenNguoiMua)"
-                                                       placeholder="VD: Ông Bà Nội / Đối tác..." />
-                                            </div>
+                                            <input type="text" name="DanhSachDotGiao[0].TenNguoiNhan" id="dot0_TenNguoiNhan" required
+                                                   class="input-phang-bitis"
+                                                   value="@(diaChiMacDinh?.TenNguoiNhan ?? Model.HoTenNguoiMua)"
+                                                   placeholder="Họ và tên người nhận *" />
                                         </div>
                                         <div class="col-md-6">
-                                            <div class="khung-input-floating-shondo">
-                                                <label for="dot0_SdtNguoiNhan" id="lblDot0SdtNguoiNhan" class="nhan-floating-nho">
-                                                    @(tongSoLuongSanPham >= 2 ? "SĐT người nhận #1" : "SĐT người nhận") <span class="text-danger">*</span>
-                                                </label>
-                                                <input type="text" name="DanhSachDotGiao[0].SdtNguoiNhan" id="dot0_SdtNguoiNhan" required
-                                                       value="@(diaChiMacDinh?.SdtnguoiNhan ?? Model.SdtNguoiMua)"
-                                                       placeholder="09xx..." />
-                                            </div>
+                                            <input type="text" name="DanhSachDotGiao[0].SdtNguoiNhan" id="dot0_SdtNguoiNhan" required
+                                                   class="input-phang-bitis"
+                                                   value="@(diaChiMacDinh?.SdtnguoiNhan ?? Model.SdtNguoiMua)"
+                                                   placeholder="Số điện thoại người nhận *" />
                                         </div>
                                     </div>
 
                                     <input type="hidden" name="DiemNhanQuas[0].TenNguoiNhan" id="diem0_TenNguoiNhan" value="@(diaChiMacDinh?.TenNguoiNhan ?? Model.HoTenNguoiMua)" />
                                     <input type="hidden" name="DiemNhanQuas[0].SdtNguoiNhan" id="diem0_SdtNguoiNhan" value="@(diaChiMacDinh?.SdtnguoiNhan ?? Model.SdtNguoiMua)" />
 
-                                    <!-- Danh sách các điểm nhận quà bổ sung (từ điểm #2 trở đi) -->
                                     <div id="danhSachCacDotGiaoContainer" class="mt-2" style="display: @(tongSoLuongSanPham >= 2 ? "block" : "none");"></div>
 
                                     <button type="button" id="btnThemDiemNhanQua" class="btn btn-sm btn-outline-dark rounded-pill px-3 mt-2"
                                             style="display: @(tongSoLuongSanPham >= 2 ? "inline-block" : "none");"
                                             onclick="themDotGiaoHangMoi()">
-                                        <i class="bi bi-plus-circle me-1"></i>+ Thêm điểm nhận quà khác
+                                        + Thêm điểm nhận quà khác
                                     </button>
                                 </div>
                             </div>
 
-                            <!-- TÙY CHỌN MỞ RỘNG 3: XUẤT HOÁ ĐƠN VAT / ĐƠN SỈ DOANH NGHIỆP (B2B) -->
-                            <div class="khung-tuy-chon-mo-rong-shondo">
+                            <!-- Tùy chọn 3: Xuất hóa đơn VAT / Đơn hàng Doanh nghiệp (B2B) -->
+                            <div class="dong-tuy-chon-manh-bitis">
                                 <div class="form-check d-flex align-items-center gap-2 m-0">
-                                    <input class="form-check-input chk-tron-shondo" type="checkbox" id="chkDonB2B"
+                                    <input class="form-check-input" type="checkbox" id="chkDonB2B"
                                            name="LaDonDoanhNghiepB2B" value="true"
                                            onchange="capNhatBangTinhThanhToan()">
-                                    <label class="form-check-label fw-semibold" for="chkDonB2B" style="cursor: pointer; color: #1F2937; font-size: 0.92rem;">
-                                        Xuất hoá đơn VAT / Đơn sỉ Doanh nghiệp (B2B)
+                                    <label class="form-check-label" for="chkDonB2B" style="cursor: pointer; color: #1F2937; font-size: 0.9rem;">
+                                        Xuất hóa đơn VAT / Đơn hàng Doanh nghiệp (B2B)
                                     </label>
                                 </div>
 
-                                <div id="khungThongTinB2B" class="mt-3 pt-3 border-top" style="display: none; border-color: #E5E7EB !important;">
+                                <div id="khungThongTinB2B" class="mt-2 pt-2" style="display: none;">
                                     <div class="row g-2">
-                                        <div class="col-md-6">
-                                            <div class="khung-input-floating-shondo">
-                                                <label class="nhan-floating-nho">Tên công ty / Tổ chức</label>
-                                                <input type="text" name="TenCongTy" placeholder="VD: Công ty CP Đầu tư Ánh Trăng" />
-                                            </div>
+                                        <div class="col-md-7">
+                                            <input type="text" name="TenCongTy" class="input-phang-bitis" placeholder="Tên công ty / Tổ chức" />
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="khung-input-floating-shondo">
-                                                <label class="nhan-floating-nho">Mã số thuế</label>
-                                                <input type="text" name="MaSoThue" placeholder="031xxxxxxx" />
-                                            </div>
+                                        <div class="col-md-5">
+                                            <input type="text" name="MaSoThue" class="input-phang-bitis" placeholder="Mã số thuế" />
                                         </div>
                                         <div class="col-12">
-                                            <div class="khung-input-floating-shondo">
-                                                <label class="nhan-floating-nho">Email nhận hóa đơn điện tử</label>
-                                                <input type="email" name="EmailNguoiMua" id="txtEmailNguoiMua"
-                                                       value="@Model.EmailNguoiMua" placeholder="ketoan@doanhnghiep.vn" />
-                                            </div>
-                                        </div>
-                                        <div class="col-12">
-                                            <div class="p-2 px-3 rounded d-flex justify-content-between align-items-center flex-wrap gap-2"
-                                                 style="background: #F9FAFB; border: 1px solid #E5E7EB;">
+                                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 pt-1">
                                                 <div class="form-check m-0">
                                                     <input class="form-check-input" type="checkbox" id="chkYeuCauInLogo"
                                                            name="YeuCauInLogo" value="true" onchange="capNhatBangTinhThanhToan()">
-                                                    <label class="form-check-label small fw-semibold" for="chkYeuCauInLogo" style="cursor: pointer; color: #1F2937;">
-                                                        ✨ Ép kim Logo doanh nghiệp lên nắp hộp quà
+                                                    <label class="form-check-label small" for="chkYeuCauInLogo" style="cursor: pointer; color: #1F2937;">
+                                                        Ép kim Logo doanh nghiệp lên nắp hộp quà
                                                     </label>
                                                 </div>
                                                 @if (Model.MienPhiInLogo)
                                                 {
-                                                    <span class="badge bg-success">Đạt @Model.TongSoHop hộp: MIỄN PHÍ KHUÔN LOGO</span>
+                                                    <span class="small fw-semibold text-success">Đạt @Model.TongSoHop hộp: Miễn phí khuôn Logo</span>
                                                 }
                                                 else
                                                 {
-                                                    <span class="badge rounded-pill text-dark border" style="background: #FEF3C7;">
-                                                        Phụ phí khuôn: +@Model.PhiInLogoMacDinh.ToString("N0") đ
-                                                    </span>
+                                                    <span class="small text-muted">Phụ phí khuôn: +@Model.PhiInLogoMacDinh.ToString("N0")đ</span>
                                                 }
                                             </div>
                                         </div>
@@ -545,77 +379,73 @@
                             </div>
                         </div>
 
-                        <!-- =========================================================================
-                             5. KHỐI HÌNH THỨC THANH TOÁN (COD & VÍ MOMO / CHUYỂN KHOẢN QR)
-                             ========================================================================= -->
-                        <div>
-                            <h5 class="fw-bold mb-1" style="color: #111827; font-size: 1.15rem;">Hình thức thanh toán</h5>
-                            <p class="small text-muted mb-3">Toàn bộ các giao dịch được bảo mật và mã hóa.</p>
+                        <!-- Khối Phương thức thanh toán (2 lựa chọn sạch gọn) -->
+                        <div class="mb-4">
+                            <h2 style="font-size: 1.25rem; font-weight: 700; color: #111827; margin-bottom: 12px;">
+                                Phương thức thanh toán
+                            </h2>
 
-                            <div id="nhomPhuongThucThanhToan">
-                                <!-- Thẻ Radio 1: COD -->
-                                <label class="the-kenh-thanh-toan-shondo dang-chon">
+                            <div id="nhomPhuongThucThanhToan" class="danh-sach-phuong-thuc-tt-bitis">
+                                <label class="dong-phuong-thuc-tt-bitis dang-chon">
                                     <input type="radio" name="PhuongThucTt" value="COD" checked
-                                           class="form-check-input mt-1" style="accent-color: #111827;"
+                                           class="form-check-input mt-0"
                                            onchange="capNhatTrangThaiPhuongThucTt()" />
-                                    <div class="d-flex align-items-center gap-2 flex-grow-1">
-                                        <span class="fs-5 text-secondary"><i class="bi bi-truck"></i></span>
-                                        <div>
-                                            <strong class="d-block" style="color: #111827; font-size: 0.95rem;">Thanh toán khi nhận hàng (COD)</strong>
-                                            <small class="text-muted" style="font-size: 0.78rem;">Kiểm tra lễ hộp nguyên niêm phong trước khi thanh toán tiền mặt</small>
-                                        </div>
-                                    </div>
+                                    <span class="fw-medium" style="color: #111827; font-size: 0.92rem;">
+                                        Thanh toán khi nhận hàng (COD)
+                                    </span>
                                 </label>
 
-                                <!-- Thẻ Radio 2: Ví MoMo / Chuyển khoản QR -->
-                                <label class="the-kenh-thanh-toan-shondo">
+                                <label class="dong-phuong-thuc-tt-bitis">
                                     <input type="radio" name="PhuongThucTt" value="MOMO_QR"
-                                           class="form-check-input mt-1" style="accent-color: #111827;"
+                                           class="form-check-input mt-0"
                                            onchange="capNhatTrangThaiPhuongThucTt()" />
-                                    <div class="d-flex align-items-start gap-2 flex-grow-1">
-                                        <span class="logo-momo-badge mt-1">momo</span>
-                                        <div>
-                                            <strong class="d-block" style="color: #111827; font-size: 0.95rem;">Ví MoMo / Chuyển khoản QR (0814 585 526)</strong>
-                                            <small class="text-muted d-block" style="font-size: 0.78rem;">
-                                                Quét mã QR MoMo hoặc ứng dụng Ngân hàng • Tự động xác nhận đơn trong 3 giây
-                                            </small>
-                                        </div>
-                                    </div>
+                                    <span class="d-inline-flex align-items-center gap-2 fw-medium" style="color: #111827; font-size: 0.92rem;">
+                                        <span class="logo-momo-badge">momo</span>
+                                        <span>Ví MoMo / Quét mã QR Ngân hàng (VietQR, VNPay, ZaloPay)</span>
+                                    </span>
                                 </label>
                             </div>
+                        </div>
 
-                            <small class="d-block text-muted mt-2" style="font-size: 0.76rem;">
-                                <i class="bi bi-clock-history me-1"></i>Đơn QR MoMo giữ chỗ sản phẩm trong 15 phút. Quá 15 phút chưa thanh toán, hệ thống tự động hủy đơn và hoàn trả sản phẩm về kho.
+                        <!-- Khung Xác thực Captcha hình ảnh nhiễu trên 1 hàng ngang duy nhất ngay phía trên nút HOÀN TẤT ĐẶT HÀNG -->
+                        <div class="khung-captcha-ngang-bitis mb-3">
+                            <div class="d-flex align-items-center gap-2 flex-nowrap">
+                                <img id="imgCaptchaThanhToan" src="" alt="Mã Captcha"
+                                     style="width: 135px; height: 44px; border-radius: 6px; border: 1px solid #D1D5DB; background: #F9FAFB; flex-shrink: 0;" />
+                                <button type="button" class="btn-doi-captcha-bitis" title="Đổi mã Captcha mới" onclick="taiMaCaptchaMoi(true)">
+                                    ↻
+                                </button>
+                                <input type="text" id="txtMaCaptchaNhap" name="maCaptchaNhap"
+                                       class="input-phang-bitis text-uppercase fw-bold"
+                                       placeholder="Nhập mã xác thực *"
+                                       maxlength="5" required autocomplete="off"
+                                       style="letter-spacing: 2px; flex: 1; min-width: 0;"
+                                       oninput="xuLyGoMaCaptchaTuDong(this)" />
+                            </div>
+                            <small id="lblTrangThaiCaptchaKho" class="d-block mt-1" style="font-size: 0.8rem; color: #6B7280;">
+                                Nhập đủ 5 ký tự trong hình để hệ thống tự động xác thực &amp; kiểm tra tồn kho.
                             </small>
+                        </div>
+
+                        <!-- Hàng cuối Cột Trái: Liên kết ← Quay lại giỏ hàng bên trái và nút lớn HOÀN TẤT ĐẶT HÀNG bên phải -->
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 pt-2">
+                            <a href="javascript:void(0)" onclick="moNganKeoGioHang()" class="lien-ket-quay-lai-gio-bitis">
+                                ← Quay lại giỏ hàng
+                            </a>
+                            <button type="submit" id="btnHoanTatDatHang" class="btn-hoan-tat-dat-hang-bitis" disabled>
+                                HOÀN TẤT ĐẶT HÀNG
+                            </button>
                         </div>
                     </div>
                 </div>
 
                 <!-- =========================================================================
-                     B. CỘT PHẢI (NỀN XÁM KEM NHẠT #F7F7F7, CHIẾM 40% - 42% CHIỀU RỘNG)
+                     B. CỘT PHẢI (45% CHIỀU RỘNG - CHUẨN BITI'S)
                      ========================================================================= -->
-                <div class="col-lg-5 cot-phai-shondo">
-                    <div class="khung-cot-phai-shondo sticky-top" style="top: 84px;">
-                        <!-- 1. TIÊU ĐỀ CHI TIẾT ĐƠN HÀNG -->
-                        <h5 class="fw-bold mb-2 pb-2 border-bottom" style="color: #111827; border-color: #E5E7EB !important;">
-                            Chi tiết đơn hàng (@tongSoMon)
-                        </h5>
-
-                        <!-- THANH THÔNG BÁO MỐC FREESHIP 500.000 Đ TRONG KHUNG TÓM TẮT ĐƠN HÀNG BÊN PHẢI -->
-                        <div id="khungThongBaoFreeshipCotPhai" class="p-2 px-3 rounded-3 mb-3 small fw-semibold"
-                             style="background: @(duMienPhiShip ? "#ECFDF5" : "#FFFBEB"); border: 1px solid @(duMienPhiShip ? "#10B981" : "#F59E0B"); color: @(duMienPhiShip ? "#065F46" : "#92400E"); font-size: 0.8rem;">
-                            @if (duMienPhiShip)
-                            {
-                                <span>🎉 Đơn hàng của bạn đã đủ điều kiện Miễn phí giao hàng tiêu chuẩn!</span>
-                            }
-                            else
-                            {
-                                <span>🚚 Miễn phí giao tiêu chuẩn cho đơn từ 500.000 đ — Mua thêm <strong>@soTienCanMuaThemBanDau.ToString("N0") đ</strong> để được Freeship!</span>
-                            }
-                        </div>
-
-                        <!-- 2. DANH SÁCH SẢN PHẨM TRONG ĐƠN -->
-                        <div class="overflow-auto pe-1 mb-3" style="max-height: 320px;">
+                <div class="col-lg-5 cot-phai-bitis">
+                    <div class="khung-cot-phai-bitis">
+                        <!-- 1. Danh sách sản phẩm (Ảnh có chấm tròn đen số lượng góc phải trên, Tên ở giữa, Giá bên phải) -->
+                        <div class="danh-sach-san-pham-bitis mb-3">
                             @foreach (var item in Model.DanhSachMon)
                             {
                                 string tenMon = item.LoaiSanPham == 3
@@ -630,18 +460,18 @@
                                         ? LayAnhDaiDienMon(item.MaCbNavigation)
                                         : LayAnhDaiDienMon(item.MaHopTcNavigation?.ChiTietHopTuChons?.FirstOrDefault()?.MaBanhNavigation);
 
-                                <div class="the-san-pham-cot-phai">
-                                    <div class="d-flex align-items-start justify-content-between gap-2">
-                                        <div class="d-flex align-items-start gap-2">
-                                            <img src="@anhSanPham" alt="@tenMon" class="anh-thu-nho-don-hang" />
-                                            <div>
-                                                <strong class="d-block" style="color: #111827; font-size: 0.9rem; line-height: 1.3;">@tenMon</strong>
-                                                <span class="small text-muted">Số lượng: <strong>x @item.SoLuong</strong></span>
-                                            </div>
+                                <div class="dong-san-pham-bitis">
+                                    <div class="d-flex align-items-center justify-content-between gap-3">
+                                        <div class="khung-anh-san-pham-bitis">
+                                            <img src="@anhSanPham" alt="@tenMon" class="anh-thu-nho-bitis" />
+                                            <span class="cham-so-luong-bitis">@item.SoLuong</span>
                                         </div>
-                                        <strong class="text-nowrap" style="color: #111827; font-size: 0.92rem;">
+                                        <div class="ten-san-pham-bitis">
+                                            <strong class="d-block" style="color: #111827; font-size: 0.9rem; line-height: 1.35;">@tenMon</strong>
+                                        </div>
+                                        <div class="gia-san-pham-bitis">
                                             @((item.SoLuong * item.DonGiaTamTinh).ToString("N0")) đ
-                                        </strong>
+                                        </div>
                                     </div>
 
                                     @if (item.LoaiSanPham == 3 && item.MaHopTcNavigation != null)
@@ -655,9 +485,9 @@
                                             <div class="bang-thanh-phan-hop-2-cot mt-2">
                                                 @foreach (var o in danhSachO)
                                                 {
-                                                    <div class="dong-thanh-phan-hop" style="display: flex; align-items: baseline; padding: 4px 8px; border-bottom: 1px dashed #EAE0D5; font-size: 0.78rem;">
-                                                        <span class="cot-o-banh" style="font-weight: 700; color: #7A1215; flex: 0 0 58px; width: 58px;">Ô @o.ViTriOtrongHop</span>
-                                                        <span class="cot-ten-banh" style="flex: 1; color: #2C1810; font-weight: 500;">@(o.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu")</span>
+                                                    <div class="dong-thanh-phan-hop">
+                                                        <span class="cot-o-banh">Ô @o.ViTriOtrongHop</span>
+                                                        <span class="cot-ten-banh">@(o.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu")</span>
                                                     </div>
                                                 }
                                             </div>
@@ -667,176 +497,94 @@
                             }
                         </div>
 
-                        <!-- 3. KHUNG NHẬP MÃ GIẢM GIÁ KÈM HẠN SỬ DỤNG THỰC TẾ TỪ CSDL -->
-                        <div class="mb-3">
-                            <div class="d-flex gap-2">
-                                <input type="text" id="txtMaGiamGiaCheckout" class="form-control form-control-sm"
+                        <!-- 2. Khung Mã khuyến mãi kiểu Biti's -->
+                        <div class="khung-ma-khuyen-mai-bitis py-3 border-top border-bottom" style="border-color: #E5E7EB !important;">
+                            <!-- Ô nhập mã bên trái + Nút đen [Sử dụng] bên phải -->
+                            <div class="d-flex gap-2 mb-2">
+                                <input type="text" id="txtMaGiamGiaCheckout" class="input-phang-bitis"
                                        value="@Model.CodeKmDangDung"
-                                       placeholder="Nhập mã giảm giá (VD: TRANGTRON2026)"
-                                       style="border-radius: 6px; border-color: #D1D5DB; background: #FFFFFF;" />
-                                <button type="button" class="btn btn-sm px-3 fw-bold text-white text-nowrap"
-                                        style="background: #111827; border-radius: 6px;"
+                                       placeholder="Mã khuyến mãi"
+                                       style="flex: 1; min-width: 0;" />
+                                <button type="button" class="btn-su-dung-ma-bitis"
                                         onclick="apDungMaGiamGiaTrangThanhToan()">
-                                    Áp dụng
+                                    Sử dụng
                                 </button>
                             </div>
-                            <div class="d-flex flex-wrap justify-content-between align-items-center mt-1 gap-1">
-                                <small id="lblKetQuaVoucherCheckout" class="text-success fw-medium" style="font-size: 0.75rem;">
-                                    @if (!string.IsNullOrEmpty(Model.CodeKmDangDung))
-                                    {
-                                        <span><i class="bi bi-check-circle-fill me-1"></i>Đang áp dụng mã <strong>@Model.CodeKmDangDung</strong></span>
-                                    }
-                                </small>
-                                <div class="d-inline-flex align-items-center gap-1 flex-wrap">
-                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none"
-                                            style="font-size: 0.74rem; color: #7A1215; font-weight: 700;"
-                                            onclick="chonNhanhMaCheckout('TRANGTRON2026')">
-                                        + Dùng mã TRANGTRON2026 (-10%)
-                                    </button>
-                                    <span id="lblHsdVoucherCheckout" class="badge rounded-pill px-2 py-0"
-                                          style="background: #FEF3C7; color: #92400E; font-size: 0.68rem; font-weight: 600;">
-                                        @Model.ThongTinVoucherGoiY
-                                    </span>
+
+                            <small id="lblKetQuaVoucherCheckout" class="d-block mb-2 text-success fw-medium" style="font-size: 0.78rem;">
+                                @if (!string.IsNullOrEmpty(Model.CodeKmDangDung))
+                                {
+                                    <span>✓ Đang áp dụng mã <strong>@Model.CodeKmDangDung</strong></span>
+                                }
+                            </small>
+
+                            <!-- Thẻ Voucher trực quan kiểu Biti's -->
+                            <div class="the-voucher-truc-quan-bitis">
+                                <div class="icon-hop-qua-voucher">
+                                    <i class="bi bi-gift-fill"></i>
                                 </div>
+                                <div class="noi-dung-the-voucher">
+                                    <div class="fw-bold" style="color: #111827; font-size: 0.86rem;">Giảm 10% đơn Lễ Hội</div>
+                                    <div class="d-flex align-items-center flex-wrap gap-1 mt-1">
+                                        <span class="nhan-ma-vang-bitis">Mã: TRANGTRON2026</span>
+                                        <span class="text-muted" style="font-size: 0.74rem;">HSD: 31/12/2027</span>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-ap-dung-ma-vang-bitis"
+                                        onclick="chonNhanhMaCheckout('TRANGTRON2026')">
+                                    Áp dụng mã
+                                </button>
                             </div>
                         </div>
 
-                        <!-- 4. NẾU CHƯA ĐĂNG NHẬP: HIỆN KHUNG TRẮNG ĐĂNG NHẬP TÍCH ĐIỂM -->
-                        @if (!Model.DaDangNhap)
-                        {
-                            <div class="p-3 mb-3 rounded-3 bg-white d-flex justify-content-between align-items-center gap-2"
-                                 style="border: 1px solid #E5E7EB;">
-                                <span class="small fw-medium" style="color: #1F2937;">
-                                    Đăng nhập để xem hạng thành viên &amp; tích điểm
-                                </span>
-                                <button type="button" class="btn btn-sm px-3 fw-bold text-white text-nowrap"
-                                        style="background: #111827; border-radius: 6px;"
-                                        data-bs-toggle="modal" data-bs-target="#modalTaiKhoan">
-                                    Đăng nhập
-                                </button>
-                            </div>
-                        }
-
-                        <!-- 5. KHỐI CHI TIẾT THANH TOÁN -->
-                        <div class="pt-3 border-top" style="border-color: #E5E7EB !important;">
-                            <h6 class="fw-bold mb-2" style="color: #111827; font-size: 0.95rem;">Chi tiết thanh toán</h6>
-
-                            <div class="d-flex justify-content-between py-1 small">
-                                <span class="text-muted">Tổng tiền hàng</span>
+                        <!-- 3. Bảng tính tiền tối giản (3 dòng chính: Tạm tính, Phí vận chuyển, Tổng cộng) -->
+                        <div class="pt-3">
+                            <div class="d-flex justify-content-between align-items-center py-1" style="font-size: 0.92rem;">
+                                <span style="color: #4B5563;">Tạm tính</span>
                                 <strong style="color: #111827;">@Model.TongTienHang.ToString("N0") đ</strong>
                             </div>
 
                             @if (Model.TienChietKhauB2B > 0)
                             {
-                                <div class="d-flex justify-content-between py-1 small" style="color: #B45309;">
+                                <div class="d-flex justify-content-between align-items-center py-1" style="font-size: 0.88rem; color: #B45309;">
                                     <span>Chiết khấu sỉ B2B (@Model.PhanTramCkB2B%)</span>
                                     <strong>-@Model.TienChietKhauB2B.ToString("N0") đ</strong>
                                 </div>
                             }
 
-                            <div id="dongGiamGiaVoucherCheckout" class="d-flex justify-content-between py-1 small text-success"
-                                 style="display: @(Model.TienGiamVoucher > 0 ? "flex" : "none") !important;">
-                                <span>Giảm giá Voucher</span>
+                            <div id="dongGiamGiaVoucherCheckout" class="d-flex justify-content-between align-items-center py-1 text-success"
+                                 style="font-size: 0.88rem; display: @(Model.TienGiamVoucher > 0 ? "flex" : "none") !important;">
+                                <span>Giảm giá khuyến mãi</span>
                                 <strong id="lblTienGiamVoucherCheckout">-@Model.TienGiamVoucher.ToString("N0") đ</strong>
                             </div>
 
-                            <div id="dongPhiLogoB2BCheckout" class="d-flex justify-content-between py-1 small text-muted" style="display: none !important;">
+                            <div id="dongPhiLogoB2BCheckout" class="d-flex justify-content-between align-items-center py-1"
+                                 style="font-size: 0.88rem; color: #4B5563; display: none !important;">
                                 <span>Phí khuôn ép kim Logo B2B</span>
                                 <strong id="lblPhiInLogoCheckout" style="color: #111827;">0 đ</strong>
                             </div>
 
-                            <div class="d-flex justify-content-between py-1 small">
-                                <span class="text-muted">Phí giao hàng (<span id="lblSoDiemGiaoCheckout">1</span> điểm)</span>
-                                <strong id="lblPhiShipCheckout" class="@(duMienPhiShip ? "text-success" : "")" style="color: @(duMienPhiShip ? "#059669" : "#111827");">
-                                    @(duMienPhiShip ? "0 đ (Miễn phí)" : "30.000 đ")
+                            <div class="d-flex justify-content-between align-items-center py-1" style="font-size: 0.92rem;">
+                                <span style="color: #4B5563;">
+                                    Phí vận chuyển
+                                    <small style="color: #9CA3AF; font-size: 0.78rem;">(Miễn phí cho đơn từ 500k)</small>
+                                    <span id="lblSoDiemGiaoCheckout" class="d-none">1</span>
+                                </span>
+                                <strong id="lblPhiShipCheckout" style="color: #111827;">
+                                    @(duMienPhiShip ? "0 đ" : "30.000 đ")
                                 </strong>
                             </div>
 
-                            <hr class="my-2" style="border-color: #D1D5DB;" />
+                            <hr class="my-3" style="border-color: #E5E7EB; opacity: 1;" />
 
-                            <div class="d-flex justify-content-between align-items-center pt-1 mb-3">
-                                <span class="fw-bold" style="color: #111827; font-size: 1.02rem;">Tổng thanh toán</span>
-                                <span id="lblTongThanhToanCuoiCheckout"
-                                      style="font-size: 1.25rem; font-weight: 800; text-decoration: underline; color: #111827;">
+                            <div class="d-flex justify-content-between align-items-baseline">
+                                <span class="fw-bold" style="color: #111827; font-size: 1.05rem;">Tổng cộng</span>
+                                <strong id="lblTongThanhToanCuoiCheckout" style="font-size: 1.35rem; font-weight: 800; color: #111827;">
                                     @tongThanhToanBanDau.ToString("N0") đ
-                                </span>
+                                </strong>
                             </div>
-
-                            <!-- 6. KHUNG CAPTCHA XÁC THỰC BẢO MẬT & KIỂM TRA TỒN KHO LỚP 3 (NGAY PHÍA TRÊN NÚT ĐẶT HÀNG) -->
-                            <div class="p-3 rounded-3 mb-2" style="background: #FFFFFF; border: 1.5px solid #D4AF37;">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="small fw-bold" style="color: #7A1215;">
-                                        <i class="bi bi-shield-lock-fill me-1"></i>Xác thực bảo mật &amp; Kiểm tra kho
-                                    </span>
-                                    <button type="button" class="btn btn-sm btn-link p-0 text-decoration-none small"
-                                            style="color: #4B5563; font-size: 0.75rem;" onclick="taiMaCaptchaMoi()">
-                                        <i class="bi bi-arrow-clockwise"></i> Đổi mã
-                                    </button>
-                                </div>
-
-                                <div class="d-flex align-items-center gap-2 mb-2">
-                                    <img id="imgCaptchaThanhToan" src="" alt="Mã Captcha"
-                                         style="height: 40px; width: 138px; border-radius: 6px; border: 1px solid #E5E7EB; background: #FDFBF7;" />
-                                    <input type="text" id="txtMaCaptchaNhap" name="MaCaptcha"
-                                           class="form-control form-control-sm text-uppercase fw-bold"
-                                           placeholder="Nhập mã (tùy chọn)" maxlength="6"
-                                           style="letter-spacing: 2px; border-color: #D1D5DB;" />
-                                </div>
-
-                                <div class="form-check d-flex align-items-center gap-2 m-0 pt-1">
-                                    <input class="form-check-input" type="checkbox" id="chkXacThucCaptchaKho"
-                                           style="width: 1.15rem; height: 1.15rem; cursor: pointer; accent-color: #059669;"
-                                           onchange="xuLyTichCaptchaVaKiemTraKho(this)" />
-                                    <label class="form-check-label small fw-semibold" for="chkXacThucCaptchaKho" style="cursor: pointer; color: #111827;">
-                                        Tôi không phải là người máy (Xác thực bảo mật &amp; Kiểm tra kho)
-                                    </label>
-                                </div>
-                                <small id="lblTrangThaiCaptchaKho" class="d-block mt-1" style="font-size: 0.75rem; color: #6B7280;">
-                                    Tích chọn để kiểm tra tồn kho thực tế trước khi hoàn tất đặt hàng.
-                                </small>
-                            </div>
-
-                            <button type="submit" class="btn w-100 py-2 fw-bold text-white shadow-sm"
-                                    style="background: #7A1215; border-radius: 8px; font-size: 0.98rem;">
-                                ĐẶT HÀNG NGAY
-                            </button>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- =========================================================================
-                 C. THANH CHỐT ĐƠN CỐ ĐỊNH DƯỚI ĐÁY MÀN HÌNH (STICKY BOTTOM CHECKOUT BAR)
-                 ========================================================================= -->
-            <div class="thanh-chot-don-sticky-bottom">
-                <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span id="badgeTrangThaiShipSticky" class="badge-freeship-shondo"
-                          style="@(duMienPhiShip ? "" : "background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B;")">
-                        @if (duMienPhiShip)
-                        {
-                            <i class="bi bi-truck"></i> @:FREESHIP
-                        }
-                        else
-                        {
-                            <i class="bi bi-truck"></i> @:Phí giao: +@phiShipMacDinh.ToString("N0") đ
-                        }
-                    </span>
-                    <span id="lblNhacNhoThongTinSticky" class="small fw-medium" style="color: #4B5563;">
-                        Miễn phí giao tiêu chuẩn cho đơn từ 500.000 đ hoặc Nhận tại cửa hàng
-                    </span>
-                </div>
-
-                <div class="d-flex align-items-center justify-content-end gap-3">
-                    <div class="text-end">
-                        <small class="text-muted d-block" style="font-size: 0.74rem;">Tổng thanh toán:</small>
-                        <strong id="lblTongThanhToanStickyBar" style="font-size: 1.28rem; font-weight: 800; color: #7A1215;">
-                            @tongThanhToanBanDau.ToString("N0") đ
-                        </strong>
-                    </div>
-
-                    <button type="submit" id="btnDatHangSticky" class="btn-dat-hang-sticky-shondo">
-                        ĐẶT HÀNG
-                    </button>
                 </div>
             </div>
         </form>
@@ -869,7 +617,7 @@
                     Đóng lại
                 </button>
                 <button type="button" class="btn text-white rounded-pill px-4 fw-bold" style="background: #7A1215;"
-                        onclick=" bootstrap.Modal.getInstance(document.getElementById('modalThongBaoHetHang'))?.hide(); moNganKeoGioHang();">
+                        onclick="bootstrap.Modal.getInstance(document.getElementById('modalThongBaoHetHang'))?.hide(); moNganKeoGioHang();">
                     <i class="bi bi-bag-check me-1"></i>Điều chỉnh Giỏ quà ngay
                 </button>
             </div>
@@ -923,8 +671,7 @@
             dongBoDiaChiGiaoChinh();
             kiemTraTinhThanhVaCapNhatHoaToc();
             capNhatBangTinhThanhToan();
-            kiemTraNhacNhoStickyBar();
-            taiMaCaptchaMoi();
+            taiMaCaptchaMoi(false);
 
             @if (!string.IsNullOrWhiteSpace(tenBanhHetHangBanDau))
             {
@@ -953,8 +700,28 @@
             }
         }
 
-        // Sinh mã Captcha mới từ Server
-        async function taiMaCaptchaMoi() {
+        function datTrangThaiKhoaNutDatHang(moKhoa) {
+            daXacThucCaptchaHopLe = Boolean(moKhoa);
+            const btn = document.getElementById("btnHoanTatDatHang");
+            if (btn) {
+                btn.disabled = !daXacThucCaptchaHopLe;
+            }
+        }
+
+        // Sinh mã Captcha hình ảnh nhiễu mới từ Server
+        async function taiMaCaptchaMoi(xoaOInput = true) {
+            datTrangThaiKhoaNutDatHang(false);
+            const inputCaptcha = document.getElementById("txtMaCaptchaNhap");
+            const lbl = document.getElementById("lblTrangThaiCaptchaKho");
+
+            if (xoaOInput && inputCaptcha) {
+                inputCaptcha.value = "";
+                if (lbl) {
+                    lbl.style.color = "#6B7280";
+                    lbl.textContent = "Nhập đủ 5 ký tự trong hình để hệ thống tự động xác thực & kiểm tra tồn kho.";
+                }
+            }
+
             try {
                 const res = await fetch("/ThanhToan/LayMaCaptchaMoi");
                 const data = await res.json();
@@ -967,38 +734,36 @@
             }
         }
 
-        // Mốc Timing Gate: Khi khách tích chọn Captcha xác thực bảo mật & kiểm tra kho
-        async function xuLyTichCaptchaVaKiemTraKho(chk) {
+        // Mốc Timing Kiểm Tra Tồn Kho Tự Động: Ngay khi người dùng gõ đủ 5 ký tự vào ô Captcha (sự kiện input)
+        async function xuLyGoMaCaptchaTuDong(inputEl) {
+            if (!inputEl) return;
+            const giaTri = inputEl.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+            if (inputEl.value !== giaTri) {
+                inputEl.value = giaTri;
+            }
+
             const lbl = document.getElementById("lblTrangThaiCaptchaKho");
-            if (!chk.checked) {
-                daXacThucCaptchaHopLe = false;
+            if (giaTri.length < 5) {
+                datTrangThaiKhoaNutDatHang(false);
                 if (lbl) {
                     lbl.style.color = "#6B7280";
-                    lbl.textContent = "Tích chọn để kiểm tra tồn kho thực tế trước khi hoàn tất đặt hàng.";
+                    lbl.textContent = "Nhập đủ 5 ký tự trong hình để hệ thống tự động xác thực & kiểm tra tồn kho.";
                 }
                 return;
             }
 
-            if (lbl) {
-                lbl.style.color = "#B45309";
-                lbl.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Đang xác thực bảo mật & đối chiếu tồn kho thực tế...`;
-            }
-
-            const hopLe = await goiApiXacThucCaptchaVaKho();
-            if (!hopLe) {
-                chk.checked = false;
-                daXacThucCaptchaHopLe = false;
-            } else {
-                daXacThucCaptchaHopLe = true;
+            if (giaTri.length === 5) {
                 if (lbl) {
-                    lbl.style.color = "#059669";
-                    lbl.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Đã xác thực bảo mật & kiểm tra kho thành công! Đủ hàng giao ngay.`;
+                    lbl.style.color = "#B45309";
+                    lbl.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Đang xác thực mã & kiểm tra tồn kho thực tế...`;
                 }
+                await goiApiXacThucCaptchaVaKho();
             }
         }
 
         async function goiApiXacThucCaptchaVaKho() {
-            const maCaptcha = document.getElementById("txtMaCaptchaNhap")?.value.trim() || "";
+            const inputEl = document.getElementById("txtMaCaptchaNhap");
+            const maCaptcha = inputEl?.value.trim() || "";
             const lbl = document.getElementById("lblTrangThaiCaptchaKho");
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 8000);
@@ -1007,7 +772,10 @@
                 const res = await fetch("/ThanhToan/XacThucCaptchaVaKiemTraKho", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ maCaptcha: maCaptcha }),
+                    body: JSON.stringify({
+                        maCaptcha: maCaptcha,
+                        maCaptchaNhap: maCaptcha
+                    }),
                     signal: controller.signal
                 });
                 clearTimeout(timeoutId);
@@ -1018,37 +786,61 @@
 
                 const data = await res.json();
                 if (data.thanhCong) {
+                    datTrangThaiKhoaNutDatHang(true);
+                    if (lbl) {
+                        lbl.style.color = "#059669";
+                        lbl.className = "d-block mt-1 fw-semibold";
+                        lbl.textContent = "✓ Đã xác thực & kiểm tra còn hàng";
+                    }
                     return true;
                 }
+
+                datTrangThaiKhoaNutDatHang(false);
 
                 if (data.loaiLoi === "CAPTCHA") {
                     if (lbl) {
                         lbl.style.color = "#DC2626";
-                        lbl.innerHTML = `<i class="bi bi-exclamation-circle-fill me-1"></i>${data.thongBao}`;
+                        lbl.className = "d-block mt-1 fw-medium";
+                        lbl.textContent = data.thongBao || "Mã xác thực Captcha không chính xác. Vui lòng nhập lại mã hiển thị trong hình!";
                     }
-                    taiMaCaptchaMoi();
+                    if (data.anhCaptchaSvg) {
+                        const img = document.getElementById("imgCaptchaThanhToan");
+                        if (img) img.src = data.anhCaptchaSvg;
+                        if (inputEl) {
+                            inputEl.value = "";
+                            inputEl.focus();
+                        }
+                    } else {
+                        await taiMaCaptchaMoi(false);
+                        if (inputEl) {
+                            inputEl.value = "";
+                            inputEl.focus();
+                        }
+                    }
                     return false;
                 }
 
-                // Hết hàng hoặc không đủ tồn kho
+                // Mã Captcha đúng nhưng sản phẩm vừa hết hàng trong CSDL
                 if (lbl) {
                     lbl.style.color = "#DC2626";
-                    lbl.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-1"></i>Kho không đủ số lượng cho sản phẩm ${data.tenBanh || "trong giỏ"}!`;
+                    lbl.className = "d-block mt-1 fw-medium";
+                    lbl.textContent = `Sản phẩm ${data.tenBanh || "trong giỏ"} vừa hết hàng hoặc không đủ tồn kho!`;
                 }
                 hienThiModalHetHang(data.tenBanh, data.thongBao);
                 return false;
             } catch (err) {
                 clearTimeout(timeoutId);
+                datTrangThaiKhoaNutDatHang(false);
                 if (lbl) {
                     lbl.style.color = "#DC2626";
-                    lbl.innerHTML = `<i class="bi bi-wifi-off me-1"></i>Kết nối Internet bị gián đoạn!`;
+                    lbl.className = "d-block mt-1 fw-medium";
+                    lbl.textContent = "Kết nối Internet bị gián đoạn!";
                 }
                 hienThiModalCanhBaoMang();
                 return false;
             }
         }
 
-        // Kiểm tra Tỉnh/Thành phố có hỗ trợ Giao hỏa tốc 6h (chỉ TP. Hồ Chí Minh và An Giang)
         function laTinhHoTroHoaToc(tinhThanh) {
             if (!tinhThanh) return false;
             const t = tinhThanh.toLowerCase();
@@ -1095,17 +887,14 @@
             capNhatBangTinhThanhToan();
         }
 
-        // Chuyển đổi giữa "Giao tận nơi" và "Nhận tại cửa hàng"
         function chuyenDoiHinhThucNhanHang() {
             const laNhanTaiCuaHang = document.getElementById("radNhanTaiCuaHang")?.checked === true;
-            const khungVanChuyen = document.getElementById("khungPhuongThucVanChuyen");
             const khungDiaChiGiao = document.getElementById("khungDiaChiGiaoTanNoi");
             const khungCuaHang = document.getElementById("khungNhanTaiCuaHang");
 
             document.getElementById("lblChonGiaoTanNoi")?.classList.toggle("dang-chon", !laNhanTaiCuaHang);
             document.getElementById("lblChonNhanTaiCuaHang")?.classList.toggle("dang-chon", laNhanTaiCuaHang);
 
-            if (khungVanChuyen) khungVanChuyen.style.display = laNhanTaiCuaHang ? "none" : "block";
             if (khungDiaChiGiao) khungDiaChiGiao.style.display = laNhanTaiCuaHang ? "none" : "block";
             if (khungCuaHang) khungCuaHang.style.display = laNhanTaiCuaHang ? "block" : "none";
 
@@ -1114,37 +903,28 @@
             capNhatBangTinhThanhToan();
         }
 
-        // Cập nhật nhãn checkbox và giới hạn số điểm nhận theo hình thức nhận hàng & tongSoLuongSanPham
         function capNhatGiaoDienNguoiKhacNhan() {
             const laNhanTaiCuaHang = document.getElementById("radNhanTaiCuaHang")?.checked === true;
             const lblChk = document.getElementById("lblChkGoiNguoiKhacNhan");
-            const lblTen0 = document.getElementById("lblDot0TenNguoiNhan");
-            const lblSdt0 = document.getElementById("lblDot0SdtNguoiNhan");
             const container = document.getElementById("danhSachCacDotGiaoContainer");
             const btnThem = document.getElementById("btnThemDiemNhanQua");
 
             if (laNhanTaiCuaHang) {
-                if (lblChk) lblChk.textContent = "Nhờ người khác đến cửa hàng nhận thay (nếu có)";
-                if (lblTen0) lblTen0.innerHTML = 'Họ tên người nhận thay <span class="text-danger">*</span>';
-                if (lblSdt0) lblSdt0.innerHTML = 'Số điện thoại người nhận thay <span class="text-danger">*</span>';
+                if (lblChk) lblChk.textContent = "Gọi người khác nhận hàng tại cửa hàng";
                 if (container) {
                     container.innerHTML = "";
                     container.style.display = "none";
                 }
                 if (btnThem) btnThem.style.display = "none";
             } else if (tongSoLuongSanPham <= 1) {
-                if (lblChk) lblChk.textContent = "Gọi người khác nhận hàng (nếu có)";
-                if (lblTen0) lblTen0.innerHTML = 'Tên người nhận <span class="text-danger">*</span>';
-                if (lblSdt0) lblSdt0.innerHTML = 'SĐT người nhận <span class="text-danger">*</span>';
+                if (lblChk) lblChk.textContent = "Gọi người khác nhận hàng";
                 if (container) {
                     container.innerHTML = "";
                     container.style.display = "none";
                 }
                 if (btnThem) btnThem.style.display = "none";
             } else {
-                if (lblChk) lblChk.textContent = `Gọi người khác nhận hàng / Giao nhiều địa chỉ (tối đa ${tongSoLuongSanPham} điểm nhận)`;
-                if (lblTen0) lblTen0.innerHTML = 'Tên người nhận quà #1 <span class="text-danger">*</span>';
-                if (lblSdt0) lblSdt0.innerHTML = 'SĐT người nhận #1 <span class="text-danger">*</span>';
+                if (lblChk) lblChk.textContent = `Gọi người khác nhận hàng (Chia điểm nhận tối đa ${tongSoLuongSanPham} địa chỉ)`;
                 if (container) {
                     container.style.display = "block";
                 }
@@ -1155,7 +935,6 @@
             }
         }
 
-        // Ghép địa chỉ giao tận nơi hoặc gán địa chỉ cửa hàng vào DiaChiGiaoChiTiet
         function dongBoDiaChiGiaoChinh() {
             const laNhanTaiCuaHang = document.getElementById("radNhanTaiCuaHang")?.checked === true;
             const inputDiaChiServer = document.getElementById("dot0_DiaChi");
@@ -1174,10 +953,8 @@
                 const cacPhan = [soNha, phuongQuan, tinhThanh].filter(p => p.length > 0);
                 inputDiaChiServer.value = soNha.length > 0 ? cacPhan.join(", ") : "";
             }
-            kiemTraNhacNhoStickyBar();
         }
 
-        // Chọn nhanh từ Dropdown Sổ địa chỉ đã lưu
         function chonTuDropdownSoDiaChi(selectEl) {
             const opt = selectEl.options[selectEl.selectedIndex];
             if (!opt || !opt.value) return;
@@ -1206,7 +983,9 @@
 
             dongBoDiaChiGiaoChinh();
             kiemTraTinhThanhVaCapNhatHoaToc();
-            hienThiThongBaoGioHang("Đã điền nhanh địa chỉ giao hàng đã lưu!", true);
+            if (typeof hienThiThongBaoGioHang === "function") {
+                hienThiThongBaoGioHang("Đã điền nhanh địa chỉ giao hàng đã lưu!", true);
+            }
         }
 
         function batTatKhungTuyChonMoRong(idCheckbox, idKhung) {
@@ -1217,7 +996,6 @@
             }
         }
 
-        // Xử lý bật/tắt Thiệp Chúc Tết Đoàn Viên QR 3D (mặc định checked = false)
         function xuLyBatTatThiepQrChinh(chk) {
             const khung = document.getElementById("khungChiTietThiepQr");
             const hidCoThiep = document.getElementById("hidCoThiep3D");
@@ -1280,34 +1058,10 @@
             if (txtNguoiGuiThiep && !txtNguoiGuiThiep.dataset.daSuaTay) {
                 txtNguoiGuiThiep.value = hoTenMua;
             }
-
-            kiemTraNhacNhoStickyBar();
-        }
-
-        function kiemTraNhacNhoStickyBar() {
-            const lblNhac = document.getElementById("lblNhacNhoThongTinSticky");
-            if (!lblNhac) return;
-
-            const hoTen = document.getElementById("txtHoTenNguoiMua")?.value.trim() || "";
-            const sdt = document.getElementById("txtSdtNguoiMua")?.value.trim() || "";
-            const diaChi = document.getElementById("dot0_DiaChi")?.value.trim() || "";
-
-            const conThieu = [];
-            if (!hoTen) conThieu.push("Họ tên");
-            if (!sdt) conThieu.push("Số điện thoại");
-            if (!diaChi) conThieu.push("Địa chỉ nhận hàng");
-
-            if (conThieu.length > 0) {
-                lblNhac.style.color = "#B45309";
-                lblNhac.innerHTML = `<i class="bi bi-info-circle me-1"></i>Vui lòng nhập thêm: <strong>${conThieu.join(", ")}</strong>`;
-            } else {
-                lblNhac.style.color = "#059669";
-                lblNhac.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i>Đã đủ thông tin người nhận • Sẵn sàng hoàn tất đặt hàng`;
-            }
         }
 
         function batTatKhungThiepQr(chk) {
-            const khungThiep = chk.closest(".khung-thiep-qr-vang");
+            const khungThiep = chk.closest(".khung-thiep-qr-phu");
             if (!khungThiep) return;
             const vungLoiChuc = khungThiep.querySelector(".noi-dung-loi-chuc-qr");
             if (vungLoiChuc) {
@@ -1316,7 +1070,7 @@
         }
 
         function capNhatTrangThaiPhuongThucTt() {
-            document.querySelectorAll("#nhomPhuongThucThanhToan .the-kenh-thanh-toan-shondo").forEach(the => {
+            document.querySelectorAll("#nhomPhuongThucThanhToan .dong-phuong-thuc-tt-bitis").forEach(the => {
                 const radio = the.querySelector('input[type="radio"]');
                 the.classList.toggle("dang-chon", Boolean(radio && radio.checked));
             });
@@ -1341,68 +1095,52 @@
             const tenNguoiMua = document.getElementById("txtHoTenNguoiMua")?.value.trim() || "";
 
             const div = document.createElement("div");
-            div.className = "item-dot-giao khung-dia-chi-giao mt-2";
+            div.className = "item-dot-giao pt-2 mt-2 border-top";
             div.dataset.index = idx;
             div.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
-                    <strong class="chu-do-son-mai small">
-                        <i class="bi bi-geo-alt-fill me-1"></i><span class="tieu-de-dot-giao">Điểm nhận quà #${idx + 1}</span>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong class="small" style="color: #111827;">
+                        <span class="tieu-de-dot-giao">Điểm nhận quà #${idx + 1}</span>
                     </strong>
-                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="xoaDotGiaoHang(this)">
-                        <i class="bi bi-trash"></i> Xóa
+                    <button type="button" class="btn btn-sm btn-link text-danger p-0 text-decoration-none" onclick="xoaDotGiaoHang(this)">
+                        Xóa
                     </button>
                 </div>
 
                 <div class="row g-2">
                     <div class="col-md-6">
                         <input type="text" name="DanhSachDotGiao[${idx}].TenNguoiNhan" required
-                               class="form-control form-control-sm" placeholder="Họ tên người nhận *" />
+                               class="input-phang-bitis" placeholder="Họ và tên người nhận *" />
                     </div>
                     <div class="col-md-6">
                         <input type="text" name="DanhSachDotGiao[${idx}].SdtNguoiNhan" required
-                               class="form-control form-control-sm" placeholder="SĐT người nhận *" />
+                               class="input-phang-bitis" placeholder="Số điện thoại người nhận *" />
                     </div>
                     <div class="col-12">
                         <input type="text" name="DanhSachDotGiao[${idx}].DiaChiGiaoChiTiet" required
-                               class="form-control form-control-sm" placeholder="Địa chỉ nhận quà chi tiết *" />
+                               class="input-phang-bitis" placeholder="Địa chỉ nhận quà chi tiết *" />
                     </div>
-                    <div class="col-md-6">
-                        <input type="date" name="DanhSachDotGiao[${idx}].NgayHenGiao" value="${NGAY_HEN_MAC_DINH}"
-                               class="form-control form-control-sm" />
-                    </div>
-                    <div class="col-md-6">
-                        <select name="DanhSachDotGiao[${idx}].KhungGioGiao" class="form-select form-select-sm">
-                            <option value="Sáng (08:00 - 11:30)">Sáng (08:00 - 11:30)</option>
-                            <option value="Chiều (13:30 - 17:00)">Chiều (13:30 - 17:00)</option>
-                            <option value="Tối Đoàn Viên (18:00 - 20:30)">Tối Đoàn Viên (18:00 - 20:30)</option>
-                        </select>
-                    </div>
+                    <input type="hidden" name="DanhSachDotGiao[${idx}].NgayHenGiao" value="${NGAY_HEN_MAC_DINH}" />
+                    <input type="hidden" name="DanhSachDotGiao[${idx}].KhungGioGiao" value="Sáng (08:00 - 11:30)" />
                 </div>
 
-                <div class="khung-thiep-qr-vang mt-2">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-1">
-                        <div class="form-check m-0">
-                            <input class="form-check-input" type="checkbox" name="DanhSachDotGiao[${idx}].CoKemThiepQr" value="true"
-                                   onchange="batTatKhungThiepQr(this)">
-                            <label class="form-check-label small fw-bold chu-do-son-mai">
-                                Đính kèm Thiệp Chúc Tết Đoàn Viên QR 3D riêng (Miễn phí)
-                            </label>
-                        </div>
-                        <select name="DanhSachDotGiao[${idx}].MauGiaoDienThiep" class="form-select form-select-sm w-auto">
-                            <option value="CO_PHONG_HOANG_GIA">🏯 Cổ Phong Hoàng Gia</option>
-                            <option value="TRANG_RAM_HIEN_DAI">🌕 Trăng Rằm Hiện Đại</option>
-                            <option value="SUM_VAY_AM_AP">🏮 Sum Vầy Ấm Áp</option>
-                        </select>
+                <div class="khung-thiep-qr-phu mt-2">
+                    <div class="form-check m-0">
+                        <input class="form-check-input" type="checkbox" name="DanhSachDotGiao[${idx}].CoKemThiepQr" value="true"
+                               onchange="batTatKhungThiepQr(this)">
+                        <label class="form-check-label small" style="color: #1F2937;">
+                            Đính kèm Thiệp Chúc Tết Đoàn Viên QR 3D riêng (Miễn phí)
+                        </label>
                     </div>
-                    <div class="noi-dung-loi-chuc-qr" style="display: none;">
-                        <div class="row g-2 mb-2 mt-1">
+                    <div class="noi-dung-loi-chuc-qr mt-2" style="display: none;">
+                        <div class="row g-2 mb-2">
                             <div class="col-md-6">
                                 <input type="text" name="DanhSachDotGiao[${idx}].TenNguoiNhanThiep"
-                                       class="form-control form-control-sm" placeholder="Kính gửi (Tên in trên thiệp) *" />
+                                       class="input-phang-bitis" placeholder="Kính gửi *" />
                             </div>
                             <div class="col-md-6">
                                 <input type="text" name="DanhSachDotGiao[${idx}].TenNguoiGuiThiep" value="${tenNguoiMua}"
-                                       class="form-control form-control-sm" placeholder="Tên người gửi in trên thiệp *" />
+                                       class="input-phang-bitis" placeholder="Người gửi *" />
                             </div>
                         </div>
                         <textarea name="DanhSachDotGiao[${idx}].LoiChucThiep" rows="2" class="form-control form-control-sm"
@@ -1444,7 +1182,6 @@
             });
         }
 
-        // Áp mã giảm giá trực tiếp tại cột phải Trang Thanh Toán
         function chonNhanhMaCheckout(maCode) {
             const txt = document.getElementById("txtMaGiamGiaCheckout");
             if (txt) {
@@ -1480,23 +1217,29 @@
                             lblTienGiam.innerText = `-${TIEN_GIAM_VOUCHER.toLocaleString("vi-VN")} đ`;
                         }
                         if (lblKetQua) {
-                            lblKetQua.className = "text-success fw-medium";
+                            lblKetQua.className = "d-block mb-2 text-success fw-medium";
                             lblKetQua.innerHTML = dataGio.codeKmDangDung
-                                ? `<i class="bi bi-check-circle-fill me-1"></i>Đang áp dụng mã <strong>${dataGio.codeKmDangDung}</strong>`
+                                ? `✓ Đang áp dụng mã <strong>${dataGio.codeKmDangDung}</strong>`
                                 : "";
                         }
                         capNhatBangTinhThanhToan();
                     }
-                    hienThiThongBaoGioHang(data.thongBao, true);
+                    if (typeof hienThiThongBaoGioHang === "function") {
+                        hienThiThongBaoGioHang(data.thongBao, true);
+                    }
                 } else {
                     if (lblKetQua) {
-                        lblKetQua.className = "text-danger fw-medium";
-                        lblKetQua.innerHTML = `<i class="bi bi-exclamation-circle-fill me-1"></i>${data.thongBao}`;
+                        lblKetQua.className = "d-block mb-2 text-danger fw-medium";
+                        lblKetQua.textContent = data.thongBao;
                     }
-                    hienThiThongBaoGioHang(data.thongBao, false);
+                    if (typeof hienThiThongBaoGioHang === "function") {
+                        hienThiThongBaoGioHang(data.thongBao, false);
+                    }
                 }
             } catch (err) {
-                hienThiThongBaoGioHang("Lỗi kết nối khi áp dụng mã giảm giá!", false);
+                if (typeof hienThiThongBaoGioHang === "function") {
+                    hienThiThongBaoGioHang("Lỗi kết nối khi áp dụng mã giảm giá!", false);
+                }
             }
         }
 
@@ -1532,45 +1275,18 @@
 
             const tienHangSauGiam = Math.max(0, TONG_TIEN_HANG - TIEN_CK_B2B - TIEN_GIAM_VOUCHER);
             const duMocFreeship = tienHangSauGiam >= MOC_FREESHIP_TIEU_CHUAN;
-            const canMuaThem = Math.max(0, MOC_FREESHIP_TIEU_CHUAN - tienHangSauGiam);
 
-            // Cập nhật 2 thanh thông báo Freeship (cột trái & cột phải)
-            const htmlFreeship = duMocFreeship
-                ? `<span>🎉 Đơn hàng của bạn đã đủ điều kiện Miễn phí giao hàng tiêu chuẩn!</span>`
-                : `<span>🚚 Miễn phí giao tiêu chuẩn cho đơn từ 500.000 đ — Mua thêm <strong>${canMuaThem.toLocaleString("vi-VN")} đ</strong> để được Freeship!</span>`;
-
-            ["khungThongBaoFreeshipCotTrai", "khungThongBaoFreeshipCotPhai"].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.innerHTML = htmlFreeship;
-                    el.style.background = duMocFreeship ? "#ECFDF5" : "#FFFBEB";
-                    el.style.borderColor = duMocFreeship ? "#10B981" : "#F59E0B";
-                    el.style.color = duMocFreeship ? "#065F46" : "#92400E";
-                }
-            });
-
-            // Cập nhật hiển thị giá trên 2 dòng Radio Phương thức vận chuyển
             const phiTieuChuan = duMocFreeship ? 0 : (30000 * soDiemGiao);
             const phiHoaToc = (duMocFreeship ? 30000 : 60000) * soDiemGiao;
 
             const lblGiaShipTieuChuan = document.getElementById("lblGiaShipTieuChuan");
             if (lblGiaShipTieuChuan) {
-                lblGiaShipTieuChuan.innerText = duMocFreeship ? "0 đ (Miễn phí)" : `${phiTieuChuan.toLocaleString("vi-VN")} đ`;
-                lblGiaShipTieuChuan.style.color = duMocFreeship ? "#059669" : "#111827";
+                lblGiaShipTieuChuan.innerText = "30.000đ";
             }
 
             const lblGiaShipHoaToc = document.getElementById("lblGiaShipHoaToc");
             if (lblGiaShipHoaToc) {
-                lblGiaShipHoaToc.innerText = duMocFreeship
-                    ? `${phiHoaToc.toLocaleString("vi-VN")} đ (Đã hỗ trợ 50%)`
-                    : `${phiHoaToc.toLocaleString("vi-VN")} đ`;
-            }
-
-            const lblMoTaPhuHoaToc = document.getElementById("lblMoTaPhuHoaToc");
-            if (lblMoTaPhuHoaToc) {
-                lblMoTaPhuHoaToc.textContent = duMocFreeship
-                    ? "Đã hỗ trợ 50% phí hỏa tốc cho đơn từ 500.000 đ"
-                    : "Ưu tiên giao nhanh trong 6 giờ tại TP.HCM & TP. Long Xuyên (An Giang)";
+                lblGiaShipHoaToc.innerText = duMocFreeship ? "30.000đ" : "60.000đ";
             }
 
             const radHoaToc = document.getElementById("radGiaoHoaToc");
@@ -1600,42 +1316,15 @@
 
             const lblPhiShip = document.getElementById("lblPhiShipCheckout");
             if (lblPhiShip) {
-                if (tongPhiShip === 0) {
-                    lblPhiShip.innerText = "0 đ (Miễn phí)";
-                    lblPhiShip.className = "text-success fw-bold";
-                    lblPhiShip.style.color = "#059669";
-                } else {
-                    lblPhiShip.innerText = `+${tongPhiShip.toLocaleString("vi-VN")} đ`;
-                    lblPhiShip.className = "fw-bold";
-                    lblPhiShip.style.color = "#111827";
-                }
+                lblPhiShip.innerText = tongPhiShip === 0 ? "0 đ" : `${tongPhiShip.toLocaleString("vi-VN")} đ`;
             }
 
-            // Đồng bộ Badge trên Sticky Bar dưới đáy màn hình: CHỈ hiện FREESHIP khi PhiVanChuyen == 0
-            const badgeSticky = document.getElementById("badgeTrangThaiShipSticky");
-            if (badgeSticky) {
-                if (tongPhiShip === 0) {
-                    badgeSticky.innerHTML = `<i class="bi bi-truck"></i> FREESHIP`;
-                    badgeSticky.style.background = "#10B981";
-                    badgeSticky.style.color = "#FFFFFF";
-                    badgeSticky.style.border = "none";
-                } else {
-                    badgeSticky.innerHTML = `<i class="bi bi-truck"></i> Phí giao: +${tongPhiShip.toLocaleString("vi-VN")} đ`;
-                    badgeSticky.style.background = "#FEF3C7";
-                    badgeSticky.style.color = "#92400E";
-                    badgeSticky.style.border = "1px solid #F59E0B";
-                }
-            }
-
-            const chuoiTongTien = `${tongCuoi.toLocaleString("vi-VN")} đ`;
             const lblTongCotPhai = document.getElementById("lblTongThanhToanCuoiCheckout");
-            if (lblTongCotPhai) lblTongCotPhai.innerText = chuoiTongTien;
-
-            const lblTongSticky = document.getElementById("lblTongThanhToanStickyBar");
-            if (lblTongSticky) lblTongSticky.innerText = chuoiTongTien;
+            if (lblTongCotPhai) {
+                lblTongCotPhai.innerText = `${tongCuoi.toLocaleString("vi-VN")} đ`;
+            }
         }
 
-        // Trước khi submit form: Kiểm tra thông tin, Thiệp 3D, và gọi Timing Gate kiểm tra tồn kho Lớp 3
         async function chuanBiTruocKhiGuiDon(e) {
             if (dangGuiDonHang) return true;
             if (e) e.preventDefault();
@@ -1646,51 +1335,53 @@
             const hoTen = document.getElementById("txtHoTenNguoiMua")?.value.trim() || "";
             const sdt = document.getElementById("txtSdtNguoiMua")?.value.trim() || "";
             const diaChi = document.getElementById("dot0_DiaChi")?.value.trim() || "";
+            const maCaptcha = document.getElementById("txtMaCaptchaNhap")?.value.trim() || "";
 
             if (!hoTen || !sdt) {
-                hienThiThongBaoGioHang("Vui lòng nhập đầy đủ Họ tên và Số điện thoại liên hệ!", false);
+                if (typeof hienThiThongBaoGioHang === "function") {
+                    hienThiThongBaoGioHang("Vui lòng nhập đầy đủ Họ và tên, Số điện thoại!", false);
+                }
                 document.getElementById("txtHoTenNguoiMua")?.focus();
                 return false;
             }
 
             if (!diaChi) {
-                hienThiThongBaoGioHang("Vui lòng nhập Địa chỉ giao hàng (Số nhà, tên đường) hoặc chọn Cửa hàng nhận!", false);
+                if (typeof hienThiThongBaoGioHang === "function") {
+                    hienThiThongBaoGioHang("Vui lòng nhập Địa chỉ giao hàng (Số nhà, tên đường) hoặc chọn Cửa hàng nhận!", false);
+                }
                 document.getElementById("txtDiaChiSoNha")?.focus();
                 return false;
             }
 
-            // Kiểm tra nếu khách có tích chọn Thiệp Chúc Tết Đoàn Viên QR 3D
             const chkThiep0 = document.getElementById("chkThiepQr_0");
             if (chkThiep0 && chkThiep0.checked) {
                 const kinhGui = document.getElementById("txtKinhGuiTrenThiep_0")?.value.trim() || "";
                 const nguoiGui = document.getElementById("txtNguoiGuiTrenThiep_0")?.value.trim() || "";
                 const loiChuc = document.getElementById("txtLoiChucThiep_0")?.value.trim() || "";
 
-                if (!kinhGui) {
-                    hienThiThongBaoGioHang("Vui lòng nhập mục 'Kính gửi (Tên người nhận in trên thiệp)'!", false);
-                    document.getElementById("txtKinhGuiTrenThiep_0")?.focus();
-                    return false;
-                }
-                if (!nguoiGui) {
-                    hienThiThongBaoGioHang("Vui lòng nhập 'Tên người gửi in trên thiệp'!", false);
-                    document.getElementById("txtNguoiGuiTrenThiep_0")?.focus();
-                    return false;
-                }
-                if (!loiChuc) {
-                    hienThiThongBaoGioHang("Vui lòng nhập 'Lời chúc Tết Đoàn Viên'!", false);
-                    document.getElementById("txtLoiChucThiep_0")?.focus();
+                if (!kinhGui || !nguoiGui || !loiChuc) {
+                    if (typeof hienThiThongBaoGioHang === "function") {
+                        hienThiThongBaoGioHang("Vui lòng nhập đầy đủ Kính gửi, Người gửi và Lời chúc trên thiệp 3D!", false);
+                    }
                     return false;
                 }
             }
 
-            // Kiểm tra Captcha & Tồn kho thực tế thêm 1 lần nữa ngay lúc bấm ĐẶT HÀNG
-            const chkCaptcha = document.getElementById("chkXacThucCaptchaKho");
-            if (chkCaptcha) chkCaptcha.checked = true;
-
-            const hopLeKho = await goiApiXacThucCaptchaVaKho();
-            if (!hopLeKho) {
-                if (chkCaptcha) chkCaptcha.checked = false;
+            if (maCaptcha.length < 5) {
+                const lbl = document.getElementById("lblTrangThaiCaptchaKho");
+                if (lbl) {
+                    lbl.style.color = "#DC2626";
+                    lbl.textContent = "Mã xác thực Captcha không chính xác. Vui lòng nhập lại mã hiển thị trong hình!";
+                }
+                document.getElementById("txtMaCaptchaNhap")?.focus();
                 return false;
+            }
+
+            if (!daXacThucCaptchaHopLe) {
+                const hopLeKho = await goiApiXacThucCaptchaVaKho();
+                if (!hopLeKho) {
+                    return false;
+                }
             }
 
             dangGuiDonHang = true;

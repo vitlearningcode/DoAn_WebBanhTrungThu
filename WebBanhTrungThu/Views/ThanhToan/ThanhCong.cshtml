@@ -281,12 +281,16 @@
                                     <span>Đang chờ xác nhận tự động từ Webhook MoMo (kiểm tra mỗi 3 giây)...</span>
                                 </div>
 
-                                <!-- Nút Test nhận Webhook MoMo thực tế dành cho Giảng viên chấm bài / Developer -->
-                                <div class="pt-2 border-top text-center" style="border-color: #EADBC8 !important;">
+                                <!-- Nút mở Cổng thanh toán MoMo độc lập & Test nhận Webhook MoMo thực tế -->
+                                <div class="pt-2 border-top text-center d-flex flex-column gap-2" style="border-color: #EADBC8 !important;">
+                                    <a href="/ThanhToan/CongThanhToanMoMo/@Model.DonHang.MaTraCuuDh" class="btn btn-sm w-100 rounded-pill fw-bold py-2 text-white"
+                                       style="background: #D82D8B; font-size: 0.82rem;">
+                                        Mở Cổng thanh toán MoMo toàn màn hình
+                                    </a>
                                     <button type="button" id="btnTestWebhookMoMo" class="btn btn-sm w-100 rounded-pill fw-bold py-2"
                                             style="background: #111827; color: #FBBF24; border: 1px solid #D4AF37; font-size: 0.8rem;"
                                             onclick="testNhanWebhookMoMoThucTe()">
-                                        ⚡ Test nhận Webhook MoMo thực tế
+                                        ⚡ Giả lập Khách đã quét QR thành công (Test Webhook MoMo)
                                     </button>
                                 </div>
                             </div>

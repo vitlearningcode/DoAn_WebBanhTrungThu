@@ -1684,3 +1684,11 @@ function khoiChayDongHoDemNguoc() {
         el.innerText = giay.toString().padStart(2, '0');
     }, 1000);
 }
+
+// =========================================================================
+// 6. HỖ TRỢ XÁC THỰC CAPTCHA TỰ ĐỘNG & KIỂM TRA KHO KHI GÕ ĐỦ 5 KÝ TỰ (NHÁNH 4.1.9)
+// =========================================================================
+function chuanHoaChuoiCaptchaNhap(chuoi) {
+    if (!chuoi) return "";
+    return String(chuoi).replace(/[^a-zA-Z0-9]/g, "").toUpperCase().slice(0, 5);
+}

@@ -345,31 +345,78 @@ namespace WebBanhTrungThu.Controllers
         }
 
         // =========================================================================
-        // 1B. SINH MÃ CAPTCHA BẢO MẬT & KIỂM TRA TỒN KHO LỚP 3 (TIMING GATE)
+        // 1B. SINH MÃ CAPTCHA HÌNH ẢNH NHIỄU CHỐNG BOT & KIỂM TRA TỒN KHO LỚP 3 (TIMING GATE)
         // =========================================================================
-        [HttpGet]
-        public IActionResult LayMaCaptchaMoi()
+        private static string SinhChuoiCaptchaNgauNhien()
         {
+            // Bỏ các ký tự dễ nhầm như 0, O, 1, I
             const string kyTuChoPhep = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
             char[] mangKyTu = new char[5];
             for (int i = 0; i < mangKyTu.Length; i++)
             {
                 mangKyTu[i] = kyTuChoPhep[Random.Shared.Next(kyTuChoPhep.Length)];
             }
-            string maCaptcha = new string(mangKyTu);
+            return new string(mangKyTu);
+        }
 
+        private static string TaoAnhSvgCaptchaNhieu(string maCaptcha)
+        {
+            var sb = new StringBuilder();
+            sb.Append("<svg xmlns='http://www.w3.org/2000/svg' width='135' height='44' viewBox='0 0 135 44'>");
+            sb.Append("<rect width='135' height='44' rx='6' fill='#F9FAFB'/>");
+
+            string[] bangMauNhieu = { "#9CA3AF", "#D1D5DB", "#E5E7EB", "#7A1215", "#B45309", "#6B7280" };
+
+            // 5 đường cong nhiễu ngẫu nhiên (Bezier noise lines)
+            for (int i = 0; i < 5; i++)
+            {
+                int x1 = Random.Shared.Next(2, 22);
+                int y1 = Random.Shared.Next(4, 40);
+                int cx1 = Random.Shared.Next(28, 68);
+                int cy1 = Random.Shared.Next(2, 42);
+                int cx2 = Random.Shared.Next(68, 108);
+                int cy2 = Random.Shared.Next(2, 42);
+                int x2 = Random.Shared.Next(112, 133);
+                int y2 = Random.Shared.Next(4, 40);
+                string mauLine = bangMauNhieu[Random.Shared.Next(bangMauNhieu.Length)];
+                sb.Append($"<path d='M{x1} {y1} C {cx1} {cy1}, {cx2} {cy2}, {x2} {y2}' stroke='{mauLine}' stroke-width='1.35' fill='none' opacity='0.65'/>");
+            }
+
+            // 24 chấm nhiễu ngẫu nhiên (Noise dots)
+            for (int i = 0; i < 24; i++)
+            {
+                int cx = Random.Shared.Next(4, 131);
+                int cy = Random.Shared.Next(4, 40);
+                int r = Random.Shared.Next(1, 3);
+                string mauDot = bangMauNhieu[Random.Shared.Next(bangMauNhieu.Length)];
+                sb.Append($"<circle cx='{cx}' cy='{cy}' r='{r}' fill='{mauDot}' opacity='0.55'/>");
+            }
+
+            // Vẽ từng ký tự trong 5 ký tự với góc xoay nghiêng (-18deg .. +18deg) và lệch trục Y khác nhau
+            string[] bangMauChu = { "#111827", "#7A1215", "#1F2937", "#374151", "#4A0709" };
+            for (int i = 0; i < maCaptcha.Length; i++)
+            {
+                int x = 19 + (i * 24) + Random.Shared.Next(-2, 3);
+                int y = 28 + Random.Shared.Next(-5, 6);
+                int gocXoay = Random.Shared.Next(-18, 19);
+                string mauChu = bangMauChu[i % bangMauChu.Length];
+                sb.Append($"<text x='{x}' y='{y}' transform='rotate({gocXoay} {x} {y})' font-family='Consolas, Courier New, monospace' font-size='21' font-weight='800' fill='{mauChu}' text-anchor='middle'>{maCaptcha[i]}</text>");
+            }
+
+            sb.Append("</svg>");
+            return "data:image/svg+xml;base64," + Convert.ToBase64String(Encoding.UTF8.GetBytes(sb.ToString()));
+        }
+
+        [HttpGet]
+        public IActionResult LayMaCaptchaMoi()
+        {
+            string maCaptcha = SinhChuoiCaptchaNgauNhien();
+
+            HttpContext.Session.SetString("CaptchaThanhToan", maCaptcha);
             HttpContext.Session.SetString("MaCaptchaThanhToan", maCaptcha);
             HttpContext.Session.SetString("DaXacThucCaptcha", "false");
 
-            // Sinh ảnh SVG sắc nét chống bot
-            string svg = $@"<svg xmlns='http://www.w3.org/2000/svg' width='150' height='44' viewBox='0 0 150 44'>
-                <rect width='150' height='44' rx='8' fill='#FDFBF7' stroke='#D4AF37' stroke-width='1.5'/>
-                <path d='M12 32 Q 48 10, 88 30 T 140 16' stroke='#E6D5B8' stroke-width='1.5' fill='none'/>
-                <path d='M16 14 Q 65 36, 112 14 T 142 32' stroke='#EADBC4' stroke-width='1.2' fill='none'/>
-                <text x='75' y='29' font-family='monospace, Georgia, serif' font-size='21' font-weight='bold' fill='#7A1C1C' letter-spacing='6' text-anchor='middle'>{maCaptcha}</text>
-            </svg>";
-
-            string anhSvgBase64 = "data:image/svg+xml;base64," + Convert.ToBase64String(Encoding.UTF8.GetBytes(svg));
+            string anhSvgBase64 = TaoAnhSvgCaptchaNhieu(maCaptcha);
 
             return Json(new
             {
@@ -380,23 +427,36 @@ namespace WebBanhTrungThu.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> XacThucCaptchaVaKiemTraKho([FromBody] XacThucCaptchaRequest? req)
+        public async Task<IActionResult> XacThucCaptchaVaKiemTraKho([FromBody] XacThucCaptchaMoRongRequest? req, string? maCaptchaNhap = null)
         {
-            string? maTrongSession = HttpContext.Session.GetString("MaCaptchaThanhToan");
-            string maKhachNhap = req?.MaCaptcha?.Trim() ?? string.Empty;
+            string? maTrongSession = HttpContext.Session.GetString("CaptchaThanhToan")
+                                  ?? HttpContext.Session.GetString("MaCaptchaThanhToan");
 
-            // Nếu người dùng gửi mã Captcha chữ thì đối chiếu với Session
-            if (!string.IsNullOrWhiteSpace(maKhachNhap) && !string.IsNullOrWhiteSpace(maTrongSession))
+            string maKhachNhap = (!string.IsNullOrWhiteSpace(maCaptchaNhap)
+                ? maCaptchaNhap
+                : (!string.IsNullOrWhiteSpace(req?.MaCaptchaNhap)
+                    ? req.MaCaptchaNhap
+                    : (!string.IsNullOrWhiteSpace(req?.MaCaptcha)
+                        ? req.MaCaptcha
+                        : (Request.Form.ContainsKey("maCaptchaNhap") ? Request.Form["maCaptchaNhap"].FirstOrDefault() : null))))?.Trim() ?? string.Empty;
+
+            // BẮT BUỘC kiểm tra chuỗi maCaptchaNhap người dùng gõ vào phải trùng khớp 100% (không phân biệt hoa/thường) với Session["CaptchaThanhToan"]
+            if (string.IsNullOrWhiteSpace(maKhachNhap)
+                || string.IsNullOrWhiteSpace(maTrongSession)
+                || !string.Equals(maKhachNhap, maTrongSession, StringComparison.OrdinalIgnoreCase))
             {
-                if (!string.Equals(maKhachNhap, maTrongSession, StringComparison.OrdinalIgnoreCase))
+                string maMoi = SinhChuoiCaptchaNgauNhien();
+                HttpContext.Session.SetString("CaptchaThanhToan", maMoi);
+                HttpContext.Session.SetString("MaCaptchaThanhToan", maMoi);
+                HttpContext.Session.SetString("DaXacThucCaptcha", "false");
+
+                return Json(new
                 {
-                    return Json(new
-                    {
-                        thanhCong = false,
-                        loaiLoi = "CAPTCHA",
-                        thongBao = "Mã xác thực bảo mật chưa chính xác. Quý khách vui lòng kiểm tra và nhập lại!"
-                    });
-                }
+                    thanhCong = false,
+                    loaiLoi = "CAPTCHA",
+                    thongBao = "Mã xác thực Captcha không chính xác. Vui lòng nhập lại mã hiển thị trong hình!",
+                    anhCaptchaSvg = TaoAnhSvgCaptchaNhieu(maMoi)
+                });
             }
 
             var gioHang = await LayGioHangDayDuAsync();
@@ -428,7 +488,7 @@ namespace WebBanhTrungThu.Controllers
             return Json(new
             {
                 thanhCong = true,
-                thongBao = "Đã xác thực bảo mật & kiểm tra tồn kho thành công! Kho đủ số lượng giao ngay."
+                thongBao = "✓ Đã xác thực & kiểm tra còn hàng"
             });
         }
 
@@ -437,12 +497,34 @@ namespace WebBanhTrungThu.Controllers
         // =========================================================================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DatHang(TaoDonHangRequest req)
+        public async Task<IActionResult> DatHang(TaoDonHangRequest req, string? maCaptchaNhap = null, string? MaCaptcha = null)
         {
             var gioHang = await LayGioHangDayDuAsync();
             if (gioHang == null || !gioHang.ChiTietGioHangs.Any())
             {
                 return RedirectToAction("Index", "Home");
+            }
+
+            // BẮT BUỘC kiểm tra chuỗi maCaptchaNhap khớp 100% với Session["CaptchaThanhToan"]
+            string? maTrongSession = HttpContext.Session.GetString("CaptchaThanhToan")
+                                  ?? HttpContext.Session.GetString("MaCaptchaThanhToan");
+            string maNhap = (!string.IsNullOrWhiteSpace(maCaptchaNhap)
+                ? maCaptchaNhap
+                : (!string.IsNullOrWhiteSpace(MaCaptcha)
+                    ? MaCaptcha
+                    : (Request.Form["maCaptchaNhap"].FirstOrDefault() ?? Request.Form["MaCaptcha"].FirstOrDefault() ?? string.Empty))).Trim();
+
+            if (string.IsNullOrWhiteSpace(maNhap)
+                || string.IsNullOrWhiteSpace(maTrongSession)
+                || !string.Equals(maNhap, maTrongSession, StringComparison.OrdinalIgnoreCase))
+            {
+                string maMoi = SinhChuoiCaptchaNgauNhien();
+                HttpContext.Session.SetString("CaptchaThanhToan", maMoi);
+                HttpContext.Session.SetString("MaCaptchaThanhToan", maMoi);
+                HttpContext.Session.SetString("DaXacThucCaptcha", "false");
+
+                TempData["LoiThanhToan"] = "Mã xác thực Captcha không chính xác. Vui lòng nhập lại mã hiển thị trong hình!";
+                return RedirectToAction(nameof(Index));
             }
 
             // Kiểm tra chặt chẽ tồn kho thực tế từ LoSanXuatBanh và MauVoHop trước khi tạo đơn
@@ -870,13 +952,109 @@ namespace WebBanhTrungThu.Controllers
                     meta.Thiep3DTheoToken = mapThiepMeta;
                 });
 
-                return RedirectToAction("ThanhCong", new { maDon = donHang.MaTraCuuDh });
+                HttpContext.Session.Remove("CaptchaThanhToan");
+                HttpContext.Session.Remove("MaCaptchaThanhToan");
+                HttpContext.Session.Remove("DaXacThucCaptcha");
+
+                if (laThanhToanQrMoMo)
+                {
+                    return RedirectToAction("CongThanhToanMoMo", new { id = donHang.MaTraCuuDh });
+                }
+
+                return RedirectToAction("ThanhCong", new { id = donHang.MaTraCuuDh });
             }
             catch
             {
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        // =========================================================================
+        // 3A. CỔNG THANH TOÁN MOMO ĐỘC LẬP (/ThanhToan/CongThanhToanMoMo/{maDon})
+        // =========================================================================
+        [HttpGet]
+        public async Task<IActionResult> CongThanhToanMoMo(string? id, string? maDon)
+        {
+            string maTraCuu = !string.IsNullOrWhiteSpace(maDon) ? maDon.Trim() : (id?.Trim() ?? string.Empty);
+            if (string.IsNullOrWhiteSpace(maTraCuu))
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            var donHang = await _db.DonHangs
+                .Include(d => d.DotGiaoHangDaDiems)
+                .Include(d => d.ChiTietDonHangs)
+                .FirstOrDefaultAsync(d => d.MaTraCuuDh == maTraCuu);
+
+            if (donHang == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            _kiotMeta.GanMetadataChoDonHang(donHang);
+
+            if (donHang.TrangThaiTt == "DA_THANH_TOAN" || donHang.TrangThaiTt == "DA_TT")
+            {
+                return RedirectToAction("ThanhCong", new { id = donHang.MaTraCuuDh });
+            }
+
+            DateTime hanThanhToan = donHang.HanThanhToan ?? donHang.NgayDat.AddMinutes(15);
+            donHang.HanThanhToan = hanThanhToan;
+
+            if ((donHang.TrangThaiTt == "CHO_THANH_TOAN" || donHang.TrangThaiTt == "CHO_XAC_MINH_CK") && DateTime.Now >= hanThanhToan)
+            {
+                await ThucHienRollbackKhoDonHetHanAsync(donHang);
+                return RedirectToAction("Index", "Home");
+            }
+
+            if (donHang.TrangThaiTt == "HET_HAN_15P" || donHang.TrangThaiDh == "DA_HUY")
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            int soGiayConLai = Math.Max(0, (int)Math.Ceiling((hanThanhToan - DateTime.Now).TotalSeconds));
+
+            var cauHinhQr = _kiotMeta.LayCauHinhQr();
+            string sdtMoMoRaw = string.IsNullOrWhiteSpace(cauHinhQr.SoTaiKhoanMoMo) ? "0814585526" : cauHinhQr.SoTaiKhoanMoMo.Trim();
+            string sdtMoMoHienThi = string.IsNullOrWhiteSpace(cauHinhQr.SoDienThoaiHienThi) ? "0814 585 526" : cauHinhQr.SoDienThoaiHienThi.Trim();
+            string tenChuTk = string.IsNullOrWhiteSpace(cauHinhQr.TenChuTaiKhoan) ? "LE MINH DUC" : cauHinhQr.TenChuTaiKhoan.Trim();
+
+            string noiDungCk = (cauHinhQr.MauNoiDungCk ?? "NGUYETCAT {MaTraCuuDh}")
+                .Replace("{MaTraCuuDh}", donHang.MaTraCuuDh, StringComparison.OrdinalIgnoreCase);
+
+            string bin = string.IsNullOrWhiteSpace(cauHinhQr.MaBinVietQr) ? "970422" : cauHinhQr.MaBinVietQr.Trim();
+            string stk = Uri.EscapeDataString(sdtMoMoRaw);
+            string addInfo = Uri.EscapeDataString(noiDungCk);
+            string accName = Uri.EscapeDataString(tenChuTk);
+            long soTienNguyen = (long)Math.Round(donHang.TongThanhToanCuoi, 0);
+
+            string urlVietQr = $"https://img.vietqr.io/image/{bin}-{stk}-compact2.png?amount={soTienNguyen}&addInfo={addInfo}&accountName={accName}";
+
+            using var qrGenerator = new QRCodeGenerator();
+            string payloadQrMoMo = $"2|99|{sdtMoMoRaw}|{tenChuTk}||0|0|{soTienNguyen}|{noiDungCk}|transfer_myqr";
+            using QRCodeData dataQrTt = qrGenerator.CreateQrCode(payloadQrMoMo, QRCodeGenerator.ECCLevel.Q);
+            using var pngQrTt = new PngByteQRCode(dataQrTt);
+            string qrThanhToanBase64 = "data:image/png;base64," + Convert.ToBase64String(pngQrTt.GetGraphic(10));
+
+            var vm = new CongThanhToanMoMoViewModel
+            {
+                DonHang = donHang,
+                MaTraCuuDh = donHang.MaTraCuuDh,
+                TongThanhToan = donHang.TongThanhToanCuoi,
+                TongThanhToanCuoi = donHang.TongThanhToanCuoi,
+                NoiDungChuyenKhoan = noiDungCk,
+                SoDienThoaiMoMo = sdtMoMoHienThi,
+                SoTaiKhoanMoMo = sdtMoMoRaw,
+                TenChuTaiKhoan = tenChuTk,
+                AnhQrThanhToanBase64 = qrThanhToanBase64,
+                UrlVietQr = urlVietQr,
+                CauHinhQr = cauHinhQr,
+                HanThanhToan = hanThanhToan,
+                SoGiayConLai = soGiayConLai
+            };
+
+            return View(vm);
         }
 
         // =========================================================================
@@ -1259,5 +1437,30 @@ namespace WebBanhTrungThu.Controllers
                 thongBao = $"Đã xác nhận thanh toán tự động thành công cho đơn #{donHang.MaTraCuuDh}!"
             });
         }
+    }
+}
+
+namespace WebBanhTrungThu.ViewModels
+{
+    public class XacThucCaptchaMoRongRequest : XacThucCaptchaRequest
+    {
+        public string? MaCaptchaNhap { get; set; }
+    }
+
+    public class CongThanhToanMoMoViewModel
+    {
+        public Models.Entities.DonHang DonHang { get; set; } = null!;
+        public string MaTraCuuDh { get; set; } = string.Empty;
+        public decimal TongThanhToan { get; set; }
+        public decimal TongThanhToanCuoi { get; set; }
+        public string NoiDungChuyenKhoan { get; set; } = string.Empty;
+        public string SoDienThoaiMoMo { get; set; } = "0814 585 526";
+        public string SoTaiKhoanMoMo { get; set; } = "0814585526";
+        public string TenChuTaiKhoan { get; set; } = "LE MINH DUC";
+        public string AnhQrThanhToanBase64 { get; set; } = string.Empty;
+        public string UrlVietQr { get; set; } = string.Empty;
+        public Services.CauHinhThanhToanQr CauHinhQr { get; set; } = new();
+        public DateTime HanThanhToan { get; set; }
+        public int SoGiayConLai { get; set; }
     }
 }
