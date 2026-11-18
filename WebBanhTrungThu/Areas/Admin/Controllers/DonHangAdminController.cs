@@ -212,6 +212,18 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
                     meta.NguoiCapNhatCuoi = nguoiCapNhat;
                 });
 
+                _kiotMeta.GhiNhanPhieuThuChi(new PhieuThuChiKiot
+                {
+                    MaDonHang = donHang.MaDh,
+                    MaTraCuuDh = donHang.MaTraCuuDh,
+                    LoaiPhieu = "THU",
+                    PhuongThuc = donHang.PhuongThucTt,
+                    SoTien = donHang.TongThanhToanCuoi,
+                    NguoiNopNhan = donHang.HoTenNguoiMua,
+                    NoiDung = $"Thu xác nhận chuyển khoản QR đơn #{donHang.MaTraCuuDh}",
+                    ThoiGian = DateTime.Now
+                });
+
                 TempData["ThongBaoAdmin"] = $"⚡ Đã xác nhận nhận chuyển khoản QR cho đơn #{donHang.MaTraCuuDh} ({donHang.TongThanhToanCuoi:N0} đ) -> Tự động đẩy sang trạng thái Chờ lấy hàng (CHO_LAY_HANG)!";
             }
 
@@ -428,6 +440,19 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
 
             if (canHoanTien)
             {
+                _kiotMeta.GhiNhanPhieuThuChi(new PhieuThuChiKiot
+                {
+                    MaPhieu = $"PCH-{DateTime.Now:yyMMddHHmmss}",
+                    MaDonHang = donHang.MaDh,
+                    MaTraCuuDh = donHang.MaTraCuuDh,
+                    LoaiPhieu = "CHI",
+                    PhuongThuc = "CHUYEN_KHOAN",
+                    SoTien = donHang.TongThanhToanCuoi,
+                    NguoiNopNhan = donHang.HoTenNguoiMua,
+                    NoiDung = $"Chi hoàn tiền hủy đơn #{donHang.MaTraCuuDh} ({maNganHangHoan} - STK: {soTaiKhoanHoan})",
+                    ThoiGian = DateTime.Now
+                });
+
                 TempData["ThongBaoAdmin"] = $"🗑️ Đã hủy đơn #{donHang.MaTraCuuDh}, hoàn kho ({soBanhHoanKho} bánh, {soVoHopHoanKho} vỏ hộp) và ghi nhận Phiếu Chi Hoàn Tiền {donHang.TongThanhToanCuoi:N0} đ tới {maNganHangHoan} - STK: {soTaiKhoanHoan} ({tenChuTkHoan}) vào Sổ Quỹ!";
             }
             else

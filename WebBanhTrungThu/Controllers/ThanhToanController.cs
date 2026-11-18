@@ -15,6 +15,7 @@ namespace WebBanhTrungThu.Controllers
     {
         private readonly CSDLBanhTrungThuContext _db;
         private readonly DichVuKiotVietMetadata _kiotMeta;
+        private CSDLBanhTrungThuContext _context => _db;
 
         public ThanhToanController(CSDLBanhTrungThuContext db, DichVuKiotVietMetadata kiotMeta)
         {
@@ -527,15 +528,6 @@ namespace WebBanhTrungThu.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Kiểm tra chặt chẽ tồn kho thực tế từ LoSanXuatBanh và MauVoHop trước khi tạo đơn
-            var ketQuaKho = KiemTraTonKhoThucTeGioHang(gioHang);
-            if (!ketQuaKho.HopLe)
-            {
-                TempData["TenBanhHetHang"] = ketQuaKho.TenSanPhamThieu ?? "Bánh Trung Thu";
-                TempData["LoiThanhToan"] = ketQuaKho.ThongBaoChiTiet;
-                return RedirectToAction(nameof(Index));
-            }
-
             if (req.DanhSachDotGiao == null || !req.DanhSachDotGiao.Any())
             {
                 req.DanhSachDotGiao = new List<DotGiaoHangInput>
@@ -555,9 +547,19 @@ namespace WebBanhTrungThu.Controllers
             int? maNd = ThongTinPhienHelper.LayMaNguoiDung(HttpContext);
             string? maPhienKvl = maNd.HasValue ? null : ThongTinPhienHelper.LayMaPhienKVL(HttpContext);
 
-            using var transaction = await _db.Database.BeginTransactionAsync();
+            using var giaoDichDb = await _context.Database.BeginTransactionAsync();
             try
             {
+                // Kiểm tra chặt chẽ tồn kho thực tế từ LoSanXuatBanh (FEFO) và MauVoHop bên trong Database Transaction (ACID)
+                var ketQuaKho = KiemTraTonKhoThucTeGioHang(gioHang);
+                if (!ketQuaKho.HopLe)
+                {
+                    await giaoDichDb.RollbackAsync();
+                    TempData["TenBanhHetHang"] = ketQuaKho.TenSanPhamThieu ?? "Bánh Trung Thu";
+                    TempData["LoiThanhToan"] = ketQuaKho.ThongBaoChiTiet;
+                    return RedirectToAction(nameof(Index));
+                }
+
                 // 1. Sinh mã tra cứu đơn hàng duy nhất: TT2026-XXXX
                 string maTraCuu;
                 do
@@ -768,6 +770,27 @@ namespace WebBanhTrungThu.Controllers
                 }
                 await _db.SaveChangesAsync();
 
+                // Lưu trực tiếp Thiệp 3D vào bảng vật lý dbo.ThiepChucMung3D trong SQL Server
+                foreach (var dotDaLuu in cacDotDaLuu)
+                {
+                    if (dotDaLuu.CoKemThiepQr && !string.IsNullOrWhiteSpace(dotDaLuu.MaTokenThiepQr))
+                    {
+                        mapThiepMeta.TryGetValue(dotDaLuu.MaTokenThiepQr, out var thiepMeta);
+                        _db.ThiepChucMung3ds.Add(new ThiepChucMung3d
+                        {
+                            MaTokenQr = dotDaLuu.MaTokenThiepQr,
+                            MaDonHang = donHang.MaDh,
+                            MaDotGiao = dotDaLuu.MaDotGh,
+                            TenNguoiGui = thiepMeta?.TenNguoiGuiThiep ?? donHang.HoTenNguoiMua,
+                            TenNguoiNhan = thiepMeta?.TenNguoiNhanThiep ?? dotDaLuu.TenNguoiNhan,
+                            LoiChuc = dotDaLuu.LoiChucThiep ?? "Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên, Viên Mãn & An Khang!",
+                            MauGiaoDien = dotDaLuu.MauGiaoDienThiep ?? "CO_PHONG_HOANG_GIA",
+                            SoLanMoThiep = 0,
+                            NgayTao = DateTime.Now
+                        });
+                    }
+                }
+
                 int? maDotDauTien = cacDotDaLuu.FirstOrDefault()?.MaDotGh;
 
                 // 6. Lưu ChiTietDonHangs & Tạm trừ tồn kho theo chuẩn FEFO (LoSanXuatBanh + SanPhamBanh + MauVoHop)
@@ -939,7 +962,7 @@ namespace WebBanhTrungThu.Controllers
                 gioHang.NgayCapNhat = DateTime.Now;
 
                 await _db.SaveChangesAsync();
-                await transaction.CommitAsync();
+                await giaoDichDb.CommitAsync();
 
                 // 9. Lưu Metadata KiotViet (Hạn thanh toán 15 phút, Nhật ký trừ lô FEFO để Rollback, và Thông tin Thiệp 3D)
                 _kiotMeta.CapNhatMetadataDonHang(donHang.MaDh, meta =>
@@ -965,7 +988,7 @@ namespace WebBanhTrungThu.Controllers
             }
             catch
             {
-                await transaction.RollbackAsync();
+                await giaoDichDb.RollbackAsync();
                 throw;
             }
         }
@@ -1213,34 +1236,46 @@ namespace WebBanhTrungThu.Controllers
                 return Json(new { thanhCong = false, thongBao = "Không tìm thấy mã đơn hàng." });
             }
 
-            var donHang = await _db.DonHangs
-                .Include(d => d.ChiTietDonHangs)
-                .FirstOrDefaultAsync(d => d.MaTraCuuDh == maTraCuu.Trim());
-
-            if (donHang == null)
+            using var giaoDichDb = await _context.Database.BeginTransactionAsync();
+            try
             {
-                return Json(new { thanhCong = false, thongBao = "Không tìm thấy đơn hàng." });
-            }
+                var donHang = await _db.DonHangs
+                    .Include(d => d.ChiTietDonHangs)
+                    .FirstOrDefaultAsync(d => d.MaTraCuuDh == maTraCuu.Trim());
 
-            if (donHang.TrangThaiTt == "DA_THANH_TOAN" || donHang.TrangThaiTt == "DA_TT")
-            {
+                if (donHang == null)
+                {
+                    await giaoDichDb.RollbackAsync();
+                    return Json(new { thanhCong = false, thongBao = "Không tìm thấy đơn hàng." });
+                }
+
+                if (donHang.TrangThaiTt == "DA_THANH_TOAN" || donHang.TrangThaiTt == "DA_TT")
+                {
+                    await giaoDichDb.RollbackAsync();
+                    return Json(new
+                    {
+                        thanhCong = false,
+                        daThanhToan = true,
+                        thongBao = "Đơn hàng đã được thanh toán thành công!"
+                    });
+                }
+
+                await ThucHienRollbackKhoDonHetHanAsync(donHang);
+                await giaoDichDb.CommitAsync();
+
                 return Json(new
                 {
-                    thanhCong = false,
-                    daThanhToan = true,
-                    thongBao = "Đơn hàng đã được thanh toán thành công!"
+                    thanhCong = true,
+                    trangThaiTt = donHang.TrangThaiTt,
+                    trangThaiDh = donHang.TrangThaiDh,
+                    thongBao = "Đơn hàng đã hết hạn thanh toán 15 phút. Hệ thống đã hoàn trả sản phẩm về kho"
                 });
             }
-
-            await ThucHienRollbackKhoDonHetHanAsync(donHang);
-
-            return Json(new
+            catch
             {
-                thanhCong = true,
-                trangThaiTt = donHang.TrangThaiTt,
-                trangThaiDh = donHang.TrangThaiDh,
-                thongBao = "Đơn hàng đã hết hạn thanh toán 15 phút. Hệ thống đã hoàn trả sản phẩm về kho"
-            });
+                await giaoDichDb.RollbackAsync();
+                throw;
+            }
         }
 
         private async Task ThucHienRollbackKhoDonHetHanAsync(DonHang donHang)

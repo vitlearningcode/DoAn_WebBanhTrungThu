@@ -32,11 +32,25 @@ namespace WebBanhTrungThu.Controllers
 
             if (dotGiao != null)
             {
-                var metaThiep = _kiotMeta.LayThongTinThiepTheoToken(dotGiao.MaDh, dotGiao.MaTokenThiepQr);
-                if (metaThiep != null)
+                var thiepSql = await _db.ThiepChucMung3ds
+                    .FirstOrDefaultAsync(t => t.MaTokenQr == tokenChuan);
+
+                if (thiepSql != null)
                 {
-                    dotGiao.TenNguoiNhanThiep = metaThiep.TenNguoiNhanThiep;
-                    dotGiao.TenNguoiGuiThiep = metaThiep.TenNguoiGuiThiep;
+                    dotGiao.TenNguoiNhanThiep = thiepSql.TenNguoiNhan;
+                    dotGiao.TenNguoiGuiThiep = thiepSql.TenNguoiGui;
+                    if (!string.IsNullOrWhiteSpace(thiepSql.LoiChuc)) dotGiao.LoiChucThiep = thiepSql.LoiChuc;
+                    if (!string.IsNullOrWhiteSpace(thiepSql.MauGiaoDien)) dotGiao.MauGiaoDienThiep = thiepSql.MauGiaoDien;
+                    thiepSql.SoLanMoThiep += 1;
+                }
+                else
+                {
+                    var metaThiep = _kiotMeta.LayThongTinThiepTheoToken(dotGiao.MaDh, dotGiao.MaTokenThiepQr);
+                    if (metaThiep != null)
+                    {
+                        dotGiao.TenNguoiNhanThiep = metaThiep.TenNguoiNhanThiep;
+                        dotGiao.TenNguoiGuiThiep = metaThiep.TenNguoiGuiThiep;
+                    }
                 }
 
                 dotGiao.SoLanMoThiep += 1;

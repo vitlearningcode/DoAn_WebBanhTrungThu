@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Models.Entities;
@@ -65,6 +65,12 @@ public partial class CSDLBanhTrungThuContext : DbContext
     public virtual DbSet<ThongSoDinhDuong> ThongSoDinhDuongs { get; set; }
 
     public virtual DbSet<VaiTro> VaiTros { get; set; }
+
+    public virtual DbSet<PhieuThuChi> PhieuThuChis { get; set; }
+
+    public virtual DbSet<ThiepChucMung3d> ThiepChucMung3ds { get; set; }
+
+    public virtual DbSet<CauHinhHeThong> CauHinhHeThongs { get; set; }
 
 //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -332,6 +338,28 @@ public partial class CSDLBanhTrungThuContext : DbContext
         modelBuilder.Entity<VaiTro>(entity =>
         {
             entity.HasKey(e => e.MaVt).HasName("PK__VaiTro__2725103ECB282279");
+        });
+
+        modelBuilder.Entity<PhieuThuChi>(entity =>
+        {
+            entity.ToTable("PhieuThuChi");
+            entity.HasKey(e => e.MaPhieu);
+            entity.Property(e => e.NgayLap).HasDefaultValueSql("(getdate())");
+        });
+
+        modelBuilder.Entity<ThiepChucMung3d>(entity =>
+        {
+            entity.ToTable("ThiepChucMung3D");
+            entity.HasKey(e => e.MaThiep);
+            entity.HasIndex(e => e.MaTokenQr, "UQ_ThiepChucMung3D_MaTokenQr").IsUnique();
+            entity.Property(e => e.NgayTao).HasDefaultValueSql("(getdate())");
+        });
+
+        modelBuilder.Entity<CauHinhHeThong>(entity =>
+        {
+            entity.ToTable("CauHinhHeThong");
+            entity.HasKey(e => e.KhoaCauHinh);
+            entity.Property(e => e.NgayCapNhat).HasDefaultValueSql("(getdate())");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -26,6 +26,31 @@ namespace WebBanhTrungThu.ViewModels
         public string SdtNguoiMua { get; set; } = string.Empty;
         public string EmailNguoiMua { get; set; } = string.Empty;
         public List<SoDiaChi> DanhSachSoDiaChi { get; set; } = new();
+
+        public string LayTenMon(ChiTietGioHang item) =>
+            item.LoaiSanPham == 3
+                ? (item.MaHopTcNavigation?.TenHopKhachDat ?? "Hộp Tự Phối")
+                : item.LoaiSanPham == 2
+                    ? (item.MaCbNavigation?.TenCombo ?? "Combo Mẫu")
+                    : (item.MaBanhNavigation?.TenBanh ?? "Bánh Lẻ");
+
+        public string LayAnhMon(ChiTietGioHang item)
+        {
+            object? entity = item.LoaiSanPham == 1
+                ? item.MaBanhNavigation
+                : item.LoaiSanPham == 2
+                    ? item.MaCbNavigation
+                    : item.MaHopTcNavigation?.ChiTietHopTuChons?.FirstOrDefault()?.MaBanhNavigation;
+            if (entity == null) return "/images/default/banh-mac-dinh.png";
+            var kieu = entity.GetType();
+            foreach (var ten in new[] { "HinhAnh", "AnhDaiDien", "UrlHinhAnh", "AnhBanh", "HinhAnhChinh", "AnhMinhHoa", "HinhAnhCombo", "AnhVoHop" })
+            {
+                var prop = kieu.GetProperty(ten);
+                if (prop != null && prop.GetValue(entity) is string duongDan && !string.IsNullOrWhiteSpace(duongDan))
+                    return duongDan;
+            }
+            return "/images/default/banh-mac-dinh.png";
+        }
     }
 
     public class TaoDonHangRequest

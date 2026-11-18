@@ -1,0 +1,677 @@
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100vh;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    background-color: #EBEEF2;
+    color: #1F2937;
+}
+
+/* ================================================================= */
+/* 1. TOP BAR POS (#005AC3 - CAO 48PX)                               */
+/* ================================================================= */
+.pos-topbar {
+    height: 48px;
+    background-color: #005AC3;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    gap: 10px;
+    user-select: none;
+}
+
+.pos-search-wrap {
+    position: relative;
+    width: 340px;
+    max-width: 32vw;
+}
+
+.pos-search-wrap i {
+    position: absolute;
+    left: 11px;
+    top: 8px;
+    color: #6B7280;
+    font-size: 14px;
+}
+
+.pos-search-input {
+    width: 100%;
+    height: 34px;
+    border-radius: 5px;
+    border: none;
+    padding: 0 12px 0 34px;
+    font-size: 13px;
+    color: #111827;
+    background: #FFFFFF;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+}
+
+.pos-search-input:focus {
+    outline: 2px solid #93C5FD;
+}
+
+/* Multi-tab Hóa đơn */
+.pos-tabs-bar {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 100%;
+    padding-top: 8px;
+    flex-grow: 1;
+    overflow-x: auto;
+}
+
+.pos-tab-item {
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 6px 6px 0 0;
+    background: rgba(255, 255, 255, 0.16);
+    color: #E5E7EB;
+    font-weight: 600;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    border: none;
+    white-space: nowrap;
+    transition: background 0.12s;
+}
+
+.pos-tab-item:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color: #FFFFFF;
+}
+
+.pos-tab-item.active {
+    background: #EBEEF2;
+    color: #005AC3;
+    font-weight: 700;
+}
+
+.pos-tab-close {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    opacity: 0.75;
+}
+
+.pos-tab-close:hover {
+    background: rgba(220, 38, 38, 0.15);
+    color: #DC2626;
+    opacity: 1;
+}
+
+.pos-btn-add-tab {
+    height: 32px;
+    width: 32px;
+    border-radius: 5px;
+    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.12);
+    color: #FFFFFF;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+    cursor: pointer;
+}
+
+.pos-btn-add-tab:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+.pos-btn-top-action {
+    height: 33px;
+    padding: 0 12px;
+    border-radius: 5px;
+    background: #00B63E;
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 12.5px;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.pos-btn-top-action:hover {
+    background: #009E35;
+    color: #FFFFFF;
+}
+
+.pos-btn-manage {
+    height: 33px;
+    padding: 0 12px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.16);
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 12.5px;
+    border: 1px solid rgba(255,255,255,0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.pos-btn-manage:hover {
+    background: rgba(255,255,255,0.28);
+    color: #FFFFFF;
+}
+
+/* ================================================================= */
+/* 2. BỐ CỤC CHÍNH 2 KHU VỰC: TRÁI (65%) & PHẢI (35%)               */
+/* ================================================================= */
+.pos-workspace {
+    height: calc(100vh - 48px);
+    display: flex;
+    gap: 8px;
+    padding: 8px;
+}
+
+/* KHU VỰC TRÁI (65%) */
+.pos-left-col {
+    width: 65%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+/* Khung trên: Bảng món trong hóa đơn (46% chiều cao cột trái) */
+.pos-cart-panel {
+    height: 46%;
+    background: #FFFFFF;
+    border-radius: 6px;
+    border: 1px solid #D1D5DB;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.pos-cart-table-wrap {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.pos-cart-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.pos-cart-table thead th {
+    position: sticky;
+    top: 0;
+    background: #F4F6F8;
+    color: #374151;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #E5E7EB;
+    z-index: 2;
+}
+
+.pos-cart-table tbody td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #F0F1F3;
+    vertical-align: middle;
+    font-size: 13px;
+}
+
+.pos-cart-table tbody tr:hover {
+    background-color: #F8FAFC;
+}
+
+.pos-qty-box {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #D1D5DB;
+    border-radius: 5px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.pos-qty-btn {
+    width: 26px;
+    height: 26px;
+    border: none;
+    background: #F3F4F6;
+    color: #1F2937;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pos-qty-btn:hover {
+    background: #E5E7EB;
+}
+
+.pos-qty-input {
+    width: 42px;
+    height: 26px;
+    border: none;
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    color: #111827;
+}
+
+/* Khung dưới: Lưới chọn nhanh Hàng hóa & Combo (54% chiều cao cột trái) */
+.pos-catalog-panel {
+    height: 54%;
+    background: #FFFFFF;
+    border-radius: 6px;
+    border: 1px solid #D1D5DB;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.pos-pill-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #E5E7EB;
+    background: #F9FAFB;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.pos-filter-pill {
+    padding: 5px 12px;
+    border-radius: 999px;
+    border: 1px solid #D1D5DB;
+    background: #FFFFFF;
+    color: #374151;
+    font-weight: 600;
+    font-size: 12px;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.12s;
+}
+
+.pos-filter-pill:hover {
+    border-color: #0070F4;
+    color: #0070F4;
+}
+
+.pos-filter-pill.active {
+    background: #0070F4;
+    border-color: #0070F4;
+    color: #FFFFFF;
+}
+
+.pos-product-grid {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    gap: 10px;
+    align-content: start;
+}
+
+.pos-prod-card {
+    border: 1px solid #E5E7EB;
+    border-radius: 6px;
+    background: #FFFFFF;
+    padding: 8px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    transition: border-color 0.12s, box-shadow 0.12s, transform 0.08s;
+    user-select: none;
+}
+
+.pos-prod-card:hover {
+    border-color: #0070F4;
+    box-shadow: 0 3px 8px rgba(0, 112, 244, 0.12);
+    transform: translateY(-1px);
+}
+
+.pos-prod-card.out-of-stock {
+    opacity: 0.55;
+}
+
+.pos-prod-img-wrap {
+    height: 76px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #F9FAFB;
+    border-radius: 5px;
+    margin-bottom: 6px;
+    overflow: hidden;
+}
+
+.pos-prod-img-wrap img {
+    max-height: 70px;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.pos-badge-candate {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background: #DC2626;
+    color: #FFFFFF;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.pos-badge-stock {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: rgba(17, 24, 39, 0.75);
+    color: #FFFFFF;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.pos-prod-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #111827;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 32px;
+}
+
+.pos-prod-brand {
+    font-size: 11px;
+    color: #6B7280;
+    margin-top: 2px;
+}
+
+.pos-prod-price {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0070F4;
+    margin-top: 4px;
+}
+
+/* ================================================================= */
+/* 3. KHU VỰC PHẢI (35% - KHUNG THANH TOÁN HÓA ĐƠN)                  */
+/* ================================================================= */
+.pos-right-col {
+    width: 35%;
+    height: 100%;
+    background: #FFFFFF;
+    border-radius: 6px;
+    border: 1px solid #D1D5DB;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.pos-right-scroll {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+.pos-mode-switch {
+    display: flex;
+    background: #F3F4F6;
+    padding: 3px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.pos-mode-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 6px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4B5563;
+    cursor: pointer;
+}
+
+.pos-mode-btn.active {
+    background: #FFFFFF;
+    color: #0070F4;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
+.pos-summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px dashed #E5E7EB;
+    font-size: 13px;
+}
+
+.pos-total-payable-box {
+    background: #EBF5FF;
+    border: 1px solid #BFDBFE;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin: 10px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pos-denom-btn {
+    border: 1px solid #D1D5DB;
+    background: #F9FAFB;
+    color: #1F2937;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.pos-denom-btn:hover {
+    border-color: #0070F4;
+    color: #0070F4;
+    background: #EBF5FF;
+}
+
+.pos-checkout-footer {
+    padding: 10px 12px;
+    border-top: 1px solid #E5E7EB;
+    background: #F9FAFB;
+}
+
+.pos-btn-pay-f9 {
+    width: 100%;
+    height: 52px;
+    background-color: #00B63E;
+    color: #FFFFFF;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 182, 62, 0.28);
+}
+
+.pos-btn-pay-f9:hover {
+    background-color: #009E35;
+}
+
+.pos-btn-pay-f9:disabled {
+    background-color: #9CA3AF;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Dropdown gợi ý khách hàng */
+.pos-cust-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #FFFFFF;
+    border: 1px solid #D1D5DB;
+    border-radius: 6px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    z-index: 50;
+    max-height: 210px;
+    overflow-y: auto;
+    display: none;
+}
+
+.pos-cust-option {
+    padding: 7px 10px;
+    border-bottom: 1px solid #F3F4F6;
+    cursor: pointer;
+    font-size: 12.5px;
+}
+
+.pos-cust-option:hover {
+    background: #EBF5FF;
+}
+
+/* Chuẩn hóa số liệu thẳng hàng dọc tuyệt đối */
+td, th, .so-tien, .ton-kho, .kpi-value, .pos-price-final, .pos-stock-pill {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Banner cảnh báo lô cận Date FEFO trên POS */
+.banner-canh-bao-fefo-pos {
+    background: #FFFBEB;
+    border-bottom: 1px solid #F59E0B;
+    color: #92400E;
+    padding: 6px 12px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.dong-fefo-pos {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.nut-xa-kho-pos {
+    background: #D97706;
+    color: #FFFFFF;
+    border: 1px solid #B45309;
+    border-radius: 5px;
+    padding: 2px 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.nut-xa-kho-pos:hover:not(:disabled) {
+    background: #B45309;
+}
+
+.nut-xa-kho-pos.da-ap-gia-xa {
+    background: #059669;
+    border-color: #047857;
+    color: #FFFFFF;
+    cursor: default;
+}
+
+/* Mẫu in hóa đơn nhiệt K80 (80mm) chuẩn thương mại */
+.hoa-don-nhiet-k80 {
+    width: 80mm;
+    max-width: 100%;
+    margin: 0 auto;
+    background: #FFFFFF;
+    color: #000000;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 6px 4px;
+}
+
+.hoa-don-nhiet-k80 .duong-ke-net-dut {
+    border-top: 1px dashed #111827;
+    margin: 6px 0;
+}
+
+.hoa-don-nhiet-k80 table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11.5px;
+}
+
+.hoa-don-nhiet-k80 th {
+    border-bottom: 1px solid #111827;
+    padding: 4px 2px;
+    font-weight: 700;
+}
+
+.hoa-don-nhiet-k80 td {
+    padding: 4px 2px;
+    vertical-align: top;
+    border-bottom: 1px dashed #D1D5DB;
+    font-variant-numeric: tabular-nums;
+}
+
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+    #modalPhieuInPos,
+    #modalPhieuInPos #areaInHoaDonPos,
+    #modalPhieuInPos #areaInHoaDonPos * {
+        visibility: visible !important;
+    }
+    #modalPhieuInPos {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 80mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #FFFFFF !important;
+    }
+    .modal-header, .modal-footer {
+        display: none !important;
+    }
+}

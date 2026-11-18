@@ -499,6 +499,22 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
                     _db.DotGiaoHangDaDiems.Add(dotGiao);
                     await _db.SaveChangesAsync();
                     maDotGh = dotGiao.MaDotGh;
+
+                    if (req.CoKemThiepQr && !string.IsNullOrWhiteSpace(maTokenQr))
+                    {
+                        _db.ThiepChucMung3ds.Add(new ThiepChucMung3d
+                        {
+                            MaTokenQr = maTokenQr,
+                            MaDonHang = donHang.MaDh,
+                            MaDotGiao = dotGiao.MaDotGh,
+                            TenNguoiGui = hoTenMua,
+                            TenNguoiNhan = dotGiao.TenNguoiNhan,
+                            LoiChuc = dotGiao.LoiChucThiep ?? "Kính chúc Quý khách & Gia đình mùa Trăng Rằm Đoàn Viên, Viên Mãn & An Khang!",
+                            MauGiaoDien = dotGiao.MauGiaoDienThiep ?? "CO_PHONG_HOANG_GIA",
+                            SoLanMoThiep = 0,
+                            NgayTao = DateTime.Now
+                        });
+                    }
                 }
 
                 // Hàm phụ trừ tồn kho Bánh lẻ và trừ SlconLai của Lô theo chuẩn FEFO
@@ -668,6 +684,20 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
                     else if (khachMember.DiemTichLuy >= 500) khachMember.HangTv = "Vàng";
                     else if (khachMember.DiemTichLuy >= 200) khachMember.HangTv = "Bạc";
                 }
+
+                // Ghi nhận trực tiếp Phiếu Thu POS vào bảng vật lý dbo.PhieuThuChi trong SQL Server
+                _db.PhieuThuChis.Add(new PhieuThuChi
+                {
+                    MaPhieuHienThi = $"PTH-{DateTime.Now:yyMMddHHmmss}",
+                    LoaiPhieu = "THU",
+                    HangMuc = "Thu tiền bán hàng POS tại quầy",
+                    SoTien = donHang.TongThanhToanCuoi,
+                    PhuongThuc = donHang.PhuongThucTt,
+                    MaDonHangLienKet = donHang.MaDh,
+                    NguoiNopNhan = donHang.HoTenNguoiMua,
+                    GhiChu = $"Thu tiền hóa đơn POS #{donHang.MaTraCuuDh}",
+                    NgayLap = DateTime.Now
+                });
 
                 await _db.SaveChangesAsync();
                 await transaction.CommitAsync();

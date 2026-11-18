@@ -48,12 +48,250 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
-// Khởi tạo & Chuẩn hóa dữ liệu CSDL khi khởi động (Hạn Voucher 2027, Lô sản xuất còn hạn & Filtered Index Thiệp QR)
+// Khởi tạo & Chuẩn hóa dữ liệu CSDL khi khởi động (Tạo 3 bảng vật lý mới, Migrate kiotviet_metadata.json, Hạn Voucher 2027 & Lô FEFO)
 using (var scope = app.Services.CreateScope())
 {
     try
     {
-        var db = scope.ServiceProvider.GetRequiredService<CSDLBanhTrungThuContext>();
+        var context = scope.ServiceProvider.GetRequiredService<CSDLBanhTrungThuContext>();
+        var db = context;
+
+        // 0. Tự động tạo 3 bảng vật lý PhieuThuChi, ThiepChucMung3D, CauHinhHeThong trong SQL Server nếu chưa tồn tại
+        context.Database.ExecuteSqlRaw(@"
+            IF OBJECT_ID('dbo.PhieuThuChi', 'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.PhieuThuChi (
+                    MaPhieu INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                    MaPhieuHienThi NVARCHAR(50) NOT NULL,
+                    LoaiPhieu NVARCHAR(20) NOT NULL,
+                    HangMuc NVARCHAR(100) NOT NULL,
+                    SoTien DECIMAL(18,2) NOT NULL,
+                    PhuongThuc NVARCHAR(30) NOT NULL,
+                    MaDonHangLienKet INT NULL,
+                    NguoiNopNhan NVARCHAR(150) NOT NULL,
+                    GhiChu NVARCHAR(500) NULL,
+                    NgayLap DATETIME NOT NULL DEFAULT(GETDATE())
+                );
+            END;
+
+            IF OBJECT_ID('dbo.ThiepChucMung3D', 'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.ThiepChucMung3D (
+                    MaThiep INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                    MaTokenQr NVARCHAR(60) NOT NULL UNIQUE,
+                    MaDonHang INT NOT NULL,
+                    MaDotGiao INT NULL,
+                    TenNguoiGui NVARCHAR(150) NOT NULL,
+                    TenNguoiNhan NVARCHAR(150) NOT NULL,
+                    LoiChuc NVARCHAR(1000) NOT NULL,
+                    MauGiaoDien NVARCHAR(100) NOT NULL,
+                    SoLanMoThiep INT NOT NULL DEFAULT(0),
+                    NgayTao DATETIME NOT NULL DEFAULT(GETDATE())
+                );
+            END;
+
+            IF OBJECT_ID('dbo.CauHinhHeThong', 'U') IS NULL
+            BEGIN
+                CREATE TABLE dbo.CauHinhHeThong (
+                    KhoaCauHinh NVARCHAR(100) NOT NULL PRIMARY KEY,
+                    GiaTriJson NVARCHAR(MAX) NOT NULL,
+                    MoTa NVARCHAR(255) NULL,
+                    NgayCapNhat DATETIME NOT NULL DEFAULT(GETDATE())
+                );
+            END;
+        ");
+
+        // 0B. Tự động Migrate dữ liệu từ wwwroot/data/kiotviet_metadata.json (nếu còn tồn tại) vào SQL Server rồi xóa vĩnh viễn file & thư mục
+        string thuMucDataCu = Path.Combine(app.Environment.WebRootPath, "data");
+        string fileJsonCu = Path.Combine(thuMucDataCu, "kiotviet_metadata.json");
+        var jsonOpt = new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
+
+        if (File.Exists(fileJsonCu))
+        {
+            try
+            {
+                string noiDungJsonCu = await File.ReadAllTextAsync(fileJsonCu);
+                var storeCu = System.Text.Json.JsonSerializer.Deserialize<KiotMetadataStore>(noiDungJsonCu, jsonOpt);
+                if (storeCu != null)
+                {
+                    if (!await db.CauHinhHeThongs.AnyAsync(c => c.KhoaCauHinh == DichVuKiotVietMetadata.KHOA_CAU_HINH_QR_MOMO))
+                    {
+                        db.CauHinhHeThongs.Add(new WebBanhTrungThu.Models.Entities.CauHinhHeThong
+                        {
+                            KhoaCauHinh = DichVuKiotVietMetadata.KHOA_CAU_HINH_QR_MOMO,
+                            GiaTriJson = System.Text.Json.JsonSerializer.Serialize(storeCu.CauHinhQr ?? new CauHinhThanhToanQr(), jsonOpt),
+                            MoTa = "Cấu hình Tài khoản nhận tiền Ví MoMo / VietQR (0814585526 - LE MINH DUC)",
+                            NgayCapNhat = DateTime.Now
+                        });
+                    }
+
+                    if (!await db.CauHinhHeThongs.AnyAsync(c => c.KhoaCauHinh == DichVuKiotVietMetadata.KHOA_METADATA_KIOTVIET))
+                    {
+                        db.CauHinhHeThongs.Add(new WebBanhTrungThu.Models.Entities.CauHinhHeThong
+                        {
+                            KhoaCauHinh = DichVuKiotVietMetadata.KHOA_METADATA_KIOTVIET,
+                            GiaTriJson = System.Text.Json.JsonSerializer.Serialize(storeCu, jsonOpt),
+                            MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO KiotViet",
+                            NgayCapNhat = DateTime.Now
+                        });
+                    }
+
+                    if (storeCu.DanhSachPhieuThuChi != null)
+                    {
+                        foreach (var p in storeCu.DanhSachPhieuThuChi)
+                        {
+                            string maHienThi = string.IsNullOrWhiteSpace(p.MaPhieu) ? $"PTH-{DateTime.Now:yyMMddHHmmss}" : p.MaPhieu;
+                            if (!await db.PhieuThuChis.AnyAsync(x => x.MaPhieuHienThi == maHienThi))
+                            {
+                                db.PhieuThuChis.Add(new WebBanhTrungThu.Models.Entities.PhieuThuChi
+                                {
+                                    MaPhieuHienThi = maHienThi,
+                                    LoaiPhieu = string.IsNullOrWhiteSpace(p.LoaiPhieu) ? "THU" : p.LoaiPhieu,
+                                    HangMuc = p.LoaiPhieu == "CHI" ? "Chi hoàn tiền đơn hàng" : "Thu tiền bán hàng",
+                                    SoTien = p.SoTien,
+                                    PhuongThuc = string.IsNullOrWhiteSpace(p.PhuongThuc) ? "MOMO_QR" : p.PhuongThuc,
+                                    MaDonHangLienKet = p.MaDh,
+                                    NguoiNopNhan = string.IsNullOrWhiteSpace(p.NguoiNopNhan) ? "Khách Hàng Nguyệt Cát" : p.NguoiNopNhan,
+                                    GhiChu = p.NoiDung,
+                                    NgayLap = p.ThoiGianTao == default ? DateTime.Now : p.ThoiGianTao
+                                });
+                            }
+                        }
+                    }
+
+                    if (storeCu.DonHangs != null)
+                    {
+                        foreach (var kvDh in storeCu.DonHangs)
+                        {
+                            if (kvDh.Value?.Thiep3DTheoToken == null) continue;
+                            foreach (var kvThiep in kvDh.Value.Thiep3DTheoToken)
+                            {
+                                string token = (kvThiep.Key ?? string.Empty).Trim();
+                                var thiepInfo = kvThiep.Value;
+                                if (!string.IsNullOrWhiteSpace(token) && thiepInfo != null &&
+                                    !await db.ThiepChucMung3ds.AnyAsync(t => t.MaTokenQr == token))
+                                {
+                                    int? maDot = await db.DotGiaoHangDaDiems
+                                        .Where(d => d.MaTokenThiepQr == token)
+                                        .Select(d => (int?)d.MaDotGh)
+                                        .FirstOrDefaultAsync();
+
+                                    db.ThiepChucMung3ds.Add(new WebBanhTrungThu.Models.Entities.ThiepChucMung3d
+                                    {
+                                        MaTokenQr = token,
+                                        MaDonHang = kvDh.Key,
+                                        MaDotGiao = maDot,
+                                        TenNguoiGui = string.IsNullOrWhiteSpace(thiepInfo.TenNguoiGuiThiep) ? "Khách Hàng Nguyệt Cát" : thiepInfo.TenNguoiGuiThiep,
+                                        TenNguoiNhan = string.IsNullOrWhiteSpace(thiepInfo.TenNguoiNhanThiep) ? "Quý Khách & Gia Đình" : thiepInfo.TenNguoiNhanThiep,
+                                        LoiChuc = string.IsNullOrWhiteSpace(thiepInfo.LoiChucThiep)
+                                            ? "Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên, Viên Mãn & An Khang!"
+                                            : thiepInfo.LoiChucThiep,
+                                        MauGiaoDien = string.IsNullOrWhiteSpace(thiepInfo.MauGiaoDienThiep) ? "CO_PHONG_HOANG_GIA" : thiepInfo.MauGiaoDienThiep,
+                                        SoLanMoThiep = 0,
+                                        NgayTao = DateTime.Now
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    await db.SaveChangesAsync();
+                }
+            }
+            catch
+            {
+                // Bỏ qua lỗi đọc file cũ nếu có
+            }
+
+            File.Delete(fileJsonCu);
+        }
+
+        if (Directory.Exists(thuMucDataCu))
+        {
+            Directory.Delete(thuMucDataCu, true);
+        }
+
+        // 0C. Đảm bảo 3 bảng vật lý luôn có dữ liệu chuẩn trong SQL Server (kể cả sau khi file JSON đã xóa)
+        if (!await db.CauHinhHeThongs.AnyAsync(c => c.KhoaCauHinh == DichVuKiotVietMetadata.KHOA_CAU_HINH_QR_MOMO))
+        {
+            db.CauHinhHeThongs.Add(new WebBanhTrungThu.Models.Entities.CauHinhHeThong
+            {
+                KhoaCauHinh = DichVuKiotVietMetadata.KHOA_CAU_HINH_QR_MOMO,
+                GiaTriJson = System.Text.Json.JsonSerializer.Serialize(new CauHinhThanhToanQr(), jsonOpt),
+                MoTa = "Cấu hình Tài khoản nhận tiền Ví MoMo / VietQR (0814585526 - LE MINH DUC)",
+                NgayCapNhat = DateTime.Now
+            });
+        }
+
+        if (!await db.CauHinhHeThongs.AnyAsync(c => c.KhoaCauHinh == DichVuKiotVietMetadata.KHOA_METADATA_KIOTVIET))
+        {
+            db.CauHinhHeThongs.Add(new WebBanhTrungThu.Models.Entities.CauHinhHeThong
+            {
+                KhoaCauHinh = DichVuKiotVietMetadata.KHOA_METADATA_KIOTVIET,
+                GiaTriJson = System.Text.Json.JsonSerializer.Serialize(DichVuKiotVietMetadata.TaoDuLieuMacDinh(), jsonOpt),
+                MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO KiotViet",
+                NgayCapNhat = DateTime.Now
+            });
+        }
+
+        // Đồng bộ các đợt giao hàng có Thiệp QR trong DotGiaoHang_DaDiem sang bảng vật lý dbo.ThiepChucMung3D
+        var cacDotCoThiep = await db.DotGiaoHangDaDiems
+            .Include(d => d.MaDhNavigation)
+            .Where(d => d.CoKemThiepQr && d.MaTokenThiepQr != null && d.MaTokenThiepQr != "")
+            .ToListAsync();
+
+        foreach (var dot in cacDotCoThiep)
+        {
+            string token = dot.MaTokenThiepQr!.Trim();
+            if (!await db.ThiepChucMung3ds.AnyAsync(t => t.MaTokenQr == token))
+            {
+                db.ThiepChucMung3ds.Add(new WebBanhTrungThu.Models.Entities.ThiepChucMung3d
+                {
+                    MaTokenQr = token,
+                    MaDonHang = dot.MaDh,
+                    MaDotGiao = dot.MaDotGh,
+                    TenNguoiGui = dot.MaDhNavigation?.HoTenNguoiMua ?? "Khách Hàng Nguyệt Cát",
+                    TenNguoiNhan = dot.TenNguoiNhan,
+                    LoiChuc = string.IsNullOrWhiteSpace(dot.LoiChucThiep)
+                        ? "Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên, Viên Mãn & An Khang!"
+                        : dot.LoiChucThiep,
+                    MauGiaoDien = string.IsNullOrWhiteSpace(dot.MauGiaoDienThiep) ? "CO_PHONG_HOANG_GIA" : dot.MauGiaoDienThiep,
+                    SoLanMoThiep = dot.SoLanMoThiep,
+                    NgayTao = dot.MaDhNavigation?.NgayDat ?? DateTime.Now
+                });
+            }
+        }
+
+        // Đồng bộ các đơn hàng đã thanh toán sang bảng vật lý dbo.PhieuThuChi nếu bảng đang trống
+        if (!await db.PhieuThuChis.AnyAsync())
+        {
+            var cacDonDaThu = await db.DonHangs
+                .Where(d => d.TrangThaiTt == "DA_TT" || d.TrangThaiTt == "DA_THANH_TOAN")
+                .OrderByDescending(d => d.NgayDat)
+                .ToListAsync();
+
+            foreach (var dh in cacDonDaThu)
+            {
+                db.PhieuThuChis.Add(new WebBanhTrungThu.Models.Entities.PhieuThuChi
+                {
+                    MaPhieuHienThi = $"PTH-{dh.NgayDat:yyMMdd}-{dh.MaDh:D3}",
+                    LoaiPhieu = "THU",
+                    HangMuc = "Thu tiền bán hàng",
+                    SoTien = dh.TongThanhToanCuoi,
+                    PhuongThuc = string.IsNullOrWhiteSpace(dh.PhuongThucTt) ? "MOMO_QR" : dh.PhuongThucTt,
+                    MaDonHangLienKet = dh.MaDh,
+                    NguoiNopNhan = dh.HoTenNguoiMua,
+                    GhiChu = $"Thu tiền đơn hàng #{dh.MaTraCuuDh}",
+                    NgayLap = dh.NgayDat
+                });
+            }
+        }
+
+        await db.SaveChangesAsync();
 
         // 1. Cho phép nhiều bản ghi DotGiaoHang_DaDiem có MaTokenThiepQR = NULL khi khách không chọn Thiệp 3D
         await db.Database.ExecuteSqlRawAsync(@"
