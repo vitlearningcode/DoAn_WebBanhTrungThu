@@ -1,0 +1,149 @@
+@{
+    var ctrl = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+}
+
+<!-- TẦNG 1: TOP HEADER TRẮNG 48PX -->
+<header class="kv-top-header">
+    <a href="/Admin/Dashboard/Index" class="kv-brand">
+        <span class="kv-brand-circle">K</span>
+        <span class="kv-brand-text">KiotViet</span>
+    </a>
+
+    <div class="kv-top-links">
+        <a href="/Admin/DonHangAdmin/Index" class="kv-top-link hide-mobile">
+            <i class="bi bi-truck"></i> Giao hàng
+        </a>
+        <a href="/Admin/SoQuyAdmin/Index" class="kv-top-link hide-mobile">
+            <i class="bi bi-cash-coin"></i> Vay vốn
+        </a>
+        <a href="/Admin/KhoAnhAdmin/Index" class="kv-top-link hide-mobile">
+            <i class="bi bi-images"></i> Kho ảnh
+        </a>
+        <a href="/TraCuuDonHang" target="_blank" class="kv-top-link hide-mobile">
+            <i class="bi bi-question-circle"></i> Trợ giúp
+        </a>
+        <a href="/" target="_blank" class="kv-top-link hide-mobile">
+            <i class="bi bi-chat-left-text"></i> Góp ý
+        </a>
+
+        <!-- Nút mở nhanh Modal Cấu hình Tài khoản QR MoMo -->
+        <button type="button" class="kv-icon-btn" data-bs-toggle="modal" data-bs-target="#modalCauHinhMoMoQuanTri" title="Cấu hình Tài khoản nhận tiền QR MoMo">
+            <i class="bi bi-qr-code-scan text-primary"></i>
+        </button>
+
+        <!-- Nút Khôi phục CSDL mẫu gọn nhẹ -->
+        <form asp-area="Admin" asp-controller="Dashboard" asp-action="KhoiPhucDuLieuGoc" method="post" class="d-inline"
+              onsubmit="return confirm('Khôi phục dữ liệu mẫu gốc từ sp_KhoiPhucDuLieuGoc?');">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="kv-icon-btn" title="Khôi phục dữ liệu mẫu SQL">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </form>
+
+        <a href="/Admin/DonHangAdmin/Index" class="kv-icon-btn" title="Thông báo đơn hàng">
+            <i class="bi bi-bell"></i>
+        </a>
+        <a href="/Admin/SanPhamAdmin/ThietLapGia" class="kv-icon-btn" title="Cài đặt bảng giá">
+            <i class="bi bi-gear"></i>
+        </a>
+
+        <div class="d-flex align-items-center gap-2 ps-2 border-start">
+            @{
+                string curRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "QUAN_TRI";
+            }
+            <form asp-area="" asp-controller="TaiKhoan" asp-action="ChuyenNhanhVaiTroDemo" method="post" class="d-inline-flex align-items-center gap-1 m-0">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                <select name="maVt" onchange="this.form.submit()" class="form-select form-select-sm py-0 px-2"
+                        style="height: 26px; font-size: 12px; width: auto; border-color: #BFDBFE; background-color: #EBF5FF; color: #005AC3; font-weight: 600;"
+                        title="Chuyển nhanh quyền để kiểm thử phân quyền Thu ngân / Giao hàng / Quản trị">
+                    <option value="QUAN_TRI" selected="@(curRole == "QUAN_TRI")">👑 Quyền: Quản trị viên</option>
+                    <option value="THU_NGAN" selected="@(curRole == "THU_NGAN" || curRole == "NHAN_VIEN")">💼 Quyền: Thu ngân & Order</option>
+                    <option value="GIAO_HANG" selected="@(curRole == "GIAO_HANG")">🚚 Quyền: Nhân viên giao hàng</option>
+                </select>
+            </form>
+            <span class="fw-medium text-dark hide-mobile">@(User.Identity?.Name ?? "Admin")</span>
+            <form asp-area="" asp-controller="TaiKhoan" asp-action="DangXuat" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="kv-icon-btn text-danger" title="Đăng xuất">
+                    <i class="bi bi-box-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+</header>
+
+<!-- TẦNG 2: THANH MENU XANH #0070F4 44PX -->
+<nav class="kv-navbar">
+    <ul class="kv-nav-list">
+        <!-- 1. Tổng quan -->
+        <li class="kv-nav-item">
+            <a href="/Admin/Dashboard/Index" class="kv-nav-link @(ctrl == "Dashboard" ? "active" : "")">
+                <i class="bi bi-eye"></i> Tổng quan
+            </a>
+        </li>
+
+        <!-- 2. Hàng hóa -->
+        <li class="kv-nav-item">
+            <a href="/Admin/SanPhamAdmin/Index" class="kv-nav-link @(ctrl == "SanPhamAdmin" || ctrl == "KhoAnhAdmin" ? "active" : "")">
+                <i class="bi bi-box-seam"></i> Hàng hóa <i class="bi bi-chevron-down" style="font-size: 10px;"></i>
+            </a>
+            <div class="kv-dropdown-menu">
+                <a href="/Admin/SanPhamAdmin/Index" class="kv-dropdown-item">
+                    <i class="bi bi-grid"></i> Danh mục hàng hóa
+                </a>
+                <a href="/Admin/SanPhamAdmin/ThietLapGia" class="kv-dropdown-item">
+                    <i class="bi bi-tags"></i> Thiết lập giá
+                </a>
+                <a href="/Admin/SanPhamAdmin/KiemKho" class="kv-dropdown-item">
+                    <i class="bi bi-clipboard-check"></i> Kiểm kho / Lô hạn dùng
+                </a>
+            </div>
+        </li>
+
+        <!-- 3. Đơn hàng -->
+        <li class="kv-nav-item">
+            <a href="/Admin/DonHangAdmin/Index" class="kv-nav-link @(ctrl == "DonHangAdmin" ? "active" : "")">
+                <i class="bi bi-receipt"></i> Đơn hàng <i class="bi bi-chevron-down" style="font-size: 10px;"></i>
+            </a>
+            <div class="kv-dropdown-menu">
+                <a href="/Admin/DonHangAdmin/Index?locTrangThai=CHO_XAC_NHAN" class="kv-dropdown-item">
+                    <i class="bi bi-file-earmark-check"></i> Đặt hàng
+                </a>
+                <a href="/Admin/DonHangAdmin/Index" class="kv-dropdown-item">
+                    <i class="bi bi-receipt-cutoff"></i> Hóa đơn
+                </a>
+                <a href="/Admin/DonHangAdmin/Index?locTrangThai=DA_HUY" class="kv-dropdown-item">
+                    <i class="bi bi-arrow-return-left"></i> Trả hàng
+                </a>
+            </div>
+        </li>
+
+        <!-- 4. Khách hàng -->
+        <li class="kv-nav-item">
+            <a href="/Admin/KhachHangAdmin/Index" class="kv-nav-link @(ctrl == "KhachHangAdmin" ? "active" : "")">
+                <i class="bi bi-people"></i> Khách hàng <i class="bi bi-chevron-down" style="font-size: 10px;"></i>
+            </a>
+            <div class="kv-dropdown-menu">
+                <a href="/Admin/KhachHangAdmin/Index" class="kv-dropdown-item">
+                    <i class="bi bi-person-vcard"></i> Khách hàng
+                </a>
+                <a href="/Admin/KhachHangAdmin/KhuyenMai" class="kv-dropdown-item">
+                    <i class="bi bi-ticket-perforated"></i> Khuyến mãi
+                </a>
+            </div>
+        </li>
+
+        <!-- 5. Sổ quỹ -->
+        <li class="kv-nav-item">
+            <a href="/Admin/SoQuyAdmin/Index" class="kv-nav-link @(ctrl == "SoQuyAdmin" ? "active" : "")">
+                <i class="bi bi-wallet2"></i> Sổ quỹ
+            </a>
+        </li>
+    </ul>
+
+    <!-- Góc phải thanh xanh: Nút Bán hàng -->
+    <a href="/" target="_blank" class="btn-kv-pos">
+        <i class="bi bi-basket2-fill"></i> Bán hàng
+    </a>
+</nav>

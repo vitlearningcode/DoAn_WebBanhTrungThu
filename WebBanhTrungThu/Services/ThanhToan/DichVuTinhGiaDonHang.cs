@@ -3,6 +3,7 @@ using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
 using WebBanhTrungThu.ViewModels;
+using GioHang = WebBanhTrungThu.Models.Entities.GioHang;
 
 namespace WebBanhTrungThu.Services.ThanhToan
 {
@@ -70,7 +71,7 @@ namespace WebBanhTrungThu.Services.ThanhToan
         /// Kiểm tra điều kiện & hạn dùng mã khuyến mãi (MaKhuyenMai), và tính PhiVanChuyen chuẩn xác.
         /// </summary>
         public async Task<KetQuaTinhChiPhiDonHang> TinhToanChiPhiDonHangAsync(
-            GioHang gioHang,
+            Models.Entities.GioHang gioHang,
             int? maNd,
             bool laDonDoanhNghiepB2B = false,
             bool yeuCauInLogo = false,

@@ -7,6 +7,7 @@ using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
 using WebBanhTrungThu.Services.ThanhToan;
 using WebBanhTrungThu.ViewModels;
+using GioHang = WebBanhTrungThu.Models.Entities.GioHang;
 
 namespace WebBanhTrungThu.Services
 {
@@ -89,11 +90,11 @@ namespace WebBanhTrungThu.Services
         // =========================================================================
         public string TaoAnhSvgCaptcha(out string maCaptcha) => _dichVuCaptcha.TaoAnhSvgCaptcha(out maCaptcha);
 
-        public Task<KetQuaKiemTraTonKhoGioHang> KiemTraTonKhoGioHangAsync(GioHang gioHang)
+        public Task<KetQuaKiemTraTonKhoGioHang> KiemTraTonKhoGioHangAsync(Models.Entities.GioHang gioHang)
             => _dichVuTonKho.KiemTraTonKhoGioHangAsync(gioHang);
 
         public Task<KetQuaTinhChiPhiDonHang> TinhToanChiPhiDonHangAsync(
-            GioHang gioHang,
+            Models.Entities.GioHang gioHang,
             int? maNd,
             bool laDonDoanhNghiepB2B = false,
             bool yeuCauInLogo = false,
@@ -113,9 +114,9 @@ namespace WebBanhTrungThu.Services
         public Task HoanTraTonKhoRollbackAsync(DonHang donHang)
             => _dichVuTonKho.HoanTraTonKhoRollbackAsync(donHang);
 
-        public async Task<GioHang?> LayGioHangDayDuAsync(int? maNd, string? maPhienKvl)
+        public async Task<Models.Entities.GioHang?> LayGioHangDayDuAsync(int? maNd, string? maPhienKvl)
         {
-            IQueryable<GioHang> truyVan = _context.GioHangs
+            IQueryable<Models.Entities.GioHang> truyVan = _context.GioHangs
                 .Include(g => g.ChiTietGioHangs).ThenInclude(ct => ct.MaBanhNavigation).ThenInclude(b => b!.LoSanXuatBanhs)
                 .Include(g => g.ChiTietGioHangs).ThenInclude(ct => ct.MaCbNavigation).ThenInclude(cb => cb!.MaVhNavigation)
                 .Include(g => g.ChiTietGioHangs).ThenInclude(ct => ct.MaCbNavigation).ThenInclude(cb => cb!.ChiTietComboMaus).ThenInclude(ctcb => ctcb.MaBanhNavigation).ThenInclude(b => b!.LoSanXuatBanhs)
@@ -131,7 +132,7 @@ namespace WebBanhTrungThu.Services
         // 2. XỬ LÝ ĐẶT HÀNG TRỌN GÓI TRONG GIAO DỊCH ACID
         // =========================================================================
         public async Task<KetQuaXuLyDatHang> XuLyDatHangAsync(
-            GioHang gioHang,
+            Models.Entities.GioHang gioHang,
             TaoDonHangRequest req,
             int? maNd,
             string? maPhienKvl,

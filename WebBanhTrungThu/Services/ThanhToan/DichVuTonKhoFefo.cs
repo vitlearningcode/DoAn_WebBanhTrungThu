@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using GioHang = WebBanhTrungThu.Models.Entities.GioHang;
 
 namespace WebBanhTrungThu.Services.ThanhToan
 {
@@ -23,7 +24,7 @@ namespace WebBanhTrungThu.Services.ThanhToan
         /// (SlconLai > 0 && HanSuDung > DateTime.Today && TrangThaiLo == "DANG_BAN" / "XA_CAN_DATE") trong bảng LoSanXuatBanh.
         /// Trả về danh sách tên các bánh bị thiếu (nếu có).
         /// </summary>
-        public async Task<KetQuaKiemTraTonKhoGioHang> KiemTraTonKhoGioHangAsync(GioHang gioHang)
+        public async Task<KetQuaKiemTraTonKhoGioHang> KiemTraTonKhoGioHangAsync(Models.Entities.GioHang gioHang)
         {
             var ketQua = new KetQuaKiemTraTonKhoGioHang();
             DateOnly homNay = LayNgayHienTai();
