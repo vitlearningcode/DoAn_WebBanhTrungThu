@@ -5,6 +5,7 @@ using Microsoft.Extensions.FileProviders;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Middlewares;
 using WebBanhTrungThu.Services;
+using WebBanhTrungThu.Services.GiaoDien;
 using WebBanhTrungThu.Services.GioHang;
 using WebBanhTrungThu.Services.QuanTri;
 using WebBanhTrungThu.Services.TaiKhoan;
@@ -39,6 +40,8 @@ builder.Services.AddScoped<DichVuQuanTriBangGia>();
 builder.Services.AddScoped<DichVuQuanTriKhoFefo>();
 builder.Services.AddScoped<DichVuQuanTriDonHang>();
 builder.Services.AddScoped<DichVuBanHangPos>();
+builder.Services.AddScoped<DichVuTrangChu>();
+builder.Services.AddScoped<DichVuThongKeVaSoQuy>();
 builder.Services.AddSingleton<DichVuCauHinhHeThong>();
 
 // 4. Cấu hình Cookie Authentication thuần

@@ -1,4 +1,4 @@
-﻿# =============================================================================
+# =============================================================================
 # SCRIPT DỌN DẸP RÁC BIÊN DỊCH & ĐÓNG GÓI ĐỒ ÁN SẠCH (< 3MB)
 # Cách chạy: Mở PowerShell tại thư mục gốc Solution và gõ: ./don-dep-dong-goi.ps1
 # =============================================================================
@@ -36,6 +36,7 @@ Write-Host "2. ĐANG ĐÓNG GÓI MÃ NGUỒN SẠCH RA FILE ZIP NỘP ĐỒ ÁN.
 Write-Host "================================================================" -ForegroundColor Cyan
 
 $duongDanFileZip = Join-Path $thuMucGoc "NopDoAn_WebBanhTrungThu_Sach.zip"
+if (Test-Path "NopDoAn_WebBanhTrungThu_Sach.zip") { Remove-Item "NopDoAn_WebBanhTrungThu_Sach.zip" -Force }
 if (Test-Path $duongDanFileZip) {
     Remove-Item -Path $duongDanFileZip -Force
 }
