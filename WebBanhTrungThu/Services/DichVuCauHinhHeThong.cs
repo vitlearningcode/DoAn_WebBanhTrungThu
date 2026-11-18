@@ -121,6 +121,14 @@ namespace WebBanhTrungThu.Services
         public string? NguoiCapNhatCuoi { get; set; }
         public DateTime? HanThanhToan { get; set; }
         public bool DaRollbackKho { get; set; }
+        public int DiemDaDung { get; set; }
+        public decimal TienGiamDiem { get; set; }
+        public string? HangTvLucDat { get; set; }
+        public decimal PhanTramGiamVip { get; set; }
+        public decimal TienGiamVip { get; set; }
+        public bool DaCongDiemThuong { get; set; }
+        public int DiemThuongDaCong { get; set; }
+        public bool DaHoanDiemKhiHuy { get; set; }
         public List<NhatKyTruLoFefo> DanhSachLoDaTru { get; set; } = new();
         public List<NhatKyTruVoHop> DanhSachVoHopDaTru { get; set; } = new();
         public Dictionary<string, ThongTinThiep3DMeta> Thiep3DTheoToken { get; set; } = new();

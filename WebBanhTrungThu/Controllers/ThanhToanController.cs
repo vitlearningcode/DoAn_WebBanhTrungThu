@@ -68,6 +68,10 @@ namespace WebBanhTrungThu.Controllers
                 CodeKmDangDung = chiPhi.CodeKmDangDung,
                 ThongTinVoucherGoiY = chiPhi.ThongTinVoucherGoiY,
                 DanhSachCanhBaoTonKho = ketQuaKho.DanhSachCanhBao,
+                DiemTichLuy = chiPhi.DiemTichLuyHienCo,
+                HangTv = chiPhi.HangTv,
+                PhanTramGiamVip = chiPhi.PhanTramGiamVip,
+                TienGiamVip = chiPhi.TienGiamVip,
                 DaDangNhap = maNd.HasValue,
                 MaPhienHienTai = maNd.HasValue ? $"MEMBER #{maNd.Value}" : (maPhienKvl ?? "GUEST")
             };

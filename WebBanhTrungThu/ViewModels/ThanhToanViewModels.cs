@@ -18,6 +18,10 @@ namespace WebBanhTrungThu.ViewModels
         public string? CodeKmDangDung { get; set; }
         public string ThongTinVoucherGoiY { get; set; } = "HSD: 31/12/2027 • Đơn từ 200k";
         public List<string> DanhSachCanhBaoTonKho { get; set; } = new();
+        public int DiemTichLuy { get; set; }
+        public string HangTv { get; set; } = "Đồng";
+        public decimal PhanTramGiamVip { get; set; }
+        public decimal TienGiamVip { get; set; }
 
         // 2. Thông tin Người đặt (Member hoặc Guest)
         public bool DaDangNhap { get; set; }
@@ -67,6 +71,7 @@ namespace WebBanhTrungThu.ViewModels
         public bool CoThiep3D { get; set; } = false;
         public string? MaCaptcha { get; set; }
         public bool DaXacThucCaptcha { get; set; }
+        public bool DungDiemTichLuy { get; set; }
 
         // 2. Tùy chọn Doanh nghiệp B2B
         public bool LaDonDoanhNghiepB2B { get; set; }

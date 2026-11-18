@@ -56,8 +56,6 @@ namespace WebBanhTrungThu.ViewModels
             string tenGoi = hoTen.Split(' ', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? "N";
             ChuCaiDauTen = tenGoi.Length > 0 ? tenGoi.Substring(0, 1).ToUpperInvariant() : "N";
 
-            TenHangHienTai = string.IsNullOrWhiteSpace(NguoiDung?.HangTv) ? "Đồng" : NguoiDung.HangTv.Trim();
-
             TongSoDonHang = LichSuDonHang?.Count ?? 0;
             TongSoDiaChi = DanhSachSoDiaChi?.Count ?? 0;
             TongSoHopTuChon = DanhSachHopTuChon?.Count ?? 0;
@@ -66,26 +64,30 @@ namespace WebBanhTrungThu.ViewModels
                 .Where(d => !string.Equals(d.TrangThaiDh, "DA_HUY", StringComparison.OrdinalIgnoreCase))
                 .Sum(d => d.TongThanhToanCuoi);
 
-            int diemHienTai = Math.Max(0, NguoiDung?.DiemTichLuy ?? 0);
-            if (diemHienTai < 100)
+            var (hangVipChuan, _, diemXetHang) = Services.TaiKhoan.DichVuHoiVien.XacDinhHangVipTheoChiTieu(
+                NguoiDung?.DiemTichLuy ?? 0,
+                TongChiTieuTichLuy);
+            TenHangHienTai = hangVipChuan;
+
+            if (diemXetHang < 100)
             {
                 TenHangTiepTheo = "Hạng Bạc (100 điểm - Ưu đãi giảm 3%)";
-                DiemCanThangHang = 100 - diemHienTai;
-                PhanTramTienTrinhVip = Math.Clamp((int)Math.Round(diemHienTai * 100.0 / 100.0), 4, 99);
+                DiemCanThangHang = 100 - diemXetHang;
+                PhanTramTienTrinhVip = Math.Clamp((int)Math.Round(diemXetHang * 100.0 / 100.0), 4, 99);
                 DaDatDinhVip = false;
             }
-            else if (diemHienTai < 300)
+            else if (diemXetHang < 300)
             {
                 TenHangTiepTheo = "Hạng Vàng (300 điểm - Ưu đãi giảm 5%)";
-                DiemCanThangHang = 300 - diemHienTai;
-                PhanTramTienTrinhVip = Math.Clamp((int)Math.Round((diemHienTai - 100) * 100.0 / 200.0), 6, 99);
+                DiemCanThangHang = 300 - diemXetHang;
+                PhanTramTienTrinhVip = Math.Clamp((int)Math.Round((diemXetHang - 100) * 100.0 / 200.0), 6, 99);
                 DaDatDinhVip = false;
             }
-            else if (diemHienTai < 600)
+            else if (diemXetHang < 600)
             {
                 TenHangTiepTheo = "Hạng Kim Cương (600 điểm - Ưu đãi giảm 10% + Quà VIP)";
-                DiemCanThangHang = 600 - diemHienTai;
-                PhanTramTienTrinhVip = Math.Clamp((int)Math.Round((diemHienTai - 300) * 100.0 / 300.0), 6, 99);
+                DiemCanThangHang = 600 - diemXetHang;
+                PhanTramTienTrinhVip = Math.Clamp((int)Math.Round((diemXetHang - 300) * 100.0 / 300.0), 6, 99);
                 DaDatDinhVip = false;
             }
             else

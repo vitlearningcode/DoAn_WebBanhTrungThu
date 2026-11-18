@@ -166,10 +166,21 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
             DateTime? hanSuDung,
             int slNhapBanDau = 50,
             decimal phanTramGiamCanDate = 0m,
+            string? nguonHangPhanPhoi = null,
+            decimal donGiaNhapSi = 0m,
+            bool tuDongGhiPhieuChi = false,
             string? returnUrl = null)
         {
             var (hopLe, thongBao) = await _dichVuKhoFefo.ThemLoBanhMoiAsync(
-                maBanh, maLoCode, ngaySanXuat, hanSuDung, slNhapBanDau, phanTramGiamCanDate);
+                maBanh,
+                maLoCode,
+                ngaySanXuat,
+                hanSuDung,
+                slNhapBanDau,
+                phanTramGiamCanDate,
+                nguonHangPhanPhoi,
+                donGiaNhapSi,
+                tuDongGhiPhieuChi);
 
             TempData[hopLe ? "ThongBaoAdmin" : "LoiAdmin"] = thongBao;
 

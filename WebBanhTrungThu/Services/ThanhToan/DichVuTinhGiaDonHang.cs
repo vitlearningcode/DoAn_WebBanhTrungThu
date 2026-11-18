@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.TaiKhoan;
 using WebBanhTrungThu.ViewModels;
 using GioHang = WebBanhTrungThu.Models.Entities.GioHang;
 
@@ -79,7 +80,8 @@ namespace WebBanhTrungThu.Services.ThanhToan
             string? tocDoGiaoHang = null,
             List<DotGiaoHangInput>? danhSachDotGiao = null,
             bool capNhatLuotDungVoucher = false,
-            bool luuCapNhatGiaGioHang = false)
+            bool luuCapNhatGiaGioHang = false,
+            bool dungDiemTichLuy = false)
         {
             bool coCapNhatGia = false;
             foreach (var ct in gioHang.ChiTietGioHangs)
@@ -167,8 +169,40 @@ namespace WebBanhTrungThu.Services.ThanhToan
                 }
             }
 
-            // 3. Tính phí vận chuyển (Nhận tại cửa hàng / Tiêu chuẩn Freeship 500k / Hỏa tốc 6h TP.HCM & An Giang)
-            decimal tienHangSauGiam = Math.Max(0m, tongTienHang - tienChietKhauB2B - tienGiamVoucher);
+            // 3. Tính ưu đãi Hạng VIP (không tụt hạng khi tiêu điểm) & Tiêu điểm tích lũy (1 điểm = 1.000đ, tối đa 50% tiền hàng sau giảm)
+            decimal tienHangSauCkVaVoucher = Math.Max(0m, tongTienHang - tienChietKhauB2B - tienGiamVoucher);
+            string hangTv = "Đồng";
+            decimal phanTramGiamVip = 0m;
+            decimal tongChiTieuTichLuy = 0m;
+            int diemTichLuyHienCo = 0;
+
+            if (maNd.HasValue)
+            {
+                var nd = await _context.NguoiDungs
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.MaNd == maNd.Value);
+
+                if (nd != null)
+                {
+                    diemTichLuyHienCo = Math.Max(0, nd.DiemTichLuy);
+                    (hangTv, phanTramGiamVip, tongChiTieuTichLuy, _) = await DichVuHoiVien.TinhThongTinHangVipAsync(
+                        _context,
+                        nd.MaNd,
+                        diemTichLuyHienCo);
+                }
+            }
+
+            decimal tienGiamVip = phanTramGiamVip > 0m
+                ? Math.Round(tienHangSauCkVaVoucher * (phanTramGiamVip / 100m), 0)
+                : 0m;
+            decimal tienHangSauVip = Math.Max(0m, tienHangSauCkVaVoucher - tienGiamVip);
+
+            int diemToiDaTheoDon = (int)Math.Floor((tienHangSauVip * 0.5m) / 1000m);
+            int diemTichLuySeDung = dungDiemTichLuy ? Math.Min(diemTichLuyHienCo, diemToiDaTheoDon) : 0;
+            decimal tienGiamDiem = diemTichLuySeDung * 1000m;
+
+            // 4. Tính phí vận chuyển (Nhận tại cửa hàng / Tiêu chuẩn Freeship 500k / Hỏa tốc 6h TP.HCM & An Giang)
+            decimal tienHangSauGiam = Math.Max(0m, tienHangSauVip - tienGiamDiem);
             bool duMocFreeship500k = tienHangSauGiam >= 500000m;
 
             var cacDotGiao = danhSachDotGiao ?? new List<DotGiaoHangInput>();
@@ -215,6 +249,13 @@ namespace WebBanhTrungThu.Services.ThanhToan
                 TienGiamVoucher = tienGiamVoucher,
                 CodeKmDangDung = codeKmDangDung,
                 ThongTinVoucherGoiY = thongTinVoucherGoiY,
+                HangTv = hangTv,
+                PhanTramGiamVip = phanTramGiamVip,
+                TienGiamVip = tienGiamVip,
+                TongChiTieuTichLuy = tongChiTieuTichLuy,
+                DiemTichLuyHienCo = diemTichLuyHienCo,
+                DiemTichLuySeDung = diemTichLuySeDung,
+                TienGiamDiem = tienGiamDiem,
                 TienHangSauGiam = tienHangSauGiam,
                 LaNhanTaiCuaHang = laNhanTaiCuaHang,
                 HopLeVungHoaToc = hopLeVungHoaToc,

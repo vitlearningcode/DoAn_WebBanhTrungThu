@@ -48,7 +48,10 @@ namespace WebBanhTrungThu.Services.QuanTri
             DateTime? ngaySanXuat,
             DateTime? hanSuDung,
             int slNhapBanDau = 50,
-            decimal phanTramGiamCanDate = 0m)
+            decimal phanTramGiamCanDate = 0m,
+            string? nguonHangPhanPhoi = null,
+            decimal donGiaNhapSi = 0m,
+            bool tuDongGhiPhieuChi = false)
         {
             var banh = await _db.SanPhamBanhs.FindAsync(maBanh);
             if (banh == null)
@@ -93,9 +96,43 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             _db.LoSanXuatBanhs.Add(loMoi);
             banh.TongTonKho = Math.Max(0, banh.TongTonKho) + slNhap;
+
+            string hangPhanPhoi = ChuanHoaChuoi(nguonHangPhanPhoi, "Kinh Đô");
+            decimal giaNhapSi = donGiaNhapSi > 0m
+                ? Math.Round(donGiaNhapSi, 0)
+                : (banh.GiaVon > 0m ? Math.Round(banh.GiaVon, 0) : 0m);
+            decimal tongChiNhapHang = slNhap * giaNhapSi;
+            bool daGhiPhieuChi = false;
+
+            if (tuDongGhiPhieuChi && tongChiNhapHang > 0m)
+            {
+                DateTime ngayLapPhieu = LayThoiGianHeThong();
+                string maPhieuHienThi = $"PCH-NH-{ngayLapPhieu:yyMMddHHmmss}";
+                string ghiChu = $"Nhập lô [{code}] - {banh.TenBanh} ({slNhap:N0} bánh x {giaNhapSi:N0} đ) từ hãng {hangPhanPhoi}";
+                if (ghiChu.Length > 500) ghiChu = ghiChu[..500];
+
+                _db.PhieuThuChis.Add(new PhieuThuChi
+                {
+                    MaPhieuHienThi = maPhieuHienThi,
+                    LoaiPhieu = "CHI",
+                    HangMuc = "Nhập lô bánh từ hãng",
+                    SoTien = tongChiNhapHang,
+                    PhuongThuc = "CHUYEN_KHOAN",
+                    MaDonHangLienKet = null,
+                    NguoiNopNhan = hangPhanPhoi,
+                    GhiChu = ghiChu,
+                    NgayLap = ngayLapPhieu
+                });
+                daGhiPhieuChi = true;
+            }
+
             await _db.SaveChangesAsync();
 
-            return (true, $"Đã nhập lô mới [{code}] cho bánh '{banh.TenBanh}' (+{slNhap:N0} bánh vào tổng tồn kho)!");
+            string thongBaoChi = daGhiPhieuChi
+                ? $" Đã tự động lập Phiếu Chi {tongChiNhapHang:N0} đ ({hangPhanPhoi}) vào Sổ quỹ!"
+                : string.Empty;
+
+            return (true, $"Đã nhập lô mới [{code}] cho bánh '{banh.TenBanh}' (+{slNhap:N0} bánh vào tổng tồn kho)!{thongBaoChi}");
         }
 
         public async Task<string?> CapNhatGiamGiaCanDateAsync(

@@ -3,6 +3,7 @@ using QRCoder;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.TaiKhoan;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Services.QuanTri
@@ -155,6 +156,8 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             await _db.SaveChangesAsync();
 
+            await DichVuHoiVien.CongDiemThuongDonHangAsync(_db, _cauHinhHeThong, donHang);
+
             _cauHinhHeThong.CapNhatMetadataDonHang(donHang.MaDh, meta =>
             {
                 meta.ThoiGianCapNhatCuoi = LayThoiGianHeThong().ToString("dd/MM/yyyy HH:mm");
@@ -210,6 +213,18 @@ namespace WebBanhTrungThu.Services.QuanTri
             }
 
             await _db.SaveChangesAsync();
+
+            if (string.Equals(donHang.TrangThaiDh, "DA_HUY", StringComparison.OrdinalIgnoreCase))
+            {
+                await DichVuHoiVien.HoanDiemKhiHuyDonAsync(_db, _cauHinhHeThong, donHang);
+            }
+            else if (string.Equals(donHang.TrangThaiDh, "DA_GIAO", StringComparison.OrdinalIgnoreCase)
+                  || string.Equals(donHang.TrangThaiDh, "HOAN_TAT", StringComparison.OrdinalIgnoreCase)
+                  || string.Equals(donHang.TrangThaiTt, "DA_TT", StringComparison.OrdinalIgnoreCase)
+                  || string.Equals(donHang.TrangThaiTt, "DA_THANH_TOAN", StringComparison.OrdinalIgnoreCase))
+            {
+                await DichVuHoiVien.CongDiemThuongDonHangAsync(_db, _cauHinhHeThong, donHang);
+            }
 
             _cauHinhHeThong.CapNhatMetadataDonHang(donHang.MaDh, meta =>
             {
@@ -333,6 +348,8 @@ namespace WebBanhTrungThu.Services.QuanTri
             }
 
             await _db.SaveChangesAsync();
+
+            await DichVuHoiVien.HoanDiemKhiHuyDonAsync(_db, _cauHinhHeThong, donHang);
 
             _cauHinhHeThong.CapNhatMetadataDonHang(donHang.MaDh, meta =>
             {

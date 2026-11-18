@@ -5,6 +5,7 @@ using QRCoder;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.TaiKhoan;
 using WebBanhTrungThu.Services.ThanhToan;
 using WebBanhTrungThu.ViewModels;
 using GioHang = WebBanhTrungThu.Models.Entities.GioHang;
@@ -33,6 +34,13 @@ namespace WebBanhTrungThu.Services
         public decimal TienGiamVoucher { get; set; }
         public string? CodeKmDangDung { get; set; }
         public string ThongTinVoucherGoiY { get; set; } = string.Empty;
+        public string HangTv { get; set; } = "Đồng";
+        public decimal PhanTramGiamVip { get; set; }
+        public decimal TienGiamVip { get; set; }
+        public decimal TongChiTieuTichLuy { get; set; }
+        public int DiemTichLuyHienCo { get; set; }
+        public int DiemTichLuySeDung { get; set; }
+        public decimal TienGiamDiem { get; set; }
         public decimal TienHangSauGiam { get; set; }
         public bool LaNhanTaiCuaHang { get; set; }
         public bool HopLeVungHoaToc { get; set; }
@@ -102,11 +110,12 @@ namespace WebBanhTrungThu.Services
             string? tocDoGiaoHang = null,
             List<DotGiaoHangInput>? danhSachDotGiao = null,
             bool capNhatLuotDungVoucher = false,
-            bool luuCapNhatGiaGioHang = false)
+            bool luuCapNhatGiaGioHang = false,
+            bool dungDiemTichLuy = false)
             => _dichVuTinhGia.TinhToanChiPhiDonHangAsync(
                 gioHang, maNd, laDonDoanhNghiepB2B, yeuCauInLogo,
                 hinhThucNhanHang, tocDoGiaoHang, danhSachDotGiao,
-                capNhatLuotDungVoucher, luuCapNhatGiaGioHang);
+                capNhatLuotDungVoucher, luuCapNhatGiaGioHang, dungDiemTichLuy);
 
         public Task<List<NhatKyTruLoFefo>> TruTonKhoFefoAsync(int maBanh, int soLuongCanTru, List<NhatKyTruLoFefo>? danhSachLoDaTru = null)
             => _dichVuTonKho.TruTonKhoFefoAsync(maBanh, soLuongCanTru, danhSachLoDaTru);
@@ -179,7 +188,8 @@ namespace WebBanhTrungThu.Services
                 var chiPhi = await _dichVuTinhGia.TinhToanChiPhiDonHangAsync(
                     gioHang, maNd, req.LaDonDoanhNghiepB2B, req.YeuCauInLogo,
                     hinhThucNhanHang, tocDoGiao, req.DanhSachDotGiao,
-                    capNhatLuotDungVoucher: true, luuCapNhatGiaGioHang: false);
+                    capNhatLuotDungVoucher: true, luuCapNhatGiaGioHang: false,
+                    dungDiemTichLuy: req.DungDiemTichLuy);
 
                 if (chiPhi.LaNhanTaiCuaHang && req.DanhSachDotGiao.Count > 1)
                 {
@@ -374,10 +384,13 @@ namespace WebBanhTrungThu.Services
                     var nd = await _context.NguoiDungs.FindAsync(maNd.Value);
                     if (nd != null)
                     {
-                        nd.DiemTichLuy += (int)(chiPhi.TongThanhToanCuoi / 10000m);
-                        if (nd.DiemTichLuy >= 1500) nd.HangTv = "Kim Cương";
-                        else if (nd.DiemTichLuy >= 500) nd.HangTv = "Vàng";
-                        else if (nd.DiemTichLuy >= 200) nd.HangTv = "Bạc";
+                        if (chiPhi.DiemTichLuySeDung > 0)
+                        {
+                            nd.DiemTichLuy = Math.Max(0, nd.DiemTichLuy - chiPhi.DiemTichLuySeDung);
+                        }
+
+                        var (hangVipMoi, _, _, _) = await DichVuHoiVien.TinhThongTinHangVipAsync(_context, nd.MaNd, nd.DiemTichLuy);
+                        nd.HangTv = hangVipMoi;
                     }
                 }
 
@@ -393,6 +406,14 @@ namespace WebBanhTrungThu.Services
                     meta.KenhBan = "WEB_ONLINE";
                     meta.HanThanhToan = laThanhToanQrMoMo ? donHang.NgayDat.AddMinutes(15) : null;
                     meta.DaHoanKhoDoHetHan = false;
+                    meta.DiemDaDung = chiPhi.DiemTichLuySeDung;
+                    meta.TienGiamDiem = chiPhi.TienGiamDiem;
+                    meta.HangTvLucDat = chiPhi.HangTv;
+                    meta.PhanTramGiamVip = chiPhi.PhanTramGiamVip;
+                    meta.TienGiamVip = chiPhi.TienGiamVip;
+                    meta.DaCongDiemThuong = false;
+                    meta.DiemThuongDaCong = 0;
+                    meta.DaHoanDiemKhiHuy = false;
                     meta.DanhSachLoDaTru = danhSachLoDaTru;
                     meta.DanhSachVoHopDaTru = danhSachVoHopDaTru;
                     meta.Thiep3DTheoToken = mapThiepMeta;
@@ -642,6 +663,8 @@ namespace WebBanhTrungThu.Services
                 donHang.TrangThaiTt = "DA_THANH_TOAN";
                 donHang.TrangThaiDh = "DA_XAC_NHAN";
                 await _context.SaveChangesAsync();
+
+                await DichVuHoiVien.CongDiemThuongDonHangAsync(_context, _kiotMeta, donHang);
 
                 _kiotMeta.CapNhatMetadataDonHang(donHang.MaDh, m => m.SoTienKhachDaTra = soTienNhan);
                 _kiotMeta.GhiNhanPhieuThuChi(new PhieuThuChiMoRong

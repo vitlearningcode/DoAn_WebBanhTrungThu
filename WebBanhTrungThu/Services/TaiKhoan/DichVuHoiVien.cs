@@ -163,7 +163,150 @@ namespace WebBanhTrungThu.Services.TaiKhoan
             };
             vm.TinhToanChiSoHoiVien(tab);
 
+            if (!string.Equals(nd.HangTv, vm.TenHangHienTai, StringComparison.Ordinal))
+            {
+                nd.HangTv = vm.TenHangHienTai;
+                await _db.NguoiDungs
+                    .Where(u => u.MaNd == maNd)
+                    .ExecuteUpdateAsync(s => s.SetProperty(u => u.HangTv, vm.TenHangHienTai));
+            }
+
             return vm;
+        }
+
+        /// <summary>
+        /// Xác định Hạng VIP dựa trên MAX giữa điểm tích lũy hiện tại và tổng chi tiêu hợp lệ (TrangThaiDh != "DA_HUY"),
+        /// đảm bảo khi hội viên tiêu điểm giảm giá đơn hàng mới thì Hạng thẻ VIP tuyệt đối không bị tụt hạng.
+        /// </summary>
+        public static (string HangTv, decimal PhanTramGiamVip, int DiemXetHang) XacDinhHangVipTheoChiTieu(
+            int diemHienTai,
+            decimal tongChiTieuTichLuy)
+        {
+            int diemHopLe = Math.Max(0, diemHienTai);
+            int diemQuyDoiChiTieu = tongChiTieuTichLuy > 0m ? (int)(tongChiTieuTichLuy / 10000m) : 0;
+            int diemXetHang = Math.Max(diemHopLe, diemQuyDoiChiTieu);
+
+            if (diemXetHang >= 600 || tongChiTieuTichLuy >= 6000000m)
+                return ("Kim Cương", 10m, diemXetHang);
+            if (diemXetHang >= 300 || tongChiTieuTichLuy >= 3000000m)
+                return ("Vàng", 5m, diemXetHang);
+            if (diemXetHang >= 100 || tongChiTieuTichLuy >= 1000000m)
+                return ("Bạc", 3m, diemXetHang);
+
+            return ("Đồng", 0m, diemXetHang);
+        }
+
+        /// <summary>
+        /// Truy vấn TongChiTieuTichLuy các đơn hàng hợp lệ (TrangThaiDh != "DA_HUY") trong bảng DonHang
+        /// để tính hạng VIP và phần trăm ưu đãi tự động của hội viên.
+        /// </summary>
+        public static async Task<(string HangTv, decimal PhanTramGiamVip, decimal TongChiTieuTichLuy, int DiemXetHang)> TinhThongTinHangVipAsync(
+            CSDLBanhTrungThuContext db,
+            int maNd,
+            int diemHienTai)
+        {
+            decimal tongChiTieuTichLuy = await db.DonHangs
+                .Where(d => d.MaNd == maNd && d.TrangThaiDh != "DA_HUY")
+                .SumAsync(d => (decimal?)d.TongThanhToanCuoi) ?? 0m;
+
+            var (hangTv, phanTramGiamVip, diemXetHang) = XacDinhHangVipTheoChiTieu(diemHienTai, tongChiTieuTichLuy);
+            return (hangTv, phanTramGiamVip, tongChiTieuTichLuy, diemXetHang);
+        }
+
+        /// <summary>
+        /// Cộng thưởng +1 điểm cho mỗi 10.000 đ thực trả khi đơn thanh toán QR thành công hoặc chuyển sang DA_GIAO / HOAN_TAT.
+        /// Đảm bảo idempotent qua cờ DaCongDiemThuong trong metadata đơn hàng.
+        /// </summary>
+        public static async Task<int> CongDiemThuongDonHangAsync(
+            CSDLBanhTrungThuContext db,
+            DichVuCauHinhHeThong cauHinhHeThong,
+            DonHang donHang)
+        {
+            if (!donHang.MaNd.HasValue || string.Equals(donHang.TrangThaiDh, "DA_HUY", StringComparison.OrdinalIgnoreCase))
+            {
+                return 0;
+            }
+
+            var meta = cauHinhHeThong.LayMetadataDonHang(donHang.MaDh);
+            if (meta.DaCongDiemThuong)
+            {
+                return 0;
+            }
+
+            int diemThuong = donHang.TongThanhToanCuoi > 0m
+                ? (int)(donHang.TongThanhToanCuoi / 10000m)
+                : 0;
+
+            var nd = await db.NguoiDungs.FindAsync(donHang.MaNd.Value);
+            if (nd == null)
+            {
+                return 0;
+            }
+
+            if (diemThuong > 0)
+            {
+                nd.DiemTichLuy += diemThuong;
+            }
+
+            var (hangVipMoi, _, _, _) = await TinhThongTinHangVipAsync(db, nd.MaNd, nd.DiemTichLuy);
+            nd.HangTv = hangVipMoi;
+            await db.SaveChangesAsync();
+
+            cauHinhHeThong.CapNhatMetadataDonHang(donHang.MaDh, m =>
+            {
+                m.DaCongDiemThuong = true;
+                m.DiemThuongDaCong = diemThuong;
+            });
+
+            return diemThuong;
+        }
+
+        /// <summary>
+        /// Hoàn lại số điểm đã dùng (và thu hồi điểm thưởng nếu đã cộng trước đó) khi đơn hàng chuyển sang DA_HUY.
+        /// </summary>
+        public static async Task<int> HoanDiemKhiHuyDonAsync(
+            CSDLBanhTrungThuContext db,
+            DichVuCauHinhHeThong cauHinhHeThong,
+            DonHang donHang)
+        {
+            if (!donHang.MaNd.HasValue)
+            {
+                return 0;
+            }
+
+            var meta = cauHinhHeThong.LayMetadataDonHang(donHang.MaDh);
+            if (meta.DaHoanDiemKhiHuy)
+            {
+                return 0;
+            }
+
+            var nd = await db.NguoiDungs.FindAsync(donHang.MaNd.Value);
+            if (nd == null)
+            {
+                return 0;
+            }
+
+            int diemHoan = Math.Max(0, meta.DiemDaDung);
+            if (diemHoan > 0)
+            {
+                nd.DiemTichLuy += diemHoan;
+            }
+
+            if (meta.DaCongDiemThuong && meta.DiemThuongDaCong > 0)
+            {
+                nd.DiemTichLuy = Math.Max(0, nd.DiemTichLuy - meta.DiemThuongDaCong);
+            }
+
+            var (hangVipMoi, _, _, _) = await TinhThongTinHangVipAsync(db, nd.MaNd, nd.DiemTichLuy);
+            nd.HangTv = hangVipMoi;
+            await db.SaveChangesAsync();
+
+            cauHinhHeThong.CapNhatMetadataDonHang(donHang.MaDh, m =>
+            {
+                m.DaHoanDiemKhiHuy = true;
+            });
+
+            return diemHoan;
         }
 
         public async Task<string> ThemDiaChiMoiAsync(

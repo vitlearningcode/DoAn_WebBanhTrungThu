@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.TaiKhoan;
 using GioHang = WebBanhTrungThu.Models.Entities.GioHang;
 
 namespace WebBanhTrungThu.Services.ThanhToan
@@ -304,6 +305,8 @@ namespace WebBanhTrungThu.Services.ThanhToan
             {
                 m.DaHoanKhoDoHetHan = true;
             });
+
+            await DichVuHoiVien.HoanDiemKhiHuyDonAsync(_context, _kiotMeta, donHang);
         }
     }
 }

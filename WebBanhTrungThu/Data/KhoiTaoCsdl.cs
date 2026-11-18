@@ -26,6 +26,7 @@ namespace WebBanhTrungThu.Data
                 await ChuanHoaChiMucTokenThiepQrAsync(db);
                 await ChuanHoaMaKhuyenMaiVaLoBanhFefoAsync(db);
                 await CapNhatAnhKhayHop6OSonMaiAsync(db);
+                await CapNhatDuongDanAnhBanhHatSenHueAsync(db);
             }
             catch
             {
@@ -338,6 +339,47 @@ namespace WebBanhTrungThu.Data
             }
 
             if (coCapNhatAnhVoHop)
+            {
+                await db.SaveChangesAsync();
+            }
+        }
+
+        private static async Task CapNhatDuongDanAnhBanhHatSenHueAsync(CSDLBanhTrungThuContext db)
+        {
+            const string tenAnhCu = "kv-20261101155727-573.jpg";
+            const string tenAnhMoi = "banh-hat-sen-hue.jpg";
+            const string duongDanMoi = "/images/banh/banh-hat-sen-hue.jpg";
+            bool coThayDoi = false;
+
+            var dsKhoAnh = await db.KhoHinhAnhs
+                .Where(h => (h.DuongDanCucBo != null && h.DuongDanCucBo.Contains(tenAnhCu)) || h.TenTepGoc.Contains(tenAnhCu))
+                .ToListAsync();
+
+            foreach (var anh in dsKhoAnh)
+            {
+                if (anh.TenTepGoc.Contains(tenAnhCu, StringComparison.OrdinalIgnoreCase))
+                {
+                    anh.TenTepGoc = tenAnhMoi;
+                }
+                if (!string.IsNullOrWhiteSpace(anh.DuongDanCucBo) && anh.DuongDanCucBo.Contains(tenAnhCu, StringComparison.OrdinalIgnoreCase))
+                {
+                    anh.DuongDanCucBo = duongDanMoi;
+                }
+                coThayDoi = true;
+            }
+
+            var dsCauHinh = await db.CauHinhHeThongs
+                .Where(c => c.GiaTriJson.Contains(tenAnhCu))
+                .ToListAsync();
+
+            foreach (var ch in dsCauHinh)
+            {
+                ch.GiaTriJson = ch.GiaTriJson.Replace(tenAnhCu, tenAnhMoi, StringComparison.OrdinalIgnoreCase);
+                ch.NgayCapNhat = DateTime.Now;
+                coThayDoi = true;
+            }
+
+            if (coThayDoi)
             {
                 await db.SaveChangesAsync();
             }

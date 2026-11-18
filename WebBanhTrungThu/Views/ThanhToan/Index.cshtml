@@ -2,8 +2,7 @@
 @{
     ViewData["Title"] = "Thanh Toán Đơn Hàng - Nguyệt Cát";
     int tongSoMon = Model.DanhSachMon.Sum(x => x.SoLuong);
-    int tongSoLuongSanPham = Model.GioHang?.ChiTietGioHangs?.Sum(x => x.SoLuong) ?? tongSoMon;
-    decimal tienHangSauGiamBanDau = Math.Max(0m, Model.TongTienHang - Model.TienChietKhauB2B - Model.TienGiamVoucher);
+    decimal tienHangSauGiamBanDau = Math.Max(0m, Model.TongTienHang - Model.TienChietKhauB2B - Model.TienGiamVoucher - Model.TienGiamVip);
     bool duMienPhiShip = tienHangSauGiamBanDau >= 500000m;
     decimal tongThanhToanBanDau = Math.Max(0m, tienHangSauGiamBanDau + (duMienPhiShip ? 0m : 30000m));
     string ngayHenMacDinh = DateTime.Now.AddDays(2).ToString("yyyy-MM-dd");
@@ -153,17 +152,13 @@ else
     <div class="dong-tuy-chon-manh-bitis">
         <div class="form-check d-flex align-items-center gap-2 m-0">
             <input class="form-check-input" type="checkbox" id="chkGoiNguoiKhacNhan" onchange="xuLyBatTatNguoiKhacNhan()">
-            <label class="form-check-label text-dark" id="lblChkGoiNguoiKhacNhan" for="chkGoiNguoiKhacNhan">@(tongSoLuongSanPham >= 2 ? $"Gọi người khác nhận hàng (Chia điểm nhận tối đa {tongSoLuongSanPham} địa chỉ)" : "Gọi người khác nhận hàng")</label>
+            <label class="form-check-label text-dark" id="lblChkGoiNguoiKhacNhan" for="chkGoiNguoiKhacNhan">Gọi người khác nhận hàng thay (nếu có)</label>
         </div>
         <div id="khungNguoiKhacNhanHang" class="mt-2 pt-2" style="display: none;">
             <div class="row g-2">
-                <div class="col-md-6"><input type="text" name="DanhSachDotGiao[0].TenNguoiNhan" id="dot0_TenNguoiNhan" required class="input-phang-bitis" value="@(dc0?.TenNguoiNhan ?? Model.HoTenNguoiMua)" placeholder="Họ và tên người nhận *" /></div>
-                <div class="col-md-6"><input type="text" name="DanhSachDotGiao[0].SdtNguoiNhan" id="dot0_SdtNguoiNhan" required class="input-phang-bitis" value="@(dc0?.SdtnguoiNhan ?? Model.SdtNguoiMua)" placeholder="Số điện thoại người nhận *" /></div>
+                <div class="col-md-6"><input type="text" name="DanhSachDotGiao[0].TenNguoiNhan" id="dot0_TenNguoiNhan" class="input-phang-bitis" value="@(dc0?.TenNguoiNhan ?? Model.HoTenNguoiMua)" placeholder="Họ tên người nhận thay *" /></div>
+                <div class="col-md-6"><input type="text" name="DanhSachDotGiao[0].SdtNguoiNhan" id="dot0_SdtNguoiNhan" class="input-phang-bitis" value="@(dc0?.SdtnguoiNhan ?? Model.SdtNguoiMua)" placeholder="Số điện thoại người nhận thay *" /></div>
             </div>
-            <input type="hidden" name="DiemNhanQuas[0].TenNguoiNhan" id="diem0_TenNguoiNhan" value="@(dc0?.TenNguoiNhan ?? Model.HoTenNguoiMua)" />
-            <input type="hidden" name="DiemNhanQuas[0].SdtNguoiNhan" id="diem0_SdtNguoiNhan" value="@(dc0?.SdtnguoiNhan ?? Model.SdtNguoiMua)" />
-            <div id="danhSachCacDotGiaoContainer" class="mt-2" style="display: @(tongSoLuongSanPham >= 2 ? "block" : "none");"></div>
-            <button type="button" id="btnThemDiemNhanQua" class="btn btn-sm btn-outline-dark rounded-pill px-3 mt-2" style="display: @(tongSoLuongSanPham >= 2 ? "inline-block" : "none");" onclick="themDotGiaoHangMoi()">+ Thêm điểm nhận quà khác</button>
         </div>
     </div>
 
@@ -281,6 +276,19 @@ else
     </div>
 </div>
 
+@if (Model.DaDangNhap && Model.DiemTichLuy > 0)
+{
+    <div class="py-3 border-bottom">
+        <div class="form-check form-switch d-flex align-items-center gap-2 m-0">
+            <input class="form-check-input mt-0" type="checkbox" role="switch" id="chkDungDiemTichLuy" name="DungDiemTichLuy" value="true" onchange="capNhatBangTinhThanhToan()" />
+            <label class="form-check-label text-dark small fw-medium" for="chkDungDiemTichLuy">
+                Dùng @Model.DiemTichLuy điểm tích lũy (Giảm -@((Model.DiemTichLuy * 1000).ToString("N0")) đ)
+            </label>
+        </div>
+        <small id="lblGhiChuDiemTichLuyCheckout" class="text-muted d-block mt-1" style="display: none !important;"></small>
+    </div>
+}
+
 <div class="pt-3">
     <div class="d-flex justify-content-between align-items-center py-1"><span class="text-secondary">Tạm tính</span><strong class="text-dark">@Model.TongTienHang.ToString("N0") đ</strong></div>
     @if (Model.TienChietKhauB2B > 0)
@@ -288,6 +296,8 @@ else
         <div class="d-flex justify-content-between align-items-center py-1 text-warning"><span>Chiết khấu sỉ B2B (@Model.PhanTramCkB2B%)</span><strong>-@Model.TienChietKhauB2B.ToString("N0") đ</strong></div>
     }
     <div id="dongGiamGiaVoucherCheckout" class="d-flex justify-content-between align-items-center py-1 text-success" style="display: @(Model.TienGiamVoucher > 0 ? "flex" : "none") !important;"><span>Giảm giá khuyến mãi</span><strong id="lblTienGiamVoucherCheckout">-@Model.TienGiamVoucher.ToString("N0") đ</strong></div>
+    <div id="dongGiamGiaHangVipCheckout" class="d-flex justify-content-between align-items-center py-1 text-primary" style="display: @(Model.TienGiamVip > 0 ? "flex" : "none") !important;"><span>Ưu đãi Hạng @Model.HangTv (@Model.PhanTramGiamVip.ToString("0.##")%)</span><strong id="lblTienGiamHangVipCheckout">-@Model.TienGiamVip.ToString("N0") đ</strong></div>
+    <div id="dongGiamGiaDiemCheckout" class="d-flex justify-content-between align-items-center py-1 text-success" style="display: none !important;"><span>Giảm giá điểm VIP (<span id="lblSoDiemSuDungCheckout">0</span> điểm)</span><strong id="lblTienGiamDiemCheckout">-0 đ</strong></div>
     <div id="dongPhiLogoB2BCheckout" class="d-flex justify-content-between align-items-center py-1 text-secondary" style="display: none !important;"><span>Phí khuôn ép kim Logo B2B</span><strong id="lblPhiInLogoCheckout" class="text-dark">0 đ</strong></div>
     <div class="d-flex justify-content-between align-items-center py-1"><span class="text-secondary">Phí vận chuyển <span id="lblSoDiemGiaoCheckout" class="d-none">1</span></span><strong id="lblPhiShipCheckout" class="text-dark">@(duMienPhiShip ? "0 đ" : "30.000 đ")</strong></div>
     <hr class="my-3" />
@@ -303,13 +313,14 @@ else
 @section Scripts {
 <script>
 window.CAU_HINH_THANH_TOAN = {
-    tongTienHang: @Model.TongTienHang,
-    tienCkB2B: @Model.TienChietKhauB2B,
-    tienGiamVoucher: @Model.TienGiamVoucher,
+    tongTienHang: @Model.TongTienHang.ToString(System.Globalization.CultureInfo.InvariantCulture),
+    tienCkB2B: @Model.TienChietKhauB2B.ToString(System.Globalization.CultureInfo.InvariantCulture),
+    tienGiamVoucher: @Model.TienGiamVoucher.ToString(System.Globalization.CultureInfo.InvariantCulture),
+    phanTramGiamVip: @Model.PhanTramGiamVip.ToString(System.Globalization.CultureInfo.InvariantCulture),
+    diemTichLuy: @Model.DiemTichLuy,
     mienPhiLogo: @(Model.MienPhiInLogo ? "true" : "false"),
-    phiLogoMacDinh: @Model.PhiInLogoMacDinh,
+    phiLogoMacDinh: @Model.PhiInLogoMacDinh.ToString(System.Globalization.CultureInfo.InvariantCulture),
     ngayHenMacDinh: "@ngayHenMacDinh",
-    tongSoLuongSanPham: @tongSoLuongSanPham,
     tenBanhHetHangBanDau: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(tenBanhHetHangBanDau)),
     thongBaoHetHangBanDau: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(thongBaoHetHangBanDau))
 };
