@@ -1,19 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using WebBanhTrungThu.Controllers.CoSo;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services;
 
 namespace WebBanhTrungThu.Controllers
 {
-    public class Thiep3DController : Controller
+    public class Thiep3DController : ControllerKhachHangCoSo
     {
-        private readonly CSDLBanhTrungThuContext _db;
         private readonly DichVuKiotVietMetadata _kiotMeta;
 
-        public Thiep3DController(CSDLBanhTrungThuContext db, DichVuKiotVietMetadata kiotMeta)
+        public Thiep3DController(CSDLBanhTrungThuContext db, DichVuKiotVietMetadata kiotMeta) : base(db)
         {
-            _db = db;
             _kiotMeta = kiotMeta;
         }
 

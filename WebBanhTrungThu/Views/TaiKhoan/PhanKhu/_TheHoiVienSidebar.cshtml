@@ -1,0 +1,109 @@
+@model WebBanhTrungThu.ViewModels.HoSoThanhVienViewModel
+@{
+    var nd = Model.NguoiDung;
+    string tabMacDinh = Model.TabMacDinh;
+}
+
+<aside class="col-lg-4 col-xl-3">
+    <div class="cot-trai-ho-so">
+        <!-- Khối đầu: Thẻ Hội Viên Nguyệt Cát -->
+        <div class="the-hoi-vien-nguyet-cat">
+            <div class="dau-the-hoi-vien">
+                <div class="avatar-hoi-vien" aria-hidden="true">@Model.ChuCaiDauTen</div>
+                <div class="ten-hang-hoi-vien">
+                    <h1 class="ten-hoi-vien" title="@nd.HoTen">@nd.HoTen</h1>
+                    <span class="huy-hieu-hang-hoi-vien">Hạng @Model.TenHangHienTai</span>
+                </div>
+            </div>
+
+            <ul class="lien-he-hoi-vien">
+                <li>
+                    <i class="bi bi-telephone" aria-hidden="true"></i>
+                    <span>@nd.Sdt</span>
+                </li>
+                <li>
+                    <i class="bi bi-envelope" aria-hidden="true"></i>
+                    <span class="chu-ngat-dong">@nd.Email</span>
+                </li>
+                <li>
+                    <i class="bi bi-calendar3" aria-hidden="true"></i>
+                    <span>Gia nhập @nd.NgayTao.ToString("dd/MM/yyyy")</span>
+                </li>
+            </ul>
+
+            <div class="dai-chi-so-hoi-vien">
+                <div class="o-chi-so-hoi-vien">
+                    <span class="nhan-chi-so">Điểm tích lũy</span>
+                    <strong class="gia-tri-chi-so">@nd.DiemTichLuy.ToString("N0")</strong>
+                    <span class="phu-chi-so">~@Model.GiaTriQuyDoiDiem.ToString("N0")đ</span>
+                </div>
+                <div class="o-chi-so-hoi-vien">
+                    <span class="nhan-chi-so">Đơn hàng</span>
+                    <strong class="gia-tri-chi-so">@Model.TongSoDonHang</strong>
+                    <span class="phu-chi-so" title="Tổng chi tiêu tích lũy: @Model.TongChiTieuTichLuy.ToString("N0")đ">@Model.TongChiTieuTichLuy.ToString("N0")đ</span>
+                </div>
+                <div class="o-chi-so-hoi-vien">
+                    <span class="nhan-chi-so">Hộp tự phối</span>
+                    <strong class="gia-tri-chi-so">@Model.TongSoHopTuChon</strong>
+                    <span class="phu-chi-so">mẫu</span>
+                </div>
+            </div>
+
+            <!-- Thanh tiến trình thăng hạng VIP (Tier Progress Bar) -->
+            <div class="khung-tien-trinh-vip-ho-so mt-3 pt-2">
+                <div class="d-flex justify-content-between align-items-center mb-1" style="font-size: 0.74rem;">
+                    <span class="fw-semibold" style="color: #F3D078;">Tiến trình hạng VIP</span>
+                    <span class="fw-bold" style="color: #FFFDF9; font-variant-numeric: tabular-nums;">@Model.PhanTramTienTrinhVip%</span>
+                </div>
+                <div class="thanh-tien-trinh-vip-nen">
+                    <div class="thanh-tien-trinh-vip-vang" style="width: @(Model.PhanTramTienTrinhVip)%;"></div>
+                </div>
+                <div class="nhac-thang-hang-vip mt-1">
+                    @if (Model.DaDatDinhVip)
+                    {
+                        <span>✨ Đã đạt đỉnh <strong>@Model.TenHangTiepTheo</strong> (Ưu đãi giảm 10% + Quà VIP)</span>
+                    }
+                    else
+                    {
+                        <span>Còn thiếu <strong>@Model.DiemCanThangHang.ToString("N0")</strong> điểm nữa để thăng hạng <strong>@Model.TenHangTiepTheo</strong></span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Khối dưới: Menu điều hướng hồ sơ dọc -->
+        <nav class="menu-ho-so-doc" aria-label="Điều hướng hồ sơ thành viên">
+            <div class="danh-sach-tab-ho-so" role="tablist" aria-orientation="vertical" id="danhSachTabHoSo">
+                <button type="button" role="tab"
+                        class="nut-tab-ho-so @(tabMacDinh == "DON_HANG" ? "active" : "")"
+                        id="nut-tab-don-hang" data-tab-ho-so="DON_HANG" data-muc-tieu="#tab-don-hang"
+                        aria-controls="tab-don-hang" aria-selected="@(tabMacDinh == "DON_HANG" ? "true" : "false")"
+                        onclick="chuyenTabHoSo(this)">
+                    <span>Đơn hàng &amp; Thiệp chúc</span>
+                    <span class="dem-tab-ho-so">@Model.TongSoDonHang</span>
+                </button>
+                <button type="button" role="tab"
+                        class="nut-tab-ho-so @(tabMacDinh == "DIA_CHI" ? "active" : "")"
+                        id="nut-tab-so-dia-chi" data-tab-ho-so="DIA_CHI" data-muc-tieu="#tab-so-dia-chi"
+                        aria-controls="tab-so-dia-chi" aria-selected="@(tabMacDinh == "DIA_CHI" ? "true" : "false")"
+                        onclick="chuyenTabHoSo(this)">
+                    <span>Sổ địa chỉ nhận quà</span>
+                    <span class="dem-tab-ho-so">@Model.TongSoDiaChi</span>
+                </button>
+                <button type="button" role="tab"
+                        class="nut-tab-ho-so @(tabMacDinh == "HOP_TU_CHON" ? "active" : "")"
+                        id="nut-tab-hop-tu-chon" data-tab-ho-so="HOP_TU_CHON" data-muc-tieu="#tab-hop-tu-chon"
+                        aria-controls="tab-hop-tu-chon" aria-selected="@(tabMacDinh == "HOP_TU_CHON" ? "true" : "false")"
+                        onclick="chuyenTabHoSo(this)">
+                    <span>Bộ sưu tập hộp tự phối</span>
+                    <span class="dem-tab-ho-so">@Model.TongSoHopTuChon</span>
+                </button>
+            </div>
+
+            <div class="lien-ket-tien-ich-ho-so">
+                <a href="/#tang-tu-chon-hop">← Tự phối hộp quà mới</a>
+                <a href="/ThanhToan">Thanh toán giỏ hàng hiện tại</a>
+            </div>
+        </nav>
+    </div>
+</aside>

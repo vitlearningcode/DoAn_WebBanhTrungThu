@@ -1,0 +1,144 @@
+@model WebBanhTrungThu.ViewModels.HoSoThanhVienViewModel
+@{
+    string tabMacDinh = Model.TabMacDinh;
+}
+
+<div class="pane-ho-so @(tabMacDinh == "DON_HANG" ? "dang-hien" : "")" id="tab-don-hang" role="tabpanel" aria-labelledby="nut-tab-don-hang">
+    <div class="dau-pane-ho-so">
+        <h2 class="tieu-de-pane-ho-so">Đơn hàng &amp; Thiệp chúc</h2>
+        <p class="mo-ta-pane-ho-so">Theo dõi tiến độ từng lễ hộp và mở lại thiệp chúc 3D đã gửi người nhận.</p>
+    </div>
+
+    @if (!Model.LichSuDonHang.Any())
+    {
+        <div class="khung-trong-ho-so">
+            <i class="bi bi-receipt" aria-hidden="true"></i>
+            <h3>Bạn chưa có đơn hàng nào</h3>
+            <p>Tự tay phối một lễ hộp và gửi kèm thiệp chúc 3D cho người thân.</p>
+            <a href="/#tang-tu-chon-hop" class="btn btn-do-son-mai rounded-pill px-4">Tự phối hộp quà</a>
+        </div>
+    }
+    else
+    {
+        <div class="danh-sach-don-ho-so">
+            @foreach (var dh in Model.LichSuDonHang)
+            {
+                var trangThaiDon = Model.AnhXaTrangThaiDonHang(dh.TrangThaiDh);
+                int buocTienTrinh = Model.XacDinhBuocTienTrinhDon(dh.TrangThaiDh);
+
+                <article class="the-don-hang-ho-so">
+                    <header class="dau-the-don-hang">
+                        <div class="thong-tin-ma-don">
+                            <strong class="ma-don-ho-so">#@dh.MaTraCuuDh</strong>
+                            <span class="ngay-dat-ho-so">@dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</span>
+                            <span class="huy-hieu-trang-thai-don @trangThaiDon.LopHuyHieu">@trangThaiDon.TenHienThi</span>
+                        </div>
+                        <div class="thong-tin-thanh-toan-don">
+                            <span class="hinh-thuc-tt-ho-so">@Model.AnhXaHinhThucThanhToan(dh.PhuongThucTt)</span>
+                            <strong class="tong-tien-ho-so">@dh.TongThanhToanCuoi.ToString("N0") đ</strong>
+                            <button type="button" class="nut-vien-ho-so nut-dat-lai-don-ho-so" onclick="datLaiDonHangCu(@dh.MaDh, this)">
+                                ↻ Đặt lại đơn này
+                            </button>
+                            <a href="/ThanhToan/ThanhCong?maDon=@dh.MaTraCuuDh" class="nut-vien-ho-so">Xem biên lai &amp; QR</a>
+                        </div>
+                    </header>
+
+                    @if (buocTienTrinh == 0)
+                    {
+                        <div class="timeline-don-hang-4-buoc timeline-don-da-huy">
+                            <span class="nhan-don-da-huy"><i class="bi bi-x-circle me-1"></i>Đơn hàng đã hủy</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="timeline-don-hang-4-buoc" aria-label="Tiến độ đơn hàng 4 bước">
+                            <div class="buoc-timeline @(buocTienTrinh >= 1 ? "da-hoan-thanh" : "")">
+                                <span class="cham-buoc-timeline">@(buocTienTrinh >= 1 ? "✓" : "1")</span>
+                                <span class="ten-buoc-timeline">1. Đặt đơn</span>
+                            </div>
+                            <div class="duong-noi-timeline @(buocTienTrinh >= 2 ? "da-hoan-thanh" : "")"></div>
+                            <div class="buoc-timeline @(buocTienTrinh >= 2 ? "da-hoan-thanh" : "")">
+                                <span class="cham-buoc-timeline">@(buocTienTrinh >= 2 ? "✓" : "2")</span>
+                                <span class="ten-buoc-timeline">2. Chuẩn bị lễ hộp</span>
+                            </div>
+                            <div class="duong-noi-timeline @(buocTienTrinh >= 3 ? "da-hoan-thanh" : "")"></div>
+                            <div class="buoc-timeline @(buocTienTrinh >= 3 ? "da-hoan-thanh" : "")">
+                                <span class="cham-buoc-timeline">@(buocTienTrinh >= 3 ? "✓" : "3")</span>
+                                <span class="ten-buoc-timeline">3. Đang giao quà</span>
+                            </div>
+                            <div class="duong-noi-timeline @(buocTienTrinh >= 4 ? "da-hoan-thanh" : "")"></div>
+                            <div class="buoc-timeline @(buocTienTrinh >= 4 ? "da-hoan-thanh" : "")">
+                                <span class="cham-buoc-timeline">@(buocTienTrinh >= 4 ? "✓" : "4")</span>
+                                <span class="ten-buoc-timeline">4. Hoàn tất</span>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="than-the-don-hang">
+                        <div class="row g-3">
+                            <!-- Cột trái: Sản phẩm đã đặt -->
+                            <div class="col-md-7">
+                                <h3 class="nhan-cot-don-hang">Sản phẩm đã đặt</h3>
+                                <div class="d-flex flex-column gap-2">
+                                    @foreach (var ct in dh.ChiTietDonHangs)
+                                    {
+                                        var danhSachOTrongHop = Model.PhanTichThanhPhanHop(ct.CauHinhHopJson);
+                                        <div class="mon-don-hang-ho-so">
+                                            <div class="dong-ten-mon-don">
+                                                <span class="ten-mon-don-ho-so">@ct.TenSanPhamLuuCung <span class="so-luong-mon-don">× @ct.SoLuong</span></span>
+                                                <span class="gia-mon-don-ho-so">@ct.ThanhTien.ToString("N0") đ</span>
+                                            </div>
+                                            @if (danhSachOTrongHop.Any())
+                                            {
+                                                <div class="bang-thanh-phan-hop-2-cot">
+                                                    @foreach (var o in danhSachOTrongHop)
+                                                    {
+                                                        <div class="dong-thanh-phan-hop">
+                                                            <span class="cot-o-banh">Ô @o.ViTriOTrongHop</span>
+                                                            <span class="cot-ten-banh">@o.TenBanh</span>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Cột phải: Thông tin nhận quà & Thiệp 3D -->
+                            <div class="col-md-5">
+                                <h3 class="nhan-cot-don-hang">Thông tin nhận quà</h3>
+                                <div class="d-flex flex-column gap-2">
+                                    @foreach (var dot in dh.DotGiaoHangDaDiems)
+                                    {
+                                        var trangThaiDot = Model.AnhXaTrangThaiDonHang(dot.TrangThaiGiao);
+
+                                        <div class="diem-nhan-qua-ho-so">
+                                            <div class="dong-nguoi-nhan-qua">
+                                                <strong class="ten-nguoi-nhan-qua">@dot.TenNguoiNhan</strong>
+                                                <span class="huy-hieu-trang-thai-don huy-hieu-nho @trangThaiDot.LopHuyHieu">@trangThaiDot.TenHienThi</span>
+                                            </div>
+                                            <div class="sdt-nguoi-nhan-qua">@dot.SdtnguoiNhan</div>
+                                            <div class="dia-chi-nhan-qua">@dot.DiaChiGiaoChiTiet</div>
+                                            <div class="lich-hen-nhan-qua">
+                                                <i class="bi bi-clock" aria-hidden="true"></i>
+                                                Hẹn giao @dot.NgayHenGiao.ToString("dd/MM/yyyy")@(string.IsNullOrWhiteSpace(dot.KhungGioGiao) ? "" : $" • {dot.KhungGioGiao}")
+                                            </div>
+
+                                            @if (dh.ThiepChucMung3Ds.Any() && dot.CoKemThiepQr && !string.IsNullOrWhiteSpace(dot.MaTokenThiepQr))
+                                            {
+                                                <a href="/Thiep3D/Xem/@dot.MaTokenThiepQr" target="_blank" rel="noopener" class="nut-mo-thiep-ho-so">
+                                                    Mở Thiệp QR 3D
+                                                </a>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</div>

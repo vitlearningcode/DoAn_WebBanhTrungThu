@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using WebBanhTrungThu.Controllers.CoSo;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models;
 using WebBanhTrungThu.Services;
@@ -8,18 +9,16 @@ using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController : ControllerKhachHangCoSo
     {
-        private readonly CSDLBanhTrungThuContext _db;
         private readonly DichVuHinhAnh _dichVuHinhAnh;
         private readonly DichVuKiotVietMetadata _kiotMeta;
 
         public HomeController(
             CSDLBanhTrungThuContext db,
             DichVuHinhAnh dichVuHinhAnh,
-            DichVuKiotVietMetadata kiotMeta)
+            DichVuKiotVietMetadata kiotMeta) : base(db)
         {
-            _db = db;
             _dichVuHinhAnh = dichVuHinhAnh;
             _kiotMeta = kiotMeta;
         }

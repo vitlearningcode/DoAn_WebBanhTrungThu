@@ -1,22 +1,20 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using WebBanhTrungThu.Areas.Admin.Controllers.CoSo;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Services;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Areas.Admin.Controllers
 {
-    [Area("Admin")]
     [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN,GIAO_HANG")]
-    public class SoQuyAdminController : Controller
+    public class SoQuyAdminController : ControllerQuanTriCoSo
     {
-        private readonly CSDLBanhTrungThuContext _db;
         private readonly DichVuKiotVietMetadata _kiotMeta;
 
-        public SoQuyAdminController(CSDLBanhTrungThuContext db, DichVuKiotVietMetadata kiotMeta)
+        public SoQuyAdminController(CSDLBanhTrungThuContext db, DichVuKiotVietMetadata kiotMeta) : base(db)
         {
-            _db = db;
             _kiotMeta = kiotMeta;
         }
 

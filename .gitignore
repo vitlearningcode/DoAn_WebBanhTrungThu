@@ -361,5 +361,15 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Chặn triệt để các thư mục biên dịch, rác phân tích và file tạm khi đóng gói đồ án
+bin/
+obj/
+.vs/
 graphify-out/
-!graphify-out/GRAPH_REPORT.md
+.agent/vendor-skills/
+.agent/baoyu-design/
+*.tmp
+*.bak
+NopDoAn_WebBanhTrungThu_Sach.zip
+

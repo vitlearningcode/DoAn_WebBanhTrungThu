@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using WebBanhTrungThu.Controllers.CoSo;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Middlewares;
 using WebBanhTrungThu.Models.Entities;
@@ -12,14 +13,12 @@ using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Controllers
 {
-    public class TaiKhoanController : Controller
+    public class TaiKhoanController : ControllerKhachHangCoSo
     {
-        private readonly CSDLBanhTrungThuContext _db;
         private readonly DichVuGioHang _dichVuGioHang;
 
-        public TaiKhoanController(CSDLBanhTrungThuContext db, DichVuGioHang dichVuGioHang)
+        public TaiKhoanController(CSDLBanhTrungThuContext db, DichVuGioHang dichVuGioHang) : base(db)
         {
-            _db = db;
             _dichVuGioHang = dichVuGioHang;
         }
 
@@ -230,6 +229,7 @@ namespace WebBanhTrungThu.Controllers
                 .AsNoTracking()
                 .Include(d => d.DotGiaoHangDaDiems)
                 .Include(d => d.ChiTietDonHangs)
+                .Include(d => d.ThiepChucMung3Ds)
                 .Where(d => d.MaNd == maNd.Value)
                 .OrderByDescending(d => d.NgayDat)
                 .ToListAsync();
@@ -243,8 +243,6 @@ namespace WebBanhTrungThu.Controllers
                 .OrderByDescending(h => h.NgayTao)
                 .ToListAsync();
 
-            ViewBag.TabMacDinh = string.IsNullOrWhiteSpace(tab) ? "DON_HANG" : tab.ToUpperInvariant();
-
             var vm = new HoSoThanhVienViewModel
             {
                 NguoiDung = nd,
@@ -252,6 +250,9 @@ namespace WebBanhTrungThu.Controllers
                 LichSuDonHang = lichSuDonHangs,
                 DanhSachHopTuChon = danhSachHopTuChons
             };
+            vm.TinhToanChiSoHoiVien(tab);
+
+            ViewBag.TabMacDinh = vm.TabMacDinh;
 
             return View(vm);
         }

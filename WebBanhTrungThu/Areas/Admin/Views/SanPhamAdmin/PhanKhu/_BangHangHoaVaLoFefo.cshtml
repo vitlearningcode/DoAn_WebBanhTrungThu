@@ -1,0 +1,361 @@
+@model WebBanhTrungThu.ViewModels.SanPhamAdminViewModel
+@using System.Text.Json
+@{
+    var jsonOptions = new JsonSerializerOptions
+    {
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+}
+
+<!-- BẢNG DANH SÁCH HÀNG HÓA, QUẢN LÝ LÔ FEFO & COMBO THÀNH PHẦN -->
+<div class="kv-card overflow-hidden">
+    <div class="table-responsive">
+        <table class="kv-table">
+            <thead>
+                <tr>
+                    <th style="width: 34px;" class="text-center">
+                        <input type="checkbox" class="form-check-input" onclick="event.stopPropagation(); document.querySelectorAll('.chk-row-kv').forEach(c => c.checked = this.checked)" />
+                    </th>
+                    <th style="width: 52px;"></th>
+                    <th>Mã hàng</th>
+                    <th>Tên hàng</th>
+                    <th>Nhóm hàng</th>
+                    <th>Thương hiệu</th>
+                    <th class="text-end">Giá bán</th>
+                    <th class="text-end">Giá vốn</th>
+                    <th class="text-end">Tồn kho</th>
+                    <th>Dự kiến hết hàng</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyDanhSachHangHoa">
+                @for (int i = 0; i < Model.DanhSachHangHoa.Count; i++)
+                {
+                    var item = Model.DanhSachHangHoa[i];
+                    string itemJson = JsonSerializer.Serialize(new
+                    {
+                        idGoc = item.IdGoc,
+                        laCombo = item.LaCombo,
+                        maHang = item.MaHang,
+                        maVach = item.MaVach,
+                        tenHang = item.TenHang,
+                        maDm = item.MaDm,
+                        tenNhomHang = item.TenNhomHang,
+                        thuongHieu = item.ThuongHieu,
+                        nhaCungCap = item.NhaCungCap,
+                        viTriKho = item.ViTriKho,
+                        donViTinh = item.DonViTinh,
+                        giaBan = Math.Round(item.GiaBan, 0),
+                        giaVon = Math.Round(item.GiaVon, 0),
+                        tonKho = item.TonKho,
+                        trongLuongGram = item.TrongLuongGram,
+                        banTrucTiep = item.BanTrucTiep,
+                        laBanhChay = item.LaBanhChay,
+                        laBanhThuongHang = item.LaBanhThuongHang,
+                        soTrungMuoi = item.SoTrungMuoi,
+                        mucDoNgot = item.MucDoNgot,
+                        moTaNgan = item.MoTaNgan ?? "",
+                        cauChuyenBanh = item.CauChuyenBanh ?? "",
+                        maVhCombo = item.MaVhCombo ?? 1,
+                        nangLuongCalo = item.NangLuongCalo,
+                        luongDuongGram = Math.Round(item.LuongDuongGram, 0),
+                        chiSoDuongHuyetGi = item.ChiSoDuongHuyetGi,
+                        canhBaoDiUng = item.CanhBaoDiUng,
+                        urlAnhChinh = item.UrlAnhChinh,
+                        danhSachAnh = item.DanhSachAnh,
+                        hangThanhPhans = item.HangThanhPhans.Select(tp => new
+                        {
+                            maBanh = tp.MaBanh,
+                            maHang = tp.MaHang,
+                            tenHang = tp.TenHang,
+                            soLuong = tp.SoLuong,
+                            giaVon = Math.Round(tp.GiaVon, 0),
+                            giaBan = Math.Round(tp.GiaBan, 0)
+                        })
+                    }, jsonOptions);
+
+                    string searchKey = $"{item.MaHang} {item.TenHang} {item.MaVach} {item.ThuongHieu} {item.TenNhomHang}".ToLowerInvariant();
+
+                    <!-- DÒNG MASTER -->
+                    <tr class="kv-master-row"
+                        data-detail-id="detail-@item.KeyId"
+                        data-search="@searchKey"
+                        data-madm="@item.MaDm"
+                        data-tonkho="@item.TonKho"
+                        data-ncc="@item.NhaCungCap"
+                        data-thuonghieu="@item.ThuongHieu"
+                        data-vitri="@item.ViTriKho"
+                        data-loaihang="@(item.LaCombo ? "COMBO" : "BANH_LE")"
+                        data-bantructiep="@(item.BanTrucTiep ? "CO" : "KHONG")"
+                        onclick="toggleKvDetailRow('detail-@item.KeyId', this)">
+                        <td class="text-center" onclick="event.stopPropagation();">
+                            <input type="checkbox" class="form-check-input chk-row-kv" />
+                        </td>
+                        <td>
+                            <img src="@item.UrlAnhChinh" alt="@item.TenHang" class="kv-thumb-36"
+                                 onerror="window.kvImgFallback(this)" />
+                        </td>
+                        <td class="fw-medium text-primary">@item.MaHang</td>
+                        <td>
+                            <span class="fw-medium text-dark">@item.TenHang</span>
+                            @if (item.LaCombo)
+                            {
+                                <span class="text-muted ms-1" style="font-size: 12px;">(Combo)</span>
+                            }
+                        </td>
+                        <td>@item.TenNhomHang</td>
+                        <td>@item.ThuongHieu</td>
+                        <td class="text-end fw-medium">@item.GiaBan.ToString("N0")</td>
+                        <td class="text-end text-muted">@item.GiaVon.ToString("N0")</td>
+                        <td class="text-end fw-medium @(item.TonKho <= 15 ? "text-danger" : "")">@item.TonKho.ToString("N0")</td>
+                        <td class="text-muted">@item.DuKienHetHang</td>
+                    </tr>
+
+                    <!-- DÒNG CHI TIẾT XỔ XUỐNG KIOTVIET (EXPANDABLE ROW) -->
+                    <tr id="detail-@item.KeyId" class="kv-detail-row" onclick="event.stopPropagation();">
+                        <td colspan="10" class="p-0">
+                            <div class="kv-detail-box">
+                                <div class="d-flex flex-wrap flex-md-nowrap gap-4 align-items-start">
+                                    <div style="width: 180px; min-width: 180px;" class="text-center">
+                                        <div class="mx-auto mb-2 d-flex align-items-center justify-content-center bg-white"
+                                             style="width: 140px; height: 140px; border-radius: 8px; border: 1px solid #E5E7EB; padding: 6px; overflow: hidden;">
+                                            <img src="@item.UrlAnhChinh" alt="@item.TenHang"
+                                                 style="width: 100%; height: 100%; object-fit: contain;"
+                                                 onerror="window.kvImgFallback(this)" />
+                                        </div>
+                                        @if (item.BanTrucTiep)
+                                        {
+                                            <span class="badge rounded-pill" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; font-size: 11.5px; font-weight: 600; padding: 4px 10px;">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Đang kinh doanh
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge rounded-pill" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; font-size: 11.5px; font-weight: 600; padding: 4px 10px;">
+                                                <i class="bi bi-slash-circle me-1"></i>Ngừng kinh doanh
+                                            </span>
+                                        }
+                                    </div>
+
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 pb-1" style="border-bottom: 1px solid #E5E7EB;">
+                                            <h6 class="fw-bold text-dark mb-0" style="font-size: 15px;">
+                                                @item.TenHang
+                                                @if (item.LaBanhThuongHang)
+                                                {
+                                                    <span class="badge bg-warning text-dark ms-1" style="font-size: 11px;">👑 Thượng Hạng VIP</span>
+                                                }
+                                                @if (item.LaBanhChay)
+                                                {
+                                                    <span class="badge bg-success ms-1" style="font-size: 11px;">🌱 Bánh Chay</span>
+                                                }
+                                            </h6>
+                                            <span class="text-muted small">Loại hàng: <strong>@(item.LaCombo ? "Combo - đóng gói" : "Hàng hóa (Bánh lẻ)")</strong></span>
+                                        </div>
+
+                                        <div class="row g-4" style="font-size: 13px;">
+                                            <div class="col-md-6">
+                                                <div class="py-1 d-flex justify-content-between" style="border-bottom: 1px solid #F0F1F3;">
+                                                    <span class="text-muted">Mã hàng:</span>
+                                                    <strong class="text-primary">@item.MaHang</strong>
+                                                </div>
+                                                <div class="py-1 d-flex justify-content-between" style="border-bottom: 1px solid #F0F1F3;">
+                                                    <span class="text-muted">Mã vạch:</span>
+                                                    <strong class="text-dark">@item.MaVach</strong>
+                                                </div>
+                                                <div class="py-1 d-flex justify-content-between" style="border-bottom: 1px solid #F0F1F3;">
+                                                    <span class="text-muted">Nhóm hàng:</span>
+                                                    <strong class="text-dark">@item.TenNhomHang</strong>
+                                                </div>
+                                                <div class="py-1 d-flex justify-content-between" style="border-bottom: 1px solid #F0F1F3;">
+                                                    <span class="text-muted">Thương hiệu:</span>
+                                                    <strong class="text-primary">@item.ThuongHieu</strong>
+                                                </div>
+                                                <div class="py-1 d-flex justify-content-between" style="border-bottom: 1px solid #F0F1F3;">
+                                                    <span class="text-muted">Nhà cung cấp:</span>
+                                                    <strong class="text-dark">@item.NhaCungCap</strong>
+                                                </div>
+                                                <div class="py-1 d-flex justify-content-between" style="border-bottom: 1px solid #F0F1F3;">
+                                                    <span class="text-muted">Vị trí kho:</span>
+                                                    <strong class="text-dark">@item.ViTriKho</strong>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="py-1 d-flex justify-content-between" style="border-bottom: 1px solid #F0F1F3;">
+                                                    <span class="text-muted">Giá bán lẻ:</span>
+                                                    <strong class="text-primary">@item.GiaBan.ToString("N0") đ</strong>
+                                                </div>
+                                                <div class="py-1 d-flex justify-content-between" style="border-bottom: 1px solid #F0F1F3;">
+                                                    <span class="text-muted">Giá vốn:</span>
+                                                    <strong class="text-dark">@item.GiaVon.ToString("N0") đ</strong>
+                                                </div>
+                                                <div class="py-1 d-flex justify-content-between" style="border-bottom: 1px solid #F0F1F3;">
+                                                    <span class="text-muted">Tồn kho:</span>
+                                                    <strong class="@(item.TonKho <= 15 ? "text-danger" : "text-dark")">@item.TonKho.ToString("N0") @item.DonViTinh</strong>
+                                                </div>
+                                                <div class="py-1 d-flex justify-content-between" style="border-bottom: 1px solid #F0F1F3;">
+                                                    <span class="text-muted">Trọng lượng:</span>
+                                                    <strong class="text-dark">@item.TrongLuongGram.ToString("N0") g</strong>
+                                                </div>
+                                                <div class="py-1 d-flex justify-content-between" style="border-bottom: 1px solid #F0F1F3;">
+                                                    <span class="text-muted">Chỉ số dinh dưỡng (Calo / Đường / GI):</span>
+                                                    <strong class="text-dark">@item.NangLuongCalo Kcal • @item.LuongDuongGram.ToString("N0")g đường • GI @item.ChiSoDuongHuyetGi</strong>
+                                                </div>
+                                                <div class="py-1 d-flex justify-content-between" style="border-bottom: 1px solid #F0F1F3;">
+                                                    <span class="text-muted">Cảnh báo dị ứng:</span>
+                                                    <strong class="text-danger">@item.CanhBaoDiUng</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- KHU VỰC QUẢN LÝ LÔ FEFO & HÀNG THÀNH PHẦN COMBO -->
+                                <div class="mt-3 pt-3" style="border-top: 1px dashed #D1D5DB;">
+                                    @if (item.LaCombo)
+                                    {
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="fw-bold text-dark" style="font-size: 13px;">
+                                                <i class="bi bi-boxes text-primary me-1"></i> Danh sách Hàng thành phần cấu thành Combo (@item.HangThanhPhans.Count món)
+                                            </span>
+                                            <span class="text-muted small">Vỏ hộp: <strong>@(item.TenVoHopCombo ?? "Hộp tiêu chuẩn")</strong></span>
+                                        </div>
+                                        @if (item.HangThanhPhans.Count > 0)
+                                        {
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered mb-0 bg-white" style="font-size: 12.5px;">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Mã bánh</th>
+                                                            <th>Tên bánh thành phần</th>
+                                                            <th class="text-center">Số lượng</th>
+                                                            <th class="text-end">Giá vốn</th>
+                                                            <th class="text-end">Giá bán lẻ</th>
+                                                            <th class="text-end">Thành tiền</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var tp in item.HangThanhPhans)
+                                                        {
+                                                            <tr>
+                                                                <td class="fw-semibold text-primary">@tp.MaHang</td>
+                                                                <td>@tp.TenHang</td>
+                                                                <td class="text-center fw-bold">x@(tp.SoLuong)</td>
+                                                                <td class="text-end">@tp.GiaVon.ToString("N0") đ</td>
+                                                                <td class="text-end">@tp.GiaBan.ToString("N0") đ</td>
+                                                                <td class="text-end fw-semibold text-primary">@tp.TongGiaBan.ToString("N0") đ</td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-muted small">Chưa gắn bánh thành phần cho Combo này. Hãy bấm <strong>[✏️ Cập nhật]</strong> để chọn bánh thành phần.</div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+                                            <span class="fw-bold text-dark" style="font-size: 13px;">
+                                                <i class="bi bi-calendar2-check text-primary me-1"></i> Quản lý Lô sản xuất &amp; Giảm giá xả kho cận Date (@item.DanhSachLo.Count lô)
+                                            </span>
+                                            <button type="button" class="btn-kv-outline py-1 px-2" style="font-size: 12px;"
+                                                    onclick="event.stopPropagation(); moModalThemLoNhanh(@item.IdGoc, '@Html.Raw(item.TenHang.Replace("'", "\\'"))')">
+                                                <i class="bi bi-plus-circle text-primary"></i> + Thêm lô mới
+                                            </button>
+                                        </div>
+
+                                        @if (item.DanhSachLo.Count > 0)
+                                        {
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered align-middle mb-0 bg-white" style="font-size: 12.5px;">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Mã lô</th>
+                                                            <th class="text-center">Ngày SX</th>
+                                                            <th class="text-center">Hạn dùng</th>
+                                                            <th class="text-center">SL còn lại</th>
+                                                            <th class="text-center">Trạng thái lô</th>
+                                                            <th class="text-center" style="width: 240px;">% Giảm giá xả kho cận Date</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var lo in item.DanhSachLo)
+                                                        {
+                                                            <tr>
+                                                                <td class="fw-bold text-primary">@lo.MaLoCode</td>
+                                                                <td class="text-center">@lo.NgaySanXuat.ToString("dd/MM/yyyy")</td>
+                                                                <td class="text-center fw-medium">@lo.HanSuDung.ToString("dd/MM/yyyy")</td>
+                                                                <td class="text-center fw-bold">@lo.SlconLai.ToString("N0")</td>
+                                                                <td class="text-center">
+                                                                    @if (lo.PhanTramGiamCanDate > 0 || lo.TrangThaiLo == "XA_CAN_DATE")
+                                                                    {
+                                                                        <span class="badge bg-warning text-dark">Xả cận Date (-@Math.Round(lo.PhanTramGiamCanDate, 0)%)</span>
+                                                                    }
+                                                                    else if (lo.TrangThaiLo == "HET_HAN")
+                                                                    {
+                                                                        <span class="badge bg-danger">Hết hạn</span>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <span class="badge bg-success">Đang bán</span>
+                                                                    }
+                                                                </td>
+                                                                <td>
+                                                                    <form asp-area="Admin" asp-controller="SanPhamAdmin" asp-action="CapNhatGiamGiaCanDate" method="post"
+                                                                          class="d-flex align-items-center justify-content-center gap-1"
+                                                                          onclick="event.stopPropagation();">
+                                                                        @Html.AntiForgeryToken()
+                                                                        <input type="hidden" name="maLo" value="@lo.MaLo" />
+                                                                        <input type="hidden" name="returnUrl" value="/Admin/SanPhamAdmin/Index" />
+                                                                        <div class="input-group input-group-sm" style="width: 95px;">
+                                                                            <input type="number" name="phanTramGiam" min="0" max="90" step="1"
+                                                                                   value="@Math.Round(lo.PhanTramGiamCanDate, 0)"
+                                                                                   class="form-control text-end fw-bold text-danger" />
+                                                                            <span class="input-group-text">%</span>
+                                                                        </div>
+                                                                        <button type="submit" class="btn-kv-blue py-1 px-2" style="font-size: 11.5px;">
+                                                                            Lưu % giảm
+                                                                        </button>
+                                                                    </form>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="text-muted small">Sản phẩm chưa có lô hạn sử dụng. Bấm <strong>[+ Thêm lô mới]</strong> để nhập lô vào kho.</div>
+                                        }
+                                    }
+                                </div>
+
+                                <div class="d-flex justify-content-end align-items-center gap-2 mt-3 pt-2 border-top">
+                                    <button type="button" class="btn-kv-green"
+                                            data-item="@itemJson"
+                                            onclick="event.stopPropagation(); moModalSuaTuButton(this)">
+                                        ✏️ Cập nhật
+                                    </button>
+
+                                    <form asp-area="Admin" asp-controller="SanPhamAdmin" asp-action="XoaHangHoa" method="post" class="d-inline"
+                                          onsubmit="event.stopPropagation(); return confirm('Xác nhận ngừng kinh doanh / xóa hàng hóa [@item.MaHang] @item.TenHang?');">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="idGoc" value="@item.IdGoc" />
+                                        <input type="hidden" name="laCombo" value="@item.LaCombo.ToString().ToLower()" />
+                                        <button type="submit" class="btn btn-danger btn-sm px-3" style="font-size: 13px; font-weight: 600;">
+                                            🗑️ Xóa hàng hóa
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

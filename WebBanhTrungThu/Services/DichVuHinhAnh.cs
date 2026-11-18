@@ -1,20 +1,20 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
-using WebBanhTrungThu.Models.Entities;
+using WebBanhTrungThu.Services.CoSo;
 
 namespace WebBanhTrungThu.Services
 {
-    public class DichVuHinhAnh
+    /// <summary>
+    /// Dịch vụ quản lý và ánh xạ từ điển hình ảnh đa nguồn (WebRoot, Ổ cứng, Google Drive), kế thừa từ DichVuCoSo.
+    /// </summary>
+    public class DichVuHinhAnh : DichVuCoSo
     {
-        private readonly CSDLBanhTrungThuContext _db;
-
-        public DichVuHinhAnh(CSDLBanhTrungThuContext db)
+        public DichVuHinhAnh(CSDLBanhTrungThuContext db) : base(db)
         {
-            _db = db;
         }
 
         /// <summary>
-        /// Lấy toàn bộ từ điển ảnh của danh sách Bánh/Vỏ hộp trong 1 lần truy vấn duy nhất (tránh lỗi N+1 Query)
+        /// Lấy toàn bộ từ điển ảnh của danh sách Bánh/Vỏ hộp trong 1 lần truy vấn duy nhất (tránh lỗi N+1 Query).
         /// </summary>
         public async Task<Dictionary<string, string>> LayTuDienUrlAnhAsync()
         {
@@ -27,7 +27,6 @@ namespace WebBanhTrungThu.Services
 
             foreach (var lk in danhSachLK)
             {
-                // Khóa tra cứu dạng: "BANH_1_TACH_NEN_SLOT" hoặc "VOHOP_1_KHAY_HOP_RONG"
                 string key = $"{lk.LoaiDoiTuong}_{lk.MaDoiTuong}_{lk.VaiTroAnh}";
                 if (!ketQua.ContainsKey(key) && lk.MaHaNavigation != null)
                 {
@@ -39,7 +38,7 @@ namespace WebBanhTrungThu.Services
         }
 
         /// <summary>
-        /// Hàm lấy nhanh URL ảnh từ Từ điển đã nạp (có sẵn ảnh Fallback nếu thiếu)
+        /// Hàm lấy nhanh URL ảnh từ Từ điển đã nạp (có sẵn ảnh Fallback nếu thiếu).
         /// </summary>
         public static string LayUrl(Dictionary<string, string>? tuDien, string loaiDoiTuong, int maDoiTuong, string vaiTroAnh)
         {
@@ -51,7 +50,6 @@ namespace WebBanhTrungThu.Services
                     return url;
                 }
 
-                // Nếu tìm ANH_CHINH chưa có thì lấy tạm ảnh TACH_NEN_SLOT của bánh đó
                 string fallbackKey = $"{loaiDoiTuong}_{maDoiTuong}_TACH_NEN_SLOT";
                 if (tuDien.TryGetValue(fallbackKey, out string? fallbackUrl))
                 {

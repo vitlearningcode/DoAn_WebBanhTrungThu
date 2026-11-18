@@ -1,0 +1,323 @@
+@{
+    bool laQuanTriVien = User.IsInRole("QUAN_TRI");
+    string vaiTroHienTai = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "QUAN_TRI";
+}
+
+<!-- MODAL 1: ✏️ ĐIỀU PHỐI & CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG -->
+<div class="modal fade" id="modalCapNhatTrangThaiDon" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header py-2 px-3" style="background: #F4F6F8; border-bottom: 1px solid #E5E7EB;">
+                <h6 class="modal-title fw-bold text-dark mb-0">
+                    <i class="bi bi-pencil-square text-primary me-1"></i>
+                    Điều Phối &amp; Cập Nhật Trạng Thái Đơn Hàng <span id="lblMdCnMaDon" class="text-primary">#---</span>
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-3">
+                <div class="d-flex flex-wrap justify-content-between align-items-center p-2 mb-2 rounded border bg-white" style="font-size: 13px;">
+                    <div>
+                        Khách hàng: <strong id="lblMdCnKhachHang">---</strong> •
+                        Số đợt giao: <strong id="lblMdCnSoDotGiao">1</strong> điểm nhận
+                    </div>
+                    <div>
+                        Phương thức: <strong id="lblMdCnPhuongThuc" class="text-primary">---</strong> •
+                        Cần thu: <strong id="lblMdCnTongTien" class="text-danger so-tien">0 đ</strong>
+                    </div>
+                </div>
+
+                <!-- 1. THANH TIẾN TRÌNH TRẠNG THÁI (STEPPER) -->
+                <div class="kv-stepper">
+                    <div class="kv-step-item" id="stepItem_CHO_XAC_NHAN">
+                        <div class="kv-step-circle">1</div>
+                        <div class="kv-step-label">Chờ xác nhận</div>
+                    </div>
+                    <div class="kv-step-arrow"><i class="bi bi-arrow-right"></i></div>
+                    <div class="kv-step-item" id="stepItem_CHO_LAY_HANG">
+                        <div class="kv-step-circle">2</div>
+                        <div class="kv-step-label">Đang đóng gói / Chờ lấy</div>
+                    </div>
+                    <div class="kv-step-arrow"><i class="bi bi-arrow-right"></i></div>
+                    <div class="kv-step-item" id="stepItem_DANG_GIAO">
+                        <div class="kv-step-circle">3</div>
+                        <div class="kv-step-label">Đang giao hàng</div>
+                    </div>
+                    <div class="kv-step-arrow"><i class="bi bi-arrow-right"></i></div>
+                    <div class="kv-step-item" id="stepItem_HOAN_TAT">
+                        <div class="kv-step-circle">4</div>
+                        <div class="kv-step-label">Hoàn tất</div>
+                    </div>
+                </div>
+
+                <!-- 2. KHU VỰC 1: XÁC NHẬN THANH TOÁN CHUYỂN KHOẢN QR -->
+                <div id="boxXacNhanQrThuNgan" class="p-3 mb-3 rounded border" style="background: #ECFDF5; border-color: #A7F3D0 !important; display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong style="color: #065F46; font-size: 13.5px;">
+                            <i class="bi bi-qr-code-scan me-1"></i> Khu vực 1 - Xác nhận Thanh toán Chuyển khoản QR (Thu ngân / Webhook API)
+                        </strong>
+                        <span class="badge bg-warning text-dark">Đang chờ thanh toán</span>
+                    </div>
+                    <p class="small text-muted mb-2">
+                        Khi khách hàng quét mã chuyển khoản thành công, bấm nút dưới đây để ghi nhận <code>DA_TT</code> vào Sổ Quỹ và tự động chuyển đơn sang trạng thái <strong>Chờ lấy hàng (<code>CHO_LAY_HANG</code>)</strong> cho bộ phận giao vận.
+                    </p>
+                    <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="XacNhanChuyenKhoanQr" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="maDh" id="inpQrMaDh" value="0" />
+                        <button type="submit" class="btn-kv-green w-100 py-2 fw-semibold">
+                            ⚡ Xác nhận đã nhận chuyển khoản QR -> Chuyển sang Chờ lấy hàng
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 3. KHU VỰC 2: NÚT CHUYỂN BƯỚC TIẾP THEO -->
+                <div class="p-3 mb-3 rounded border" style="background: #F2F8FE; border-color: #BFDBFE !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong style="color: #005AC3; font-size: 13.5px;">
+                            <i class="bi bi-diagram-3-fill me-1"></i> Khu vực 2 - Tác vụ Chuyển Bước Tiếp Theo (Nhân viên Bán hàng / Giao hàng)
+                        </strong>
+                        <span class="kv-tag-mini member">Quyền hiện tại: @vaiTroHienTai</span>
+                    </div>
+
+                    <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="CapNhatTrangThai" method="post" id="formChuyenBuocTiepTheo">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="maDh" id="inpNextStepMaDh" value="0" />
+                        <input type="hidden" name="trangThaiDh" id="inpNextStepTrangThaiDh" value="" />
+                        <input type="hidden" name="trangThaiTt" id="inpNextStepTrangThaiTt" value="" />
+
+                        <div id="btnWrapStep_CHO_XAC_NHAN" style="display: none;">
+                            <p class="small text-muted mb-2">Đơn hàng đang ở bước <strong>Chờ xác nhận</strong>. Nhân viên Order/Thu ngân kiểm tra hộp bánh và xác nhận đóng gói để chuyển sang Chờ lấy hàng:</p>
+                            <button type="submit" class="btn-kv-blue w-100 py-2 fw-semibold"
+                                    onclick="document.getElementById('inpNextStepTrangThaiDh').value='CHO_LAY_HANG'; document.getElementById('inpNextStepTrangThaiTt').value='';">
+                                📦 Xác nhận đơn &amp; Chuyển sang Chờ lấy hàng
+                            </button>
+                        </div>
+
+                        <div id="btnWrapStep_CHO_LAY_HANG" style="display: none;">
+                            <p class="small text-muted mb-2">Hộp quà đã đóng gói sẵn sàng tại quầy (<strong>Chờ lấy hàng</strong>). Nhân viên giao vận nhận kiện hàng để bắt đầu lộ trình giao:</p>
+                            <button type="submit" class="btn-kv-blue w-100 py-2 fw-semibold"
+                                    onclick="document.getElementById('inpNextStepTrangThaiDh').value='DANG_GIAO'; document.getElementById('inpNextStepTrangThaiTt').value='';">
+                                🚚 Nhân viên nhận hàng &amp; Bắt đầu đi giao (Đang giao)
+                            </button>
+                        </div>
+
+                        <div id="btnWrapStep_DANG_GIAO" style="display: none;">
+                            <p class="small text-muted mb-2">Đơn hàng đang trên đường giao (<strong>Đang giao</strong>). Sau khi giao tận tay người nhận (và thu tiền nếu COD), xác nhận hoàn tất:</p>
+                            <button type="submit" class="btn-kv-green w-100 py-2 fw-semibold"
+                                    onclick="document.getElementById('inpNextStepTrangThaiDh').value='HOAN_TAT'; document.getElementById('inpNextStepTrangThaiTt').value='DA_TT';">
+                                ✅ Xác nhận đã giao thành công (Hoàn tất &amp; Ghi nhận doanh thu)
+                            </button>
+                        </div>
+
+                        <div id="btnWrapStep_HOAN_TAT" style="display: none;">
+                            <div class="p-2 rounded bg-white border text-success fw-medium text-center">
+                                <i class="bi bi-check-circle-fill me-1"></i> Đơn hàng này đã giao thành công (HOAN_TAT) và đã ghi nhận doanh thu vào Sổ Quỹ.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 4. KHU VỰC 3: QUYỀN ĐIỀU CHỈNH TRỰC TIẾP CỦA QUẢN TRỊ VIÊN -->
+                <div class="p-3 rounded border" style="background: #F9FAFB; border-color: #D1D5DB !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong class="text-dark" style="font-size: 13px;">
+                            🛠️ Quyền Quản Trị Viên: Điều chỉnh trạng thái thủ công (Dùng khi mất kết nối mạng / lỗi thiết bị để khớp doanh thu)
+                        </strong>
+                        @if (laQuanTriVien)
+                        {
+                            <span class="badge bg-primary">QUAN_TRI Đang kích hoạt</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">Chỉ dành cho QUAN_TRI</span>
+                        }
+                    </div>
+
+                    <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="CapNhatTrangThai" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="maDh" id="inpOverrideMaDh" value="0" />
+                        <input type="hidden" name="laAdminOverride" value="true" />
+
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Trạng thái đơn hàng</label>
+                                <select name="trangThaiDh" id="selOverrideTrangThaiDh" class="kv-select" @(laQuanTriVien ? "" : "disabled")>
+                                    <option value="CHO_XAC_NHAN">CHO_XAC_NHAN - Chờ xác nhận</option>
+                                    <option value="CHO_LAY_HANG">CHO_LAY_HANG - Chờ lấy hàng</option>
+                                    <option value="DANG_GIAO">DANG_GIAO - Đang giao hàng</option>
+                                    <option value="HOAN_TAT">HOAN_TAT - Hoàn tất</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Trạng thái thanh toán</label>
+                                <select name="trangThaiTt" id="selOverrideTrangThaiTt" class="kv-select" @(laQuanTriVien ? "" : "disabled")>
+                                    <option value="CHUA_TT">CHUA_TT - Chưa thanh toán</option>
+                                    <option value="DA_TT">DA_TT - Đã thanh toán</option>
+                                    <option value="DA_HOAN_TIEN">DA_HOAN_TIEN - Đã hoàn tiền</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Lý do điều chỉnh Quản trị</label>
+                                <input type="text" name="ghiChuDieuChinh" class="kv-input"
+                                       placeholder="VD: Shipper báo giao xong khi mất sóng..."
+                                       @(laQuanTriVien ? "" : "disabled") />
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
+                            @if (!laQuanTriVien)
+                            {
+                                <small class="text-danger">
+                                    * Bạn đang đăng nhập quyền <strong>@vaiTroHienTai</strong>. Hãy chọn <strong>"👑 Quyền: Quản trị viên"</strong> ở góc trên cùng bên phải nếu muốn test Admin Override.
+                                </small>
+                            }
+                            else
+                            {
+                                <small class="text-muted">Cho phép chuyển thẳng tới bất kỳ trạng thái nào để đồng bộ Sổ Quỹ cuối ngày.</small>
+                            }
+                            <button type="submit" class="btn-kv-outline fw-semibold" @(laQuanTriVien ? "" : "disabled")>
+                                <i class="bi bi-shield-check text-primary me-1"></i> Lưu điều chỉnh Quản trị
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL 2: 🗑️ KIỂM TRA PHIẾU LIÊN QUAN & HOÀN TIỀN NGÂN HÀNG (VIETQR REFUND) -->
+<div class="modal fade" id="modalHuyDonVaHoanTien" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header py-2 px-3" style="background: #FEF2F2; border-bottom: 1px solid #FECACA;">
+                <h6 class="modal-title fw-bold mb-0" style="color: #DC2626;">
+                    <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                    Kiểm Tra Phiếu Liên Quan &amp; Xác Nhận Hủy Hóa Đơn <span id="lblMdHuyMaDon">#---</span>
+                </h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="HuyDonVaHoanTien" method="post" id="formHuyDonVaHoanTien" onsubmit="return kiemTraTruocKhiSubmitHuy()">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="maDh" id="inpHuyMaDh" value="0" />
+
+                <div class="modal-body p-3">
+                    <div class="p-3 mb-3 rounded border bg-light">
+                        <div class="fw-semibold text-dark mb-2" style="font-size: 13.5px;">
+                            📋 1. Danh sách các phiếu &amp; chứng từ liên quan sẽ bị hủy theo hóa đơn này:
+                        </div>
+                        <div class="row g-2" style="font-size: 13px;">
+                            <div class="col-md-6">
+                                <div class="p-2 rounded bg-white border d-flex justify-content-between">
+                                    <span class="text-muted">🚚 Phiếu giao hàng đa điểm:</span>
+                                    <strong class="text-danger"><span id="lblHuySoDotGiao">1</span> phiếu ➔ DA_HUY</strong>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-2 rounded bg-white border d-flex justify-content-between">
+                                    <span class="text-muted">💌 Mã Thiệp điện tử QR 3D:</span>
+                                    <strong class="text-danger"><span id="lblHuySoThiepQr">1</span> thiệp ➔ Vô hiệu hóa</strong>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-2 rounded bg-white border d-flex justify-content-between">
+                                    <span class="text-muted">📦 Hoàn trả tồn kho hàng hóa:</span>
+                                    <strong class="text-success">+<span id="lblHuySoMon">1</span> sản phẩm/hộp về kho</strong>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-2 rounded bg-white border d-flex justify-content-between">
+                                    <span class="text-muted">💰 Trạng thái Phiếu thu Sổ quỹ:</span>
+                                    <strong id="lblHuyTrangThaiTt" class="text-primary">---</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="boxHoanTienVietQr" style="display: none;">
+                        <div class="p-3 mb-3 rounded border" style="background: #FFFBEB; border-color: #FDE68A !important; color: #92400E;">
+                            <div class="fw-bold mb-1" style="font-size: 13.5px;">
+                                ⚠️ Đơn hàng này khách đã thanh toán (<span id="lblHuySoTienCanHoan">0</span> đ).
+                                Vui lòng liên hệ khách hàng (<span id="lblHuyThongTinKhach">---</span>) lấy thông tin Ngân hàng để hoàn tiền trước khi hủy phiếu!
+                            </div>
+                            <small>Hệ thống sẽ tự động sinh mã <strong>VietQR Hoàn Tiền</strong> chuẩn xác theo Số tài khoản khách cung cấp và tạo <strong>Phiếu Chi Hoàn Tiền</strong> trong Sổ Quỹ.</small>
+                        </div>
+
+                        <div class="row g-3 align-items-center">
+                            <div class="col-md-7">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="fw-semibold text-dark" style="font-size: 13px;">Thông tin tài khoản nhận hoàn tiền của khách:</span>
+                                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2" style="font-size: 11.5px;"
+                                            onclick="dienNhanhStkKhachDemo()">
+                                        ⚡ Điền mẫu STK khách
+                                    </button>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label small fw-medium mb-1">Ngân hàng nhận hoàn tiền <span class="text-danger">*</span></label>
+                                    <select name="maNganHangHoan" id="selMaNganHangHoan" class="kv-select" onchange="capNhatAnhVietQrHoanTien()">
+                                        <option value="VCB">VCB - Ngân hàng TMCP Ngoại thương (Vietcombank)</option>
+                                        <option value="MB">MB - Ngân hàng TMCP Quân Đội (MBBank)</option>
+                                        <option value="TCB">TCB - Ngân hàng TMCP Kỹ Thương (Techcombank)</option>
+                                        <option value="ACB">ACB - Ngân hàng TMCP Á Châu (ACB)</option>
+                                        <option value="CTG">CTG - Ngân hàng TMCP Công Thương (VietinBank)</option>
+                                        <option value="BIDV">BIDV - Ngân hàng TMCP Đầu tư &amp; Phát triển (BIDV)</option>
+                                        <option value="VPB">VPB - Ngân hàng TMCP Việt Nam Thịnh Vượng (VPBank)</option>
+                                        <option value="TPB">TPB - Ngân hàng TMCP Tiên Phong (TPBank)</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label small fw-medium mb-1">Số tài khoản khách hàng <span class="text-danger">*</span></label>
+                                    <input type="text" name="soTaiKhoanHoan" id="txtSoTaiKhoanHoan" class="kv-input"
+                                           placeholder="Nhập số tài khoản nhận hoàn tiền..."
+                                           oninput="capNhatAnhVietQrHoanTien()" />
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label small fw-medium mb-1">Tên chủ tài khoản (Không dấu) <span class="text-danger">*</span></label>
+                                    <input type="text" name="tenChuTkHoan" id="txtTenChuTkHoan" class="kv-input text-uppercase"
+                                           placeholder="VD: NGUYEN MINH CHAU"
+                                           oninput="capNhatAnhVietQrHoanTien()" />
+                                </div>
+                            </div>
+
+                            <div class="col-md-5 text-center">
+                                <div class="p-2 rounded border bg-white">
+                                    <div class="small fw-semibold text-primary mb-1">
+                                        <i class="bi bi-qr-code me-1"></i> Mã VietQR Quét Hoàn Tiền
+                                    </div>
+                                    <div id="khungChuaVietQrHoan" class="py-2">
+                                        <img id="imgVietQrHoanTien"
+                                             src=""
+                                             alt="VietQR Hoàn Tiền"
+                                             style="max-width: 185px; border-radius: 6px; border: 1px solid #E5E7EB; display: none;" />
+                                        <div id="placeholderVietQrHoan" class="p-3 text-muted small">
+                                            Nhập Số tài khoản khách hàng ở cột trái để tạo mã QR chuyển khoản hoàn tiền tự động.
+                                        </div>
+                                    </div>
+                                    <div class="small text-danger fw-bold" id="lblSoTienQrPreview">0 đ</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-2">
+                        <label class="form-label small fw-medium mb-1">Lý do hủy phiếu &amp; ghi chú đối soát</label>
+                        <input type="text" name="lyDoHuy" id="txtLyDoHuyDon" class="kv-input"
+                               placeholder="VD: Khách đổi ý / Nhầm mẫu hộp / Đã chuyển khoản hoàn tiền..."
+                               value="Khách yêu cầu hủy đơn & hoàn kho" />
+                    </div>
+                </div>
+
+                <div class="modal-footer py-2 px-3" style="background: #F9FAFB;">
+                    <button type="button" class="btn-kv-outline" data-bs-dismiss="modal">Đóng lại</button>
+                    <button type="submit" id="btnSubmitXacNhanHuy" class="btn btn-danger btn-sm px-3 py-2 fw-semibold">
+                        🗑️ Xác nhận Hủy Đơn Hàng
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

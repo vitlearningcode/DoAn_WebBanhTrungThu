@@ -1,0 +1,159 @@
+@model WebBanhTrungThu.ViewModels.SanPhamAdminViewModel
+
+<!-- CỘT TRÁI (250PX): TIÊU ĐỀ "HÀNG HÓA" + 9 KHỐI LỌC CLIENT-SIDE TỨC THÌ -->
+<aside class="kv-sidebar-filter">
+    <h1 class="kv-page-heading">Hàng hóa</h1>
+
+    <div id="boxLocClientKiotViet">
+        <input type="hidden" id="fltBanTrucTiep" value="ALL" />
+
+        <!-- 1. Nhóm hàng (kèm nút Tạo mới màu xanh) -->
+        <div class="kv-filter-card">
+            <div class="kv-filter-header">
+                <span>Nhóm hàng</span>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="javascript:void(0)" class="kv-link-create" onclick="moPopupTaoMoiDanhMuc('NHOM_HANG')">Tạo mới</a>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+            </div>
+            <select id="fltMaDm" class="kv-select" onchange="locBangHangHoaClient()">
+                <option value="ALL">Chọn nhóm hàng (Tất cả)</option>
+                @foreach (var dm in Model.DanhSachDanhMuc)
+                {
+                    <option value="@dm.MaDm">@dm.TenDm</option>
+                }
+            </select>
+        </div>
+
+        <!-- 2. Tồn kho -->
+        <div class="kv-filter-card">
+            <div class="kv-filter-header">
+                <span>Tồn kho</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <select id="fltTonKho" class="kv-select" onchange="locBangHangHoaClient()">
+                <option value="ALL">Tất cả</option>
+                <option value="DUOI_DINH_MUC">Dưới định mức tồn (&le; 30)</option>
+                <option value="VUOT_DINH_MUC">Vượt định mức tồn (&gt; 100)</option>
+                <option value="CON_HANG">Còn hàng trong kho</option>
+                <option value="HET_HANG">Hết hàng trong kho</option>
+            </select>
+        </div>
+
+        <!-- 3. Dự kiến hết hàng -->
+        <div class="kv-filter-card">
+            <div class="kv-filter-header">
+                <span>Dự kiến hết hàng</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <div class="d-flex flex-column gap-1">
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="duKienHetHang" value="ALL" checked onchange="locBangHangHoaClient()" />
+                    <span>Toàn thời gian</span>
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="duKienHetHang" value="TUY_CHINH" onchange="locBangHangHoaClient()" />
+                    <span>Tùy chỉnh</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 4. Thời gian tạo -->
+        <div class="kv-filter-card">
+            <div class="kv-filter-header">
+                <span>Thời gian tạo</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <div class="d-flex flex-column gap-1">
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="thoiGianTao" value="ALL" checked onchange="locBangHangHoaClient()" />
+                    <span>Toàn thời gian</span>
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="thoiGianTao" value="TUY_CHINH" onchange="locBangHangHoaClient()" />
+                    <span>Tùy chỉnh</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- 5. Nhà cung cấp -->
+        <div class="kv-filter-card">
+            <div class="kv-filter-header">
+                <span>Nhà cung cấp</span>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="javascript:void(0)" class="kv-link-create" onclick="moPopupTaoMoiDanhMuc('NHA_CUNG_CAP')">Tạo mới</a>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+            </div>
+            <select id="fltNhaCungCap" class="kv-select" onchange="locBangHangHoaClient()">
+                <option value="ALL">Chọn nhà cung cấp</option>
+                @foreach (var ncc in Model.DanhSachNhaCungCap)
+                {
+                    <option value="@ncc">@ncc</option>
+                }
+            </select>
+        </div>
+
+        <!-- 6. Thương hiệu -->
+        <div class="kv-filter-card">
+            <div class="kv-filter-header">
+                <span>Thương hiệu</span>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="javascript:void(0)" class="kv-link-create" onclick="moPopupTaoMoiDanhMuc('THUONG_HIEU')">Tạo mới</a>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+            </div>
+            <select id="fltThuongHieu" class="kv-select" onchange="locBangHangHoaClient()">
+                <option value="ALL">Chọn thương hiệu</option>
+                @foreach (var th in Model.DanhSachThuongHieu)
+                {
+                    <option value="@th">@th</option>
+                }
+            </select>
+        </div>
+
+        <!-- 7. Vị trí -->
+        <div class="kv-filter-card">
+            <div class="kv-filter-header">
+                <span>Vị trí</span>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="javascript:void(0)" class="kv-link-create" onclick="moPopupTaoMoiDanhMuc('VI_TRI')">Tạo mới</a>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+            </div>
+            <select id="fltViTriKho" class="kv-select" onchange="locBangHangHoaClient()">
+                <option value="ALL">Chọn vị trí</option>
+                @foreach (var vt in Model.DanhSachViTriKho)
+                {
+                    <option value="@vt">@vt</option>
+                }
+            </select>
+        </div>
+
+        <!-- 8. Loại hàng -->
+        <div class="kv-filter-card">
+            <div class="kv-filter-header">
+                <span>Loại hàng</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <select id="fltLoaiHang" class="kv-select" onchange="locBangHangHoaClient()">
+                <option value="ALL">Tất cả loại hàng</option>
+                <option value="BANH_LE">Hàng hóa thường (Bánh lẻ)</option>
+                <option value="COMBO">Combo - đóng gói</option>
+            </select>
+        </div>
+
+        <!-- 9. Bán trực tiếp -->
+        <div class="kv-filter-card">
+            <div class="kv-filter-header">
+                <span>Bán trực tiếp</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <div class="kv-pill-group" id="pillGroupBanTrucTiep">
+                <button type="button" class="kv-pill-btn active" data-val="ALL" onclick="chonBanTrucTiep(this, 'ALL')">Tất cả</button>
+                <button type="button" class="kv-pill-btn" data-val="CO" onclick="chonBanTrucTiep(this, 'CO')">Có</button>
+                <button type="button" class="kv-pill-btn" data-val="KHONG" onclick="chonBanTrucTiep(this, 'KHONG')">Không</button>
+            </div>
+        </div>
+    </div>
+</aside>

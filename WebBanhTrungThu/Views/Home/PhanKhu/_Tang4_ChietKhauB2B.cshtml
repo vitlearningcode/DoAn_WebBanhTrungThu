@@ -1,0 +1,85 @@
+@model WebBanhTrungThu.ViewModels.LandingPageViewModel
+
+<!-- =========================================================================
+     TẦNG 4 (04): QUÀ TẶNG DOANH NGHIỆP B2B & ÉP KIM LOGO RIÊNG (NỀN NGỌC TRAI ẤM)
+     ========================================================================= -->
+<section id="tang-b2b" class="tang-phan-khu nen-ngoc-trai-am border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
+    <div class="container py-3 section-reveal">
+        <div class="row align-items-center g-5">
+            <div class="col-lg-6">
+                <span class="text-uppercase small chu-do-son-mai fw-bold" style="letter-spacing: 1.5px;">Giải Pháp Quà Biếu Doanh Nghiệp Đẳng Cấp</span>
+                <h2 class="font-co-phong display-5 fw-bold chu-nau-tram mb-3">Chiết Khấu Sỉ B2B &amp; Ép Kim Logo Thương Hiệu</h2>
+                <p class="chu-nau-phu mb-4">
+                    Kéo thanh trượt bên dưới để ước tính ngay mức chiết khấu ưu đãi theo số lượng lễ hộp và chính sách miễn phí khuôn ép kim Logo doanh nghiệp lên nắp hộp sơn mài.
+                </p>
+
+                <div class="card-hoang-gia p-4">
+                    <label class="form-label d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold chu-nau-tram">Số lượng lễ hộp dự kiến đặt:</span>
+                        <strong id="lblSoHopB2B" class="fs-4 chu-do-son-mai">35 Hộp</strong>
+                    </label>
+                    <input type="range" class="form-range" id="sliderSoHopB2B" min="10" max="200" step="5" value="35" oninput="tinhGiaSiB2B(this.value)">
+
+                    <div class="row g-3 mt-2 text-center">
+                        <div class="col-4">
+                            <div class="p-2 rounded" style="background: var(--mau-nen-giay-do); border: 1px solid var(--mau-vien-vang-dong);">
+                                <small class="chu-nau-phu d-block">Mức chiết khấu</small>
+                                <strong id="lblPhanTramB2B" class="fs-4 chu-do-son-mai">15%</strong>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 rounded" style="background: var(--mau-nen-giay-do); border: 1px solid var(--mau-vien-vang-dong);">
+                                <small class="chu-nau-phu d-block">Khuôn ép kim Logo</small>
+                                <strong id="lblLogoB2B" class="fs-6 text-success">MIỄN PHÍ</strong>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 rounded" style="background: var(--mau-nen-giay-do); border: 1px solid var(--mau-vien-vang-dong);">
+                                <small class="chu-nau-phu d-block">Ngân sách tiết kiệm</small>
+                                <strong id="lblTietKiemB2B" class="fs-6 chu-vang-dong">3.150.000đ</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card-hoang-gia p-4">
+                    <h5 class="font-co-phong fs-3 fw-bold chu-do-son-mai mb-3">Bảng Định Mức Chiết Khấu B2B Chính Thức</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0 table-trung-thu">
+                            <thead>
+                                <tr>
+                                    <th>Hạng Mức</th>
+                                    <th>Số Lượng Hộp</th>
+                                    <th>Chiết Khấu</th>
+                                    <th>Ép Kim Logo Riêng</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var moc in Model.BangGiaSiB2B)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold chu-nau-tram">@moc.TenMocB2b</td>
+                                        <td class="chu-nau-phu">@moc.SlhopToiThieu – @moc.SlhopToiDa hộp</td>
+                                        <td><span class="badge badge-thuong-hang">-@moc.PhanTramChietKhau.ToString("N0")%</span></td>
+                                        <td>
+                                            @if (moc.MienPhiInLogo)
+                                            {
+                                                <span class="text-success fw-semibold"><i class="bi bi-check-circle-fill me-1"></i>Miễn phí khuôn</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="chu-nau-phu">Phụ phí @moc.PhiKhuonInLogo.ToString("N0")đ</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

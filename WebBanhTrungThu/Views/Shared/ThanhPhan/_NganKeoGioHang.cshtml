@@ -1,0 +1,77 @@
+<!-- NGĂN KÉO GIỎ QUÀ TRUNG THU (OFFCANVAS DÙNG CHUNG TOÀN HỆ THỐNG) -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="nganKeoGioHang" style="background: var(--mau-nen-giay-do); color: var(--mau-chu-nau-tram); border-left: 2px solid var(--mau-vang-dong-co); width: 410px;">
+    <div class="offcanvas-header border-bottom" style="border-color: var(--mau-vien-vang-dong) !important; background: linear-gradient(90deg, #5C0A0D 0%, #6E0D10 100%);">
+        <div>
+            <h5 class="offcanvas-title font-co-phong fs-3 fw-bold chu-vang-kim">
+                🏮 Giỏ Quà Trung Thu
+            </h5>
+            <small class="chu-kem-vang">
+                <i class="bi bi-person-heart me-1"></i>Khách hàng: @(User.Identity != null && User.Identity.IsAuthenticated ? User.Identity.Name : "Khách Vãng Lai")
+            </small>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column justify-content-between p-3">
+        <div id="danhSachMonTrongGio" class="overflow-auto pe-1" style="max-height: 55vh;">
+            <div class="text-center chu-nau-phu py-5">Đang đồng bộ giỏ quà...</div>
+        </div>
+
+        <div class="border-top pt-3 mt-2" style="border-color: var(--mau-vien-vang-dong) !important;">
+            @if (User.Identity == null || !User.Identity.IsAuthenticated)
+            {
+                <div class="p-2 rounded small mb-2 d-flex justify-content-between align-items-center gap-2" style="background: var(--mau-nen-ngoc-trai); border: 1px solid var(--mau-vang-dong-co);">
+                    <span class="chu-nau-tram"><i class="bi bi-gift-fill chu-do-son-mai me-1"></i>Đăng nhập hội viên để lưu giỏ quà &amp; tích điểm thưởng!</span>
+                    <button type="button" class="btn btn-sm btn-do-son-mai rounded-pill text-nowrap"
+                            data-bs-toggle="modal" data-bs-target="#modalTaiKhoan">
+                        Đăng Nhập
+                    </button>
+                </div>
+            }
+
+            <!-- KHU VỰC MÃ ƯU ĐÃI 1 HÀNG NGANG GỌN GÀNG -->
+            <div class="mb-3 p-2 rounded" style="background: var(--mau-nen-ngoc-trai); border: 1px dashed var(--mau-vang-dong-co);">
+                <div class="hang-nhan-ma-uu-dai">
+                    <label for="txtMaVoucherGioHang" class="small fw-bold chu-do-son-mai mb-0 text-nowrap">
+                        <i class="bi bi-ticket-perforated-fill me-1"></i>Mã ưu đãi:
+                    </label>
+                    <div class="d-inline-flex align-items-center gap-1 flex-wrap">
+                        <button type="button" class="btn btn-sm btn-vien-vang rounded-pill py-0 px-2 text-nowrap" style="font-size: 0.72rem;"
+                                onclick="chonNhanhVoucher('TRANGTRON2026')">
+                            Áp mã TRANGTRON2026 (-10%)
+                        </button>
+                        <span id="lblHsdVoucherGioHang" class="badge rounded-pill px-2 py-0" style="background: #FEF3C7; color: #92400E; font-size: 0.66rem;">
+                            HSD: 31/12/2027 • Đơn từ 200k
+                        </span>
+                    </div>
+                </div>
+                <div class="nhom-nhap-ma-uu-dai">
+                    <input type="text" id="txtMaVoucherGioHang" class="form-control form-control-sm"
+                           placeholder="Nhập mã ưu đãi..." />
+                    <button type="button" class="btn btn-sm btn-do-son-mai px-3 text-nowrap" onclick="apDungVoucherGioHang()">
+                        Áp Dụng
+                    </button>
+                </div>
+                <small id="lblThongBaoVoucher" class="d-block mt-1" style="font-size: 0.75rem;"></small>
+            </div>
+
+            <div class="d-flex justify-content-between small mb-1">
+                <span class="chu-nau-phu">Tạm tính tiền bánh &amp; hộp:</span>
+                <strong id="lblTamTinhOffcanvas" class="chu-nau-tram">0 đ</strong>
+            </div>
+            <div class="d-flex justify-content-between small mb-1 text-success">
+                <span>Ưu đãi Voucher lễ hội:</span>
+                <strong id="lblTienGiamVoucherOffcanvas">-0 đ</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-3 pt-2 border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
+                <span class="fw-bold chu-nau-tram">Tổng cộng:</span>
+                <span id="lblTongThanhToanSauGiam" class="fs-4 fw-bold chu-do-son-mai">0 đ</span>
+            </div>
+
+            <div id="canhBaoTonKhoOffcanvas" class="alert alert-danger py-2 px-3 small mb-2 d-none" style="font-size: 0.78rem;"></div>
+
+            <a href="/ThanhToan/Index" id="btnTienHanhThanhToanOffcanvas" onclick="return chuyenDenTrangThanhToan(event)" class="btn btn-do-son-mai w-100 py-2 rounded-pill shadow">
+                Tiến Hành Đặt Quà &amp; Tạo Thiệp QR 3D <i class="bi bi-arrow-right-circle ms-1"></i>
+            </a>
+        </div>
+    </div>
+</div>

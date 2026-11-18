@@ -1,0 +1,184 @@
+<!-- 1. MODAL ĐĂNG NHẬP / ĐĂNG KÝ & TỰ ĐỘNG HỢP NHẤT GIỎ QUÀ -->
+<div class="modal fade" id="modalTaiKhoan" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-hoang-gia p-2">
+            <div class="modal-header border-bottom pb-2" style="border-color: var(--mau-vien-vang-dong) !important;">
+                <div>
+                    <h5 class="modal-title font-co-phong fs-3 chu-do-son-mai fw-bold">
+                        <i class="bi bi-shield-lock-fill chu-vang-dong me-2"></i>Hội Viên Nguyệt Cát &amp; Lưu Giỏ Quà
+                    </h5>
+                    <small class="chu-nau-phu">Các hộp bánh bạn đã chọn sẽ tự động lưu vào tài khoản thành viên</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-pills nav-fill mb-3 p-1 rounded" style="background: var(--mau-nen-ngoc-trai); border: 1px solid var(--mau-vien-vang-dong);" id="tabTaiKhoan" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active rounded-pill fw-semibold" id="btn-tab-dangnhap"
+                                data-bs-toggle="pill" data-bs-target="#pane-dangnhap" type="button" role="tab">
+                            Đăng Nhập
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill fw-semibold chu-nau-tram" id="btn-tab-dangky"
+                                data-bs-toggle="pill" data-bs-target="#pane-dangky" type="button" role="tab">
+                            Đăng Ký Hội Viên Mới (+50 Điểm)
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- TAB 1: ĐĂNG NHẬP -->
+                    <div class="tab-pane fade show active" id="pane-dangnhap" role="tabpanel">
+                        <div class="p-2 mb-3 rounded" style="background: var(--mau-nen-giay-do); border: 1px dashed var(--mau-vang-dong-co);">
+                            <small class="chu-do-son-mai fw-bold d-block mb-2">🎯 Chọn nhanh tài khoản trải nghiệm:</small>
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-sm btn-vien-vang text-start"
+                                        onclick="dienNhanhTaiKhoanDemo('0909123456', '123456')">
+                                    🌟 Khách Hàng Thân Thiết (Minh Châu - SĐT: 0909123456)
+                                </button>
+                                <button type="button" class="btn btn-sm btn-vien-vang text-start"
+                                        onclick="dienNhanhTaiKhoanDemo('0814585526', '123456')">
+                                    👑 Quản Lý Cửa Hàng (Lê Minh Đức - SĐT: 0814585526)
+                                </button>
+                                <button type="button" class="btn btn-sm btn-vien-vang text-start"
+                                        onclick="dienNhanhTaiKhoanDemo('0908111222', '123456')">
+                                    💼 Chuyên Viên Quầy Lễ (Trần Thu Ngân - SĐT: 0908111222)
+                                </button>
+                                <button type="button" class="btn btn-sm btn-vien-vang text-start"
+                                        onclick="dienNhanhTaiKhoanDemo('0908333444', '123456')">
+                                    🚚 Phụ Trách Giao Quà (Nguyễn Văn Giao - SĐT: 0908333444)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold chu-nau-tram">Số điện thoại hoặc Email</label>
+                            <input type="text" id="txtDangNhapTaiKhoan" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="Nhập SĐT hoặc Email..." />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold chu-nau-tram">Mật khẩu</label>
+                            <input type="password" id="txtDangNhapMatKhau" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="Nhập mật khẩu..." />
+                        </div>
+                        <div id="thongBaoLoiDangNhap" class="alert alert-danger py-2 small d-none"></div>
+                        <button type="button" id="btnSubmitDangNhap" class="btn btn-do-son-mai w-100 py-2 rounded-pill" onclick="thucHienDangNhapAjax()">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Đăng Nhập &amp; Đồng Bộ Giỏ Quà
+                        </button>
+                    </div>
+
+                    <!-- TAB 2: ĐĂNG KÝ THÀNH VIÊN MỚI -->
+                    <div class="tab-pane fade" id="pane-dangky" role="tabpanel">
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold chu-nau-tram">Họ và tên</label>
+                            <input type="text" id="txtDangKyHoTen" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="VD: Nguyễn Ngọc Ánh" />
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold chu-nau-tram">Số điện thoại</label>
+                                <input type="text" id="txtDangKySdt" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="09xx..." />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold chu-nau-tram">Email</label>
+                                <input type="email" id="txtDangKyEmail" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="email@domain.com" />
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold chu-nau-tram">Mật khẩu khởi tạo</label>
+                            <input type="password" id="txtDangKyMatKhau" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="Tối thiểu 6 ký tự..." />
+                        </div>
+                        <div id="thongBaoLoiDangKy" class="alert alert-danger py-2 small d-none"></div>
+                        <button type="button" id="btnSubmitDangKy" class="btn btn-do-son-mai w-100 py-2 rounded-pill" onclick="thucHienDangKyAjax()">
+                            <i class="bi bi-person-plus-fill me-1"></i>Đăng Ký Hội Viên (+50 Điểm Thưởng)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. MODAL TRA CỨU ĐƠN HÀNG NHANH -->
+<div class="modal fade" id="modalTraCuuDon" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content card-hoang-gia p-2">
+            <div class="modal-header border-bottom" style="border-color: var(--mau-vien-vang-dong) !important;">
+                <h5 class="modal-title font-co-phong fs-3 chu-do-son-mai fw-bold">
+                    <i class="bi bi-box-seam chu-vang-dong me-2"></i>Tra Cứu Hành Trình Đơn Quà
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="small chu-nau-phu mb-3">Nhập mã đơn hàng và số điện thoại người đặt mua để theo dõi tiến độ giao quà đa điểm và mở thiệp chúc mừng QR 3D.</p>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold chu-nau-tram">Mã tra cứu đơn hàng (VD: TT2026-8891)</label>
+                    <input type="text" id="txtMaTraCuu" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="Nhập mã đơn..." />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold chu-nau-tram">Số điện thoại đặt mua</label>
+                    <input type="text" id="txtSdtTraCuu" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="0909..." />
+                </div>
+                <div id="danh-sach-don-vua-dat-nhanh" class="mb-3 d-none"></div>
+                <button type="button" class="btn btn-do-son-mai w-100 rounded-pill py-2" onclick="traCuuDonHangGuest()">Kiểm Tra Đơn Hàng</button>
+                <div id="ketQuaTraCuuBox" class="mt-3 d-none p-3 rounded" style="background: var(--mau-nen-giay-do); border: 1px solid var(--mau-vang-dong-co);"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. MODAL NGHỆ NHÂN TƯ VẤN CHỌN VỊ BÁNH THEO GU THƯỞNG THỨC -->
+<div class="modal fade" id="modalTroLyChonBanh" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content card-hoang-gia">
+            <div class="modal-header nen-le-hoi-son-mai border-bottom" style="border-color: var(--mau-vang-dong-co) !important; border-radius: 15px 15px 0 0;">
+                <h5 class="modal-title font-co-phong fs-2 fw-bold chu-vang-kim">
+                    ✨ Nghệ Nhân Tư Vấn Chọn Vị Bánh Theo Gu Thưởng Thức
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold chu-do-son-mai">1. Bạn muốn biếu tặng ai?</label>
+                        <select id="quizDoiTuong" class="form-select" style="border-color: var(--mau-vien-vang-dong);">
+                            <option value="ONG_BA">Ông Bà / Cha Mẹ (Người lớn tuổi)</option>
+                            <option value="SEP_VIP">Cấp trên / Đối tác Trọng thị</option>
+                            <option value="BAN_BE">Bạn bè / Đồng nghiệp thân thiết</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold chu-do-son-mai">2. Ưu tiên chế độ dinh dưỡng?</label>
+                        <select id="quizSucKhoe" class="form-select" style="border-color: var(--mau-vien-vang-dong);">
+                            <option value="TIEU_DUONG">Ăn kiêng / Tiểu đường (Ưu tiên đường Isomalt GI thấp)</option>
+                            <option value="AN_CHAY">Thuần chay thanh tịnh 100%</option>
+                            <option value="BINH_THUONG">Truyền thống đậm đà</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold chu-do-son-mai">3. Gu thưởng thức yêu thích?</label>
+                        <select id="quizHuongVi" class="form-select" style="border-color: var(--mau-vien-vang-dong);">
+                            <option value="NGOT_HIENDAI">Ngọt thanh hạt sen / Đậu xanh</option>
+                            <option value="THUONG_HANG">Mặn thượng hạng (Bào ngư, Hải sản)</option>
+                            <option value="LAVA_CHAY">Nhân chảy Kim sa Lava</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold chu-do-son-mai">4. Ngân sách dự kiến cho hộp 4 bánh?</label>
+                        <select id="quizNganSach" class="form-select" style="border-color: var(--mau-vien-vang-dong);">
+                            <option value="500000">Dưới 500.000 đ</option>
+                            <option value="800000" selected>Khoảng 500.000đ – 800.000 đ</option>
+                            <option value="1500000">Cao cấp trên 800.000 đ</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button class="btn btn-do-son-mai px-5 py-2 rounded-pill" onclick="chayThuatToanGoiY()">
+                        <i class="bi bi-stars me-1"></i> Xem Gợi Ý Quà Tặng Phù Hợp
+                    </button>
+                </div>
+
+                <div id="ketQuaQuizContainer" class="row g-3 mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>

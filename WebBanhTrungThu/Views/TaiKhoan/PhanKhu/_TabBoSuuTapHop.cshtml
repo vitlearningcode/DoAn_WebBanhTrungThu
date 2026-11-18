@@ -1,0 +1,66 @@
+@model WebBanhTrungThu.ViewModels.HoSoThanhVienViewModel
+@{
+    string tabMacDinh = Model.TabMacDinh;
+}
+
+<div class="pane-ho-so @(tabMacDinh == "HOP_TU_CHON" ? "dang-hien" : "")" id="tab-hop-tu-chon" role="tabpanel" aria-labelledby="nut-tab-hop-tu-chon">
+    <div class="dau-pane-ho-so">
+        <h2 class="tieu-de-pane-ho-so">Bộ sưu tập hộp tự phối</h2>
+        <p class="mo-ta-pane-ho-so">Những lễ hộp bạn đã tự tay phối. Đặt lại chỉ với một lần bấm.</p>
+    </div>
+
+    @if (!Model.DanhSachHopTuChon.Any())
+    {
+        <div class="khung-trong-ho-so">
+            <i class="bi bi-box2-heart" aria-hidden="true"></i>
+            <h3>Bạn chưa lưu mẫu hộp tự phối nào</h3>
+            <p>Mỗi hộp bạn phối ở trang chủ sẽ được lưu tại đây để đặt lại nhanh.</p>
+            <a href="/#tang-tu-chon-hop" class="btn btn-do-son-mai rounded-pill px-4">Tự phối hộp quà</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var hop in Model.DanhSachHopTuChon)
+            {
+                <div class="col-md-6">
+                    <div class="the-hop-tu-phoi-ho-so">
+                        <div class="dau-the-hop-tu-phoi">
+                            <span class="loai-vo-hop-ho-so">@(hop.MaVhNavigation?.TenVoHop ?? "Hộp Quà Nghệ Thuật")</span>
+                            <h3 class="ten-hop-tu-phoi-ho-so">@hop.TenHopKhachDat</h3>
+                            <div class="thong-so-hop-tu-phoi">
+                                <span>Phối ngày @hop.NgayTao.ToString("dd/MM/yyyy")</span>
+                                <span class="cham-ngan-cach" aria-hidden="true">•</span>
+                                <span>@hop.TongCaloHop.ToString("N0") Kcal</span>
+                            </div>
+                        </div>
+
+                        <div class="bang-thanh-phan-hop-2-cot">
+                            @foreach (var ctHop in hop.ChiTietHopTuChons.OrderBy(c => c.ViTriOtrongHop))
+                            {
+                                <div class="dong-thanh-phan-hop">
+                                    <span class="cot-o-banh">Ô @ctHop.ViTriOtrongHop</span>
+                                    <span class="cot-ten-banh">@(ctHop.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu")</span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="chan-the-hop-tu-phoi">
+                            <div class="gia-hop-tu-phoi">
+                                <span>Giá trọn hộp</span>
+                                <strong>@hop.TongGiaMotHop.ToString("N0") đ</strong>
+                            </div>
+                            <form asp-controller="TaiKhoan" asp-action="DatLaiHopTuChon" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="maHopTc" value="@hop.MaHopTc" />
+                                <button type="submit" class="btn btn-do-son-mai rounded-pill px-3 nut-khong-ep">
+                                    Đặt lại mẫu hộp này
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

@@ -1,0 +1,70 @@
+@model WebBanhTrungThu.ViewModels.LandingPageViewModel
+@using WebBanhTrungThu.Services
+@{
+    string anhHero = Model.HeroBanner?.MaAnhNenNavigation?.UrlHienThi ?? "/images/landing/hero-banner-trungthu.jpg";
+}
+
+<!-- =========================================================================
+     TẦNG 1 (01): HERO BANNER LỄ HỘI TRUNG THU TRUYỀN THỐNG & ĐẾM NGƯỢC ĐOÀN VIÊN
+     ========================================================================= -->
+<section id="tang-hero" class="tang-phan-khu nen-le-hoi-son-mai" style="background: linear-gradient(135deg, rgba(110, 13, 16, 0.94) 0%, rgba(74, 7, 9, 0.90) 100%), url('@anhHero') center/cover no-repeat;">
+    <div class="container py-3 section-reveal active">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-7">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background: rgba(212, 175, 55, 0.16); border: 1px solid var(--mau-vang-anh-kim);">
+                    <span class="chu-vang-kim small fw-semibold">🏮 @(Model.HeroBanner?.TieuDePhu ?? "BỘ SƯU TẬP LỄ HỘP TRUNG THU CỔ TRUYỀN 2026")</span>
+                </div>
+
+                <h1 class="font-co-phong display-4 fw-bold chu-vang-kim mb-3">
+                    @(Model.HeroBanner?.TieuDeChinh ?? "Tuyệt Tác Trăng Rằm – Tự Tay Kiến Tạo Lễ Hộp Độc Bản")
+                </h1>
+
+                <p class="lead chu-kem-vang opacity-90 mb-4">
+                    @(Model.HeroBanner?.NoiDungMoTa ?? "Hội tụ tinh hoa bánh nướng, bánh dẻo cổ truyền từ Kinh Đô, Đồng Khánh, Như Lan, Brodard cùng dòng bánh thực dưỡng đường Isomalt thanh tao cho mùa Trăng Đoàn Viên trọn vẹn.")
+                </p>
+
+                <!-- Đồng hồ đếm ngược Đêm Rằm Trung Thu -->
+                <div class="d-flex gap-3 mb-4">
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
+                        <span id="cd-ngay" class="fs-3 fw-bold chu-vang-kim d-block">18</span>
+                        <small class="chu-kem-vang opacity-75">Ngày</small>
+                    </div>
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
+                        <span id="cd-gio" class="fs-3 fw-bold chu-vang-kim d-block">09</span>
+                        <small class="chu-kem-vang opacity-75">Giờ</small>
+                    </div>
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
+                        <span id="cd-phut" class="fs-3 fw-bold chu-vang-kim d-block">45</span>
+                        <small class="chu-kem-vang opacity-75">Phút</small>
+                    </div>
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
+                        <span id="cd-giay" class="fs-3 fw-bold chu-vang-kim d-block">30</span>
+                        <small class="chu-kem-vang opacity-75">Giây</small>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="#tang-tu-chon-hop" onclick="return cuonDenPhanKhu('#tang-tu-chon-hop', event)" class="btn btn-vang-kim btn-lg rounded-pill px-4">
+                        <i class="bi bi-box2-heart-fill me-2"></i>Tự Phối Hộp Quà Ngay
+                    </a>
+                    <button class="btn btn-vien-vang btn-lg rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalTroLyChonBanh">
+                        ✨ Tư Vấn Chọn Hộp Quà Hợp Ý
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-lg-5 text-center">
+                <div class="card-hoang-gia p-4 position-relative">
+                    <span class="badge badge-thuong-hang position-absolute top-0 end-0 m-3 px-3 py-2 rounded-pill">
+                        🔥 Ưu đãi đặt sớm -10% (Mã: TRANGTRON2026)
+                    </span>
+                    <div class="khung-anh-banh-sang my-3">
+                        <img src="@DichVuHinhAnh.LayUrl(Model.TuDienAnh, "BANH", 1, "TACH_NEN_SLOT")" class="img-fluid" style="max-height: 250px;" alt="Bánh Trung Thu Chủ Đạo" />
+                    </div>
+                    <h4 class="font-co-phong fs-3 fw-bold chu-do-son-mai mb-1">Lễ Hộp Sơn Mài Tứ Quý Đoàn Viên</h4>
+                    <p class="small chu-nau-phu mb-0">Tự do phối 4 hoặc 6 vị bánh danh tiếng • Cân đối năng lượng &amp; độ ngọt thanh</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

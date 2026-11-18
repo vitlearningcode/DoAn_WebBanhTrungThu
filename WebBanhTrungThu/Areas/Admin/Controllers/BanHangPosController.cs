@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using WebBanhTrungThu.Areas.Admin.Controllers.CoSo;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services;
@@ -11,20 +12,17 @@ using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Areas.Admin.Controllers
 {
-    [Area("Admin")]
     [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN")]
-    public class BanHangPosController : Controller
+    public class BanHangPosController : ControllerQuanTriCoSo
     {
-        private readonly CSDLBanhTrungThuContext _db;
         private readonly DichVuHinhAnh _dichVuHinhAnh;
         private readonly DichVuKiotVietMetadata _kiotMeta;
 
         public BanHangPosController(
             CSDLBanhTrungThuContext db,
             DichVuHinhAnh dichVuHinhAnh,
-            DichVuKiotVietMetadata kiotMeta)
+            DichVuKiotVietMetadata kiotMeta) : base(db)
         {
-            _db = db;
             _dichVuHinhAnh = dichVuHinhAnh;
             _kiotMeta = kiotMeta;
         }

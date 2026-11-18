@@ -1,21 +1,18 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using WebBanhTrungThu.Areas.Admin.Controllers.CoSo;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Areas.Admin.Controllers
 {
-    [Area("Admin")]
     [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN,GIAO_HANG")]
-    public class KhachHangAdminController : Controller
+    public class KhachHangAdminController : ControllerQuanTriCoSo
     {
-        private readonly CSDLBanhTrungThuContext _db;
-
-        public KhachHangAdminController(CSDLBanhTrungThuContext db)
+        public KhachHangAdminController(CSDLBanhTrungThuContext db) : base(db)
         {
-            _db = db;
         }
 
         [HttpGet]

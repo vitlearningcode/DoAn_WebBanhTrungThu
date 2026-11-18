@@ -2,22 +2,20 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using WebBanhTrungThu.Areas.Admin.Controllers.CoSo;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Areas.Admin.Controllers
 {
-    [Area("Admin")]
     [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN,GIAO_HANG")]
-    public class KhoAnhAdminController : Controller
+    public class KhoAnhAdminController : ControllerQuanTriCoSo
     {
-        private readonly CSDLBanhTrungThuContext _db;
         private readonly IWebHostEnvironment _env;
 
-        public KhoAnhAdminController(CSDLBanhTrungThuContext db, IWebHostEnvironment env)
+        public KhoAnhAdminController(CSDLBanhTrungThuContext db, IWebHostEnvironment env) : base(db)
         {
-            _db = db;
             _env = env;
         }
 
