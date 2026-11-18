@@ -12,12 +12,12 @@ namespace WebBanhTrungThu.Controllers
     public class HomeController : ControllerKhachHangCoSo
     {
         private readonly DichVuHinhAnh _dichVuHinhAnh;
-        private readonly DichVuKiotVietMetadata _kiotMeta;
+        private readonly DichVuCauHinhHeThong _kiotMeta;
 
         public HomeController(
             CSDLBanhTrungThuContext db,
             DichVuHinhAnh dichVuHinhAnh,
-            DichVuKiotVietMetadata kiotMeta) : base(db)
+            DichVuCauHinhHeThong kiotMeta) : base(db)
         {
             _dichVuHinhAnh = dichVuHinhAnh;
             _kiotMeta = kiotMeta;
@@ -58,7 +58,7 @@ namespace WebBanhTrungThu.Controllers
                 .Where(cb => cb.TrangThai)
                 .ToListAsync();
 
-            // Đồng bộ Thương hiệu (Kinh Đô, Đồng Khánh, Như Lan, Brodard...) từ KiotViet Metadata
+            // Đồng bộ Thương hiệu (Kinh Đô, Đồng Khánh, Như Lan, Brodard...) từ Nguyệt Cát ERP Metadata
             var store = _kiotMeta.DocDuLieu();
             foreach (var b in vm.DanhSachBanh)
             {

@@ -9,19 +9,19 @@ using WebBanhTrungThu.ViewModels;
 namespace WebBanhTrungThu.Services.QuanTri
 {
     /// <summary>
-    /// Dịch vụ chuyên trách nghiệp vụ Bán hàng tại quầy KiotViet Web POS:
+    /// Dịch vụ chuyên trách nghiệp vụ Bán hàng tại quầy Nguyệt Cát ERP Web POS:
     /// Tìm/mở thẻ khách hàng thành viên, Tạo đơn tại quầy POS, Trừ kho FEFO tại quầy và Ghi phiếu thu POS vào Sổ quỹ.
     /// Kế thừa từ DichVuCoSo.
     /// </summary>
     public class DichVuBanHangPos : DichVuCoSo
     {
         private readonly DichVuHinhAnh _dichVuHinhAnh;
-        private readonly DichVuKiotVietMetadata _kiotMeta;
+        private readonly DichVuCauHinhHeThong _kiotMeta;
 
         public DichVuBanHangPos(
             CSDLBanhTrungThuContext db,
             DichVuHinhAnh dichVuHinhAnh,
-            DichVuKiotVietMetadata kiotMeta) : base(db)
+            DichVuCauHinhHeThong kiotMeta) : base(db)
         {
             _dichVuHinhAnh = dichVuHinhAnh;
             _kiotMeta = kiotMeta;

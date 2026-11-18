@@ -5,7 +5,7 @@ using WebBanhTrungThu.Data;
 namespace WebBanhTrungThu.Areas.Admin.Controllers.CoSo
 {
     /// <summary>
-    /// Lớp Controller cơ sở trừu tượng cho toàn bộ phân khu Quản trị KiotViet ([Area("Admin")]),
+    /// Lớp Controller cơ sở trừu tượng cho toàn bộ phân khu Quản trị Nguyệt Cát ERP ([Area("Admin")]),
     /// cung cấp sẵn kết nối CSDL, tiện ích kiểm tra phân quyền vai trò và phản hồi JSON chuẩn hóa.
     /// </summary>
     [Area("Admin")]
@@ -34,6 +34,8 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers.CoSo
         {
             return User.FindFirstValue(ClaimTypes.Name) ?? "Quản trị viên Nguyệt Cát";
         }
+
+        protected string LayTenQuanTriVienDangNhap() => LayHoTenNhanSuHienTai();
 
         /// <summary>
         /// Kiểm tra xem nhân sự hiện tại có quyền Quản trị viên tối cao (Admin Override) hay không.

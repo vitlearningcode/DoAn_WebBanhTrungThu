@@ -1,5 +1,5 @@
 // =========================================================================
-// KIOTVIET ADMIN HÓA ĐƠN - XỬ LÝ LỌC BẢNG, ĐIỀU PHỐI TRẠNG THÁI, HOÀN TIỀN VIETQR & IN HÓA ĐƠN
+// NGUYETCAT_ERP ADMIN HÓA ĐƠN - XỬ LÝ LỌC BẢNG, ĐIỀU PHỐI TRẠNG THÁI, HOÀN TIỀN VIETQR & IN HÓA ĐƠN
 // =========================================================================
 (function () {
     let _huyDonDangDaTt = false;

@@ -9,9 +9,9 @@ namespace WebBanhTrungThu.Controllers
 {
     public class Thiep3DController : ControllerKhachHangCoSo
     {
-        private readonly DichVuKiotVietMetadata _kiotMeta;
+        private readonly DichVuCauHinhHeThong _kiotMeta;
 
-        public Thiep3DController(CSDLBanhTrungThuContext db, DichVuKiotVietMetadata kiotMeta) : base(db)
+        public Thiep3DController(CSDLBanhTrungThuContext db, DichVuCauHinhHeThong kiotMeta) : base(db)
         {
             _kiotMeta = kiotMeta;
         }

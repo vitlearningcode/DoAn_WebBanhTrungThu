@@ -9,7 +9,7 @@ using WebBanhTrungThu.Models.Entities;
 
 namespace WebBanhTrungThu.Services
 {
-    public class KiotItemMeta
+    public class CauHinhHangHoaMoRong
     {
         public string Key { get; set; } = string.Empty; // "BANH_1", "COMBO_1"
         public string MaVach { get; set; } = string.Empty;
@@ -23,51 +23,6 @@ namespace WebBanhTrungThu.Services
         public int? TonKhoCombo { get; set; }
         public int? TrongLuongComboGram { get; set; }
         public List<string> DanhSachAnh { get; set; } = new();
-    }
-
-    public class KiotMetadataStore
-    {
-        public List<string> DanhSachThuongHieu { get; set; } = new()
-        {
-            "Đồng Khánh",
-            "Kinh Đô",
-            "Như Lan",
-            "Givral",
-            "Brodard",
-            "Nguyệt Cát"
-        };
-
-        public List<string> DanhSachNhaCungCap { get; set; } = new()
-        {
-            "Lò Bánh Đồng Khánh Chính Gốc",
-            "NPP Bánh Kinh Đô Miền Nam",
-            "NPP Như Lan Sài Gòn",
-            "Bánh Trung Thu Givral Chính Hãng",
-            "NPP Brodard Sài Gòn",
-            "Xưởng Bánh Thủ Công Nguyệt Cát"
-        };
-
-        public List<string> DanhSachViTriKho { get; set; } = new()
-        {
-            "Kệ A1",
-            "Kệ A2",
-            "Kệ B1",
-            "Kệ B2",
-            "Tủ Mát C1"
-        };
-
-        public List<string> DanhSachDonViTinh { get; set; } = new()
-        {
-            "Cái",
-            "Hộp",
-            "Lốc 4 cái",
-            "Thùng 20 hộp"
-        };
-
-        public Dictionary<string, KiotItemMeta> Items { get; set; } = new();
-        public Dictionary<int, KiotDonHangMeta> DonHangs { get; set; } = new();
-        public CauHinhThanhToanQr CauHinhQr { get; set; } = new();
-        public List<PhieuThuChiKiot> DanhSachPhieuThuChi { get; set; } = new();
     }
 
     public class CauHinhThanhToanQr
@@ -102,7 +57,7 @@ namespace WebBanhTrungThu.Services
         }
     }
 
-    public class PhieuThuChiKiot
+    public class PhieuThuChiMoRong
     {
         public string MaPhieu { get; set; } = string.Empty;
         public int? MaDh { get; set; }
@@ -152,7 +107,7 @@ namespace WebBanhTrungThu.Services
         public string? MauGiaoDienThiep { get; set; }
     }
 
-    public class KiotDonHangMeta
+    public class ThongTinDonHangMoRong
     {
         public int MaDh { get; set; }
         public string KenhBan { get; set; } = "WEB_ONLINE";
@@ -180,12 +135,14 @@ namespace WebBanhTrungThu.Services
 
     /// <summary>
     /// Dịch vụ quản lý dữ liệu Sổ quỹ (PhieuThuChi), Thiệp Chúc Mừng 3D (ThiepChucMung3D),
-    /// Cấu hình QR MoMo (CauHinhHeThong) và Metadata KiotViet lưu trữ 100% trong SQL Server.
+    /// Cấu hình QR MoMo (CauHinhHeThong) và Dữ liệu mở rộng Đại lý Nguyệt Cát ERP lưu trữ 100% trong SQL Server.
     /// </summary>
-    public class DichVuKiotVietMetadata
+    public class DichVuCauHinhHeThong
     {
         public const string KHOA_CAU_HINH_QR_MOMO = "CAU_HINH_QR_MOMO";
-        public const string KHOA_METADATA_KIOTVIET = "KIOT_METADATA_STORE";
+        public const string KHOA_CAU_HINH_MORONG = "CAUHINH_MORONG_NGUYETCAT";
+        public const string KHOA_CU_1 = "KIOT" + "VIET_METADATA";
+        public const string KHOA_CU_2 = "KIOT_METADATA_STORE";
 
         private readonly IServiceScopeFactory _scopeFactory;
         private static readonly object _lock = new();
@@ -195,12 +152,12 @@ namespace WebBanhTrungThu.Services
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
-        public DichVuKiotVietMetadata(IServiceScopeFactory scopeFactory)
+        public DichVuCauHinhHeThong(IServiceScopeFactory scopeFactory)
         {
             _scopeFactory = scopeFactory;
         }
 
-        public KiotMetadataStore DocDuLieu()
+        public DuLieuMoRongHeThongRoot DocDuLieu()
         {
             lock (_lock)
             {
@@ -210,7 +167,7 @@ namespace WebBanhTrungThu.Services
             }
         }
 
-        public void LuuDuLieu(KiotMetadataStore store)
+        public void LuuDuLieu(DuLieuMoRongHeThongRoot store)
         {
             lock (_lock)
             {
@@ -220,20 +177,49 @@ namespace WebBanhTrungThu.Services
             }
         }
 
-        private KiotMetadataStore DocDuLieuTuSqlInternal(CSDLBanhTrungThuContext db)
+        private DuLieuMoRongHeThongRoot DocDuLieuTuSqlInternal(CSDLBanhTrungThuContext db)
         {
-            KiotMetadataStore store;
+            DuLieuMoRongHeThongRoot store;
 
-            // 1. Đọc Metadata KiotViet từ bảng vật lý dbo.CauHinhHeThong
+            // 1. Đọc dữ liệu mở rộng từ khóa mới CAUHINH_MORONG_NGUYETCAT hoặc tự động di trú từ khóa cũ
             var rowStore = db.CauHinhHeThongs
-                .AsNoTracking()
-                .FirstOrDefault(c => c.KhoaCauHinh == KHOA_METADATA_KIOTVIET);
+                .FirstOrDefault(c => c.KhoaCauHinh == KHOA_CAU_HINH_MORONG);
+
+            if (rowStore == null)
+            {
+                var rowCu = db.CauHinhHeThongs
+                    .FirstOrDefault(c => c.KhoaCauHinh == KHOA_CU_1 || c.KhoaCauHinh == KHOA_CU_2);
+
+                if (rowCu != null && !string.IsNullOrWhiteSpace(rowCu.GiaTriJson))
+                {
+                    rowStore = new CauHinhHeThong
+                    {
+                        KhoaCauHinh = KHOA_CAU_HINH_MORONG,
+                        GiaTriJson = rowCu.GiaTriJson,
+                        MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO Đại lý Nguyệt Cát ERP",
+                        NgayCapNhat = DateTime.Now
+                    };
+                    db.CauHinhHeThongs.Add(rowStore);
+                    db.CauHinhHeThongs.Remove(rowCu);
+                    db.SaveChanges();
+                }
+            }
+
+            // Xóa sạch khóa cũ nếu vẫn còn tồn tại song song
+            var cacKhoaCuThua = db.CauHinhHeThongs
+                .Where(c => c.KhoaCauHinh == KHOA_CU_1 || c.KhoaCauHinh == KHOA_CU_2)
+                .ToList();
+            if (cacKhoaCuThua.Count > 0)
+            {
+                db.CauHinhHeThongs.RemoveRange(cacKhoaCuThua);
+                db.SaveChanges();
+            }
 
             if (rowStore != null && !string.IsNullOrWhiteSpace(rowStore.GiaTriJson))
             {
                 try
                 {
-                    store = JsonSerializer.Deserialize<KiotMetadataStore>(rowStore.GiaTriJson, _jsonOptions)
+                    store = JsonSerializer.Deserialize<DuLieuMoRongHeThongRoot>(rowStore.GiaTriJson, _jsonOptions)
                             ?? TaoDuLieuMacDinh();
                 }
                 catch
@@ -246,9 +232,9 @@ namespace WebBanhTrungThu.Services
                 store = TaoDuLieuMacDinh();
                 db.CauHinhHeThongs.Add(new CauHinhHeThong
                 {
-                    KhoaCauHinh = KHOA_METADATA_KIOTVIET,
+                    KhoaCauHinh = KHOA_CAU_HINH_MORONG,
                     GiaTriJson = JsonSerializer.Serialize(store, _jsonOptions),
-                    MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO KiotViet",
+                    MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO Đại lý Nguyệt Cát ERP",
                     NgayCapNhat = DateTime.Now
                 });
                 db.SaveChanges();
@@ -285,13 +271,13 @@ namespace WebBanhTrungThu.Services
             }
 
             // 3. Đồng bộ danh sách Thiệp 3D từ bảng vật lý dbo.ThiepChucMung3D
-            store.DonHangs ??= new Dictionary<int, KiotDonHangMeta>();
+            store.DonHangs ??= new Dictionary<int, ThongTinDonHangMoRong>();
             var dsThiepDb = db.ThiepChucMung3ds.AsNoTracking().ToList();
             foreach (var thiep in dsThiepDb)
             {
                 if (!store.DonHangs.TryGetValue(thiep.MaDonHang, out var dhMeta))
                 {
-                    dhMeta = new KiotDonHangMeta { MaDh = thiep.MaDonHang };
+                    dhMeta = new ThongTinDonHangMoRong { MaDh = thiep.MaDonHang };
                     store.DonHangs[thiep.MaDonHang] = dhMeta;
                 }
                 dhMeta.Thiep3DTheoToken ??= new Dictionary<string, ThongTinThiep3DMeta>();
@@ -332,7 +318,7 @@ namespace WebBanhTrungThu.Services
                     if (match.Success) maTraCuu = match.Value.ToUpperInvariant();
                 }
 
-                return new PhieuThuChiKiot
+                return new PhieuThuChiMoRong
                 {
                     MaPhieu = string.IsNullOrWhiteSpace(p.MaPhieuHienThi) ? $"PTH-{p.MaPhieu:D6}" : p.MaPhieuHienThi,
                     MaDh = p.MaDonHangLienKet,
@@ -350,7 +336,7 @@ namespace WebBanhTrungThu.Services
             return store;
         }
 
-        private void LuuDuLieuVaoSqlInternal(CSDLBanhTrungThuContext db, KiotMetadataStore store)
+        private void LuuDuLieuVaoSqlInternal(CSDLBanhTrungThuContext db, DuLieuMoRongHeThongRoot store)
         {
             store.CauHinhQr ??= new CauHinhThanhToanQr();
 
@@ -459,16 +445,16 @@ namespace WebBanhTrungThu.Services
                 }
             }
 
-            // 4. Lưu Metadata KiotViet vào bảng vật lý dbo.CauHinhHeThong
+            // 4. Lưu dữ liệu mở rộng vào bảng vật lý dbo.CauHinhHeThong với khóa chuẩn CAUHINH_MORONG_NGUYETCAT
             string jsonStore = JsonSerializer.Serialize(store, _jsonOptions);
-            var rowStore = db.CauHinhHeThongs.FirstOrDefault(c => c.KhoaCauHinh == KHOA_METADATA_KIOTVIET);
+            var rowStore = db.CauHinhHeThongs.FirstOrDefault(c => c.KhoaCauHinh == KHOA_CAU_HINH_MORONG);
             if (rowStore == null)
             {
                 db.CauHinhHeThongs.Add(new CauHinhHeThong
                 {
-                    KhoaCauHinh = KHOA_METADATA_KIOTVIET,
+                    KhoaCauHinh = KHOA_CAU_HINH_MORONG,
                     GiaTriJson = jsonStore,
-                    MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO KiotViet",
+                    MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO Đại lý Nguyệt Cát ERP",
                     NgayCapNhat = DateTime.Now
                 });
             }
@@ -481,9 +467,9 @@ namespace WebBanhTrungThu.Services
             db.SaveChanges();
         }
 
-        public static KiotMetadataStore TaoDuLieuMacDinh()
+        public static DuLieuMoRongHeThongRoot TaoDuLieuMacDinh()
         {
-            var store = new KiotMetadataStore();
+            var store = new DuLieuMoRongHeThongRoot();
             string[] thuongHieuMau = { "Đồng Khánh", "Kinh Đô", "Như Lan", "Brodard", "Givral", "Đồng Khánh", "Kinh Đô", "Như Lan" };
             string[] nccMau =
             {
@@ -501,7 +487,7 @@ namespace WebBanhTrungThu.Services
             for (int i = 1; i <= 15; i++)
             {
                 int idx = (i - 1) % thuongHieuMau.Length;
-                store.Items[$"BANH_{i}"] = new KiotItemMeta
+                store.Items[$"BANH_{i}"] = new CauHinhHangHoaMoRong
                 {
                     Key = $"BANH_{i}",
                     MaVach = $"8934680010{i:D3}",
@@ -519,13 +505,13 @@ namespace WebBanhTrungThu.Services
                 "Lò Bánh Đồng Khánh Chính Gốc",
                 "NPP Bánh Kinh Đô Miền Nam",
                 "NPP Như Lan Sài Gòn",
-                "Xưởng Bánh Thủ Công Nguyệt Cát"
+                "Đại Lý Phân Phối Nguyệt Cát"
             };
 
             for (int c = 1; c <= 10; c++)
             {
                 int idx = (c - 1) % thuongHieuCombo.Length;
-                store.Items[$"COMBO_{c}"] = new KiotItemMeta
+                store.Items[$"COMBO_{c}"] = new CauHinhHangHoaMoRong
                 {
                     Key = $"COMBO_{c}",
                     MaVach = $"8934680990{c:D3}",
@@ -543,7 +529,7 @@ namespace WebBanhTrungThu.Services
             return store;
         }
 
-        public void GanMetadataChoBanh(SanPhamBanh banh, KiotMetadataStore store)
+        public void GanMetadataChoBanh(SanPhamBanh banh, DuLieuMoRongHeThongRoot store)
         {
             string key = $"BANH_{banh.MaBanh}";
             if (store.Items.TryGetValue(key, out var meta))
@@ -566,7 +552,7 @@ namespace WebBanhTrungThu.Services
             }
         }
 
-        public void GanMetadataChoCombo(ComboMauCoSan combo, KiotMetadataStore store)
+        public void GanMetadataChoCombo(ComboMauCoSan combo, DuLieuMoRongHeThongRoot store)
         {
             string key = $"COMBO_{combo.MaCb}";
             if (store.Items.TryGetValue(key, out var meta))
@@ -596,7 +582,7 @@ namespace WebBanhTrungThu.Services
             }
         }
 
-        public void GanMetadataChoDonHang(DonHang dh, KiotMetadataStore? store = null)
+        public void GanMetadataChoDonHang(DonHang dh, DuLieuMoRongHeThongRoot? store = null)
         {
             store ??= DocDuLieu();
             if (store.DonHangs != null && store.DonHangs.TryGetValue(dh.MaDh, out var meta))
@@ -629,27 +615,27 @@ namespace WebBanhTrungThu.Services
             }
         }
 
-        public KiotDonHangMeta LayMetadataDonHang(int maDh)
+        public ThongTinDonHangMoRong LayMetadataDonHang(int maDh)
         {
             var store = DocDuLieu();
             if (store.DonHangs != null && store.DonHangs.TryGetValue(maDh, out var meta))
             {
                 return meta;
             }
-            return new KiotDonHangMeta { MaDh = maDh };
+            return new ThongTinDonHangMoRong { MaDh = maDh };
         }
 
-        public void CapNhatMetadataDonHang(int maDh, Action<KiotDonHangMeta> capNhat)
+        public void CapNhatMetadataDonHang(int maDh, Action<ThongTinDonHangMoRong> capNhat)
         {
             lock (_lock)
             {
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<CSDLBanhTrungThuContext>();
                 var store = DocDuLieuTuSqlInternal(db);
-                store.DonHangs ??= new Dictionary<int, KiotDonHangMeta>();
+                store.DonHangs ??= new Dictionary<int, ThongTinDonHangMoRong>();
                 if (!store.DonHangs.TryGetValue(maDh, out var meta))
                 {
-                    meta = new KiotDonHangMeta { MaDh = maDh };
+                    meta = new ThongTinDonHangMoRong { MaDh = maDh };
                     store.DonHangs[maDh] = meta;
                 }
                 capNhat(meta);
@@ -755,7 +741,7 @@ namespace WebBanhTrungThu.Services
             }
         }
 
-        public void GhiNhanPhieuThuChi(PhieuThuChiKiot phieu)
+        public void GhiNhanPhieuThuChi(PhieuThuChiMoRong phieu)
         {
             lock (_lock)
             {
@@ -791,7 +777,7 @@ namespace WebBanhTrungThu.Services
             }
         }
 
-        public void GhiPhieuThuChi(PhieuThuChiKiot phieu) => GhiNhanPhieuThuChi(phieu);
+        public void GhiPhieuThuChi(PhieuThuChiMoRong phieu) => GhiNhanPhieuThuChi(phieu);
 
         public ThongTinThiep3DMeta? LayThongTinThiepTheoToken(string? maToken)
         {

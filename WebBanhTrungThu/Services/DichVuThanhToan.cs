@@ -67,14 +67,14 @@ namespace WebBanhTrungThu.Services
     /// </summary>
     public class DichVuThanhToan : DichVuCoSo
     {
-        private readonly DichVuKiotVietMetadata _kiotMeta;
+        private readonly DichVuCauHinhHeThong _kiotMeta;
         private readonly DichVuBaoMatCaptcha _dichVuCaptcha;
         private readonly DichVuTinhGiaDonHang _dichVuTinhGia;
         private readonly DichVuTonKhoFefo _dichVuTonKho;
 
         public DichVuThanhToan(
             CSDLBanhTrungThuContext context,
-            DichVuKiotVietMetadata kiotMeta,
+            DichVuCauHinhHeThong kiotMeta,
             DichVuBaoMatCaptcha dichVuCaptcha,
             DichVuTinhGiaDonHang dichVuTinhGia,
             DichVuTonKhoFefo dichVuTonKho) : base(context)
@@ -644,7 +644,7 @@ namespace WebBanhTrungThu.Services
                 await _context.SaveChangesAsync();
 
                 _kiotMeta.CapNhatMetadataDonHang(donHang.MaDh, m => m.SoTienKhachDaTra = soTienNhan);
-                _kiotMeta.GhiNhanPhieuThuChi(new PhieuThuChiKiot
+                _kiotMeta.GhiNhanPhieuThuChi(new PhieuThuChiMoRong
                 {
                     MaDonHang = donHang.MaDh,
                     MaTraCuuDh = donHang.MaTraCuuDh,

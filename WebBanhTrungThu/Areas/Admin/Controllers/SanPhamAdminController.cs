@@ -8,27 +8,27 @@ using WebBanhTrungThu.ViewModels;
 namespace WebBanhTrungThu.Areas.Admin.Controllers
 {
     /// <summary>
-    /// Controller quản trị Hàng hóa, Kiểm kho lô FEFO và Thiết lập bảng giá KiotViet,
-    /// kế thừa từ ControllerQuanTriCoSo và ủy quyền nghiệp vụ sang DichVuQuanTriSanPham & DichVuQuanTriKhoFefo.
+    /// Controller quản trị Hàng hóa, Kiểm kho lô FEFO và Thiết lập bảng giá Đại lý Nguyệt Cát ERP,
+    /// kế thừa từ ControllerQuanTriCoSo và ủy quyền nghiệp vụ sang DichVuQuanTriSanPham, DichVuQuanTriKhoFefo & DichVuQuanTriBangGia.
     /// </summary>
     [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN,GIAO_HANG")]
     public class SanPhamAdminController : ControllerQuanTriCoSo
     {
         private readonly DichVuQuanTriSanPham _dichVuSanPham;
         private readonly DichVuQuanTriKhoFefo _dichVuKhoFefo;
+        private readonly DichVuQuanTriBangGia _dichVuBangGia;
 
         public SanPhamAdminController(
             CSDLBanhTrungThuContext db,
             DichVuQuanTriSanPham dichVuSanPham,
-            DichVuQuanTriKhoFefo dichVuKhoFefo) : base(db)
+            DichVuQuanTriKhoFefo dichVuKhoFefo,
+            DichVuQuanTriBangGia dichVuBangGia) : base(db)
         {
             _dichVuSanPham = dichVuSanPham;
             _dichVuKhoFefo = dichVuKhoFefo;
+            _dichVuBangGia = dichVuBangGia;
         }
 
-        // =========================================================================
-        // 1. DANH MỤC HÀNG HÓA, THÊM/SỬA/XÓA BÁNH & COMBO (/Admin/SanPhamAdmin/Index)
-        // =========================================================================
         [HttpGet]
         public async Task<IActionResult> Index(
             string? tuKhoa,
@@ -117,7 +117,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CapNhatBanhNhanh(CapNhatBanhNhanhRequest req)
         {
-            string? thongBao = await _dichVuSanPham.CapNhatBanhNhanhAsync(req);
+            string? thongBao = await _dichVuBangGia.CapNhatGiaBanhNhanhAsync(req);
             if (!string.IsNullOrWhiteSpace(thongBao)) TempData["ThongBaoAdmin"] = thongBao;
             return RedirectToAction(nameof(Index));
         }
@@ -150,9 +150,6 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
             });
         }
 
-        // =========================================================================
-        // 2. KIỂM KHO / QUẢN LÝ LÔ SẢN XUẤT FEFO & XẢ KHO CẬN DATE (/Admin/SanPhamAdmin/KiemKho)
-        // =========================================================================
         [HttpGet]
         public async Task<IActionResult> KiemKho(string? tuKhoa, string locTrangThai = "ALL", string locGiamGia = "ALL")
         {
@@ -218,13 +215,10 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
             return Json(ketQua);
         }
 
-        // =========================================================================
-        // 3. THIẾT LẬP GIÁ: VỎ HỘP, CHIẾT KHẤU SỈ B2B & COMBO (/Admin/SanPhamAdmin/ThietLapGia)
-        // =========================================================================
         [HttpGet]
         public async Task<IActionResult> ThietLapGia()
         {
-            var vm = await _dichVuSanPham.XayDungThietLapGiaAsync();
+            var vm = await _dichVuBangGia.XayDungThietLapGiaAsync();
             return View(vm);
         }
 
@@ -240,7 +234,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
             int slBanhThuongHangToiThieu = 0,
             string? moTaChatLieu = null)
         {
-            var (hopLe, thongBao) = await _dichVuSanPham.ThemVoHopMoiAsync(
+            var (hopLe, thongBao) = await _dichVuBangGia.ThemVoHopMoiAsync(
                 maCodeVh, tenVoHop, sucChuaBanh, kieuBoCucLuoi,
                 giaVoHopRieng, slTonKhoVo, slBanhThuongHangToiThieu, moTaChatLieu);
 
@@ -252,7 +246,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CapNhatGiaVoHop(int maVh, decimal giaVoHopRieng, int slTonKhoVo, int slBanhVipToiThieu)
         {
-            string? thongBao = await _dichVuSanPham.CapNhatGiaVoHopAsync(maVh, giaVoHopRieng, slTonKhoVo, slBanhVipToiThieu);
+            string? thongBao = await _dichVuBangGia.CapNhatGiaVoHopAsync(maVh, giaVoHopRieng, slTonKhoVo, slBanhVipToiThieu);
             if (!string.IsNullOrWhiteSpace(thongBao)) TempData["ThongBaoAdmin"] = thongBao;
             return RedirectToAction(nameof(ThietLapGia));
         }
@@ -261,7 +255,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> XoaVoHop(int maVh)
         {
-            string? thongBao = await _dichVuSanPham.XoaVoHopAsync(maVh);
+            string? thongBao = await _dichVuBangGia.XoaVoHopAsync(maVh);
             if (!string.IsNullOrWhiteSpace(thongBao)) TempData["ThongBaoAdmin"] = thongBao;
             return RedirectToAction(nameof(ThietLapGia));
         }
@@ -276,7 +270,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
             decimal phiKhuonInLogo = 500000m,
             bool mienPhiInLogo = false)
         {
-            var (hopLe, thongBao) = await _dichVuSanPham.ThemMocB2BMoiAsync(
+            var (hopLe, thongBao) = await _dichVuBangGia.ThemMocB2BMoiAsync(
                 tenMocB2b, slHopToiThieu, slHopToiDa, phanTramChietKhau, phiKhuonInLogo, mienPhiInLogo);
 
             TempData[hopLe ? "ThongBaoAdmin" : "LoiAdmin"] = thongBao;
@@ -293,7 +287,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
             decimal phiKhuonInLogo,
             bool mienPhiInLogo)
         {
-            string? thongBao = await _dichVuSanPham.CapNhatMocB2BAsync(
+            string? thongBao = await _dichVuBangGia.CapNhatMocB2BAsync(
                 maMocCk, slHopToiThieu, slHopToiDa, phanTramChietKhau, phiKhuonInLogo, mienPhiInLogo);
 
             if (!string.IsNullOrWhiteSpace(thongBao)) TempData["ThongBaoAdmin"] = thongBao;
@@ -304,7 +298,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> XoaMocB2B(int maMocCk)
         {
-            string? thongBao = await _dichVuSanPham.XoaMocB2BAsync(maMocCk);
+            string? thongBao = await _dichVuBangGia.XoaMocB2BAsync(maMocCk);
             if (!string.IsNullOrWhiteSpace(thongBao)) TempData["ThongBaoAdmin"] = thongBao;
             return RedirectToAction(nameof(ThietLapGia));
         }
@@ -319,7 +313,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
             decimal giaUuDaiCombo,
             string? thongDiepYngia)
         {
-            var (hopLe, thongBao) = await _dichVuSanPham.ThemComboGiaMoiAsync(
+            var (hopLe, thongBao) = await _dichVuBangGia.ThemComboGiaMoiAsync(
                 maCodeCb, tenCombo, maVh, giaNiemYet, giaUuDaiCombo, thongDiepYngia);
 
             TempData[hopLe ? "ThongBaoAdmin" : "LoiAdmin"] = thongBao;
@@ -330,7 +324,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CapNhatGiaCombo(int maCb, decimal giaNiemYet, decimal giaUuDaiCombo)
         {
-            string? thongBao = await _dichVuSanPham.CapNhatGiaComboAsync(maCb, giaNiemYet, giaUuDaiCombo);
+            string? thongBao = await _dichVuBangGia.CapNhatGiaComboAsync(maCb, giaNiemYet, giaUuDaiCombo);
             if (!string.IsNullOrWhiteSpace(thongBao)) TempData["ThongBaoAdmin"] = thongBao;
             return RedirectToAction(nameof(ThietLapGia));
         }
@@ -339,7 +333,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> XoaComboGia(int maCb)
         {
-            string? thongBao = await _dichVuSanPham.XoaComboGiaAsync(maCb);
+            string? thongBao = await _dichVuBangGia.XoaComboGiaAsync(maCb);
             if (!string.IsNullOrWhiteSpace(thongBao)) TempData["ThongBaoAdmin"] = thongBao;
             return RedirectToAction(nameof(ThietLapGia));
         }

@@ -12,9 +12,9 @@ namespace WebBanhTrungThu.Services.ThanhToan
     /// </summary>
     public class DichVuTonKhoFefo : DichVuCoSo
     {
-        private readonly DichVuKiotVietMetadata _kiotMeta;
+        private readonly DichVuCauHinhHeThong _kiotMeta;
 
-        public DichVuTonKhoFefo(CSDLBanhTrungThuContext context, DichVuKiotVietMetadata kiotMeta) : base(context)
+        public DichVuTonKhoFefo(CSDLBanhTrungThuContext context, DichVuCauHinhHeThong kiotMeta) : base(context)
         {
             _kiotMeta = kiotMeta;
         }

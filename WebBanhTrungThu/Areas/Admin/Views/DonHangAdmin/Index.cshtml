@@ -1,11 +1,11 @@
 @model List<WebBanhTrungThu.Models.Entities.DonHang>
 @{
-    ViewData["Title"] = "Hóa đơn & Đặt hàng - KiotViet";
+    ViewData["Title"] = "Hóa đơn & Đặt hàng - Nguyệt Cát ERP";
     string tuKhoa = ViewBag.TuKhoa as string ?? "";
 }
 
 <div class="kv-layout-2col">
-    <!-- 1. CỘT TRÁI (250PX): BỘ LỌC GIAO DỊCH / HÓA ĐƠN CHUẨN KIOTVIET -->
+    <!-- 1. CỘT TRÁI (250PX): BỘ LỌC GIAO DỊCH / HÓA ĐƠN CHUẨN NGUYETCAT_ERP -->
     @await Html.PartialAsync("~/Areas/Admin/Views/DonHangAdmin/PhanKhu/_BoLocHoaDonSidebar.cshtml")
 
     <!-- 2. CỘT PHẢI: THANH CÔNG CỤ & BẢNG HÓA ĐƠN MASTER-DETAIL 2 TAB -->

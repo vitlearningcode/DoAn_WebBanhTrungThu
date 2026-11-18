@@ -11,9 +11,9 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN,GIAO_HANG")]
     public class DashboardController : ControllerQuanTriCoSo
     {
-        private readonly DichVuKiotVietMetadata _kiotMeta;
+        private readonly DichVuCauHinhHeThong _kiotMeta;
 
-        public DashboardController(CSDLBanhTrungThuContext db, DichVuKiotVietMetadata kiotMeta) : base(db)
+        public DashboardController(CSDLBanhTrungThuContext db, DichVuCauHinhHeThong kiotMeta) : base(db)
         {
             _kiotMeta = kiotMeta;
         }

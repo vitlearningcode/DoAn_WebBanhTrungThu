@@ -1,0 +1,349 @@
+using Microsoft.EntityFrameworkCore;
+using WebBanhTrungThu.Data;
+using WebBanhTrungThu.Middlewares;
+using WebBanhTrungThu.Models.Entities;
+using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.ViewModels;
+
+namespace WebBanhTrungThu.Services.TaiKhoan
+{
+    /// <summary>
+    /// Dịch vụ chuyên trách nghiệp vụ Hội viên: Xác thực đăng nhập, đăng ký thành viên mới (+50 điểm),
+    /// tổng hợp dữ liệu HoSoThanhVienViewModel, tính hạng VIP, quản lý Sổ địa chỉ biếu tặng và đặt lại hộp quà tự chọn.
+    /// Kế thừa từ DichVuCoSo.
+    /// </summary>
+    public class DichVuHoiVien : DichVuCoSo
+    {
+        public DichVuHoiVien(CSDLBanhTrungThuContext db) : base(db)
+        {
+        }
+
+        public async Task<(bool HopLe, string ThongBao, NguoiDung? NguoiDung)> XacThucDangNhapAsync(string? tenDangNhap, string? matKhau)
+        {
+            string taiKhoan = ChuanHoaChuoi(tenDangNhap);
+            string mkNhap = ChuanHoaChuoi(matKhau);
+
+            if (string.IsNullOrWhiteSpace(taiKhoan) || string.IsNullOrWhiteSpace(mkNhap))
+            {
+                return (false, "Vui lòng nhập đầy đủ Email/Số điện thoại và Mật khẩu!", null);
+            }
+
+            await DamBaoVaiTroVaTaiKhoanDemoAsync();
+
+            var nd = await _db.NguoiDungs
+                .FirstOrDefaultAsync(u => (u.Email == taiKhoan || u.Sdt == taiKhoan) && u.TrangThai);
+
+            if (nd == null)
+            {
+                return (false, "Tài khoản không tồn tại hoặc đã bị khóa!", null);
+            }
+
+            string maBamSha256 = ThongTinPhienHelper.BamMatKhauSHA256(mkNhap);
+            bool hopLe = false;
+
+            if (string.Equals(nd.MatKhauHash, maBamSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                hopLe = true;
+            }
+            else if (nd.MatKhauHash.StartsWith("AQAAAA", StringComparison.OrdinalIgnoreCase) && mkNhap == "123456")
+            {
+                nd.MatKhauHash = maBamSha256;
+                await _db.SaveChangesAsync();
+                hopLe = true;
+            }
+
+            if (!hopLe)
+            {
+                return (false, "Mật khẩu không chính xác. Vui lòng kiểm tra lại!", null);
+            }
+
+            return (true, $"Đăng nhập thành công ({nd.HoTen} - Vai trò: {nd.MaVt})!", nd);
+        }
+
+        public async Task<NguoiDung?> LayTaiKhoanChuyenVaiTroDemoAsync(string maVt)
+        {
+            await DamBaoVaiTroVaTaiKhoanDemoAsync();
+
+            string sdtMucTieu = maVt switch
+            {
+                "THU_NGAN" => "0908111222",
+                "GIAO_HANG" => "0908333444",
+                _ => "0814585526"
+            };
+
+            var nd = await _db.NguoiDungs.FirstOrDefaultAsync(u => u.Sdt == sdtMucTieu);
+            if (nd == null)
+            {
+                nd = await _db.NguoiDungs.FirstOrDefaultAsync(u => u.MaVt == maVt);
+            }
+
+            return nd;
+        }
+
+        public async Task<(bool HopLe, string ThongBao, NguoiDung? NguoiDung)> DangKyHoiVienMoiAsync(
+            string? hoTen,
+            string? sdt,
+            string? email,
+            string? matKhau)
+        {
+            string ten = ChuanHoaChuoi(hoTen);
+            string soDt = ChuanHoaChuoi(sdt);
+            string thuDienTu = ChuanHoaChuoi(email);
+            string mk = ChuanHoaChuoi(matKhau);
+
+            if (string.IsNullOrWhiteSpace(ten) || string.IsNullOrWhiteSpace(soDt) || string.IsNullOrWhiteSpace(thuDienTu) || string.IsNullOrWhiteSpace(mk))
+            {
+                return (false, "Vui lòng điền đầy đủ Họ tên, Số điện thoại, Email và Mật khẩu!", null);
+            }
+
+            bool daTonTai = await _db.NguoiDungs.AnyAsync(u => u.Email == thuDienTu || u.Sdt == soDt);
+            if (daTonTai)
+            {
+                return (false, "Email hoặc Số điện thoại này đã được đăng ký!", null);
+            }
+
+            var ndMoi = new NguoiDung
+            {
+                MaVt = "KHACH_TV",
+                HoTen = ten,
+                Sdt = soDt,
+                Email = thuDienTu,
+                MatKhauHash = ThongTinPhienHelper.BamMatKhauSHA256(mk),
+                DiemTichLuy = 50,
+                HangTv = "Đồng",
+                TrangThai = true,
+                NgayTao = LayThoiGianHeThong()
+            };
+
+            _db.NguoiDungs.Add(ndMoi);
+            await _db.SaveChangesAsync();
+
+            return (true, "Đăng ký thành công (Tặng +50 điểm) & Đã hợp nhất giỏ hàng vào tài khoản!", ndMoi);
+        }
+
+        public async Task<HoSoThanhVienViewModel?> XayDungHoSoThanhVienAsync(int maNd, string? tab)
+        {
+            var nd = await _db.NguoiDungs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.MaNd == maNd);
+
+            if (nd == null) return null;
+
+            var soDiaChis = await _db.SoDiaChis
+                .AsNoTracking()
+                .Where(d => d.MaNd == maNd)
+                .OrderByDescending(d => d.LaMacDinh)
+                .ThenByDescending(d => d.MaDc)
+                .ToListAsync();
+
+            var lichSuDonHangs = await _db.DonHangs
+                .AsNoTracking()
+                .Include(d => d.DotGiaoHangDaDiems)
+                .Include(d => d.ChiTietDonHangs)
+                .Include(d => d.ThiepChucMung3Ds)
+                .Where(d => d.MaNd == maNd)
+                .OrderByDescending(d => d.NgayDat)
+                .ToListAsync();
+
+            var danhSachHopTuChons = await _db.HopQuaTuChons
+                .AsNoTracking()
+                .Include(h => h.MaVhNavigation)
+                .Include(h => h.ChiTietHopTuChons)
+                    .ThenInclude(ct => ct.MaBanhNavigation)
+                .Where(h => h.MaNd == maNd)
+                .OrderByDescending(h => h.NgayTao)
+                .ToListAsync();
+
+            var vm = new HoSoThanhVienViewModel
+            {
+                NguoiDung = nd,
+                DanhSachSoDiaChi = soDiaChis,
+                LichSuDonHang = lichSuDonHangs,
+                DanhSachHopTuChon = danhSachHopTuChons
+            };
+            vm.TinhToanChiSoHoiVien(tab);
+
+            return vm;
+        }
+
+        public async Task<string> ThemDiaChiMoiAsync(
+            int maNd,
+            string? tenNguoiNhan,
+            string? sdtNguoiNhan,
+            string? tinhThanh,
+            string? quanHuyen,
+            string? phuongXa,
+            string? diaChiCuThe,
+            string? nhanDiaChi,
+            bool laMacDinh)
+        {
+            if (string.IsNullOrWhiteSpace(tenNguoiNhan) || string.IsNullOrWhiteSpace(sdtNguoiNhan) || string.IsNullOrWhiteSpace(diaChiCuThe))
+            {
+                return "⚠️ Vui lòng nhập đầy đủ Tên người nhận, Số điện thoại và Địa chỉ cụ thể!";
+            }
+
+            if (laMacDinh)
+            {
+                var cacDiaChiCu = await _db.SoDiaChis.Where(d => d.MaNd == maNd && d.LaMacDinh).ToListAsync();
+                foreach (var dc in cacDiaChiCu)
+                {
+                    dc.LaMacDinh = false;
+                }
+            }
+
+            var dcMoi = new SoDiaChi
+            {
+                MaNd = maNd,
+                TenNguoiNhan = tenNguoiNhan.Trim(),
+                SdtnguoiNhan = sdtNguoiNhan.Trim(),
+                TinhThanh = ChuanHoaChuoi(tinhThanh, "TP. Hồ Chí Minh"),
+                QuanHuyen = ChuanHoaChuoi(quanHuyen, "Quận 1"),
+                PhuongXa = ChuanHoaChuoi(phuongXa, "Phường Bến Nghé"),
+                DiaChiCuThe = diaChiCuThe.Trim(),
+                NhanDiaChi = ChuanHoaChuoi(nhanDiaChi, "Biếu Người Thân"),
+                LaMacDinh = laMacDinh
+            };
+
+            _db.SoDiaChis.Add(dcMoi);
+            await _db.SaveChangesAsync();
+
+            return $"📍 Đã thêm địa chỉ \"{dcMoi.NhanDiaChi} - {dcMoi.TenNguoiNhan}\" vào Sổ địa chỉ biếu tặng!";
+        }
+
+        public async Task<string?> XoaDiaChiAsync(int maNd, int maDc)
+        {
+            var dc = await _db.SoDiaChis.FirstOrDefaultAsync(d => d.MaDc == maDc && d.MaNd == maNd);
+            if (dc == null) return null;
+
+            _db.SoDiaChis.Remove(dc);
+            await _db.SaveChangesAsync();
+            return "🗑️ Đã xóa địa chỉ khỏi Sổ địa chỉ biếu tặng!";
+        }
+
+        public async Task<string> DatLaiHopTuChonVaoGioAsync(int maNd, int maHopTc)
+        {
+            var hopCu = await _db.HopQuaTuChons
+                .Include(h => h.MaVhNavigation)
+                .Include(h => h.ChiTietHopTuChons)
+                .FirstOrDefaultAsync(h => h.MaHopTc == maHopTc && h.MaNd == maNd);
+
+            if (hopCu == null)
+            {
+                return "⚠️ Không tìm thấy mẫu hộp tự phối này!";
+            }
+
+            var gioHang = await _db.GioHangs
+                .Include(g => g.ChiTietGioHangs)
+                    .ThenInclude(ct => ct.MaHopTcNavigation)
+                .FirstOrDefaultAsync(g => g.MaNd == maNd);
+
+            if (gioHang == null)
+            {
+                gioHang = new Models.Entities.GioHang
+                {
+                    MaNd = maNd,
+                    MaPhienKvl = null,
+                    LaCheDoMuaSiB2b = false,
+                    YeuCauInLogoB2b = false,
+                    NgayCapNhat = LayThoiGianHeThong()
+                };
+                _db.GioHangs.Add(gioHang);
+                await _db.SaveChangesAsync();
+            }
+
+            var dongDaCo = gioHang.ChiTietGioHangs.FirstOrDefault(ct =>
+                ct.LoaiSanPham == 3 &&
+                (ct.MaHopTc == hopCu.MaHopTc || (ct.MaHopTcNavigation != null && ct.MaHopTcNavigation.MaBamCauHinh == hopCu.MaBamCauHinh)));
+
+            if (dongDaCo != null)
+            {
+                dongDaCo.SoLuong += 1;
+                dongDaCo.DonGiaTamTinh = hopCu.TongGiaMotHop;
+            }
+            else
+            {
+                _db.ChiTietGioHangs.Add(new ChiTietGioHang
+                {
+                    MaGh = gioHang.MaGh,
+                    LoaiSanPham = 3,
+                    MaHopTc = hopCu.MaHopTc,
+                    SoLuong = 1,
+                    DonGiaTamTinh = hopCu.TongGiaMotHop,
+                    NgayThem = LayThoiGianHeThong()
+                });
+            }
+
+            gioHang.NgayCapNhat = LayThoiGianHeThong();
+            await _db.SaveChangesAsync();
+
+            return $"🛒 Đã đưa mẫu hộp \"{hopCu.TenHopKhachDat}\" ({hopCu.MaBamCauHinh}) vào lại Giỏ Quà thành công!";
+        }
+
+        public async Task DamBaoVaiTroVaTaiKhoanDemoAsync()
+        {
+            var danhSachVaiTro = new (string MaVt, string TenVt, string MoTa)[]
+            {
+                ("QUAN_TRI", "Quản trị viên", "Toàn quyền quản trị hệ thống & Admin Override"),
+                ("NHAN_VIEN", "Nhân viên bán hàng", "Nhân viên Order - Bán hàng & Thu ngân"),
+                ("THU_NGAN", "Thu ngân & Bán hàng", "Xác nhận thanh toán QR, chuẩn bị hàng CHO_LAY_HANG, xử lý hoàn tiền"),
+                ("GIAO_HANG", "Nhân viên giao hàng", "Nhận đơn từ CHO_LAY_HANG -> DANG_GIAO -> xác nhận HOAN_TAT"),
+                ("KHACH_TV", "Khách thành viên", "Khách hàng thành viên tích điểm")
+            };
+
+            bool coThayDoiVt = false;
+            foreach (var vt in danhSachVaiTro)
+            {
+                if (!await _db.VaiTros.AnyAsync(v => v.MaVt == vt.MaVt))
+                {
+                    _db.VaiTros.Add(new VaiTro
+                    {
+                        MaVt = vt.MaVt,
+                        TenVt = vt.TenVt,
+                        MoTa = vt.MoTa
+                    });
+                    coThayDoiVt = true;
+                }
+            }
+
+            if (coThayDoiVt)
+            {
+                await _db.SaveChangesAsync();
+            }
+
+            string mkSha = ThongTinPhienHelper.BamMatKhauSHA256("123456");
+
+            var taiKhoanMau = new (string Sdt, string Email, string HoTen, string MaVt, string HangTv)[]
+            {
+                ("0908111222", "thungan@nguyetcat.vn", "Trần Thu Ngân (Order & Thu ngân)", "THU_NGAN", "Vàng"),
+                ("0908333444", "giaohang@nguyetcat.vn", "Nguyễn Văn Giao (Giao vận)", "GIAO_HANG", "Bạc"),
+                ("0814585526", "admin@nguyetcat.vn", "Lê Minh Đức (Quản trị viên)", "QUAN_TRI", "Kim Cương")
+            };
+
+            bool coThayDoiNd = false;
+            foreach (var tk in taiKhoanMau)
+            {
+                if (!await _db.NguoiDungs.AnyAsync(u => u.Sdt == tk.Sdt || u.Email == tk.Email))
+                {
+                    _db.NguoiDungs.Add(new NguoiDung
+                    {
+                        MaVt = tk.MaVt,
+                        HoTen = tk.HoTen,
+                        Sdt = tk.Sdt,
+                        Email = tk.Email,
+                        MatKhauHash = mkSha,
+                        DiemTichLuy = 500,
+                        HangTv = tk.HangTv,
+                        TrangThai = true,
+                        NgayTao = LayThoiGianHeThong()
+                    });
+                    coThayDoiNd = true;
+                }
+            }
+
+            if (coThayDoiNd)
+            {
+                await _db.SaveChangesAsync();
+            }
+        }
+    }
+}

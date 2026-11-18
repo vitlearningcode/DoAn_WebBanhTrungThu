@@ -412,7 +412,7 @@
   <div class="modal-dialog modal-dialog-centered" style="max-width: 390px;">
     <div class="modal-content border-0 shadow-lg">
       <div class="modal-header py-2 px-3" style="background: #00B63E; color: #fff;">
-        <h6 class="modal-title fw-bold mb-0"><i class="bi bi-check-circle-fill me-1"></i> Hóa đơn nhiệt K80 - KiotViet POS</h6>
+        <h6 class="modal-title fw-bold mb-0"><i class="bi bi-check-circle-fill me-1"></i> Hóa đơn nhiệt K80 - Nguyệt Cát ERP POS</h6>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body p-3" id="areaInHoaDonPos">

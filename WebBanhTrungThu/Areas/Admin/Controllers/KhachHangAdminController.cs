@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Areas.Admin.Controllers.CoSo;
 using WebBanhTrungThu.Data;
-using WebBanhTrungThu.Models.Entities;
+using WebBanhTrungThu.Services.QuanTri;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Areas.Admin.Controllers
@@ -11,8 +11,11 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN,GIAO_HANG")]
     public class KhachHangAdminController : ControllerQuanTriCoSo
     {
-        public KhachHangAdminController(CSDLBanhTrungThuContext db) : base(db)
+        private readonly DichVuQuanTriBangGia _dichVuBangGia;
+
+        public KhachHangAdminController(CSDLBanhTrungThuContext db, DichVuQuanTriBangGia dichVuBangGia) : base(db)
         {
+            _dichVuBangGia = dichVuBangGia;
         }
 
         [HttpGet]
@@ -57,14 +60,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         [HttpGet]
         public async Task<IActionResult> KhuyenMai()
         {
-            var vm = new KhuyenMaiAdminViewModel
-            {
-                DanhSachKhuyenMai = await _db.MaKhuyenMais
-                    .AsNoTracking()
-                    .OrderByDescending(k => k.NgayKetThuc)
-                    .ToListAsync()
-            };
-
+            var vm = await _dichVuBangGia.LayDanhSachKhuyenMaiAsync();
             return View(vm);
         }
 
@@ -72,38 +68,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ThemVoucherMoi(ThemVoucherMoiRequest req)
         {
-            if (string.IsNullOrWhiteSpace(req.CodeKm) || string.IsNullOrWhiteSpace(req.TenChuongTrinh))
-            {
-                TempData["ThongBaoAdmin"] = "Vui lòng nhập đầy đủ Mã CodeKM và Tên chương trình khuyến mãi!";
-                return RedirectToAction(nameof(KhuyenMai));
-            }
-
-            string codeChuan = req.CodeKm.Trim().ToUpper();
-            if (await _db.MaKhuyenMais.AnyAsync(k => k.CodeKm == codeChuan))
-            {
-                TempData["ThongBaoAdmin"] = $"Mã khuyến mãi '{codeChuan}' đã tồn tại!";
-                return RedirectToAction(nameof(KhuyenMai));
-            }
-
-            var kmMoi = new MaKhuyenMai
-            {
-                CodeKm = codeChuan,
-                TenChuongTrinh = req.TenChuongTrinh.Trim(),
-                LoaiGiam = req.LoaiGiam,
-                GiaTriGiam = req.GiaTriGiam,
-                GiamToiDa = req.GiamToiDa,
-                DonToiThieu = req.DonToiThieu,
-                SltoiDa = req.SltoiDa > 0 ? req.SltoiDa : 100,
-                SldaDung = 0,
-                ChoPhepKhachVangLai = req.ChoPhepKhachVangLai,
-                NgayBatDau = DateTime.Now,
-                NgayKetThuc = req.NgayKetThuc ?? DateTime.Now.AddDays(45)
-            };
-
-            _db.MaKhuyenMais.Add(kmMoi);
-            await _db.SaveChangesAsync();
-
-            TempData["ThongBaoAdmin"] = $"Đã tạo mã khuyến mãi mới [{kmMoi.CodeKm}] - {kmMoi.TenChuongTrinh}!";
+            TempData["ThongBaoAdmin"] = await _dichVuBangGia.ThemVoucherMoiAsync(req);
             return RedirectToAction(nameof(KhuyenMai));
         }
 
@@ -111,18 +76,9 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CapNhatVoucher(int maKm, int slToiDa, DateTime ngayKetThuc, bool choPhepKhachVangLai)
         {
-            var km = await _db.MaKhuyenMais.FindAsync(maKm);
-            if (km != null)
-            {
-                km.SltoiDa = slToiDa;
-                km.NgayKetThuc = ngayKetThuc;
-                km.ChoPhepKhachVangLai = choPhepKhachVangLai;
-                await _db.SaveChangesAsync();
-                TempData["ThongBaoAdmin"] = $"Đã cập nhật cấu hình Voucher [{km.CodeKm}]!";
-            }
-
+            string? thongBao = await _dichVuBangGia.CapNhatVoucherAsync(maKm, slToiDa, ngayKetThuc, choPhepKhachVangLai);
+            if (!string.IsNullOrWhiteSpace(thongBao)) TempData["ThongBaoAdmin"] = thongBao;
             return RedirectToAction(nameof(KhuyenMai));
         }
     }
 }
-

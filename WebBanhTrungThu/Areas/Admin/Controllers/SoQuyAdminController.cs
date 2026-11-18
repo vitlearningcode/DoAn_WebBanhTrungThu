@@ -11,9 +11,9 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN,GIAO_HANG")]
     public class SoQuyAdminController : ControllerQuanTriCoSo
     {
-        private readonly DichVuKiotVietMetadata _kiotMeta;
+        private readonly DichVuCauHinhHeThong _kiotMeta;
 
-        public SoQuyAdminController(CSDLBanhTrungThuContext db, DichVuKiotVietMetadata kiotMeta) : base(db)
+        public SoQuyAdminController(CSDLBanhTrungThuContext db, DichVuCauHinhHeThong kiotMeta) : base(db)
         {
             _kiotMeta = kiotMeta;
         }
@@ -84,7 +84,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
                 DanhSachPhieuThuDonHang = dsHienThi,
                 DanhSachPhieuHoanTien = danhSachDonHoanTien,
                 CauHinhQr = _kiotMeta.LayCauHinhQr(),
-                DanhSachPhieuThuChiWebhook = store.DanhSachPhieuThuChi ?? new List<PhieuThuChiKiot>()
+                DanhSachPhieuThuChiWebhook = store.DanhSachPhieuThuChi ?? new List<PhieuThuChiMoRong>()
             };
 
             return View(vm);

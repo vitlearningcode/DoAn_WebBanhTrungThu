@@ -1,5 +1,5 @@
 // =========================================================================
-// KIOTVIET WEB POS - QUẢN LÝ ĐA HÓA ĐƠN (MULTI-TABS), GIỎ HÀNG & ĐÓNG HỘP TỰ CHỌN
+// NGUYETCAT_ERP WEB POS - QUẢN LÝ ĐA HÓA ĐƠN (MULTI-TABS), GIỎ HÀNG & ĐÓNG HỘP TỰ CHỌN
 // =========================================================================
 (function () {
     const cfg = window.POS_CATALOG || {};
@@ -12,7 +12,7 @@
     let boLocPillHienTai = 'ALL';
     let dsBanhDangChonTrongHop = [];
 
-    const STORAGE_KEY_POS = 'NGUYETCAT_KIOTVIET_POS_TABS_V1';
+    const STORAGE_KEY_POS = 'NGUYETCAT_NGUYETCAT_ERP_POS_TABS_V1';
     let danhSachTabs = [];
     let tabDangChonId = 1;
     let khachCanTraHienTai = 0;

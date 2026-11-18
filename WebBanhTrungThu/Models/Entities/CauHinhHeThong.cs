@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace WebBanhTrungThu.Models.Entities;
 
 /// <summary>
-/// Bảng vật lý lưu trữ Cấu hình Hệ thống (Tài khoản QR MoMo 0814585526 & Metadata KiotViet) trong SQL Server.
+/// Bảng vật lý lưu trữ Cấu hình Hệ thống (Tài khoản QR MoMo 0814585526 & Metadata Nguyệt Cát ERP) trong SQL Server.
 /// </summary>
 [Table("CauHinhHeThong")]
 public partial class CauHinhHeThong

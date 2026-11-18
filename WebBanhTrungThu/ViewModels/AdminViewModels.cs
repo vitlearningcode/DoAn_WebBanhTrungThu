@@ -108,13 +108,13 @@ namespace WebBanhTrungThu.ViewModels
         public List<LoSanXuatBanh> DanhSachLoSanXuat { get; set; } = new();
         public Dictionary<string, string> TuDienAnh { get; set; } = new();
 
-        // Danh mục KiotViet mở rộng (Thương hiệu, Nhà cung cấp, Vị trí, ĐVT)
+        // Danh mục Đại lý Nguyệt Cát ERP mở rộng (Thương hiệu, Nhà cung cấp, Vị trí, ĐVT)
         public List<string> DanhSachThuongHieu { get; set; } = new();
         public List<string> DanhSachNhaCungCap { get; set; } = new();
         public List<string> DanhSachViTriKho { get; set; } = new();
         public List<string> DanhSachDonViTinh { get; set; } = new();
 
-        // 9 Bộ lọc cột trái chuẩn KiotViet
+        // 9 Bộ lọc cột trái chuẩn Quản trị Đại lý Nguyệt Cát
         public string? TuKhoa { get; set; }
         public int? MaDmLoc { get; set; }
         public string? TenDmLoc { get; set; }
@@ -295,6 +295,6 @@ namespace WebBanhTrungThu.ViewModels
         public List<DonHang> DanhSachPhieuThuDonHang { get; set; } = new();
         public List<DonHang> DanhSachPhieuHoanTien { get; set; } = new();
         public CauHinhThanhToanQr CauHinhQr { get; set; } = new();
-        public List<PhieuThuChiKiot> DanhSachPhieuThuChiWebhook { get; set; } = new();
+        public List<PhieuThuChiMoRong> DanhSachPhieuThuChiWebhook { get; set; } = new();
     }
 }

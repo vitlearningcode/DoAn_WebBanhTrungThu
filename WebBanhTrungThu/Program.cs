@@ -7,6 +7,7 @@ using WebBanhTrungThu.Middlewares;
 using WebBanhTrungThu.Services;
 using WebBanhTrungThu.Services.GioHang;
 using WebBanhTrungThu.Services.QuanTri;
+using WebBanhTrungThu.Services.TaiKhoan;
 using WebBanhTrungThu.Services.ThanhToan;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -25,6 +26,7 @@ builder.Services.AddDbContext<CSDLBanhTrungThuContext>(options =>
 
 // 3. Đăng ký các Service nghiệp vụ theo kiến trúc phân tầng rễ cây (Clean MVC 3 tầng)
 builder.Services.AddScoped<DichVuHinhAnh>();
+builder.Services.AddScoped<DichVuHoiVien>();
 builder.Services.AddScoped<DichVuHopQuaTuChon>();
 builder.Services.AddScoped<DichVuKhuyenMaiGioHang>();
 builder.Services.AddScoped<DichVuGioHang>();
@@ -33,9 +35,11 @@ builder.Services.AddScoped<DichVuTinhGiaDonHang>();
 builder.Services.AddScoped<DichVuTonKhoFefo>();
 builder.Services.AddScoped<DichVuThanhToan>();
 builder.Services.AddScoped<DichVuQuanTriSanPham>();
+builder.Services.AddScoped<DichVuQuanTriBangGia>();
 builder.Services.AddScoped<DichVuQuanTriKhoFefo>();
+builder.Services.AddScoped<DichVuQuanTriDonHang>();
 builder.Services.AddScoped<DichVuBanHangPos>();
-builder.Services.AddSingleton<DichVuKiotVietMetadata>();
+builder.Services.AddSingleton<DichVuCauHinhHeThong>();
 
 // 4. Cấu hình Cookie Authentication thuần
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

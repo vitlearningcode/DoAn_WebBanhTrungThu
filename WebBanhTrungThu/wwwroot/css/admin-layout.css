@@ -252,7 +252,7 @@ html, body {
     align-items: center;
 }
 
-/* BẢNG DỮ LIỆU KIOTVIET TỐI GIẢN & THẲNG HÀNG SỐ LIỆU TABULAR-NUMS (NHÁNH 5.0.1) */
+/* BẢNG DỮ LIỆU NGUYETCAT_ERP TỐI GIẢN & THẲNG HÀNG SỐ LIỆU TABULAR-NUMS (NHÁNH 5.0.1) */
 td, th, .so-tien, .ton-kho, .kpi-value, .kv-table td, .kv-table th {
     font-variant-numeric: tabular-nums;
 }
@@ -416,7 +416,7 @@ td, th, .so-tien, .ton-kho, .kpi-value, .kv-table td, .kv-table th {
     font-size: 18px;
 }
 
-/* BỘ LỌC, TOOLBAR & MODAL CHUNG CHO HÀNG HÓA & ĐƠN HÀNG KIOTVIET */
+/* BỘ LỌC, TOOLBAR & MODAL CHUNG CHO HÀNG HÓA & ĐƠN HÀNG NGUYETCAT_ERP */
 .kv-page-heading {
     font-size: 20px;
     font-weight: 700;

@@ -9,8 +9,8 @@ namespace WebBanhTrungThu.Data
 {
     /// <summary>
     /// Lớp chuyên trách khởi tạo cấu trúc bảng mở rộng (PhieuThuChi, ThiepChucMung3D, CauHinhHeThong),
-    /// di trú dữ liệu KiotViet, chuẩn hóa hạn mã khuyến mãi 2027, hạn sử dụng lô bánh FEFO và ảnh khay hộp 6 ô.
-    /// Giúp giữ cho Program.cs tinh gọn đúng chuẩn Clean Architecture.
+    /// dọn dẹp 2 bảng thừa (NguyenLieu, CongThucBanhNl), di trú dữ liệu cấu hình mở rộng Đại lý Nguyệt Cát ERP,
+    /// chuẩn hóa hạn mã khuyến mãi 2027, hạn sử dụng lô bánh FEFO và ảnh khay hộp 6 ô.
     /// </summary>
     public static class KhoiTaoCsdl
     {
@@ -21,8 +21,8 @@ namespace WebBanhTrungThu.Data
             {
                 var db = scope.ServiceProvider.GetRequiredService<CSDLBanhTrungThuContext>();
 
-                await TaoCacBangMoRongNeuChuaCoAsync(db);
-                await DiTruDuLieuKiotVietVaCauHinhAsync(app, db);
+                await TaoCacBangMoRongVaDonBangThuaAsync(db);
+                await DiTruDuLieuCauHinhMoRongAsync(app, db);
                 await ChuanHoaChiMucTokenThiepQrAsync(db);
                 await ChuanHoaMaKhuyenMaiVaLoBanhFefoAsync(db);
                 await CapNhatAnhKhayHop6OSonMaiAsync(db);
@@ -33,9 +33,13 @@ namespace WebBanhTrungThu.Data
             }
         }
 
-        private static async Task TaoCacBangMoRongNeuChuaCoAsync(CSDLBanhTrungThuContext db)
+        private static async Task TaoCacBangMoRongVaDonBangThuaAsync(CSDLBanhTrungThuContext db)
         {
             await db.Database.ExecuteSqlRawAsync(@"
+                IF OBJECT_ID('dbo.CongThucBanh_NL', 'U') IS NOT NULL DROP TABLE dbo.CongThucBanh_NL;
+                IF OBJECT_ID('dbo.CongThucBanhNl', 'U') IS NOT NULL DROP TABLE dbo.CongThucBanhNl;
+                IF OBJECT_ID('dbo.NguyenLieu', 'U') IS NOT NULL DROP TABLE dbo.NguyenLieu;
+
                 IF OBJECT_ID('dbo.PhieuThuChi', 'U') IS NULL
                 BEGIN
                     CREATE TABLE dbo.PhieuThuChi (
@@ -80,139 +84,58 @@ namespace WebBanhTrungThu.Data
             ");
         }
 
-        private static async Task DiTruDuLieuKiotVietVaCauHinhAsync(WebApplication app, CSDLBanhTrungThuContext db)
+        private static async Task DiTruDuLieuCauHinhMoRongAsync(WebApplication app, CSDLBanhTrungThuContext db)
         {
-            string thuMucDataCu = Path.Combine(app.Environment.WebRootPath, "data");
-            string fileJsonCu = Path.Combine(thuMucDataCu, "kiotviet_metadata.json");
             var jsonOpt = new JsonSerializerOptions
             {
                 WriteIndented = true,
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             };
 
-            if (File.Exists(fileJsonCu))
+            // Tự động chuyển đổi khóa cũ ("NGUYETCAT_ERP_METADATA" / "KIOT_METADATA_STORE") sang khóa chuẩn "CAUHINH_MORONG_NGUYETCAT"
+            var banGhiMoi = await db.CauHinhHeThongs
+                .FirstOrDefaultAsync(c => c.KhoaCauHinh == DichVuCauHinhHeThong.KHOA_CAU_HINH_MORONG);
+
+            var dsBanGhiCu = await db.CauHinhHeThongs
+                .Where(c => c.KhoaCauHinh == DichVuCauHinhHeThong.KHOA_CU_1 || c.KhoaCauHinh == DichVuCauHinhHeThong.KHOA_CU_2)
+                .ToListAsync();
+
+            if (banGhiMoi == null && dsBanGhiCu.Count > 0)
             {
-                try
+                var banGhiCu = dsBanGhiCu.First();
+                db.CauHinhHeThongs.Add(new CauHinhHeThong
                 {
-                    string noiDungJsonCu = await File.ReadAllTextAsync(fileJsonCu);
-                    var storeCu = JsonSerializer.Deserialize<KiotMetadataStore>(noiDungJsonCu, jsonOpt);
-                    if (storeCu != null)
-                    {
-                        if (!await db.CauHinhHeThongs.AnyAsync(c => c.KhoaCauHinh == DichVuKiotVietMetadata.KHOA_CAU_HINH_QR_MOMO))
-                        {
-                            db.CauHinhHeThongs.Add(new CauHinhHeThong
-                            {
-                                KhoaCauHinh = DichVuKiotVietMetadata.KHOA_CAU_HINH_QR_MOMO,
-                                GiaTriJson = JsonSerializer.Serialize(storeCu.CauHinhQr ?? new CauHinhThanhToanQr(), jsonOpt),
-                                MoTa = "Cấu hình Tài khoản nhận tiền Ví MoMo / VietQR (0814585526 - LE MINH DUC)",
-                                NgayCapNhat = DateTime.Now
-                            });
-                        }
-
-                        if (!await db.CauHinhHeThongs.AnyAsync(c => c.KhoaCauHinh == DichVuKiotVietMetadata.KHOA_METADATA_KIOTVIET))
-                        {
-                            db.CauHinhHeThongs.Add(new CauHinhHeThong
-                            {
-                                KhoaCauHinh = DichVuKiotVietMetadata.KHOA_METADATA_KIOTVIET,
-                                GiaTriJson = JsonSerializer.Serialize(storeCu, jsonOpt),
-                                MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO KiotViet",
-                                NgayCapNhat = DateTime.Now
-                            });
-                        }
-
-                        if (storeCu.DanhSachPhieuThuChi != null)
-                        {
-                            foreach (var p in storeCu.DanhSachPhieuThuChi)
-                            {
-                                string maHienThi = string.IsNullOrWhiteSpace(p.MaPhieu) ? $"PTH-{DateTime.Now:yyMMddHHmmss}" : p.MaPhieu;
-                                if (!await db.PhieuThuChis.AnyAsync(x => x.MaPhieuHienThi == maHienThi))
-                                {
-                                    db.PhieuThuChis.Add(new PhieuThuChi
-                                    {
-                                        MaPhieuHienThi = maHienThi,
-                                        LoaiPhieu = string.IsNullOrWhiteSpace(p.LoaiPhieu) ? "THU" : p.LoaiPhieu,
-                                        HangMuc = p.LoaiPhieu == "CHI" ? "Chi hoàn tiền đơn hàng" : "Thu tiền bán hàng",
-                                        SoTien = p.SoTien,
-                                        PhuongThuc = string.IsNullOrWhiteSpace(p.PhuongThuc) ? "MOMO_QR" : p.PhuongThuc,
-                                        MaDonHangLienKet = p.MaDh,
-                                        NguoiNopNhan = string.IsNullOrWhiteSpace(p.NguoiNopNhan) ? "Khách Hàng Nguyệt Cát" : p.NguoiNopNhan,
-                                        GhiChu = p.NoiDung,
-                                        NgayLap = p.ThoiGianTao == default ? DateTime.Now : p.ThoiGianTao
-                                    });
-                                }
-                            }
-                        }
-
-                        if (storeCu.DonHangs != null)
-                        {
-                            foreach (var kvDh in storeCu.DonHangs)
-                            {
-                                if (kvDh.Value?.Thiep3DTheoToken == null) continue;
-                                foreach (var kvThiep in kvDh.Value.Thiep3DTheoToken)
-                                {
-                                    string token = (kvThiep.Key ?? string.Empty).Trim();
-                                    var thiepInfo = kvThiep.Value;
-                                    if (!string.IsNullOrWhiteSpace(token) && thiepInfo != null &&
-                                        !await db.ThiepChucMung3ds.AnyAsync(t => t.MaTokenQr == token))
-                                    {
-                                        int? maDot = await db.DotGiaoHangDaDiems
-                                            .Where(d => d.MaTokenThiepQr == token)
-                                            .Select(d => (int?)d.MaDotGh)
-                                            .FirstOrDefaultAsync();
-
-                                        db.ThiepChucMung3ds.Add(new ThiepChucMung3d
-                                        {
-                                            MaTokenQr = token,
-                                            MaDonHang = kvDh.Key,
-                                            MaDotGiao = maDot,
-                                            TenNguoiGui = string.IsNullOrWhiteSpace(thiepInfo.TenNguoiGuiThiep) ? "Khách Hàng Nguyệt Cát" : thiepInfo.TenNguoiGuiThiep,
-                                            TenNguoiNhan = string.IsNullOrWhiteSpace(thiepInfo.TenNguoiNhanThiep) ? "Quý Khách & Gia Đình" : thiepInfo.TenNguoiNhanThiep,
-                                            LoiChuc = string.IsNullOrWhiteSpace(thiepInfo.LoiChucThiep)
-                                                ? "Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên, Viên Mãn & An Khang!"
-                                                : thiepInfo.LoiChucThiep,
-                                            MauGiaoDien = string.IsNullOrWhiteSpace(thiepInfo.MauGiaoDienThiep) ? "CO_PHONG_HOANG_GIA" : thiepInfo.MauGiaoDienThiep,
-                                            SoLanMoThiep = 0,
-                                            NgayTao = DateTime.Now
-                                        });
-                                    }
-                                }
-                            }
-                        }
-
-                        await db.SaveChangesAsync();
-                    }
-                }
-                catch
-                {
-                    // Bỏ qua lỗi đọc file cũ nếu có
-                }
-
-                File.Delete(fileJsonCu);
+                    KhoaCauHinh = DichVuCauHinhHeThong.KHOA_CAU_HINH_MORONG,
+                    GiaTriJson = banGhiCu.GiaTriJson,
+                    MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO Đại lý Nguyệt Cát ERP",
+                    NgayCapNhat = DateTime.Now
+                });
             }
 
-            if (Directory.Exists(thuMucDataCu))
+            if (dsBanGhiCu.Count > 0)
             {
-                Directory.Delete(thuMucDataCu, true);
+                db.CauHinhHeThongs.RemoveRange(dsBanGhiCu);
+                await db.SaveChangesAsync();
             }
 
-            if (!await db.CauHinhHeThongs.AnyAsync(c => c.KhoaCauHinh == DichVuKiotVietMetadata.KHOA_CAU_HINH_QR_MOMO))
+            if (!await db.CauHinhHeThongs.AnyAsync(c => c.KhoaCauHinh == DichVuCauHinhHeThong.KHOA_CAU_HINH_QR_MOMO))
             {
                 db.CauHinhHeThongs.Add(new CauHinhHeThong
                 {
-                    KhoaCauHinh = DichVuKiotVietMetadata.KHOA_CAU_HINH_QR_MOMO,
+                    KhoaCauHinh = DichVuCauHinhHeThong.KHOA_CAU_HINH_QR_MOMO,
                     GiaTriJson = JsonSerializer.Serialize(new CauHinhThanhToanQr(), jsonOpt),
                     MoTa = "Cấu hình Tài khoản nhận tiền Ví MoMo / VietQR (0814585526 - LE MINH DUC)",
                     NgayCapNhat = DateTime.Now
                 });
             }
 
-            if (!await db.CauHinhHeThongs.AnyAsync(c => c.KhoaCauHinh == DichVuKiotVietMetadata.KHOA_METADATA_KIOTVIET))
+            if (!await db.CauHinhHeThongs.AnyAsync(c => c.KhoaCauHinh == DichVuCauHinhHeThong.KHOA_CAU_HINH_MORONG))
             {
                 db.CauHinhHeThongs.Add(new CauHinhHeThong
                 {
-                    KhoaCauHinh = DichVuKiotVietMetadata.KHOA_METADATA_KIOTVIET,
-                    GiaTriJson = JsonSerializer.Serialize(DichVuKiotVietMetadata.TaoDuLieuMacDinh(), jsonOpt),
-                    MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO KiotViet",
+                    KhoaCauHinh = DichVuCauHinhHeThong.KHOA_CAU_HINH_MORONG,
+                    GiaTriJson = JsonSerializer.Serialize(DichVuCauHinhHeThong.TaoDuLieuMacDinh(), jsonOpt),
+                    MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO Đại lý Nguyệt Cát ERP",
                     NgayCapNhat = DateTime.Now
                 });
             }

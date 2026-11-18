@@ -1,13 +1,13 @@
 @model WebBanhTrungThu.ViewModels.SanPhamAdminViewModel
 @{
-    ViewData["Title"] = "Danh mục Hàng hóa - KiotViet";
+    ViewData["Title"] = "Danh mục Hàng hóa - Nguyệt Cát ERP";
 }
 
 <div class="kv-layout-2col">
     <!-- 1. CỘT TRÁI (250PX): BỘ LỌC HÀNG HÓA CLIENT-SIDE 9 TIÊU CHÍ -->
     @await Html.PartialAsync("~/Areas/Admin/Views/SanPhamAdmin/PhanKhu/_BoLocHangHoaSidebar.cshtml", Model)
 
-    <!-- 2. CỘT PHẢI: THANH CÔNG CỤ KIOTVIET & BẢNG DANH SÁCH HÀNG HÓA / LÔ FEFO -->
+    <!-- 2. CỘT PHẢI: THANH CÔNG CỤ NGUYETCAT_ERP & BẢNG DANH SÁCH HÀNG HÓA / LÔ FEFO -->
     <div class="kv-main-table-area">
         <div class="kv-toolbar">
             <div class="kv-search-box">
@@ -36,7 +36,7 @@
                     </ul>
                 </div>
 
-                <button type="button" class="kv-btn-tool" onclick="alert('Tính năng Import file Excel (.xlsx) chuẩn KiotViet sẵn sàng!');">
+                <button type="button" class="kv-btn-tool" onclick="alert('Tính năng Import file Excel (.xlsx) chuẩn Nguyệt Cát ERP sẵn sàng!');">
                     <i class="bi bi-upload"></i> Import file
                 </button>
                 <button type="button" class="kv-btn-tool" onclick="window.print();">

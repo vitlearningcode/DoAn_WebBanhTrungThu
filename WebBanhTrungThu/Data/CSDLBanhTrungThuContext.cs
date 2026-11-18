@@ -30,8 +30,6 @@ public partial class CSDLBanhTrungThuContext : DbContext
 
     public virtual DbSet<ComboMauCoSan> ComboMauCoSans { get; set; }
 
-    public virtual DbSet<CongThucBanhNl> CongThucBanhNls { get; set; }
-
     public virtual DbSet<DanhMucBanh> DanhMucBanhs { get; set; }
 
     public virtual DbSet<DonHang> DonHangs { get; set; }
@@ -53,8 +51,6 @@ public partial class CSDLBanhTrungThuContext : DbContext
     public virtual DbSet<MauVoHop> MauVoHops { get; set; }
 
     public virtual DbSet<NguoiDung> NguoiDungs { get; set; }
-
-    public virtual DbSet<NguyenLieu> NguyenLieus { get; set; }
 
     public virtual DbSet<PhienKhachVangLai> PhienKhachVangLais { get; set; }
 
@@ -154,15 +150,6 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.HasOne(d => d.MaVhNavigation).WithMany(p => p.ComboMauCoSans)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Combo_MauVoHop");
-        });
-
-        modelBuilder.Entity<CongThucBanhNl>(entity =>
-        {
-            entity.HasKey(e => new { e.MaBanh, e.MaNl }).HasName("PK__CongThuc__5F83E17C0491859F");
-
-            entity.HasOne(d => d.MaBanhNavigation).WithMany(p => p.CongThucBanhNls).HasConstraintName("FK_CTNL_Banh");
-
-            entity.HasOne(d => d.MaNlNavigation).WithMany(p => p.CongThucBanhNls).HasConstraintName("FK_CTNL_NguyenLieu");
         });
 
         modelBuilder.Entity<DanhMucBanh>(entity =>
@@ -285,13 +272,6 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.HasOne(d => d.MaVtNavigation).WithMany(p => p.NguoiDungs)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ND_VaiTro");
-        });
-
-        modelBuilder.Entity<NguyenLieu>(entity =>
-        {
-            entity.HasKey(e => e.MaNl).HasName("PK__NguyenLi__2725D73C41190141");
-
-            entity.Property(e => e.LaNguyenLieuChay).HasDefaultValue(true);
         });
 
         modelBuilder.Entity<PhienKhachVangLai>(entity =>

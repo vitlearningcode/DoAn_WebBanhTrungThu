@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 namespace WebBanhTrungThu.Models.Entities;
 
 /// <summary>
-/// Bảng vật lý lưu trữ Sổ quỹ Phiếu Thu / Phiếu Chi chuẩn KiotViet trong SQL Server.
+/// Bảng vật lý lưu trữ Sổ quỹ Phiếu Thu / Phiếu Chi chuẩn Nguyệt Cát ERP trong SQL Server.
 /// </summary>
 [Table("PhieuThuChi")]
 public partial class PhieuThuChi

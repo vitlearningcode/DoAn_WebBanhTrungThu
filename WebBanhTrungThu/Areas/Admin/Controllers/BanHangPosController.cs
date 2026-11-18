@@ -8,7 +8,7 @@ using WebBanhTrungThu.ViewModels;
 namespace WebBanhTrungThu.Areas.Admin.Controllers
 {
     /// <summary>
-    /// Controller điều phối màn hình Bán hàng tại quầy KiotViet Web POS,
+    /// Controller điều phối màn hình Bán hàng tại quầy Nguyệt Cát ERP Web POS,
     /// kế thừa từ ControllerQuanTriCoSo và ủy quyền nghiệp vụ sang DichVuBanHangPos & DichVuQuanTriKhoFefo.
     /// </summary>
     [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN")]

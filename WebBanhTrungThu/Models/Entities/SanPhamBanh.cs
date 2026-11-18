@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -67,9 +67,6 @@ public partial class SanPhamBanh
 
     [InverseProperty("MaBanhNavigation")]
     public virtual ICollection<ChiTietHopTuChon> ChiTietHopTuChons { get; set; } = new List<ChiTietHopTuChon>();
-
-    [InverseProperty("MaBanhNavigation")]
-    public virtual ICollection<CongThucBanhNl> CongThucBanhNls { get; set; } = new List<CongThucBanhNl>();
 
     [InverseProperty("MaBanhNavigation")]
     public virtual ICollection<LoSanXuatBanh> LoSanXuatBanhs { get; set; } = new List<LoSanXuatBanh>();

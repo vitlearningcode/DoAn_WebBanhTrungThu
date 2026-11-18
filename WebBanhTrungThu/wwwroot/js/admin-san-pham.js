@@ -1,5 +1,5 @@
 // =========================================================================
-// KIOTVIET ADMIN HÀNG HÓA - XỬ LÝ BỘ LỌC TỨC THÌ, MODAL CRUD BÁNH LẺ / COMBO & LÔ FEFO
+// NGUYETCAT_ERP ADMIN HÀNG HÓA - XỬ LÝ BỘ LỌC TỨC THÌ, MODAL CRUD BÁNH LẺ / COMBO & LÔ FEFO
 // =========================================================================
 (function () {
     let mangHangThanhPhan = [];
