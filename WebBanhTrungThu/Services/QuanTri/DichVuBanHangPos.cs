@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.TaiKhoan;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Services.QuanTri
@@ -83,6 +84,69 @@ namespace WebBanhTrungThu.Services.QuanTri
             };
         }
 
+        private static (string HangTv, decimal PhanTramUuDai) ChuanHoaHangVip(string? hangTv)
+        {
+            string chuan = (hangTv ?? string.Empty).Trim();
+            if (chuan.Contains("Kim Cương", StringComparison.OrdinalIgnoreCase) || chuan.Contains("Kim Cuong", StringComparison.OrdinalIgnoreCase))
+                return ("Kim Cương", 10m);
+            if (chuan.Contains("Vàng", StringComparison.OrdinalIgnoreCase) || chuan.Contains("Vang", StringComparison.OrdinalIgnoreCase))
+                return ("Vàng", 5m);
+            if (chuan.Contains("Bạc", StringComparison.OrdinalIgnoreCase) || chuan.Contains("Bac", StringComparison.OrdinalIgnoreCase))
+                return ("Bạc", 3m);
+            return ("Đồng", 0m);
+        }
+
+        private async Task<(string HangTv, decimal PhanTramUuDai)> LayThongTinHangVipPosAsync(NguoiDung nd)
+        {
+            var (hangTheoChiTieu, phanTramTheoChiTieu, _, _) =
+                await DichVuHoiVien.TinhThongTinHangVipAsync(_db, nd.MaNd, nd.DiemTichLuy);
+            var (hangLuuSan, phanTramLuuSan) = ChuanHoaHangVip(nd.HangTv);
+            return phanTramLuuSan > phanTramTheoChiTieu
+                ? (hangLuuSan, phanTramLuuSan)
+                : (hangTheoChiTieu, phanTramTheoChiTieu);
+        }
+
+        public async Task<object> TraCuuHoiVienPosAsync(string? sdt)
+        {
+            string sdtTrim = (sdt ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(sdtTrim))
+            {
+                return new { thanhCong = false, thongBao = "Vui lòng nhập số điện thoại hội viên cần tra cứu!" };
+            }
+
+            string sdtChiSo = new string(sdtTrim.Where(char.IsDigit).ToArray());
+            var nd = await _db.NguoiDungs
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.TrangThai && u.Sdt == sdtTrim);
+
+            if (nd == null && sdtChiSo.Length >= 8)
+            {
+                nd = await _db.NguoiDungs
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.TrangThai && (u.Sdt == sdtChiSo || u.Sdt.Contains(sdtChiSo)));
+            }
+
+            if (nd == null)
+            {
+                return new { thanhCong = false, thongBao = $"Không tìm thấy hội viên nào có SĐT \"{sdtTrim}\"." };
+            }
+
+            var (hangThanhVien, phanTramUuDaiVip) = await LayThongTinHangVipPosAsync(nd);
+
+            return new
+            {
+                thanhCong = true,
+                maNd = nd.MaNd,
+                hoTen = nd.HoTen,
+                sdt = nd.Sdt,
+                email = nd.Email,
+                hangThanhVien,
+                hangTv = hangThanhVien,
+                phanTramUuDaiVip,
+                diemTichLuy = nd.DiemTichLuy
+            };
+        }
+
         public async Task<object> TimKhachHangPosAsync(string? tuKhoa)
         {
             string kw = ChuanHoaChuoi(tuKhoa);
@@ -93,19 +157,27 @@ namespace WebBanhTrungThu.Services.QuanTri
                 query = query.Where(u => u.Sdt.Contains(kw) || u.HoTen.Contains(kw) || u.Email.Contains(kw));
             }
 
-            var ds = await query
+            var dsNguoiDung = await query
                 .OrderByDescending(u => u.DiemTichLuy)
                 .Take(10)
-                .Select(u => new
+                .ToListAsync();
+
+            var ds = new List<object>();
+            foreach (var u in dsNguoiDung)
+            {
+                var (hangTv, phanTramUuDaiVip) = await LayThongTinHangVipPosAsync(u);
+                ds.Add(new
                 {
                     maNd = u.MaNd,
                     hoTen = u.HoTen,
                     sdt = u.Sdt,
                     email = u.Email,
-                    hangTv = u.HangTv,
+                    hangThanhVien = hangTv,
+                    hangTv,
+                    phanTramUuDaiVip,
                     diemTichLuy = u.DiemTichLuy
-                })
-                .ToListAsync();
+                });
+            }
 
             return new { thanhCong = true, danhSach = ds };
         }
@@ -189,7 +261,7 @@ namespace WebBanhTrungThu.Services.QuanTri
             };
         }
 
-        public async Task<object> ThanhToanTaiQuayAsync(PosCheckoutRequest? req)
+        public async Task<object> ThanhToanTaiQuayAsync(PosCheckoutRequest? req, bool dungDiemTichLuy = false)
         {
             if (req == null || req.DanhSachMon == null || !req.DanhSachMon.Any())
             {
@@ -327,19 +399,51 @@ namespace WebBanhTrungThu.Services.QuanTri
                     }
                 }
 
+                NguoiDung? khachMember = (req.MaNd.HasValue && req.MaNd.Value > 0)
+                    ? await _db.NguoiDungs.FindAsync(req.MaNd.Value)
+                    : null;
+
+                if (khachMember == null && !string.IsNullOrWhiteSpace(req.SdtKhach) && req.SdtKhach.Trim() != "0900000000")
+                {
+                    string sdtLookup = req.SdtKhach.Trim();
+                    khachMember = await _db.NguoiDungs.FirstOrDefaultAsync(u => u.TrangThai && u.Sdt == sdtLookup);
+                }
+
+                decimal tienHangSauCkVaVoucher = Math.Max(0m, tongTienHang - tienChietKhauB2B - tienGiamVoucher);
+                string hangVipLucDat = "Đồng";
+                decimal phanTramGiamVip = 0m;
+                decimal tienGiamVip = 0m;
+
+                if (khachMember != null)
+                {
+                    (hangVipLucDat, phanTramGiamVip) = await LayThongTinHangVipPosAsync(khachMember);
+                    if (phanTramGiamVip > 0m)
+                    {
+                        tienGiamVip = Math.Round(tienHangSauCkVaVoucher * (phanTramGiamVip / 100m), 0);
+                    }
+                }
+
+                decimal tienHangSauVip = Math.Max(0m, tienHangSauCkVaVoucher - tienGiamVip);
+                int diemDaDung = 0;
+                decimal tienGiamDiem = 0m;
+
+                if (dungDiemTichLuy && khachMember != null && khachMember.DiemTichLuy > 0 && tienHangSauVip >= 1000m)
+                {
+                    int diemToiDaTheoDon = (int)(tienHangSauVip / 1000m);
+                    diemDaDung = Math.Min(khachMember.DiemTichLuy, diemToiDaTheoDon);
+                    tienGiamDiem = diemDaDung * 1000m;
+                    khachMember.DiemTichLuy = Math.Max(0, khachMember.DiemTichLuy - diemDaDung);
+                }
+
                 bool laGiaoHang = string.Equals(req.CheDoMua, "GIAO_HANG_QR", StringComparison.OrdinalIgnoreCase);
                 decimal phiVanChuyen = laGiaoHang ? 30000m : 0m;
-                decimal tongThanhToanCuoi = Math.Max(0m, tongTienHang - tienChietKhauB2B - tienGiamVoucher + phiInLogo + phiVanChuyen);
+                decimal tongThanhToanCuoi = Math.Max(0m, tienHangSauVip - tienGiamDiem + phiInLogo + phiVanChuyen);
 
                 string maTraCuu;
                 do
                 {
                     maTraCuu = "POS26-" + Random.Shared.Next(10000, 99999);
                 } while (await _db.DonHangs.AnyAsync(d => d.MaTraCuuDh == maTraCuu));
-
-                NguoiDung? khachMember = (req.MaNd.HasValue && req.MaNd.Value > 0)
-                    ? await _db.NguoiDungs.FindAsync(req.MaNd.Value)
-                    : null;
 
                 string hoTenMua = khachMember?.HoTen ?? ChuanHoaChuoi(req.HoTenKhach, "Khách lẻ tại quầy");
                 string sdtMua = khachMember?.Sdt ?? ChuanHoaChuoi(req.SdtKhach, "0900000000");
@@ -427,7 +531,10 @@ namespace WebBanhTrungThu.Services.QuanTri
                     }
                 }
 
-                static void TruTonKhoBanhVaLoFefo(SanPhamBanh banh, int soLuongCanTru)
+                var danhSachLoDaTru = new List<NhatKyTruLoFefo>();
+                var danhSachVoHopDaTru = new List<NhatKyTruVoHop>();
+
+                static void TruTonKhoBanhVaLoFefo(SanPhamBanh banh, int soLuongCanTru, List<NhatKyTruLoFefo> nhatKyLo)
                 {
                     banh.TongTonKho = Math.Max(0, banh.TongTonKho - soLuongCanTru);
                     int conPhaiTru = soLuongCanTru;
@@ -442,6 +549,10 @@ namespace WebBanhTrungThu.Services.QuanTri
                         int truLoNay = Math.Min(lo.SlconLai, conPhaiTru);
                         lo.SlconLai -= truLoNay;
                         conPhaiTru -= truLoNay;
+
+                        var daCo = nhatKyLo.FirstOrDefault(x => x.MaLo == lo.MaLo && x.MaBanh == banh.MaBanh);
+                        if (daCo != null) daCo.SoLuongDaTru += truLoNay;
+                        else nhatKyLo.Add(new NhatKyTruLoFefo { MaLo = lo.MaLo, MaBanh = banh.MaBanh, SoLuongDaTru = truLoNay });
                     }
                 }
 
@@ -452,7 +563,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                     if (item.LoaiSanPham == 1 && item.MaBanh.HasValue && dictBanh.TryGetValue(item.MaBanh.Value, out var banh))
                     {
                         decimal donGia = Math.Round(banh.DonGiaThucTe, 0);
-                        TruTonKhoBanhVaLoFefo(banh, sl);
+                        TruTonKhoBanhVaLoFefo(banh, sl, danhSachLoDaTru);
 
                         _db.ChiTietDonHangs.Add(new ChiTietDonHang
                         {
@@ -472,12 +583,13 @@ namespace WebBanhTrungThu.Services.QuanTri
                         if (dictVoHop.TryGetValue(combo.MaVh, out var vhCombo))
                         {
                             vhCombo.SltonKhoVo = Math.Max(0, vhCombo.SltonKhoVo - sl);
+                            danhSachVoHopDaTru.Add(new NhatKyTruVoHop { MaVh = vhCombo.MaVh, SoLuongDaTru = sl });
                         }
                         foreach (var ct in combo.ChiTietComboMaus)
                         {
                             if (dictBanh.TryGetValue(ct.MaBanh, out var bThanhPhan))
                             {
-                                TruTonKhoBanhVaLoFefo(bThanhPhan, ct.SoLuong * sl);
+                                TruTonKhoBanhVaLoFefo(bThanhPhan, ct.SoLuong * sl, danhSachLoDaTru);
                             }
                         }
 
@@ -510,6 +622,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                         int maVh = item.MaVh ?? dictVoHop.Keys.First();
                         var voHop = dictVoHop[maVh];
                         voHop.SltonKhoVo = Math.Max(0, voHop.SltonKhoVo - sl);
+                        danhSachVoHopDaTru.Add(new NhatKyTruVoHop { MaVh = voHop.MaVh, SoLuongDaTru = sl });
 
                         int tongCalo = 0;
                         decimal tongGiaMotHop = Math.Round(voHop.GiaVoHopRieng, 0);
@@ -562,7 +675,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                                 DonGia = giaBanh
                             });
 
-                            TruTonKhoBanhVaLoFefo(bHop, sl);
+                            TruTonKhoBanhVaLoFefo(bHop, sl, danhSachLoDaTru);
                         }
 
                         _db.ChiTietDonHangs.Add(new ChiTietDonHang
@@ -583,11 +696,11 @@ namespace WebBanhTrungThu.Services.QuanTri
                 int diemCong = 0;
                 if (khachMember != null)
                 {
-                    diemCong = (int)(tongThanhToanCuoi / 10000m);
+                    diemCong = tongThanhToanCuoi > 0m ? (int)(tongThanhToanCuoi / 10000m) : 0;
                     khachMember.DiemTichLuy += diemCong;
-                    if (khachMember.DiemTichLuy >= 1500) khachMember.HangTv = "Kim Cương";
-                    else if (khachMember.DiemTichLuy >= 500) khachMember.HangTv = "Vàng";
-                    else if (khachMember.DiemTichLuy >= 200) khachMember.HangTv = "Bạc";
+                    var (hangVipMoi, _, _, _) = await DichVuHoiVien.TinhThongTinHangVipAsync(_db, khachMember.MaNd, khachMember.DiemTichLuy);
+                    var (_, pctMoi) = ChuanHoaHangVip(hangVipMoi);
+                    khachMember.HangTv = pctMoi >= phanTramGiamVip ? hangVipMoi : hangVipLucDat;
                 }
 
                 _db.PhieuThuChis.Add(new PhieuThuChi
@@ -606,6 +719,21 @@ namespace WebBanhTrungThu.Services.QuanTri
                 await _db.SaveChangesAsync();
                 await transaction.CommitAsync();
 
+                _kiotMeta.CapNhatMetadataDonHang(donHang.MaDh, meta =>
+                {
+                    meta.KenhBan = "POS_TAI_QUAY";
+                    meta.DiemDaDung = diemDaDung;
+                    meta.TienGiamDiem = tienGiamDiem;
+                    meta.HangTvLucDat = hangVipLucDat;
+                    meta.PhanTramGiamVip = phanTramGiamVip;
+                    meta.TienGiamVip = tienGiamVip;
+                    meta.DaCongDiemThuong = diemCong > 0;
+                    meta.DiemThuongDaCong = diemCong;
+                    meta.DaHoanDiemKhiHuy = false;
+                    meta.DanhSachLoDaTru = danhSachLoDaTru;
+                    meta.DanhSachVoHopDaTru = danhSachVoHopDaTru;
+                });
+
                 return new
                 {
                     thanhCong = true,
@@ -614,6 +742,11 @@ namespace WebBanhTrungThu.Services.QuanTri
                     ngayDat = donHang.NgayDat.ToString("dd/MM/yyyy HH:mm"),
                     hoTenKhach = donHang.HoTenNguoiMua,
                     sdtKhach = donHang.SdtnguoiMua,
+                    hangTv = hangVipLucDat,
+                    phanTramGiamVip,
+                    tienGiamVip,
+                    diemDaDung,
+                    tienGiamDiem,
                     tongTienHang = donHang.TongTienHang,
                     tienChietKhauB2B = donHang.TienChietKhauB2b,
                     tienGiamVoucher = donHang.TienGiamVoucher,
@@ -623,7 +756,8 @@ namespace WebBanhTrungThu.Services.QuanTri
                     phuongThucTt = donHang.PhuongThucTt,
                     cheDoMua = laGiaoHang ? "GIAO_HANG_QR" : "TAI_QUAY",
                     maTokenQr,
-                    diemCong
+                    diemCong,
+                    diemHienTaiMoi = khachMember?.DiemTichLuy ?? 0
                 };
             }
             catch (Exception ex)

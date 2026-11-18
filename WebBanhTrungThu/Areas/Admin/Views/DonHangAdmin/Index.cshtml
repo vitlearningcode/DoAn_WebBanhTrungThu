@@ -2,6 +2,39 @@
 @{
     ViewData["Title"] = "Hóa đơn & Đặt hàng - Nguyệt Cát ERP";
     string tuKhoa = ViewBag.TuKhoa as string ?? "";
+
+    static (string TenCongTyGoc, string? EmailVat, string? YeuCauEpKimLogo) TachThongTinB2B(WebBanhTrungThu.Models.Entities.DonHang don)
+    {
+        string raw = don.TenCongTy ?? string.Empty;
+        string tenGoc = raw;
+        string? emailVat = null;
+        string? epKim = null;
+
+        int idxLogo = raw.IndexOf(" | Ép kim Logo:", StringComparison.OrdinalIgnoreCase);
+        if (idxLogo >= 0)
+        {
+            epKim = raw[(idxLogo + " | Ép kim Logo:".Length)..].Trim();
+            tenGoc = raw[..idxLogo].Trim();
+        }
+
+        int idxVat = tenGoc.IndexOf(" | VAT:", StringComparison.OrdinalIgnoreCase);
+        if (idxVat >= 0)
+        {
+            emailVat = tenGoc[(idxVat + " | VAT:".Length)..].Trim();
+            tenGoc = tenGoc[..idxVat].Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(emailVat) && don.LaDonDoanhNghiepB2b)
+        {
+            emailVat = don.EmailNguoiMua;
+        }
+        if (string.IsNullOrWhiteSpace(epKim) && don.PhiInLogo > 0)
+        {
+            epKim = $"Có yêu cầu ép kim Logo doanh nghiệp (+{don.PhiInLogo:N0}đ)";
+        }
+
+        return (tenGoc, emailVat, epKim);
+    }
 }
 
 <div class="kv-layout-2col">
@@ -61,6 +94,15 @@
                             string trangThaiChuan = dh.TrangThaiDh == "DANG_DONG_GOI_HOP" ? "CHO_LAY_HANG" : dh.TrangThaiDh;
                             int soThiepQr = dh.DotGiaoHangDaDiems.Count(g => g.CoKemThiepQr && !string.IsNullOrEmpty(g.MaTokenThiepQr));
                             int tongSoMon = dh.ChiTietDonHangs.Sum(c => c.SoLuong);
+                            var thongTinB2B = TachThongTinB2B(dh);
+                            bool laDonB2BVat = dh.LaDonDoanhNghiepB2b || !string.IsNullOrWhiteSpace(dh.TenCongTy) || !string.IsNullOrWhiteSpace(dh.MaSoThue);
+                            bool laTrangThaiKhoa = trangThaiChuan == "DA_HUY" || trangThaiChuan == "HOAN_TIEN_TRA_HANG";
+                            string tenTrangThaiDhDep = trangThaiChuan switch
+                            {
+                                "HOAN_TIEN_TRA_HANG" => "Hoàn tiền / Trả hàng",
+                                "DA_GIAO" => "Đã giao hàng",
+                                _ => dh.TenTrangThaiDhHienThi
+                            };
 
                             <tr class="kv-master-row @(moMacDinh ? "active-row" : "")"
                                 data-detail-id="detail-dh-@dh.MaDh"
@@ -92,9 +134,17 @@
                                     <small class="text-muted">@dh.SdtnguoiMua</small>
                                 </td>
                                 <td>
-                                    @if (dh.LaDonDoanhNghiepB2b)
+                                    @if (laDonB2BVat)
                                     {
-                                        <span class="kv-tag-mini b2b">B2B</span>
+                                        <span class="badge bg-warning text-dark border border-warning-subtle fw-bold">[ĐƠN B2B • XUẤT VAT]</span>
+                                        @if (!string.IsNullOrWhiteSpace(dh.MaSoThue))
+                                        {
+                                            <div class="small text-dark mt-1">MST: <strong>@dh.MaSoThue</strong></div>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(thongTinB2B.YeuCauEpKimLogo))
+                                        {
+                                            <div class="small text-primary fw-medium" title="@thongTinB2B.YeuCauEpKimLogo"><i class="bi bi-stars me-1"></i>Ép kim Logo</div>
+                                        }
                                     }
                                     else
                                     {
@@ -105,11 +155,11 @@
                                 <td class="text-end text-muted so-tien">@(tongGiam > 0 ? tongGiam.ToString("N0") : "0")</td>
                                 <td class="text-end fw-semibold so-tien" style="color: #0070F4;">@dh.TongThanhToanCuoi.ToString("N0")</td>
                                 <td>
-                                    <span class="badge @(trangThaiChuan == "HOAN_TAT" ? "bg-success-subtle text-success border border-success-subtle" : trangThaiChuan == "DA_HUY" ? "bg-danger-subtle text-danger border border-danger-subtle" : trangThaiChuan == "CHO_LAY_HANG" ? "bg-warning-subtle text-warning-emphasis border border-warning-subtle" : "bg-primary-subtle text-primary border border-primary-subtle")">
-                                        @dh.TenTrangThaiDhHienThi
+                                    <span class="badge @(trangThaiChuan == "HOAN_TAT" || trangThaiChuan == "DA_GIAO" ? "bg-success-subtle text-success border border-success-subtle" : laTrangThaiKhoa ? "bg-danger-subtle text-danger border border-danger-subtle" : trangThaiChuan == "CHO_LAY_HANG" ? "bg-warning-subtle text-warning-emphasis border border-warning-subtle" : "bg-primary-subtle text-primary border border-primary-subtle")">
+                                        @tenTrangThaiDhDep
                                     </span>
                                     <div class="mt-1">
-                                        <small class="@(dh.TrangThaiTt == "DA_TT" ? "text-success" : dh.TrangThaiTt == "DA_HOAN_TIEN" ? "text-danger" : "text-muted")">
+                                        <small class="@(dh.TrangThaiTt == "DA_TT" || dh.TrangThaiTt == "DA_THANH_TOAN" ? "text-success fw-medium" : dh.TrangThaiTt == "DA_HOAN_TIEN" ? "text-danger fw-medium" : "text-muted")">
                                             @dh.TenTrangThaiTtHienThi
                                         </small>
                                     </div>
@@ -151,7 +201,7 @@
                                                     </div>
                                                     <div class="py-1 border-bottom d-flex justify-content-between">
                                                         <span class="text-muted">Phân loại:</span>
-                                                        <strong>@(dh.LaDonDoanhNghiepB2b ? $"Đơn sỉ B2B - {dh.TenCongTy} (MST: {dh.MaSoThue})" : "Khách lẻ B2C")</strong>
+                                                        <strong>@(laDonB2BVat ? "[ĐƠN B2B • XUẤT VAT]" : "Khách lẻ B2C")</strong>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-4">
@@ -165,6 +215,25 @@
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            @if (laDonB2BVat)
+                                            {
+                                                <div class="p-2 mb-3 rounded border" style="background: #FFFBEB; border-color: #FDE68A !important; font-size: 12.5px; color: #78350F;">
+                                                    <span class="badge bg-warning text-dark me-1">[ĐƠN B2B • XUẤT VAT]</span>
+                                                    <strong>Doanh nghiệp:</strong> @(string.IsNullOrWhiteSpace(thongTinB2B.TenCongTyGoc) ? "---" : thongTinB2B.TenCongTyGoc)
+                                                    • <strong>Mã số thuế:</strong> @(string.IsNullOrWhiteSpace(dh.MaSoThue) ? "---" : dh.MaSoThue)
+                                                    @if (!string.IsNullOrWhiteSpace(thongTinB2B.EmailVat))
+                                                    {
+                                                        <span> • <strong>Email nhận VAT:</strong> @thongTinB2B.EmailVat</span>
+                                                    }
+                                                    @if (!string.IsNullOrWhiteSpace(thongTinB2B.YeuCauEpKimLogo))
+                                                    {
+                                                        <div class="mt-1 text-primary fw-semibold">
+                                                            <i class="bi bi-stars me-1"></i>Yêu cầu ép kim Logo: @thongTinB2B.YeuCauEpKimLogo
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
 
                                             @if (dh.TrangThaiTt == "DA_HOAN_TIEN" || !string.IsNullOrWhiteSpace(dh.SoTaiKhoanHoan))
                                             {
@@ -269,17 +338,19 @@
 
                                         <div class="d-flex flex-wrap justify-content-between align-items-center pt-3 mt-2 border-top gap-2">
                                             <div>
-                                                @if (dh.TrangThaiDh != "DA_HUY")
+                                                @if (!laTrangThaiKhoa)
                                                 {
+                                                    bool daGiaoHoanTat = trangThaiChuan == "HOAN_TAT" || trangThaiChuan == "DA_GIAO";
                                                     <button type="button" class="btn-kv-danger-outline"
-                                                            onclick="moModalHuyDon(@dh.MaDh, '@dh.MaTraCuuDh', '@Html.Raw(dh.HoTenNguoiMua.Replace("'", "\\'"))', '@dh.SdtnguoiMua', @dh.TongThanhToanCuoi, '@dh.PhuongThucTt', '@dh.TrangThaiTt', @dh.DotGiaoHangDaDiems.Count, @soThiepQr, @tongSoMon)">
-                                                        <i class="bi bi-trash3"></i> Hủy phiếu
+                                                            onclick="moModalHuyDon(@dh.MaDh, '@dh.MaTraCuuDh', '@Html.Raw(dh.HoTenNguoiMua.Replace("'", "\\'"))', '@dh.SdtnguoiMua', @dh.TongThanhToanCuoi, '@dh.PhuongThucTt', '@dh.TrangThaiTt', @dh.DotGiaoHangDaDiems.Count, @soThiepQr, @tongSoMon, '@trangThaiChuan')">
+                                                        <i class="bi @(daGiaoHoanTat ? "bi-arrow-return-left" : "bi-trash3")"></i>
+                                                        @(daGiaoHoanTat ? "Đổi trả / Hoàn tiền" : "Hủy phiếu")
                                                     </button>
                                                 }
                                                 else
                                                 {
                                                     <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2" style="font-size: 12.5px;">
-                                                        <i class="bi bi-x-octagon-fill me-1"></i> Phiếu đã hủy (@dh.TenTrangThaiTtHienThi)
+                                                        <i class="bi bi-lock-fill me-1"></i> @tenTrangThaiDhDep (@dh.TenTrangThaiTtHienThi - Khóa cứng)
                                                     </span>
                                                 }
                                             </div>

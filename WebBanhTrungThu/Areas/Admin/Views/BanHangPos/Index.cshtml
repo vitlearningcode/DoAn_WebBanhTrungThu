@@ -79,8 +79,8 @@ window.kvImgFallback = function (img) {
         <input type="text" id="txtPosTimSanPham" class="pos-search-input" placeholder="(F3) Tìm tên bánh, mã SKU, quét mã vạch..." oninput="locSanPhamPos()" onkeydown="if(event.key === 'Enter'){ event.preventDefault(); quetMaVachNhanhPos(this.value); }" />
     </div>
     <div class="pos-tabs-bar" id="barMultiTabsHoaDon"></div>
-    <button type="button" class="pos-btn-top-action" onclick="moModalDongHopTuChonPos()">
-        <i class="bi bi-gift-fill"></i> Đóng hộp tự chọn cho khách (F6)
+    <button type="button" class="pos-btn-top-action" onclick="moModalDongHopTuChonPos()" title="Đóng Hộp Quà Tự Chọn (F6)">
+        🎁 Đóng Hộp Quà Tự Chọn (F6)
     </button>
     <div class="d-flex align-items-center gap-2">
         <span class="badge bg-light text-primary fw-semibold px-2 py-1"><i class="bi bi-person-badge me-1"></i>@Model.TenThuNgan (@Model.VaiTroThuNgan)</span>
@@ -164,18 +164,33 @@ window.kvImgFallback = function (img) {
             </div>
             <div class="position-relative" id="boxTimKhachPos">
                 <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                    <input type="text" id="txtPosTimKhach" class="form-control" placeholder="Tìm SĐT hoặc tên khách thành viên (F4)..." autocomplete="off" onfocus="timKhachHangPosAjax(this.value)" oninput="timKhachHangPosAjax(this.value)" />
+                    <span class="input-group-text bg-white"><i class="bi bi-telephone text-muted"></i></span>
+                    <input type="text" id="txtPosTimKhach" class="form-control" placeholder="Nhập SĐT hội viên VIP hoặc tên khách (F4)..." autocomplete="off"
+                           onfocus="timKhachHangPosAjax(this.value)"
+                           oninput="xuLyNhapSdtTimKhachPos(this.value)"
+                           onkeydown="if(event.key==='Enter'){ event.preventDefault(); traCuuHoiVienTheoSdtPos(); }" />
+                    <button type="button" class="btn btn-primary fw-semibold" id="btnPosTraCuuSdtVip" onclick="traCuuHoiVienTheoSdtPos()" title="Tra cứu hội viên VIP theo SĐT">
+                        <i class="bi bi-search"></i> Tìm VIP
+                    </button>
                 </div>
+                <div id="lblPosTrangThaiTraCuuVip" class="small text-muted mt-1" style="display: none;"></div>
                 <div class="pos-cust-dropdown" id="dropdownKhachPos"></div>
             </div>
             <div id="boxThongTinKhachDaChon" class="mt-2 p-2 rounded border bg-light" style="display: none;">
-                <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex justify-content-between align-items-start gap-2">
                     <div>
-                        <div class="fw-bold text-primary" id="lblPosTenKhach">---</div>
-                        <div class="small text-muted">SĐT: <strong id="lblPosSdtKhach">---</strong> • Hạng: <span class="badge bg-warning text-dark" id="lblPosHangTv">Đồng</span> • Điểm: <strong class="text-success" id="lblPosDiemKhach">0</strong></div>
+                        <div class="badge bg-primary-subtle text-primary border border-primary-subtle text-wrap text-start mb-1" style="font-size: 12px;">
+                            Hội viên: <span id="lblPosTenKhach">---</span> (<span id="lblPosHangTv">Đồng</span> - Giảm <span id="lblPosPhanTramVip">0</span>%) • <span id="lblPosDiemKhach">0</span> điểm
+                        </div>
+                        <div class="small text-muted">SĐT: <strong id="lblPosSdtKhach">---</strong></div>
                     </div>
                     <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2" onclick="boChonKhachHangPos()" title="Đổi về Khách lẻ tại quầy"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div class="form-check form-switch mt-2 pt-2 border-top" id="boxPosDungDiemVip" style="display: none;">
+                    <input class="form-check-input" type="checkbox" role="switch" id="chkPosDungDiemTichLuy" onchange="tinhToanHoaDonPos()" />
+                    <label class="form-check-label small fw-semibold text-success" for="chkPosDungDiemTichLuy" id="lblPosDungDiemTichLuy">
+                        Dùng điểm tích lũy (-0đ)
+                    </label>
                 </div>
             </div>
         </div>
@@ -237,6 +252,14 @@ window.kvImgFallback = function (img) {
                 </div>
                 <strong class="text-success" id="lblPosTienVoucher">-0</strong>
             </div>
+            <div class="pos-summary-row" id="rowPosGiamVip" style="display: none;">
+                <span>Ưu đãi VIP (<span id="lblPosHangVipRow">Đồng - 0%</span>)</span>
+                <strong class="text-primary" id="lblPosTienGiamVip">-0</strong>
+            </div>
+            <div class="pos-summary-row" id="rowPosGiamDiem" style="display: none;">
+                <span>Tiêu điểm tích lũy (<span id="lblPosSoDiemDungRow">0</span> điểm)</span>
+                <strong class="text-success" id="lblPosTienGiamDiem">-0</strong>
+            </div>
             <div class="pos-summary-row" id="rowPosPhiShip" style="display: none;">
                 <span>Phí giao hàng tận nơi</span>
                 <strong class="text-dark" id="lblPosPhiShip">30,000</strong>
@@ -297,9 +320,20 @@ window.kvImgFallback = function (img) {
             <div class="modal-body p-3">
                 <div class="row g-3">
                     <div class="col-md-5 border-end">
-                        <label class="form-label small fw-bold mb-1">1. Chọn mẫu vỏ hộp:</label>
+                        <label class="form-label small fw-bold mb-1">1. Chọn loại vỏ hộp (4 bánh / 6 bánh):</label>
                         <select id="selPosVoHopTuChon" class="form-select form-select-sm mb-2" onchange="doiVoHopTuChonPos()">
-                            @foreach (var vh in Model.DanhSachVoHop)
+                            @{
+                                var dsVoHopPhuHop = Model.DanhSachVoHop.Where(v => (v.SucChuaBanh == 4 || v.SucChuaBanh == 6) && v.SltonKhoVo > 0).ToList();
+                                if (!dsVoHopPhuHop.Any())
+                                {
+                                    dsVoHopPhuHop = Model.DanhSachVoHop.Where(v => v.SltonKhoVo > 0).ToList();
+                                }
+                                if (!dsVoHopPhuHop.Any())
+                                {
+                                    dsVoHopPhuHop = Model.DanhSachVoHop.ToList();
+                                }
+                            }
+                            @foreach (var vh in dsVoHopPhuHop)
                             {
                                 <option value="@vh.MaVh" data-succhua="@vh.SucChuaBanh" data-giavo="@Math.Round(vh.GiaVoHopRieng, 0)" data-ten="@vh.TenVoHop">
                                     @vh.TenVoHop (@vh.SucChuaBanh bánh - Vỏ: @vh.GiaVoHopRieng.ToString("N0") đ - Tồn: @vh.SltonKhoVo)
@@ -321,20 +355,30 @@ window.kvImgFallback = function (img) {
                         </div>
                     </div>
                     <div class="col-md-7">
-                        <label class="form-label small fw-bold mb-1">2. Chạm chọn bánh để xếp vào ô trống:</label>
+                        <label class="form-label small fw-bold mb-1">2. Chạm chọn vị bánh còn tồn kho để xếp vào ô:</label>
                         <div class="row g-2" style="max-height: 320px; overflow-y: auto;">
-                            @foreach (var b in Model.DanhSachBanh)
+                            @{
+                                var dsBanhConTon = Model.DanhSachBanh.Where(b => b.TongTonKho > 0).ToList();
+                            }
+                            @if (dsBanhConTon.Any())
                             {
-                                <div class="col-6">
-                                    <div class="p-2 border rounded d-flex justify-content-between align-items-center bg-white" style="cursor:pointer;" onclick="themBanhVaoHopTuChonPos(@b.MaBanh)">
-                                        <div class="text-truncate pe-1">
-                                            <div class="fw-semibold text-dark text-truncate">@b.TenBanh</div>
-                                            <small class="text-primary fw-bold">@b.DonGiaThucTe.ToString("N0") đ</small>
-                                            <small class="text-muted">• Tồn: @b.TongTonKho</small>
+                                @foreach (var b in dsBanhConTon)
+                                {
+                                    <div class="col-6">
+                                        <div class="p-2 border rounded d-flex justify-content-between align-items-center bg-white" style="cursor:pointer;" onclick="themBanhVaoHopTuChonPos(@b.MaBanh)">
+                                            <div class="text-truncate pe-1">
+                                                <div class="fw-semibold text-dark text-truncate">@b.TenBanh</div>
+                                                <small class="text-primary fw-bold">@b.DonGiaThucTe.ToString("N0") đ</small>
+                                                <small class="text-muted">• Tồn: @b.TongTonKho</small>
+                                            </div>
+                                            <span class="btn btn-sm btn-outline-primary py-0 px-2">+</span>
                                         </div>
-                                        <span class="btn btn-sm btn-outline-primary py-0 px-2">+</span>
                                     </div>
-                                </div>
+                                }
+                            }
+                            else
+                            {
+                                <div class="col-12 text-center text-muted py-4 small">Hiện chưa có vị bánh nào còn tồn kho.</div>
                             }
                         </div>
                     </div>

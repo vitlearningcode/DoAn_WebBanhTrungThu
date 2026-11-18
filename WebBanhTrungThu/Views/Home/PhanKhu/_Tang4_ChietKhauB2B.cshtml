@@ -1,4 +1,20 @@
 @model WebBanhTrungThu.ViewModels.LandingPageViewModel
+@using System.Text.Json
+@using System.Text.Encodings.Web
+@{
+    var jsonOptB2B = new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+    var bangB2BJs = JsonSerializer.Serialize(Model.BangGiaSiB2B.Select(b => new
+    {
+        tenMoc = b.TenMocB2b,
+        tuHop = b.SlhopToiThieu,
+        denHop = b.SlhopToiDa,
+        phanTramCk = b.PhanTramChietKhau,
+        mienPhiInLogo = b.MienPhiInLogo,
+        phiKhuon = b.PhiKhuonInLogo
+    }), jsonOptB2B);
+    var comboMacDinh = Model.DanhSachCombo.FirstOrDefault();
+    decimal giaMacDinhHop = comboMacDinh?.GiaUuDaiCombo ?? 600000m;
+}
 
 <!-- =========================================================================
      TẦNG 4 (04): QUÀ TẶNG DOANH NGHIỆP B2B & ÉP KIM LOGO RIÊNG (NỀN NGỌC TRAI ẤM)
@@ -10,17 +26,50 @@
                 <span class="text-uppercase small chu-do-son-mai fw-bold" style="letter-spacing: 1.5px;">Giải Pháp Quà Biếu Doanh Nghiệp Đẳng Cấp</span>
                 <h2 class="font-co-phong display-5 fw-bold chu-nau-tram mb-3">Chiết Khấu Sỉ B2B &amp; Ép Kim Logo Thương Hiệu</h2>
                 <p class="chu-nau-phu mb-4">
-                    Kéo thanh trượt bên dưới để ước tính ngay mức chiết khấu ưu đãi theo số lượng lễ hộp và chính sách miễn phí khuôn ép kim Logo doanh nghiệp lên nắp hộp sơn mài.
+                    Nhập hoặc kéo thanh trượt số lượng lễ hộp dự kiến để ước tính chiết khấu sỉ B2B, chính sách miễn phí khuôn ép kim Logo từ 20 hộp và đặt đơn doanh nghiệp ngay.
                 </p>
 
                 <div class="card-hoang-gia p-4">
-                    <label class="form-label d-flex justify-content-between align-items-center">
-                        <span class="fw-semibold chu-nau-tram">Số lượng lễ hộp dự kiến đặt:</span>
-                        <strong id="lblSoHopB2B" class="fs-4 chu-do-son-mai">35 Hộp</strong>
-                    </label>
-                    <input type="range" class="form-range" id="sliderSoHopB2B" min="10" max="200" step="5" value="35" oninput="tinhGiaSiB2B(this.value)">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                        <label for="txtSoHopB2BDuKien" class="fw-semibold chu-nau-tram mb-0">Số lượng lễ hộp dự kiến đặt:</label>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="number"
+                                   id="txtSoHopB2BDuKien"
+                                   class="form-control form-control-sm text-center fw-bold chu-do-son-mai"
+                                   style="width: 92px; border-color: var(--mau-vang-dong-co);"
+                                   min="10"
+                                   max="1000"
+                                   step="1"
+                                   value="35"
+                                   oninput="tinhGiaSiB2B(this.value, true)" />
+                            <strong id="lblSoHopB2B" class="fs-5 chu-do-son-mai">35 Hộp</strong>
+                        </div>
+                    </div>
+                    <input type="range" class="form-range" id="sliderSoHopB2B" min="10" max="200" step="5" value="35" oninput="tinhGiaSiB2B(this.value, false)">
 
-                    <div class="row g-3 mt-2 text-center">
+                    <div class="mt-2 mb-3">
+                        <label for="selComboDatHangB2B" class="form-label small fw-semibold chu-nau-tram mb-1">Chọn mẫu lễ hộp sỉ dự kiến:</label>
+                        <select id="selComboDatHangB2B" class="form-select form-select-sm" style="border-color: var(--mau-vang-dong-co);" onchange="tinhGiaSiB2B(document.getElementById('txtSoHopB2BDuKien').value, true)">
+                            @if (Model.DanhSachCombo.Any())
+                            {
+                                foreach (var cb in Model.DanhSachCombo)
+                                {
+                                    <option value="@cb.MaCb" data-loai="2" data-gia="@cb.GiaUuDaiCombo.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                                        @cb.TenCombo (@cb.GiaUuDaiCombo.ToString("N0")đ / hộp)
+                                    </option>
+                                }
+                            }
+                            else if (Model.DanhSachBanh.Any())
+                            {
+                                var banhDau = Model.DanhSachBanh.First();
+                                <option value="@banhDau.MaBanh" data-loai="1" data-gia="@banhDau.DonGiaThucTe.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                                    @banhDau.TenBanh (@banhDau.DonGiaThucTe.ToString("N0")đ / cái)
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mt-1 text-center">
                         <div class="col-4">
                             <div class="p-2 rounded" style="background: var(--mau-nen-giay-do); border: 1px solid var(--mau-vien-vang-dong);">
                                 <small class="chu-nau-phu d-block">Mức chiết khấu</small>
@@ -36,10 +85,14 @@
                         <div class="col-4">
                             <div class="p-2 rounded" style="background: var(--mau-nen-giay-do); border: 1px solid var(--mau-vien-vang-dong);">
                                 <small class="chu-nau-phu d-block">Ngân sách tiết kiệm</small>
-                                <strong id="lblTietKiemB2B" class="fs-6 chu-vang-dong">3.150.000đ</strong>
+                                <strong id="lblTietKiemB2B" class="fs-6 chu-vang-dong">@Math.Round(35m * giaMacDinhHop * 0.15m, 0).ToString("N0")đ</strong>
                             </div>
                         </div>
                     </div>
+
+                    <button type="button" id="btnDatHangSiB2B" class="btn btn-do-son-mai w-100 mt-3 py-2 fw-bold rounded-pill" onclick="datHangSiB2BNgay()">
+                        <i class="bi bi-building-check me-2"></i>Đặt Hàng Sỉ B2B &amp; Xuất Hóa Đơn VAT Ngay
+                    </button>
                 </div>
             </div>
 
@@ -83,3 +136,6 @@
         </div>
     </div>
 </section>
+<script>
+    window.BANG_CHIET_KHAU_B2B = @Html.Raw(bangB2BJs);
+</script>

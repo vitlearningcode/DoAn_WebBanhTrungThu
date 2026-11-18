@@ -25,6 +25,7 @@
             khachHang: null,
             cheDoMua: 'TAI_QUAY',
             yeuCauInLogo: false,
+            dungDiemTichLuy: false,
             codeKm: '',
             phuongThucTt: 'TIEN_MAT',
             tienKhachDua: 0,
@@ -176,6 +177,7 @@
         const tab = layTabHienTai();
         if (!tab) return;
         tab.yeuCauInLogo = document.getElementById('chkPosYeuCauInLogo')?.checked || false;
+        tab.dungDiemTichLuy = document.getElementById('chkPosDungDiemTichLuy')?.checked || false;
         tab.codeKm = document.getElementById('selPosVoucher')?.value || '';
         const radPt = document.querySelector('input[name="radPosPhuongThucTt"]:checked');
         if (radPt) tab.phuongThucTt = radPt.value;
@@ -211,6 +213,8 @@
         }
 
         document.getElementById('chkPosYeuCauInLogo').checked = !!tab.yeuCauInLogo;
+        const chkDiem = document.getElementById('chkPosDungDiemTichLuy');
+        if (chkDiem) chkDiem.checked = !!tab.dungDiemTichLuy;
         document.getElementById('selPosVoucher').value = tab.codeKm || '';
 
         const rad = document.querySelector(`input[name="radPosPhuongThucTt"][value="${tab.phuongThucTt || 'TIEN_MAT'}"]`);
@@ -524,7 +528,35 @@
         document.getElementById('rowPosPhiShip').style.display = (tab.cheDoMua === 'GIAO_HANG_QR') ? 'flex' : 'none';
         document.getElementById('lblPosPhiShip').innerText = dinhDangN0(phiShip);
 
-        khachCanTraHienTai = Math.max(0, tongTienHang - tienCkB2B - tienVoucher + phiInLogo + phiShip);
+        const tienSauCkVaVoucher = Math.max(0, tongTienHang - tienCkB2B - tienVoucher);
+        const khach = tab.khachHang || null;
+        const hangTv = khach ? (khach.hangThanhVien || khach.hangTv || 'Đồng') : 'Đồng';
+        const phanTramVip = khach ? Number(khach.phanTramUuDaiVip || layPhanTramVipTuHang(hangTv)) : 0;
+        const tienGiamVip = phanTramVip > 0 ? Math.round(tienSauCkVaVoucher * (phanTramVip / 100)) : 0;
+
+        const rowVip = document.getElementById('rowPosGiamVip');
+        if (rowVip) {
+            rowVip.style.display = tienGiamVip > 0 ? 'flex' : 'none';
+            document.getElementById('lblPosHangVipRow').innerText = `${hangTv} - ${phanTramVip}%`;
+            document.getElementById('lblPosTienGiamVip').innerText = `-${dinhDangN0(tienGiamVip)}`;
+        }
+
+        const tienSauVip = Math.max(0, tienSauCkVaVoucher - tienGiamVip);
+        const diemHienCo = khach ? Math.max(0, Math.floor(Number(khach.diemTichLuy || 0))) : 0;
+        const chkDungDiem = document.getElementById('chkPosDungDiemTichLuy');
+        const dangDungDiem = Boolean(khach && diemHienCo > 0 && chkDungDiem && chkDungDiem.checked);
+        const diemToiDa = Math.floor(tienSauVip / 1000);
+        const diemDaDung = dangDungDiem ? Math.min(diemHienCo, diemToiDa) : 0;
+        const tienGiamDiem = diemDaDung * 1000;
+
+        const rowDiem = document.getElementById('rowPosGiamDiem');
+        if (rowDiem) {
+            rowDiem.style.display = tienGiamDiem > 0 ? 'flex' : 'none';
+            document.getElementById('lblPosSoDiemDungRow').innerText = dinhDangN0(diemDaDung);
+            document.getElementById('lblPosTienGiamDiem').innerText = `-${dinhDangN0(tienGiamDiem)}`;
+        }
+
+        khachCanTraHienTai = Math.max(0, tienSauVip - tienGiamDiem + phiInLogo + phiShip);
 
         document.getElementById('lblPosTongSoMon').innerText = `${tongSoMon} món`;
         document.getElementById('lblPosTongSoHop').innerText = `${tongSoHop} hộp`;
@@ -582,6 +614,59 @@
         if (!boQuaLuu) tinhToanHoaDonPos();
     };
 
+    function layPhanTramVipTuHang(hangTv) {
+        const s = String(hangTv || '').toLowerCase();
+        if (s.includes('kim cương') || s.includes('kim cuong')) return 10;
+        if (s.includes('vàng') || s.includes('vang')) return 5;
+        if (s.includes('bạc') || s.includes('bac')) return 3;
+        return 0;
+    }
+
+    let _timerTraCuuSdtPos = null;
+    window.xuLyNhapSdtTimKhachPos = function (giaTri) {
+        timKhachHangPosAjax(giaTri);
+        const chiSo = String(giaTri || '').replace(/\D/g, '');
+        if (_timerTraCuuSdtPos) clearTimeout(_timerTraCuuSdtPos);
+        if (chiSo.length >= 10) {
+            _timerTraCuuSdtPos = setTimeout(() => traCuuHoiVienTheoSdtPos(true), 250);
+        } else {
+            const lbl = document.getElementById('lblPosTrangThaiTraCuuVip');
+            if (lbl) lbl.style.display = 'none';
+        }
+    };
+
+    window.traCuuHoiVienTheoSdtPos = async function (tuDongImLang) {
+        const sdt = (document.getElementById('txtPosTimKhach')?.value || '').trim();
+        const lbl = document.getElementById('lblPosTrangThaiTraCuuVip');
+        if (!sdt) {
+            if (!tuDongImLang && lbl) {
+                lbl.className = 'small text-danger mt-1';
+                lbl.textContent = 'Vui lòng nhập số điện thoại hội viên!';
+                lbl.style.display = 'block';
+            }
+            return;
+        }
+
+        try {
+            const resp = await fetch(`/Admin/BanHangPos/TraCuuHoiVienPos?sdt=${encodeURIComponent(sdt)}`);
+            const data = await resp.json();
+            if (data && data.thanhCong) {
+                if (lbl) lbl.style.display = 'none';
+                chonKhachHangVaoTabPos(data);
+            } else if (!tuDongImLang && lbl) {
+                lbl.className = 'small text-warning-emphasis mt-1';
+                lbl.textContent = (data && data.thongBao) || 'Không tìm thấy hội viên theo SĐT này.';
+                lbl.style.display = 'block';
+            }
+        } catch (e) {
+            if (!tuDongImLang && lbl) {
+                lbl.className = 'small text-danger mt-1';
+                lbl.textContent = 'Lỗi kết nối khi tra cứu hội viên!';
+                lbl.style.display = 'block';
+            }
+        }
+    };
+
     window.timKhachHangPosAjax = async function (tuKhoa) {
         const dd = document.getElementById('dropdownKhachPos');
         if (!dd) return;
@@ -595,12 +680,14 @@
             }
             dd.innerHTML = '';
             data.danhSach.forEach(u => {
+                const hang = u.hangThanhVien || u.hangTv || 'Đồng';
+                const pct = u.phanTramUuDaiVip ?? layPhanTramVipTuHang(hang);
                 const div = document.createElement('div');
                 div.className = 'pos-cust-option';
                 div.innerHTML = `
                     <div class="d-flex justify-content-between">
                         <strong>${u.hoTen}</strong>
-                        <span class="badge bg-light text-primary border">${u.hangTv} • ${u.diemTichLuy} điểm</span>
+                        <span class="badge bg-light text-primary border">${hang} (-${pct}%) • ${u.diemTichLuy} điểm</span>
                     </div>
                     <small class="text-muted">${u.sdt} • ${u.email}</small>
                 `;
@@ -613,34 +700,63 @@
 
     window.chonKhachHangVaoTabPos = function (khach) {
         const tab = layTabHienTai();
+        const hang = khach.hangThanhVien || khach.hangTv || 'Đồng';
+        khach.hangThanhVien = hang;
+        khach.hangTv = hang;
+        khach.phanTramUuDaiVip = Number(khach.phanTramUuDaiVip ?? layPhanTramVipTuHang(hang));
         tab.khachHang = khach;
+        tab.dungDiemTichLuy = false;
+        const chkDiem = document.getElementById('chkPosDungDiemTichLuy');
+        if (chkDiem) chkDiem.checked = false;
         document.getElementById('dropdownKhachPos').style.display = 'none';
         document.getElementById('txtPosTimKhach').value = '';
+        const lbl = document.getElementById('lblPosTrangThaiTraCuuVip');
+        if (lbl) lbl.style.display = 'none';
         hienThiKhachHangTrenUI(khach);
-        luuStoragePos();
+        tinhToanHoaDonPos();
     };
 
     window.boChonKhachHangPos = function () {
         const tab = layTabHienTai();
         tab.khachHang = null;
+        tab.dungDiemTichLuy = false;
+        const chkDiem = document.getElementById('chkPosDungDiemTichLuy');
+        if (chkDiem) chkDiem.checked = false;
         hienThiKhachHangTrenUI(null);
-        luuStoragePos();
+        tinhToanHoaDonPos();
     };
 
     function hienThiKhachHangTrenUI(khach) {
         const boxChon = document.getElementById('boxThongTinKhachDaChon');
         const boxTim = document.getElementById('boxTimKhachPos');
+        const boxDiem = document.getElementById('boxPosDungDiemVip');
+        const chkDiem = document.getElementById('chkPosDungDiemTichLuy');
+        const lblDiemToggle = document.getElementById('lblPosDungDiemTichLuy');
         if (!boxChon || !boxTim) return;
         if (khach && khach.maNd) {
+            const hang = khach.hangThanhVien || khach.hangTv || 'Đồng';
+            const pct = Number(khach.phanTramUuDaiVip ?? layPhanTramVipTuHang(hang));
+            const diem = Math.max(0, Math.floor(Number(khach.diemTichLuy || 0)));
+
             boxTim.style.display = 'none';
             boxChon.style.display = 'block';
             document.getElementById('lblPosTenKhach').innerText = khach.hoTen;
             document.getElementById('lblPosSdtKhach').innerText = khach.sdt;
-            document.getElementById('lblPosHangTv').innerText = khach.hangTv || 'Đồng';
-            document.getElementById('lblPosDiemKhach').innerText = khach.diemTichLuy || 0;
+            document.getElementById('lblPosHangTv').innerText = hang;
+            const lblPct = document.getElementById('lblPosPhanTramVip');
+            if (lblPct) lblPct.innerText = pct;
+            document.getElementById('lblPosDiemKhach').innerText = diem;
+
+            if (boxDiem && lblDiemToggle) {
+                boxDiem.style.display = diem > 0 ? 'block' : 'none';
+                lblDiemToggle.innerText = `Dùng điểm tích lũy (-${dinhDangN0(diem * 1000)}đ)`;
+            }
+            if (chkDiem && diem <= 0) chkDiem.checked = false;
         } else {
             boxTim.style.display = 'block';
             boxChon.style.display = 'none';
+            if (boxDiem) boxDiem.style.display = 'none';
+            if (chkDiem) chkDiem.checked = false;
         }
     }
 
@@ -660,8 +776,81 @@
         renderBangGioHangPos();
     };
 
+    function ganLienThongVipVaTonKhoHopPos() {
+        const fetchGoc = window.fetch.bind(window);
+        window.fetch = async function (input, init) {
+            const url = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+            if (url.includes('/Admin/BanHangPos/ThanhToanTaiQuay') && init && typeof init.body === 'string') {
+                try {
+                    const tab = layTabHienTai();
+                    const payload = JSON.parse(init.body);
+                    payload.dungDiemTichLuy = Boolean(tab && tab.dungDiemTichLuy);
+                    init = Object.assign({}, init, { body: JSON.stringify(payload) });
+                } catch (e) { }
+            }
+            return fetchGoc(input, init);
+        };
+
+        const demBanhTrongSlot = [];
+        const moGoc = window.moModalDongHopTuChonPos;
+        if (typeof moGoc === 'function') {
+            window.moModalDongHopTuChonPos = function () {
+                demBanhTrongSlot.length = 0;
+                return moGoc.apply(this, arguments);
+            };
+        }
+        const xoaHetGoc = window.xoaHetBanhTrongHopPos;
+        if (typeof xoaHetGoc === 'function') {
+            window.xoaHetBanhTrongHopPos = function () {
+                demBanhTrongSlot.length = 0;
+                return xoaHetGoc.apply(this, arguments);
+            };
+        }
+        const xoaSlotGoc = window.xoaBanhKhoiSlotHopPos;
+        if (typeof xoaSlotGoc === 'function') {
+            window.xoaBanhKhoiSlotHopPos = function (idx) {
+                demBanhTrongSlot.splice(idx, 1);
+                return xoaSlotGoc.apply(this, arguments);
+            };
+        }
+        const doiVoGoc = window.doiVoHopTuChonPos;
+        if (typeof doiVoGoc === 'function') {
+            window.doiVoHopTuChonPos = function () {
+                const sel = document.getElementById('selPosVoHopTuChon');
+                const sucChua = parseInt(sel?.options[sel.selectedIndex]?.getAttribute('data-succhua') || '4', 10);
+                if (demBanhTrongSlot.length > sucChua) {
+                    demBanhTrongSlot.length = sucChua;
+                }
+                return doiVoGoc.apply(this, arguments);
+            };
+        }
+        const themBanhGoc = window.themBanhVaoHopTuChonPos;
+        if (typeof themBanhGoc === 'function') {
+            window.themBanhVaoHopTuChonPos = function (maBanh) {
+                const banh = DS_BANH_POS.find(b => b.maBanh === maBanh);
+                if (!banh || banh.tonKho <= 0) {
+                    alert('Vị bánh này hiện đã hết tồn kho!');
+                    return;
+                }
+                const sel = document.getElementById('selPosVoHopTuChon');
+                const sucChua = parseInt(sel?.options[sel.selectedIndex]?.getAttribute('data-succhua') || '4', 10);
+                if (demBanhTrongSlot.length >= sucChua) {
+                    return themBanhGoc.apply(this, arguments);
+                }
+                const soDaChon = demBanhTrongSlot.filter(id => id === maBanh).length;
+                if (soDaChon + 1 > banh.tonKho) {
+                    alert(`Sản phẩm "${banh.ten}" chỉ còn tồn ${banh.tonKho} bánh trong kho!`);
+                    return;
+                }
+                demBanhTrongSlot.push(maBanh);
+                return themBanhGoc.apply(this, arguments);
+            };
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         locSanPhamPos();
         khoiTaoMultiTabsPos();
+        ganLienThongVipVaTonKhoHopPos();
     });
 })();

@@ -35,6 +35,18 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
             return View(vm);
         }
 
+        public class PosCheckoutDayDuRequest : PosCheckoutRequest
+        {
+            public bool DungDiemTichLuy { get; set; }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> TraCuuHoiVienPos(string? sdt)
+        {
+            var ketQua = await _dichVuPos.TraCuuHoiVienPosAsync(sdt);
+            return Json(ketQua);
+        }
+
         [HttpGet]
         public async Task<IActionResult> TimKhachHangPos(string? tuKhoa)
         {
@@ -50,9 +62,10 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ThanhToanTaiQuay([FromBody] PosCheckoutRequest? req)
+        public async Task<IActionResult> ThanhToanTaiQuay([FromBody] PosCheckoutDayDuRequest? req, [FromQuery] bool dungDiemTichLuy = false)
         {
-            var ketQua = await _dichVuPos.ThanhToanTaiQuayAsync(req);
+            bool suDungDiem = (req?.DungDiemTichLuy ?? false) || dungDiemTichLuy;
+            var ketQua = await _dichVuPos.ThanhToanTaiQuayAsync(req, suDungDiem);
             return Json(ketQua);
         }
 

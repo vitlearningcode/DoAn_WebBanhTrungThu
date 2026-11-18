@@ -72,22 +72,125 @@ function locTheoThuongHieu(thuongHieu, btn) {
     apDungBoLocTang4();
 }
 
-// 2. BẢNG ƯỚC TÍNH CHIẾT KHẤU SỈ B2B TRỰC TIẾP (TẦNG 4)
-function tinhGiaSiB2B(soHop) {
-    soHop = parseInt(soHop);
-    document.getElementById("lblSoHopB2B").innerText = `${soHop} Hộp`;
+// 2. BẢNG ƯỚC TÍNH CHIẾT KHẤU SỈ B2B TRỰC TIẾP & ĐẶT HÀNG SỈ (TẦNG 4)
+function tinhGiaSiB2B(soHopNhap, tuOInputSo) {
+    let soHop = parseInt(soHopNhap, 10);
+    if (isNaN(soHop) || soHop < 1) soHop = 10;
 
-    let phanTram = 8;
-    let mienPhiLogo = false;
-    if (soHop >= 100) { phanTram = 22; mienPhiLogo = true; }
-    else if (soHop >= 30) { phanTram = 15; mienPhiLogo = true; }
+    const slider = document.getElementById("sliderSoHopB2B");
+    const txtSoHop = document.getElementById("txtSoHopB2BDuKien");
+    if (slider) {
+        slider.value = Math.min(200, Math.max(10, soHop));
+    }
+    if (txtSoHop && !tuOInputSo) {
+        txtSoHop.value = soHop;
+    }
 
-    let giaTrungBinh1Hop = 600000;
-    let tienTietKiem = Math.round(soHop * giaTrungBinh1Hop * (phanTram / 100));
+    const lblSoHop = document.getElementById("lblSoHopB2B");
+    if (lblSoHop) lblSoHop.innerText = `${soHop} Hộp`;
 
-    document.getElementById("lblPhanTramB2B").innerText = `${phanTram}%`;
-    document.getElementById("lblLogoB2B").innerText = mienPhiLogo ? "MIỄN PHÍ" : "+400.000đ";
-    document.getElementById("lblTietKiemB2B").innerText = `${tienTietKiem.toLocaleString("vi-VN")}đ`;
+    let phanTram = 0;
+    let mienPhiLogo = soHop >= 20;
+    let phiKhuon = 400000;
+
+    const bangB2B = Array.isArray(window.BANG_CHIET_KHAU_B2B) ? window.BANG_CHIET_KHAU_B2B : [];
+    if (bangB2B.length > 0) {
+        let moc = bangB2B.find(m => soHop >= m.tuHop && soHop <= m.denHop);
+        if (!moc && soHop > bangB2B[bangB2B.length - 1].denHop) {
+            moc = bangB2B[bangB2B.length - 1];
+        }
+        if (moc) {
+            phanTram = Number(moc.phanTramCk || 0);
+            mienPhiLogo = Boolean(moc.mienPhiInLogo);
+            phiKhuon = Number(moc.phiKhuon || 400000);
+        }
+    } else {
+        if (soHop >= 100) { phanTram = 22; mienPhiLogo = true; }
+        else if (soHop >= 30) { phanTram = 15; mienPhiLogo = true; }
+        else if (soHop >= 10) { phanTram = 8; }
+    }
+
+    const selCombo = document.getElementById("selComboDatHangB2B");
+    const optCombo = selCombo && selCombo.selectedIndex >= 0 ? selCombo.options[selCombo.selectedIndex] : null;
+    const giaTrungBinh1Hop = Number(optCombo?.dataset?.gia || 600000);
+    const tienTietKiem = Math.round(soHop * giaTrungBinh1Hop * (phanTram / 100));
+
+    const lblPhanTram = document.getElementById("lblPhanTramB2B");
+    const lblLogo = document.getElementById("lblLogoB2B");
+    const lblTietKiem = document.getElementById("lblTietKiemB2B");
+
+    if (lblPhanTram) lblPhanTram.innerText = `${phanTram}%`;
+    if (lblLogo) {
+        lblLogo.innerText = mienPhiLogo ? "MIỄN PHÍ" : `+${phiKhuon.toLocaleString("vi-VN")}đ`;
+        lblLogo.className = mienPhiLogo ? "fs-6 text-success" : "fs-6 chu-nau-tram";
+    }
+    if (lblTietKiem) lblTietKiem.innerText = `${tienTietKiem.toLocaleString("vi-VN")}đ`;
+}
+
+async function datHangSiB2BNgay() {
+    const txtSoHop = document.getElementById("txtSoHopB2BDuKien");
+    const slider = document.getElementById("sliderSoHopB2B");
+    const soHop = parseInt(txtSoHop?.value || slider?.value || "35", 10);
+
+    if (isNaN(soHop) || soHop < 10) {
+        if (typeof hienThiThongBaoGioHang === "function") {
+            hienThiThongBaoGioHang("Đơn sỉ Doanh nghiệp (B2B) áp dụng từ tối thiểu 10 hộp trở lên!", false);
+        } else {
+            alert("Đơn sỉ Doanh nghiệp (B2B) áp dụng từ tối thiểu 10 hộp trở lên!");
+        }
+        txtSoHop?.focus();
+        return;
+    }
+
+    const selCombo = document.getElementById("selComboDatHangB2B");
+    const optCombo = selCombo && selCombo.selectedIndex >= 0 ? selCombo.options[selCombo.selectedIndex] : null;
+    const maSanPham = parseInt(selCombo?.value || "0", 10);
+    const loaiSanPham = parseInt(optCombo?.dataset?.loai || "2", 10);
+
+    if (!maSanPham || maSanPham <= 0) {
+        window.location.href = "/ThanhToan/Index?cheDoB2B=true";
+        return;
+    }
+
+    const btn = document.getElementById("btnDatHangSiB2B");
+    const noiDungCu = btn ? btn.innerHTML : "";
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>Đang đưa ${soHop} hộp vào giỏ sỉ...`;
+    }
+
+    try {
+        const res = await fetch("/GioHang/ThemBanhHoacCombo", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                loaiSanPham: loaiSanPham,
+                maSanPham: maSanPham,
+                soLuong: soHop
+            })
+        });
+        const data = await res.json();
+        if (data && data.thanhCong) {
+            window.location.href = "/ThanhToan/Index?cheDoB2B=true";
+            return;
+        }
+        if (typeof hienThiThongBaoGioHang === "function") {
+            hienThiThongBaoGioHang(data?.thongBao || "Không thể thêm đơn sỉ vào giỏ hàng!", false);
+        } else {
+            alert(data?.thongBao || "Không thể thêm đơn sỉ vào giỏ hàng!");
+        }
+    } catch (err) {
+        if (typeof hienThiThongBaoGioHang === "function") {
+            hienThiThongBaoGioHang("Lỗi kết nối máy chủ khi tạo giỏ hàng sỉ B2B!", false);
+        } else {
+            alert("Lỗi kết nối máy chủ khi tạo giỏ hàng sỉ B2B!");
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = noiDungCu;
+        }
+    }
 }
 
 // 3. NGHỆ NHÂN TƯ VẤN CHỌN QUÀ HỢP Ý (WEIGHTED SCORING MATRIX)

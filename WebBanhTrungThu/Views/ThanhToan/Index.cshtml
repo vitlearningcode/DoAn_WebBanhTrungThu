@@ -15,6 +15,8 @@
 
     string? tenBanhHetHangBanDau = TempData["TenBanhHetHang"] as string ?? ViewBag.TenBanhHetHangKhiTaiTrang as string;
     string? thongBaoHetHangBanDau = TempData["LoiThanhToan"] as string ?? ViewBag.ThongBaoHetHangKhiTaiTrang as string;
+    bool cheDoB2BTuUrl = string.Equals(Context.Request.Query["cheDoB2B"], "true", StringComparison.OrdinalIgnoreCase);
+    bool tuDongMoB2B = cheDoB2BTuUrl || Model.TongSoHop >= 10;
 }
 
 @section Styles {
@@ -164,19 +166,29 @@ else
 
     <div class="dong-tuy-chon-manh-bitis">
         <div class="form-check d-flex align-items-center gap-2 m-0">
-            <input class="form-check-input" type="checkbox" id="chkDonB2B" name="LaDonDoanhNghiepB2B" value="true" onchange="capNhatBangTinhThanhToan()">
-            <label class="form-check-label text-dark" for="chkDonB2B">Xuất hóa đơn VAT / Đơn hàng Doanh nghiệp (B2B)</label>
+            <input class="form-check-input" type="checkbox" id="chkDonB2B" name="LaDonDoanhNghiepB2B" value="true" checked="@tuDongMoB2B" onchange="capNhatBangTinhThanhToan()">
+            <label class="form-check-label text-dark fw-semibold" for="chkDonB2B">Xuất hóa đơn VAT / Đơn hàng Doanh nghiệp (B2B)</label>
         </div>
-        <div id="khungThongTinB2B" class="mt-2 pt-2" style="display: none;">
+        <div id="khungThongTinB2B" class="mt-2 pt-2" style="display: @(tuDongMoB2B ? "block" : "none");">
             <div class="row g-2">
-                <div class="col-md-7"><input type="text" name="TenCongTy" class="input-phang-bitis" placeholder="Tên công ty / Tổ chức" /></div>
-                <div class="col-md-5"><input type="text" name="MaSoThue" class="input-phang-bitis" placeholder="Mã số thuế" /></div>
-                <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2 pt-1">
-                    <div class="form-check m-0">
-                        <input class="form-check-input" type="checkbox" id="chkYeuCauInLogo" name="YeuCauInLogo" value="true" onchange="capNhatBangTinhThanhToan()">
-                        <label class="form-check-label small text-dark" for="chkYeuCauInLogo">Ép kim Logo doanh nghiệp lên nắp hộp quà</label>
+                <div class="col-md-7">
+                    <input type="text" name="TenCongTy" id="txtTenCongTyB2B" class="input-phang-bitis" placeholder="Tên doanh nghiệp / Cơ quan *" />
+                </div>
+                <div class="col-md-5">
+                    <input type="text" name="MaSoThue" id="txtMaSoThueB2B" class="input-phang-bitis" placeholder="Mã số thuế *" />
+                </div>
+                <div class="col-12">
+                    <input type="email" id="txtEmailNhanVatB2B" class="input-phang-bitis" value="@Model.EmailNguoiMua" placeholder="Email nhận hóa đơn VAT" />
+                </div>
+                <div class="col-12 pt-1">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="form-check m-0">
+                            <input class="form-check-input" type="checkbox" id="chkYeuCauInLogo" name="YeuCauInLogo" value="true" onchange="capNhatBangTinhThanhToan()">
+                            <label class="form-check-label small text-dark fw-medium" for="chkYeuCauInLogo">Yêu cầu ép kim Logo doanh nghiệp lên vỏ hộp (Miễn phí từ 20 hộp)</label>
+                        </div>
+                        <span class="small @(Model.MienPhiInLogo ? "fw-semibold text-success" : "text-muted")">@(Model.MienPhiInLogo ? $"Đạt {Model.TongSoHop} hộp: Miễn phí khuôn Logo" : $"Phụ phí khuôn: +{Model.PhiInLogoMacDinh:N0}đ")</span>
                     </div>
-                    <span class="small @(Model.MienPhiInLogo ? "fw-semibold text-success" : "text-muted")">@(Model.MienPhiInLogo ? $"Đạt {Model.TongSoHop} hộp: Miễn phí khuôn Logo" : $"Phụ phí khuôn: +{Model.PhiInLogoMacDinh:N0}đ")</span>
+                    <input type="text" id="txtNoiDungEpKimLogo" class="input-phang-bitis mt-2" placeholder="Ghi chú nội dung / yêu cầu ép kim Logo lên vỏ hộp (nếu có)" />
                 </div>
             </div>
         </div>
@@ -313,6 +325,7 @@ else
 @section Scripts {
 <script>
 window.CAU_HINH_THANH_TOAN = {
+    tongSoHop: @Model.TongSoHop,
     tongTienHang: @Model.TongTienHang.ToString(System.Globalization.CultureInfo.InvariantCulture),
     tienCkB2B: @Model.TienChietKhauB2B.ToString(System.Globalization.CultureInfo.InvariantCulture),
     tienGiamVoucher: @Model.TienGiamVoucher.ToString(System.Globalization.CultureInfo.InvariantCulture),

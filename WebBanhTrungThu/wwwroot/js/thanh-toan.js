@@ -17,6 +17,12 @@
 
     document.addEventListener("DOMContentLoaded", function () {
         damBaoModalCanhBaoTonTai();
+        const urlParams = new URLSearchParams(window.location.search);
+        const laCheDoB2B = urlParams.get("cheDoB2B") === "true" || Number(cfg.tongSoHop || 0) >= 10;
+        const chkB2B = document.getElementById("chkDonB2B");
+        if (chkB2B && laCheDoB2B) {
+            chkB2B.checked = true;
+        }
         if (typeof window.capNhatGiaoDienNguoiKhacNhan === "function") window.capNhatGiaoDienNguoiKhacNhan();
         if (typeof window.dongBoNguoiMuaSangNguoiNhan === "function") window.dongBoNguoiMuaSangNguoiNhan();
         if (typeof window.dongBoDiaChiGiaoChinh === "function") window.dongBoDiaChiGiaoChinh();
@@ -490,6 +496,26 @@
             }
         }
 
+        const chkB2B = document.getElementById("chkDonB2B");
+        const txtTenCongTy = document.getElementById("txtTenCongTyB2B");
+        const txtMaSoThue = document.getElementById("txtMaSoThueB2B");
+        const txtEmailVat = document.getElementById("txtEmailNhanVatB2B");
+        const chkEpKimLogo = document.getElementById("chkYeuCauInLogo");
+        const txtNoiDungLogo = document.getElementById("txtNoiDungEpKimLogo");
+
+        if (chkB2B && chkB2B.checked) {
+            const tenCongTyGoc = (txtTenCongTy?.value || "").split(" | VAT:")[0].split(" | Ép kim Logo:")[0].trim();
+            const maSoThueVal = txtMaSoThue?.value.trim() || "";
+            if (!tenCongTyGoc || !maSoThueVal) {
+                if (typeof hienThiThongBaoGioHang === "function") {
+                    hienThiThongBaoGioHang("Vui lòng nhập đầy đủ Tên doanh nghiệp / Cơ quan và Mã số thuế để xuất hóa đơn VAT!", false);
+                }
+                if (!tenCongTyGoc) txtTenCongTy?.focus();
+                else txtMaSoThue?.focus();
+                return false;
+            }
+        }
+
         if (maCaptcha.length < 5) {
             const lbl = document.getElementById("lblTrangThaiCaptchaKho");
             if (lbl) {
@@ -505,6 +531,27 @@
             if (!hopLeKho) {
                 return false;
             }
+        }
+
+        if (chkB2B && chkB2B.checked && txtTenCongTy) {
+            const tenCongTyGoc = txtTenCongTy.value.split(" | VAT:")[0].split(" | Ép kim Logo:")[0].trim();
+            const emailVatVal = txtEmailVat?.value.trim() || "";
+            const noiDungLogoVal = txtNoiDungLogo?.value.trim() || "";
+            const coEpKim = Boolean(chkEpKimLogo && chkEpKimLogo.checked) || noiDungLogoVal.length > 0;
+
+            const txtEmailNguoiMua = document.getElementById("txtEmailNguoiMua");
+            if (txtEmailNguoiMua && !txtEmailNguoiMua.value.trim() && emailVatVal) {
+                txtEmailNguoiMua.value = emailVatVal;
+            }
+
+            let chuoiLuuB2B = tenCongTyGoc;
+            if (emailVatVal) {
+                chuoiLuuB2B += ` | VAT: ${emailVatVal}`;
+            }
+            if (coEpKim) {
+                chuoiLuuB2B += ` | Ép kim Logo: ${noiDungLogoVal || "Có yêu cầu ép kim Logo doanh nghiệp lên vỏ hộp"}`;
+            }
+            txtTenCongTy.value = chuoiLuuB2B.slice(0, 248);
         }
 
         dangGuiDonHang = true;

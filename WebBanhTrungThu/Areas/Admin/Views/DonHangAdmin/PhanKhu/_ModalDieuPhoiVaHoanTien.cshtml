@@ -27,6 +27,11 @@
                     </div>
                 </div>
 
+                <div id="boxTrangThaiKhoaCung" class="alert alert-danger py-2 px-3 mb-3 small fw-semibold" style="display: none;">
+                    <i class="bi bi-lock-fill me-1"></i>
+                    Đơn hàng đang ở trạng thái khóa cứng (<span id="lblTrangThaiKhoaCung">DA_HUY</span>). Hệ thống TUYỆT ĐỐI không cho phép chuyển ngược sang Đang giao hay Hoàn tất!
+                </div>
+
                 <!-- 1. THANH TIẾN TRÌNH TRẠNG THÁI (STEPPER) -->
                 <div class="kv-stepper">
                     <div class="kv-step-item" id="stepItem_CHO_XAC_NHAN">
@@ -104,7 +109,7 @@
                         <div id="btnWrapStep_DANG_GIAO" style="display: none;">
                             <p class="small text-muted mb-2">Đơn hàng đang trên đường giao (<strong>Đang giao</strong>). Sau khi giao tận tay người nhận (và thu tiền nếu COD), xác nhận hoàn tất:</p>
                             <button type="submit" class="btn-kv-green w-100 py-2 fw-semibold"
-                                    onclick="document.getElementById('inpNextStepTrangThaiDh').value='HOAN_TAT'; document.getElementById('inpNextStepTrangThaiTt').value='DA_TT';">
+                                    onclick="document.getElementById('inpNextStepTrangThaiDh').value='HOAN_TAT'; document.getElementById('inpNextStepTrangThaiTt').value='';">
                                 ✅ Xác nhận đã giao thành công (Hoàn tất &amp; Ghi nhận doanh thu)
                             </button>
                         </div>
@@ -133,7 +138,7 @@
                         }
                     </div>
 
-                    <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="CapNhatTrangThai" method="post">
+                    <form asp-area="Admin" asp-controller="DonHangAdmin" asp-action="CapNhatTrangThai" method="post" id="formAdminOverrideTrangThai" data-role-admin="@(laQuanTriVien ? "1" : "0")">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="maDh" id="inpOverrideMaDh" value="0" />
                         <input type="hidden" name="laAdminOverride" value="true" />
@@ -175,7 +180,7 @@
                             {
                                 <small class="text-muted">Cho phép chuyển thẳng tới bất kỳ trạng thái nào để đồng bộ Sổ Quỹ cuối ngày.</small>
                             }
-                            <button type="submit" class="btn-kv-outline fw-semibold" @(laQuanTriVien ? "" : "disabled")>
+                            <button type="submit" id="btnSubmitAdminOverride" class="btn-kv-outline fw-semibold" @(laQuanTriVien ? "" : "disabled")>
                                 <i class="bi bi-shield-check text-primary me-1"></i> Lưu điều chỉnh Quản trị
                             </button>
                         </div>
@@ -191,9 +196,9 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow">
             <div class="modal-header py-2 px-3" style="background: #FEF2F2; border-bottom: 1px solid #FECACA;">
-                <h6 class="modal-title fw-bold mb-0" style="color: #DC2626;">
+                <h6 class="modal-title fw-bold mb-0" style="color: #DC2626;" id="lblTieuDeModalHuyHoan">
                     <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                    Kiểm Tra Phiếu Liên Quan &amp; Xác Nhận Hủy Hóa Đơn <span id="lblMdHuyMaDon">#---</span>
+                    Kiểm Tra Phiếu Liên Quan, Xử Lý Kho FEFO &amp; Hoàn Tiền <span id="lblMdHuyMaDon">#---</span>
                 </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -222,8 +227,8 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="p-2 rounded bg-white border d-flex justify-content-between">
-                                    <span class="text-muted">📦 Hoàn trả tồn kho hàng hóa:</span>
-                                    <strong class="text-success">+<span id="lblHuySoMon">1</span> sản phẩm/hộp về kho</strong>
+                                    <span class="text-muted">📦 Xử lý tồn kho FEFO:</span>
+                                    <strong id="lblHuyTrangThaiKhoPreview" class="text-success">+<span id="lblHuySoMon">1</span> món hoàn nhập Lô đang bán</strong>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -232,6 +237,24 @@
                                     <strong id="lblHuyTrangThaiTt" class="text-primary">---</strong>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 mb-3 rounded border" style="background: #F8FAFC;">
+                        <div class="fw-semibold text-dark mb-2" style="font-size: 13.5px;">
+                            📦 2. Tùy chọn xử lý kho đối với bánh khách trả lại / hủy đơn:
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="xuLyKhoHoanTra" id="radHoanNhapLo" value="HOAN_NHAP_LO" checked onchange="capNhatNhanXuLyKhoHuy()" />
+                            <label class="form-check-label small fw-medium text-dark" for="radHoanNhapLo">
+                                Hoàn nhập lại vào Lô đang bán <span class="text-success fw-semibold">(Bánh còn nguyên niêm phong)</span>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="xuLyKhoHoanTra" id="radXuatHuyHangLoi" value="XUAT_HUY_LOI" onchange="capNhatNhanXuLyKhoHuy()" />
+                            <label class="form-check-label small fw-medium text-dark" for="radXuatHuyHangLoi">
+                                Xuất hủy hàng lỗi / móp hộp <span class="text-danger fw-semibold">(Không cộng lại vào tồn kho bán)</span>
+                            </label>
                         </div>
                     </div>
 

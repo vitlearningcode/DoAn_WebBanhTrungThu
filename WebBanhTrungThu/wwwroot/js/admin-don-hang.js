@@ -20,6 +20,8 @@
         if (b2) b2.classList.toggle('active', tabIdx === 2);
     };
 
+    let _huyDonSoMon = 0;
+
     window.moModalCapNhatTrangThai = function (maDh, maTraCuu, hoTen, tongTien, phuongThucTt, trangThaiDh, trangThaiTt, soDotGiao) {
         document.getElementById('lblMdCnMaDon').textContent = '#' + maTraCuu;
         document.getElementById('lblMdCnKhachHang').textContent = hoTen;
@@ -32,32 +34,60 @@
         document.getElementById('inpOverrideMaDh').value = maDh;
 
         const st = (trangThaiDh === 'DANG_DONG_GOI_HOP') ? 'CHO_LAY_HANG' : trangThaiDh;
+        const biKhoaCung = (st === 'DA_HUY' || st === 'HOAN_TIEN_TRA_HANG');
         const thuTu = ['CHO_XAC_NHAN', 'CHO_LAY_HANG', 'DANG_GIAO', 'HOAN_TAT'];
-        const idxHienTai = thuTu.indexOf(st);
+        const stStepper = (st === 'DA_GIAO') ? 'HOAN_TAT' : st;
+        const idxHienTai = thuTu.indexOf(stStepper);
 
         thuTu.forEach((stepKey, idx) => {
             const el = document.getElementById('stepItem_' + stepKey);
             if (!el) return;
             el.classList.remove('done', 'current');
-            if (idx < idxHienTai || st === 'HOAN_TAT') {
+            if (biKhoaCung) return;
+            if (idx < idxHienTai || stStepper === 'HOAN_TAT') {
                 el.classList.add('done');
             } else if (idx === idxHienTai) {
                 el.classList.add('current');
             }
         });
 
+        const boxKhoaCung = document.getElementById('boxTrangThaiKhoaCung');
+        const lblKhoaCung = document.getElementById('lblTrangThaiKhoaCung');
+        if (boxKhoaCung) {
+            boxKhoaCung.style.display = biKhoaCung ? 'block' : 'none';
+            if (lblKhoaCung) lblKhoaCung.textContent = st;
+        }
+
         const boxQr = document.getElementById('boxXacNhanQrThuNgan');
         if (boxQr) {
-            boxQr.style.display = (trangThaiTt === 'CHUA_TT' && st !== 'DA_HUY') ? 'block' : 'none';
+            boxQr.style.display = (trangThaiTt === 'CHUA_TT' && !biKhoaCung) ? 'block' : 'none';
         }
 
         ['CHO_XAC_NHAN', 'CHO_LAY_HANG', 'DANG_GIAO', 'HOAN_TAT'].forEach(k => {
             const wrap = document.getElementById('btnWrapStep_' + k);
-            if (wrap) wrap.style.display = (k === st) ? 'block' : 'none';
+            if (wrap) wrap.style.display = (!biKhoaCung && k === stStepper) ? 'block' : 'none';
         });
 
+        const formOverride = document.getElementById('formAdminOverrideTrangThai');
+        if (formOverride) {
+            const laQuyenAdmin = formOverride.getAttribute('data-role-admin') === '1';
+            formOverride.querySelectorAll('select, input[type="text"], button[type="submit"]').forEach(el => {
+                el.disabled = biKhoaCung || !laQuyenAdmin;
+            });
+        }
+
         const selDh = document.getElementById('selOverrideTrangThaiDh');
-        if (selDh && thuTu.includes(st)) selDh.value = st;
+        if (selDh) {
+            const daGiao = (st === 'HOAN_TAT' || st === 'DA_GIAO');
+            Array.from(selDh.options).forEach(opt => {
+                if (daGiao && opt.value !== 'HOAN_TAT') {
+                    opt.disabled = true;
+                } else {
+                    opt.disabled = false;
+                }
+            });
+            if (thuTu.includes(stStepper)) selDh.value = stStepper;
+        }
         const selTt = document.getElementById('selOverrideTrangThaiTt');
         if (selTt) selTt.value = trangThaiTt;
 
@@ -66,17 +96,45 @@
         modal.show();
     };
 
-    window.moModalHuyDon = function (maDh, maTraCuu, hoTen, sdt, tongTien, phuongThucTt, trangThaiTt, soDotGiao, soThiepQr, tongSoMon) {
+    window.capNhatNhanXuLyKhoHuy = function () {
+        const laXuatHuy = Boolean(document.getElementById('radXuatHuyHangLoi')?.checked);
+        const lblKho = document.getElementById('lblHuyTrangThaiKhoPreview');
+        if (!lblKho) return;
+        if (laXuatHuy) {
+            lblKho.className = 'text-danger';
+            lblKho.innerHTML = 'Xuất hủy hàng lỗi / móp hộp (Không hoàn tồn kho)';
+        } else {
+            lblKho.className = 'text-success';
+            lblKho.innerHTML = '+<span id="lblHuySoMon">' + _huyDonSoMon + '</span> món hoàn nhập Lô đang bán';
+        }
+    };
+
+    window.moModalHuyDon = function (maDh, maTraCuu, hoTen, sdt, tongTien, phuongThucTt, trangThaiTt, soDotGiao, soThiepQr, tongSoMon, trangThaiDh) {
         _huyDonDangDaTt = (trangThaiTt === 'DA_TT' || trangThaiTt === 'DA_THANH_TOAN');
         _huyDonSoTien = Math.round(Number(tongTien) || 0);
         _huyDonMaTraCuu = maTraCuu;
         _huyDonTenKhach = hoTen;
+        _huyDonSoMon = tongSoMon || 0;
 
+        const laTraHangSauGiao = (trangThaiDh === 'HOAN_TAT' || trangThaiDh === 'DA_GIAO');
         document.getElementById('inpHuyMaDh').value = maDh;
         document.getElementById('lblMdHuyMaDon').textContent = '#' + maTraCuu;
         document.getElementById('lblHuySoDotGiao').textContent = soDotGiao;
         document.getElementById('lblHuySoThiepQr').textContent = soThiepQr;
-        document.getElementById('lblHuySoMon').textContent = tongSoMon;
+        const lblSoMonEl = document.getElementById('lblHuySoMon');
+        if (lblSoMonEl) lblSoMonEl.textContent = _huyDonSoMon;
+
+        const radHoanNhap = document.getElementById('radHoanNhapLo');
+        if (radHoanNhap) radHoanNhap.checked = true;
+        capNhatNhanXuLyKhoHuy();
+
+        const txtLyDo = document.getElementById('txtLyDoHuyDon');
+        if (txtLyDo) {
+            txtLyDo.value = laTraHangSauGiao
+                ? 'Khách trả hàng sau giao - đối soát hoàn tiền'
+                : 'Khách yêu cầu hủy đơn & hoàn nhập lô';
+        }
+
         document.getElementById('lblHuyTrangThaiTt').textContent =
             _huyDonDangDaTt
                 ? ('ĐÃ THANH TOÁN (' + _huyDonSoTien.toLocaleString('vi-VN') + ' đ) ➔ Bắt buộc Hoàn tiền')
@@ -90,14 +148,16 @@
             document.getElementById('lblHuySoTienCanHoan').textContent = _huyDonSoTien.toLocaleString('vi-VN');
             document.getElementById('lblHuyThongTinKhach').textContent = hoTen + ' - ' + sdt;
             document.getElementById('lblSoTienQrPreview').textContent = 'Số tiền hoàn: ' + _huyDonSoTien.toLocaleString('vi-VN') + ' đ';
-            btnSubmit.innerHTML = '💸 Xác nhận Đã Hoàn Tiền & Hủy Đơn Hàng';
+            btnSubmit.innerHTML = laTraHangSauGiao
+                ? '💸 Xác nhận Đổi trả / Hoàn tiền &amp; Ghi Sổ Quỹ'
+                : '💸 Xác nhận Đã Hoàn Tiền &amp; Hủy Đơn Hàng';
 
             document.getElementById('txtSoTaiKhoanHoan').value = '';
             document.getElementById('txtTenChuTkHoan').value = boDauTiengViet(hoTen).toUpperCase();
             capNhatAnhVietQrHoanTien();
         } else {
             boxHoanTien.style.display = 'none';
-            btnSubmit.innerHTML = '🗑️ Xác nhận Hủy Đơn Hàng & Hoàn Kho';
+            btnSubmit.innerHTML = '🗑️ Xác nhận Hủy Đơn Hàng &amp; Xử lý kho';
         }
 
         const modalEl = document.getElementById('modalHuyDonVaHoanTien');
@@ -151,8 +211,23 @@
             const stk = (document.getElementById('txtSoTaiKhoanHoan')?.value || '').trim();
             const tenTk = (document.getElementById('txtTenChuTkHoan')?.value || '').trim();
             if (!stk || !tenTk) {
-                alert('⚠️ Đơn hàng này khách đã thanh toán! Vui lòng nhập đầy đủ Số tài khoản và Tên chủ tài khoản ngân hàng của khách để hoàn tiền trước khi hủy phiếu.');
+                alert('⚠️ Đơn hàng này khách đã thanh toán! Vui lòng nhập đầy đủ Số tài khoản và Tên chủ tài khoản ngân hàng của khách để hoàn tiền trước khi xác nhận.');
                 return false;
+            }
+        }
+
+        const txtLyDo = document.getElementById('txtLyDoHuyDon');
+        const laXuatHuy = Boolean(document.getElementById('radXuatHuyHangLoi')?.checked);
+        if (txtLyDo) {
+            let lyDoSach = txtLyDo.value
+                .replace(/\[XUAT_HUY_LOI\]/gi, '')
+                .replace(/\[HOAN_NHAP_LO\]/gi, '')
+                .trim();
+            if (laXuatHuy) {
+                if (!lyDoSach) lyDoSach = 'Xuất hủy hàng lỗi / móp hộp';
+                txtLyDo.value = '[XUAT_HUY_LOI] ' + lyDoSach;
+            } else {
+                txtLyDo.value = lyDoSach || 'Khách yêu cầu hủy đơn / hoàn nhập lô';
             }
         }
         return true;

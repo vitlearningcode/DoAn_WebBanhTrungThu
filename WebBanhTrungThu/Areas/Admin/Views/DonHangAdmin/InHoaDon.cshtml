@@ -13,6 +13,32 @@
     string qrImgSrc = dotCoQrDauTien != null && !string.IsNullOrWhiteSpace(dotCoQrDauTien.AnhQrBase64)
         ? dotCoQrDauTien.AnhQrBase64
         : $"https://api.qrserver.com/v1/create-qr-code/?size=110x110&data={Uri.EscapeDataString(linkTraCuuHoacThiep)}";
+
+    string rawCongTy = dh.TenCongTy ?? string.Empty;
+    string tenCongTyGoc = rawCongTy;
+    string? emailVatB2B = null;
+    string? yeuCauEpKimLogo = null;
+    int idxLogo = rawCongTy.IndexOf(" | Ép kim Logo:", StringComparison.OrdinalIgnoreCase);
+    if (idxLogo >= 0)
+    {
+        yeuCauEpKimLogo = rawCongTy[(idxLogo + " | Ép kim Logo:".Length)..].Trim();
+        tenCongTyGoc = rawCongTy[..idxLogo].Trim();
+    }
+    int idxVat = tenCongTyGoc.IndexOf(" | VAT:", StringComparison.OrdinalIgnoreCase);
+    if (idxVat >= 0)
+    {
+        emailVatB2B = tenCongTyGoc[(idxVat + " | VAT:".Length)..].Trim();
+        tenCongTyGoc = tenCongTyGoc[..idxVat].Trim();
+    }
+    if (string.IsNullOrWhiteSpace(emailVatB2B) && dh.LaDonDoanhNghiepB2b)
+    {
+        emailVatB2B = dh.EmailNguoiMua;
+    }
+    if (string.IsNullOrWhiteSpace(yeuCauEpKimLogo) && dh.PhiInLogo > 0)
+    {
+        yeuCauEpKimLogo = $"Có yêu cầu ép kim Logo doanh nghiệp (+{dh.PhiInLogo:N0}đ)";
+    }
+    bool laDonB2BVat = dh.LaDonDoanhNghiepB2b || !string.IsNullOrWhiteSpace(dh.TenCongTy) || !string.IsNullOrWhiteSpace(dh.MaSoThue);
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -122,9 +148,27 @@
 
         <div class="mt-1" style="font-size: 11.5px;">
             <div>Khách hàng: <strong>@dh.HoTenNguoiMua - @dh.SdtnguoiMua</strong></div>
-            @if (dh.LaDonDoanhNghiepB2b && !string.IsNullOrWhiteSpace(dh.TenCongTy))
+            @if (laDonB2BVat)
             {
-                <div>Doanh nghiệp: <strong>@dh.TenCongTy</strong> @(string.IsNullOrWhiteSpace(dh.MaSoThue) ? "" : $"(MST: {dh.MaSoThue})")</div>
+                <div class="mt-1 p-1 rounded" style="border: 1px solid #111827; background: #FFFBEB;">
+                    <div class="fw-bold">[ĐƠN B2B • XUẤT VAT]</div>
+                    @if (!string.IsNullOrWhiteSpace(tenCongTyGoc))
+                    {
+                        <div>Doanh nghiệp: <strong>@tenCongTyGoc</strong></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(dh.MaSoThue))
+                    {
+                        <div>Mã số thuế: <strong>@dh.MaSoThue</strong></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(emailVatB2B))
+                    {
+                        <div>Email nhận VAT: <strong>@emailVatB2B</strong></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(yeuCauEpKimLogo))
+                    {
+                        <div>Ép kim Logo: <strong>@yeuCauEpKimLogo</strong></div>
+                    }
+                </div>
             }
         </div>
 
