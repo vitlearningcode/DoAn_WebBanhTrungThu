@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
@@ -41,11 +42,13 @@ namespace WebBanhTrungThu.Services.GioHang
         }
 
         /// <summary>
-        /// Đảm bảo mã khuyến mãi mẫu TRANGTRON2026 luôn có hiệu lực đến năm 2027.
+        /// Đảm bảo các mã khuyến mãi mẫu TRANGTRON2026 và QUATANG15K luôn có hiệu lực đến năm 2027.
         /// </summary>
         public async Task DamBaoMaKhuyenMaiMauConHanAsync()
         {
             var mocHetHan = new DateTime(2027, 12, 31, 23, 59, 59);
+            bool coThayDoi = false;
+
             var kmTrangTron = await _db.MaKhuyenMais.FirstOrDefaultAsync(k => k.CodeKm == "TRANGTRON2026");
             if (kmTrangTron == null)
             {
@@ -63,13 +66,45 @@ namespace WebBanhTrungThu.Services.GioHang
                     NgayBatDau = new DateTime(2026, 1, 1),
                     NgayKetThuc = mocHetHan
                 });
-                await _db.SaveChangesAsync();
+                coThayDoi = true;
             }
-            else if (kmTrangTron.NgayKetThuc < mocHetHan || kmTrangTron.NgayBatDau > LayThoiGianHeThong())
+            else if (kmTrangTron.NgayKetThuc < mocHetHan || kmTrangTron.NgayBatDau > LayThoiGianHeThong() || kmTrangTron.SltoiDa <= kmTrangTron.SldaDung)
             {
                 if (kmTrangTron.NgayBatDau > LayThoiGianHeThong()) kmTrangTron.NgayBatDau = new DateTime(2026, 1, 1);
                 if (kmTrangTron.NgayKetThuc < mocHetHan) kmTrangTron.NgayKetThuc = mocHetHan;
                 if (kmTrangTron.SltoiDa <= kmTrangTron.SldaDung) kmTrangTron.SltoiDa = kmTrangTron.SldaDung + 100;
+                coThayDoi = true;
+            }
+
+            var kmQuaTang15k = await _db.MaKhuyenMais.FirstOrDefaultAsync(k => k.CodeKm == "QUATANG15K");
+            if (kmQuaTang15k == null)
+            {
+                _db.MaKhuyenMais.Add(new MaKhuyenMai
+                {
+                    CodeKm = "QUATANG15K",
+                    TenChuongTrinh = "Quà Tặng Tri Ân (-15.000đ)",
+                    LoaiGiam = "TIEN_MAT",
+                    GiaTriGiam = 15000m,
+                    GiamToiDa = 15000m,
+                    DonToiThieu = 100000m,
+                    SltoiDa = 1000,
+                    SldaDung = 0,
+                    ChoPhepKhachVangLai = true,
+                    NgayBatDau = new DateTime(2026, 1, 1),
+                    NgayKetThuc = mocHetHan
+                });
+                coThayDoi = true;
+            }
+            else if (kmQuaTang15k.NgayKetThuc < mocHetHan || kmQuaTang15k.NgayBatDau > LayThoiGianHeThong() || kmQuaTang15k.SltoiDa <= kmQuaTang15k.SldaDung)
+            {
+                if (kmQuaTang15k.NgayBatDau > LayThoiGianHeThong()) kmQuaTang15k.NgayBatDau = new DateTime(2026, 1, 1);
+                if (kmQuaTang15k.NgayKetThuc < mocHetHan) kmQuaTang15k.NgayKetThuc = mocHetHan;
+                if (kmQuaTang15k.SltoiDa <= kmQuaTang15k.SldaDung) kmQuaTang15k.SltoiDa = kmQuaTang15k.SldaDung + 100;
+                coThayDoi = true;
+            }
+
+            if (coThayDoi)
+            {
                 await _db.SaveChangesAsync();
             }
         }
@@ -159,12 +194,16 @@ namespace WebBanhTrungThu.Services.GioHang
             }
             decimal tongTamTinh = gioHang.ChiTietGioHangs.Sum(ct => ct.SoLuong * ct.DonGiaTamTinh);
 
+            var viVn = CultureInfo.GetCultureInfo("vi-VN");
             if (tongTamTinh < km.GiaTriDonToiThieu)
             {
+                decimal conThieu = Math.Max(0m, km.GiaTriDonToiThieu - tongTamTinh);
                 return new
                 {
                     thanhCong = false,
-                    thongBao = $"Mã '{maNhap}' yêu cầu đơn hàng tối thiểu {km.GiaTriDonToiThieu:N0} đ (Hiện tại: {tongTamTinh:N0} đ)!"
+                    donToiThieu = km.GiaTriDonToiThieu,
+                    conThieu,
+                    thongBao = $"Mã {maNhap} chỉ áp dụng cho đơn từ {km.GiaTriDonToiThieu.ToString("N0", viVn)}đ (Bạn cần mua thêm {conThieu.ToString("N0", viVn)}đ)"
                 };
             }
 
@@ -176,7 +215,7 @@ namespace WebBanhTrungThu.Services.GioHang
             return new
             {
                 thanhCong = true,
-                thongBao = $"Áp dụng mã '{km.CodeKm}' ({km.TenChuongTrinh} • HSD: {km.NgayKetThuc:dd/MM/yyyy}) thành công! Giảm {tienGiam:N0} đ.",
+                thongBao = $"Áp dụng mã {km.CodeKm} ({km.TenChuongTrinh} • HSD: {km.NgayKetThuc:dd/MM/yyyy}) thành công! Giảm {tienGiam.ToString("N0", viVn)}đ.",
                 codeKmDangDung = km.CodeKm,
                 hanSuDungVoucher = km.NgayKetThuc.ToString("dd/MM/yyyy"),
                 tienGiamVoucher = tienGiam,

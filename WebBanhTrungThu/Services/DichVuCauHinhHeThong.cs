@@ -36,6 +36,8 @@ namespace WebBanhTrungThu.Services
         public string MaBinNganHang { get; set; } = "970422";
         public string CuPhapChuyenKhoan { get; set; } = "NGUYETCAT {MaTraCuuDh}";
         public int ThoiGianChoPhut { get; set; } = 15;
+        public string? SoTaiKhoanNganHang { get; set; }
+        public string? TenNganHangVietQr { get; set; }
 
         [JsonIgnore]
         public string MaNganHang
@@ -600,11 +602,10 @@ namespace WebBanhTrungThu.Services
                 dh.MaNganHangHoan = meta.MaNganHangHoan;
                 dh.SoTaiKhoanHoan = meta.SoTaiKhoanHoan;
                 dh.TenChuTkHoan = meta.TenChuTkHoan;
-                dh.LyDoHuyHoan = meta.LyDoHuyHoan;
+                dh.LyDoHuyHoan = !string.IsNullOrWhiteSpace(dh.LyDoHuy) ? dh.LyDoHuy : meta.LyDoHuyHoan;
                 dh.GhiChuDieuChinhAdmin = meta.GhiChuDieuChinhAdmin;
                 dh.ThoiGianCapNhatCuoi = meta.ThoiGianCapNhatCuoi;
                 dh.NguoiCapNhatCuoi = meta.NguoiCapNhatCuoi;
-                dh.HanThanhToan = meta.HanThanhToan ?? dh.NgayDat.AddMinutes(15);
 
                 if (dh.DotGiaoHangDaDiems != null && meta.Thiep3DTheoToken != null)
                 {
@@ -618,10 +619,6 @@ namespace WebBanhTrungThu.Services
                         }
                     }
                 }
-            }
-            else
-            {
-                dh.HanThanhToan = dh.NgayDat.AddMinutes(15);
             }
         }
 

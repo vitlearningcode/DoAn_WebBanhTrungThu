@@ -1,5 +1,5 @@
 // =========================================================================
-// XỬ LÝ TƯƠNG TÁC TRANG THANH TOÁN CHUẨN BITI'S (CAPTCHA, TỒN KHO, VOUCHER & TỔNG KẾT GIÁ)
+// XỬ LÝ TƯƠNG TÁC TRANG THANH TOÁN CHUẨN BITI'S (CAPTCHA, TỒN KHO, VOUCHER, ĐIỂM VIP & TỔNG KẾT GIÁ)
 // =========================================================================
 (function () {
     const cfg = window.CAU_HINH_THANH_TOAN || {};
@@ -23,12 +23,30 @@
         if (chkB2B && laCheDoB2B) {
             chkB2B.checked = true;
         }
+
+        const txtVoucher = document.getElementById("txtMaGiamGiaCheckout");
+        if (txtVoucher) {
+            txtVoucher.addEventListener("keydown", function (e) {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    apDungMaGiamGiaTrangThanhToan();
+                }
+            });
+        }
+
         if (typeof window.capNhatGiaoDienNguoiKhacNhan === "function") window.capNhatGiaoDienNguoiKhacNhan();
         if (typeof window.dongBoNguoiMuaSangNguoiNhan === "function") window.dongBoNguoiMuaSangNguoiNhan();
         if (typeof window.dongBoDiaChiGiaoChinh === "function") window.dongBoDiaChiGiaoChinh();
         if (typeof window.kiemTraTinhThanhVaCapNhatHoaToc === "function") window.kiemTraTinhThanhVaCapNhatHoaToc();
+
+        capNhatTrangThaiNutVoucher(cfg.codeKmDangDung || "");
         capNhatBangTinhThanhToan();
-        taiMaCaptchaMoi(false);
+
+        const imgCaptcha = document.getElementById("imgCaptchaThanhToan");
+        const srcHienTai = imgCaptcha ? (imgCaptcha.getAttribute("src") || "").trim() : "";
+        if (!srcHienTai) {
+            taiMaCaptchaMoi(false);
+        }
 
         if (cfg.tenBanhHetHangBanDau) {
             hienThiModalHetHang(cfg.tenBanhHetHangBanDau, cfg.thongBaoHetHangBanDau);
@@ -36,13 +54,6 @@
     });
 
     function damBaoModalCanhBaoTonTai() {
-        const khungCh = document.getElementById("khungNhanTaiCuaHang");
-        if (khungCh && khungCh.children.length === 0) {
-            khungCh.innerHTML = `
-<label class="the-cua-hang-nhan"><div class="d-flex align-items-start gap-2"><input type="radio" name="CuaHangNhan" class="form-check-input mt-1" checked value="[Nhận tại cửa hàng] Nguyệt Cát – Quận 1, Nguyễn Huệ (128 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh - 0909 123 456)" onchange="dongBoDiaChiGiaoChinh()" /><div><strong class="d-block text-dark small">Nguyệt Cát – Quận 1, Nguyễn Huệ</strong><small class="text-muted d-block">128 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh</small></div></div><span class="small fw-semibold text-success text-nowrap">Miễn phí • 0đ</span></label>
-<label class="the-cua-hang-nhan"><div class="d-flex align-items-start gap-2"><input type="radio" name="CuaHangNhan" class="form-check-input mt-1" value="[Nhận tại cửa hàng] Nguyệt Cát – Quận 3, Pasteur (215 Pasteur, Phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh - 0909 654 321)" onchange="dongBoDiaChiGiaoChinh()" /><div><strong class="d-block text-dark small">Nguyệt Cát – Quận 3, Pasteur</strong><small class="text-muted d-block">215 Pasteur, Phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh</small></div></div><span class="small fw-semibold text-success text-nowrap">Miễn phí • 0đ</span></label>
-<label class="the-cua-hang-nhan"><div class="d-flex align-items-start gap-2"><input type="radio" name="CuaHangNhan" class="form-check-input mt-1" value="[Nhận tại cửa hàng] Nguyệt Cát – Long Xuyên, An Giang (45 Trần Hưng Đạo, Phường Mỹ Xuyên, TP. Long Xuyên, An Giang - 0909 888 999)" onchange="dongBoDiaChiGiaoChinh()" /><div><strong class="d-block text-dark small">Nguyệt Cát – Long Xuyên, An Giang</strong><small class="text-muted d-block">45 Trần Hưng Đạo, Phường Mỹ Xuyên, TP. Long Xuyên, An Giang</small></div></div><span class="small fw-semibold text-success text-nowrap">Miễn phí • 0đ</span></label>`;
-        }
         if (!document.getElementById("modalThongBaoHetHang")) {
             document.body.insertAdjacentHTML("beforeend", `
 <div class="modal fade" id="modalThongBaoHetHang" tabindex="-1" aria-hidden="true">
@@ -85,6 +96,49 @@
         }
     }
 
+    function thoatHtmlAnToan(chuoi) {
+        return String(chuoi || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
+    function capNhatTrangThaiNutVoucher(maDangDung) {
+        const maChuan = String(maDangDung || "").trim().toUpperCase();
+        document.querySelectorAll("[data-code-voucher]").forEach(btn => {
+            const codeBtn = (btn.getAttribute("data-code-voucher") || "").trim().toUpperCase();
+            const dangDung = maChuan.length > 0 && codeBtn === maChuan;
+            btn.classList.toggle("dang-ap-dung", dangDung);
+            btn.textContent = dangDung ? "Đang dùng" : "Áp dụng mã";
+        });
+    }
+
+    function hienThiThongBaoVoucherThanhToan(noiDung, thanhCong, codeApDung = "", tienGiam = 0) {
+        const khung = document.getElementById("thong-bao-voucher");
+        if (!khung) return;
+
+        if (!noiDung && !codeApDung) {
+            khung.style.display = "none";
+            khung.innerHTML = "";
+            return;
+        }
+
+        khung.style.display = "block";
+        if (thanhCong) {
+            const maAnToan = thoatHtmlAnToan(codeApDung);
+            const soTienText = Math.round(Number(tienGiam || 0)).toLocaleString("vi-VN");
+            khung.innerHTML = `
+                <div class="hop-thong-bao-voucher-ok">
+                    <span>✓ Đang áp dụng mã <strong>${maAnToan}</strong> (-${soTienText}đ)</span>
+                    <button type="button" class="btn-go-ma-voucher" onclick="goMaGiamGiaTrangThanhToan()">Gỡ mã</button>
+                </div>`;
+        } else {
+            khung.innerHTML = `<div class="hop-thong-bao-voucher-loi">${thoatHtmlAnToan(noiDung)}</div>`;
+        }
+    }
+
     window.hienThiModalHetHang = function (tenBanh, thongBaoTuyChinh) {
         const noiDungEl = document.getElementById("noiDungModalHetHang");
         if (noiDungEl) {
@@ -112,7 +166,7 @@
         }
     };
 
-    window.taiMaCaptchaMoi = async function (xoaOInput = true) {
+    window.taiMaCaptchaMoi = function (xoaOInput = true) {
         datTrangThaiKhoaNutDatHang(false);
         const inputCaptcha = document.getElementById("txtMaCaptchaNhap");
         const lbl = document.getElementById("lblTrangThaiCaptchaKho");
@@ -121,19 +175,15 @@
             inputCaptcha.value = "";
             if (lbl) {
                 lbl.style.color = "#6B7280";
+                lbl.className = "d-block mt-1 text-secondary";
                 lbl.textContent = "Nhập đủ 5 ký tự trong hình để hệ thống tự động xác thực & kiểm tra tồn kho.";
             }
         }
 
-        try {
-            const res = await fetch("/ThanhToan/LayMaCaptchaMoi");
-            const data = await res.json();
-            if (data && data.thanhCong) {
-                const img = document.getElementById("imgCaptchaThanhToan");
-                if (img) img.src = data.anhCaptchaSvg;
-            }
-        } catch (e) {
-            // Bỏ qua nếu đang tải trang
+        const img = document.getElementById("imgCaptchaThanhToan");
+        if (img) {
+            delete img.dataset.fallbackApplied;
+            img.src = "/ThanhToan/AnhCaptcha?t=" + Date.now();
         }
     };
 
@@ -149,6 +199,7 @@
             datTrangThaiKhoaNutDatHang(false);
             if (lbl) {
                 lbl.style.color = "#6B7280";
+                lbl.className = "d-block mt-1 text-secondary";
                 lbl.textContent = "Nhập đủ 5 ký tự trong hình để hệ thống tự động xác thực & kiểm tra tồn kho.";
             }
             return;
@@ -157,6 +208,7 @@
         if (giaTri.length === 5) {
             if (lbl) {
                 lbl.style.color = "#B45309";
+                lbl.className = "d-block mt-1 fw-medium";
                 lbl.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>Đang xác thực mã & kiểm tra tồn kho thực tế...`;
             }
             await goiApiXacThucCaptchaVaKho();
@@ -208,16 +260,12 @@
                 if (data.anhCaptchaSvg) {
                     const img = document.getElementById("imgCaptchaThanhToan");
                     if (img) img.src = data.anhCaptchaSvg;
-                    if (inputEl) {
-                        inputEl.value = "";
-                        inputEl.focus();
-                    }
                 } else {
-                    await taiMaCaptchaMoi(false);
-                    if (inputEl) {
-                        inputEl.value = "";
-                        inputEl.focus();
-                    }
+                    taiMaCaptchaMoi(false);
+                }
+                if (inputEl) {
+                    inputEl.value = "";
+                    inputEl.focus();
                 }
                 return false;
             }
@@ -259,55 +307,82 @@
 
     window.apDungMaGiamGiaTrangThanhToan = async function () {
         const txt = document.getElementById("txtMaGiamGiaCheckout");
-        const lblKetQua = document.getElementById("lblKetQuaVoucherCheckout");
-        const codeKm = txt ? txt.value.trim() : "";
+        const codeKm = txt ? txt.value.trim().toUpperCase() : "";
+
+        if (!codeKm) {
+            hienThiThongBaoVoucherThanhToan("Vui lòng nhập mã khuyến mãi hợp lệ!", false);
+            txt?.focus();
+            return;
+        }
+
+        if (txt) txt.value = codeKm;
 
         try {
-            const res = await fetch(`/GioHang/ApDungVoucher?codeKm=${encodeURIComponent(codeKm)}`, {
+            const res = await fetch(`/ThanhToan/ApDungMaKhuyenMai?codeKm=${encodeURIComponent(codeKm)}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ codeKm: codeKm })
             });
 
             const data = await res.json();
-            if (data.thanhCong) {
-                const resGio = await fetch("/GioHang/LayThongTinGioHangJson");
-                const dataGio = await resGio.json();
-                if (dataGio && dataGio.thanhCong) {
-                    TIEN_GIAM_VOUCHER = Math.round(dataGio.tienGiamVoucher || 0);
-                    const dongVoucher = document.getElementById("dongGiamGiaVoucherCheckout");
-                    const lblTienGiam = document.getElementById("lblTienGiamVoucherCheckout");
-                    if (dongVoucher) {
-                        dongVoucher.style.setProperty("display", TIEN_GIAM_VOUCHER > 0 ? "flex" : "none", "important");
-                    }
-                    if (lblTienGiam) {
-                        lblTienGiam.innerText = `-${TIEN_GIAM_VOUCHER.toLocaleString("vi-VN")} đ`;
-                    }
-                    if (lblKetQua) {
-                        lblKetQua.className = "d-block mb-2 text-success fw-medium";
-                        lblKetQua.innerHTML = dataGio.codeKmDangDung
-                            ? `✓ Đang áp dụng mã <strong>${dataGio.codeKmDangDung}</strong>`
-                            : "";
-                    }
-                    capNhatBangTinhThanhToan();
+            if (data && data.thanhCong) {
+                const codeApDung = data.codeKmDangDung || codeKm;
+                TIEN_GIAM_VOUCHER = Math.round(Number(data.tienGiamVoucher || 0));
+
+                const dongVoucher = document.getElementById("dongGiamGiaVoucherCheckout");
+                const lblTienGiam = document.getElementById("lblTienGiamVoucherCheckout");
+                if (dongVoucher) {
+                    dongVoucher.style.setProperty("display", TIEN_GIAM_VOUCHER > 0 ? "flex" : "none", "important");
                 }
+                if (lblTienGiam) {
+                    lblTienGiam.innerText = `-${TIEN_GIAM_VOUCHER.toLocaleString("vi-VN")} đ`;
+                }
+
+                hienThiThongBaoVoucherThanhToan(data.thongBao || "Áp dụng mã thành công!", true, codeApDung, TIEN_GIAM_VOUCHER);
+                capNhatTrangThaiNutVoucher(codeApDung);
+                capNhatBangTinhThanhToan();
+
                 if (typeof hienThiThongBaoGioHang === "function") {
                     hienThiThongBaoGioHang(data.thongBao, true);
                 }
             } else {
-                if (lblKetQua) {
-                    lblKetQua.className = "d-block mb-2 text-danger fw-medium";
-                    lblKetQua.textContent = data.thongBao;
-                }
+                const thongBaoLoi = (data && data.thongBao) || "Không thể áp dụng mã khuyến mãi này!";
+                hienThiThongBaoVoucherThanhToan(thongBaoLoi, false);
                 if (typeof hienThiThongBaoGioHang === "function") {
-                    hienThiThongBaoGioHang(data.thongBao, false);
+                    hienThiThongBaoGioHang(thongBaoLoi, false);
                 }
             }
         } catch (err) {
+            hienThiThongBaoVoucherThanhToan("Lỗi kết nối khi kiểm tra mã khuyến mãi!", false);
             if (typeof hienThiThongBaoGioHang === "function") {
                 hienThiThongBaoGioHang("Lỗi kết nối khi áp dụng mã giảm giá!", false);
             }
         }
+    };
+
+    window.goMaGiamGiaTrangThanhToan = async function () {
+        try {
+            await fetch("/ThanhToan/GoMaKhuyenMai", { method: "POST" });
+        } catch (err) {
+            // Tiếp tục đồng bộ giao diện client
+        }
+
+        TIEN_GIAM_VOUCHER = 0;
+        const txt = document.getElementById("txtMaGiamGiaCheckout");
+        if (txt) txt.value = "";
+
+        const dongVoucher = document.getElementById("dongGiamGiaVoucherCheckout");
+        const lblTienGiam = document.getElementById("lblTienGiamVoucherCheckout");
+        if (dongVoucher) {
+            dongVoucher.style.setProperty("display", "none", "important");
+        }
+        if (lblTienGiam) {
+            lblTienGiam.innerText = "-0 đ";
+        }
+
+        hienThiThongBaoVoucherThanhToan("", false);
+        capNhatTrangThaiNutVoucher("");
+        capNhatBangTinhThanhToan();
     };
 
     window.capNhatBangTinhThanhToan = function () {
@@ -353,42 +428,58 @@
             lblVip.innerText = `-${tienGiamVip.toLocaleString("vi-VN")} đ`;
         }
 
-        const tienHangSauVip = Math.max(0, tienHangSauCkVaVoucher - tienGiamVip);
-        const diemToiDaTheoDon = Math.floor((tienHangSauVip * 0.5) / 1000);
-        const diemKhaDung = Math.min(DIEM_TICH_LUY, diemToiDaTheoDon);
+        const tienHangSauUuDai = Math.max(0, tienHangSauCkVaVoucher - tienGiamVip);
+        const tienGiamToiDaChoPhep = Math.floor((tienHangSauUuDai * 0.5) / 1000) * 1000;
+        const soDiemToiDaDuocDung = Math.min(DIEM_TICH_LUY, Math.floor(tienGiamToiDaChoPhep / 1000));
+        const tienGiamDuKien = soDiemToiDaDuocDung * 1000;
 
-        const chkDungDiem = document.getElementById("chkDungDiemTichLuy");
-        const dangBatDungDiem = Boolean(chkDungDiem && chkDungDiem.checked);
-        const diemDaDung = dangBatDungDiem ? diemKhaDung : 0;
+        const lblDiemToiDa = document.getElementById("lblDiemToiDaDuocDung");
+        const lblTienDuKien = document.getElementById("lblTienGiamDiemDuKien");
+        if (lblDiemToiDa) lblDiemToiDa.innerText = soDiemToiDaDuocDung.toLocaleString("vi-VN");
+        if (lblTienDuKien) lblTienDuKien.innerText = tienGiamDuKien.toLocaleString("vi-VN");
+
+        const chkDungDiem = document.getElementById("chk-su-dung-diem-vip");
+        const hidDungDiem = document.getElementById("hidDungDiemTichLuy");
+        if (chkDungDiem) {
+            if (soDiemToiDaDuocDung <= 0) {
+                chkDungDiem.checked = false;
+                chkDungDiem.disabled = true;
+            } else {
+                chkDungDiem.disabled = false;
+            }
+        }
+
+        const dangBatDungDiem = Boolean(chkDungDiem && chkDungDiem.checked && soDiemToiDaDuocDung > 0);
+        if (hidDungDiem) {
+            hidDungDiem.value = dangBatDungDiem ? "true" : "false";
+        }
+
+        const diemDaDung = dangBatDungDiem ? soDiemToiDaDuocDung : 0;
         const tienGiamDiem = diemDaDung * 1000;
 
         const lblGhiChuDiem = document.getElementById("lblGhiChuDiemTichLuyCheckout");
         if (lblGhiChuDiem) {
-            if (dangBatDungDiem && diemKhaDung === 0) {
-                lblGhiChuDiem.style.setProperty("display", "block", "important");
+            if (soDiemToiDaDuocDung <= 0) {
                 lblGhiChuDiem.textContent = "Đơn hàng cần tối thiểu 2.000 đ sau ưu đãi để áp dụng tiêu điểm (tối đa 50% giá trị).";
-            } else if (dangBatDungDiem && diemKhaDung < DIEM_TICH_LUY) {
-                lblGhiChuDiem.style.setProperty("display", "block", "important");
-                lblGhiChuDiem.textContent = `Áp dụng tối đa 50% tiền hàng sau giảm: dùng ${diemKhaDung.toLocaleString("vi-VN")} điểm (-${tienGiamDiem.toLocaleString("vi-VN")} đ).`;
             } else {
-                lblGhiChuDiem.style.setProperty("display", "none", "important");
+                lblGhiChuDiem.textContent = "Quy đổi 1 điểm = 1.000đ • Dùng tối đa 50% tiền hàng";
             }
         }
 
         const dongDiem = document.getElementById("dongGiamGiaDiemCheckout");
-        const lblSoDiem = document.getElementById("lblSoDiemSuDungCheckout");
+        const lblSoDiemSuDung = document.getElementById("lblSoDiemSuDungCheckout");
         const lblTienGiamDiem = document.getElementById("lblTienGiamDiemCheckout");
         if (dongDiem) {
             dongDiem.style.setProperty("display", tienGiamDiem > 0 ? "flex" : "none", "important");
         }
-        if (lblSoDiem) {
-            lblSoDiem.innerText = diemDaDung.toLocaleString("vi-VN");
+        if (lblSoDiemSuDung) {
+            lblSoDiemSuDung.innerText = diemDaDung.toLocaleString("vi-VN");
         }
         if (lblTienGiamDiem) {
             lblTienGiamDiem.innerText = `-${tienGiamDiem.toLocaleString("vi-VN")} đ`;
         }
 
-        const tienHangSauGiam = Math.max(0, tienHangSauVip - tienGiamDiem);
+        const tienHangSauGiam = Math.max(0, tienHangSauUuDai - tienGiamDiem);
         const duMocFreeship = tienHangSauGiam >= MOC_FREESHIP_TIEU_CHUAN;
 
         const phiTieuChuan = duMocFreeship ? 0 : (30000 * soDiemGiao);
@@ -426,12 +517,21 @@
 
         const tongCuoi = Math.max(0, tienHangSauGiam + phiLogo + tongPhiShip);
 
-        const lblSoDiem = document.getElementById("lblSoDiemGiaoCheckout");
-        if (lblSoDiem) lblSoDiem.innerText = soDiemGiao;
+        const lblSoDiemGiao = document.getElementById("lblSoDiemGiaoCheckout");
+        if (lblSoDiemGiao) lblSoDiemGiao.innerText = soDiemGiao;
 
         const lblPhiShip = document.getElementById("lblPhiShipCheckout");
         if (lblPhiShip) {
-            lblPhiShip.innerText = tongPhiShip === 0 ? "0 đ" : `${tongPhiShip.toLocaleString("vi-VN")} đ`;
+            if (laNhanTaiCuaHang) {
+                lblPhiShip.innerText = "0 đ (Miễn phí nhận tại quầy)";
+                lblPhiShip.className = "text-success";
+            } else if (tongPhiShip === 0) {
+                lblPhiShip.innerText = "0 đ (Miễn phí)";
+                lblPhiShip.className = "text-success";
+            } else {
+                lblPhiShip.innerText = `${tongPhiShip.toLocaleString("vi-VN")} đ`;
+                lblPhiShip.className = "text-dark";
+            }
         }
 
         const lblTongCotPhai = document.getElementById("lblTongThanhToanCuoiCheckout");
@@ -520,6 +620,7 @@
             const lbl = document.getElementById("lblTrangThaiCaptchaKho");
             if (lbl) {
                 lbl.style.color = "#DC2626";
+                lbl.className = "d-block mt-1 fw-medium";
                 lbl.textContent = "Mã xác thực Captcha không chính xác. Vui lòng nhập lại mã hiển thị trong hình!";
             }
             document.getElementById("txtMaCaptchaNhap")?.focus();

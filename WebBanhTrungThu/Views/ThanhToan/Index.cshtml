@@ -55,6 +55,7 @@ window.CAU_HINH_THANH_TOAN = {
     tongTienHang: @Model.TongTienHang.ToString(System.Globalization.CultureInfo.InvariantCulture),
     tienCkB2B: @Model.TienChietKhauB2B.ToString(System.Globalization.CultureInfo.InvariantCulture),
     tienGiamVoucher: @Model.TienGiamVoucher.ToString(System.Globalization.CultureInfo.InvariantCulture),
+    codeKmDangDung: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CodeKmDangDung ?? "")),
     phanTramGiamVip: @Model.PhanTramGiamVip.ToString(System.Globalization.CultureInfo.InvariantCulture),
     diemTichLuy: @Model.DiemTichLuy,
     mienPhiLogo: @(Model.MienPhiInLogo ? "true" : "false"),

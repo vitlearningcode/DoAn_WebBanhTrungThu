@@ -9,14 +9,14 @@
         </label>
         <label class="dong-phuong-thuc-tt-bitis">
             <input type="radio" name="PhuongThucTt" value="MOMO_QR" class="form-check-input mt-0" onchange="capNhatTrangThaiPhuongThucTt()" />
-            <span class="d-inline-flex align-items-center gap-2 fw-medium text-dark"><span class="logo-momo-badge">momo</span><span>Ví MoMo / Quét mã QR Ngân hàng (0814 585 526)</span></span>
+            <span class="d-inline-flex align-items-center gap-2 fw-medium text-dark"><span class="logo-momo-badge">momo</span><span>Ví MoMo – Quét mã QR chuyển khoản (0814 585 526)</span></span>
         </label>
     </div>
 </div>
 
 <div class="khung-captcha-ngang-bitis mb-3">
     <div class="d-flex align-items-center gap-2 flex-nowrap">
-        <img id="imgCaptchaThanhToan" src="" alt="Mã Captcha" style="width: 135px; height: 44px; border-radius: 6px; border: 1px solid #D1D5DB; background: #F9FAFB; flex-shrink: 0;" />
+        <img id="imgCaptchaThanhToan" src="/ThanhToan/AnhCaptcha?v=@DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()" alt="Mã Captcha" width="135" height="44" style="width: 135px; height: 44px; border-radius: 6px; border: 1px solid #E6D5B8; background: #FAF6EE; flex-shrink: 0; display: block;" />
         <button type="button" class="btn-doi-captcha-bitis" title="Đổi mã Captcha mới" onclick="taiMaCaptchaMoi(true)">↻</button>
         <input type="text" id="txtMaCaptchaNhap" name="maCaptchaNhap" class="input-phang-bitis text-uppercase fw-bold" placeholder="Nhập mã xác thực *" maxlength="5" required autocomplete="off" style="letter-spacing: 2px; flex: 1; min-width: 0;" oninput="xuLyGoMaCaptchaTuDong(this)" />
     </div>

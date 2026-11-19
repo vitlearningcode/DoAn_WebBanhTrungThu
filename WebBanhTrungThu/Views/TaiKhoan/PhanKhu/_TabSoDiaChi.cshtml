@@ -7,7 +7,7 @@
     <div class="dau-pane-ho-so dau-pane-co-nut">
         <div>
             <h2 class="tieu-de-pane-ho-so">Sổ địa chỉ nhận quà</h2>
-            <p class="mo-ta-pane-ho-so">Lưu sẵn địa chỉ người thân, đối tác để chọn nhanh khi giao quà nhiều điểm.</p>
+            <p class="mo-ta-pane-ho-so">Lưu sẵn địa chỉ người thân, đối tác để chọn nhanh khi đặt quà.</p>
         </div>
         <button type="button" class="btn btn-do-son-mai rounded-pill px-3 nut-khong-ep"
                 data-bs-toggle="collapse" data-bs-target="#khungFormThemDiaChi"
@@ -111,9 +111,121 @@
                         <div class="dia-chi-chi-tiet-ho-so">
                             @dc.DiaChiCuThe, @dc.PhuongXa, @dc.QuanHuyen, @dc.TinhThanh
                         </div>
+
+                        <div class="chan-the-dia-chi">
+                            <button type="button"
+                                    class="nut-sua-dia-chi"
+                                    data-madc="@dc.MaDc"
+                                    data-nhan="@(dc.NhanDiaChi ?? "")"
+                                    data-ten="@dc.TenNguoiNhan"
+                                    data-sdt="@dc.SdtnguoiNhan"
+                                    data-tinhthanh="@dc.TinhThanh"
+                                    data-quanhuyen="@dc.QuanHuyen"
+                                    data-phuongxa="@dc.PhuongXa"
+                                    data-diachi="@dc.DiaChiCuThe"
+                                    data-macdinh="@(dc.LaMacDinh ? "true" : "false")"
+                                    onclick="moModalSuaDiaChi(this)">
+                                <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Chỉnh sửa
+                            </button>
+
+                            @if (!dc.LaMacDinh)
+                            {
+                                <form asp-controller="TaiKhoan" asp-action="DatDiaChiMacDinh" method="post" class="m-0">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="maDiaChi" value="@dc.MaDc" />
+                                    <button type="submit" class="nut-mac-dinh-dia-chi">
+                                        Đặt mặc định
+                                    </button>
+                                </form>
+                            }
+                        </div>
                     </div>
                 </div>
             }
         </div>
     }
 </div>
+
+<div class="modal fade" id="modalSuaDiaChi" tabindex="-1" aria-labelledby="tieuDeModalSuaDiaChi" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 16px; background: #FFFDF9;">
+            <form asp-controller="TaiKhoan" asp-action="SuaDiaChi" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="suaMaDiaChi" name="maDiaChi" value="0" />
+                <div class="modal-header border-bottom" style="border-color: #EADBC8 !important;">
+                    <h5 class="modal-title font-co-phong fs-4 fw-bold chu-do-son-mai" id="tieuDeModalSuaDiaChi">
+                        Chỉnh sửa địa chỉ nhận quà
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="nhan-input-ho-so" for="suaNhanGoiNho">Nhãn gợi nhớ</label>
+                            <input type="text" id="suaNhanGoiNho" name="nhanGoiNho" class="form-control input-ho-so"
+                                   placeholder="VD: Nhà riêng, Công ty, Biếu Ông Bà" required />
+                        </div>
+                        <div class="col-md-7">
+                            <label class="nhan-input-ho-so" for="suaNguoiNhan">Họ tên người nhận</label>
+                            <input type="text" id="suaNguoiNhan" name="nguoiNhan" class="form-control input-ho-so" required />
+                        </div>
+                        <div class="col-md-5">
+                            <label class="nhan-input-ho-so" for="suaSdtNhan">Số điện thoại</label>
+                            <input type="tel" id="suaSdtNhan" name="sdtNhan" class="form-control input-ho-so" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="nhan-input-ho-so" for="suaTinhThanh">Tỉnh / Thành</label>
+                            <input type="text" id="suaTinhThanh" name="tinhThanh" class="form-control input-ho-so" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="nhan-input-ho-so" for="suaQuanHuyen">Quận / Huyện</label>
+                            <input type="text" id="suaQuanHuyen" name="quanHuyen" class="form-control input-ho-so" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="nhan-input-ho-so" for="suaPhuongXa">Phường / Xã</label>
+                            <input type="text" id="suaPhuongXa" name="phuongXa" class="form-control input-ho-so" required />
+                        </div>
+                        <div class="col-12">
+                            <label class="nhan-input-ho-so" for="suaDiaChiChiTiet">Số nhà, tên đường</label>
+                            <input type="text" id="suaDiaChiChiTiet" name="diaChiChiTiet" class="form-control input-ho-so" required />
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" id="suaLaMacDinh" name="laMacDinh" value="true" />
+                                <label class="form-check-label" for="suaLaMacDinh">Đặt làm địa chỉ mặc định</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top" style="border-color: #EADBC8 !important;">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-do-son-mai rounded-pill px-4">Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.moModalSuaDiaChi = function (btn) {
+        if (!btn) return;
+        const modalEl = document.getElementById("modalSuaDiaChi");
+        if (!modalEl) return;
+
+        if (modalEl.parentElement !== document.body) {
+            document.body.appendChild(modalEl);
+        }
+
+        document.getElementById("suaMaDiaChi").value = btn.dataset.madc || "0";
+        document.getElementById("suaNhanGoiNho").value = btn.dataset.nhan || "";
+        document.getElementById("suaNguoiNhan").value = btn.dataset.ten || "";
+        document.getElementById("suaSdtNhan").value = btn.dataset.sdt || "";
+        document.getElementById("suaTinhThanh").value = btn.dataset.tinhthanh || "";
+        document.getElementById("suaQuanHuyen").value = btn.dataset.quanhuyen || "";
+        document.getElementById("suaPhuongXa").value = btn.dataset.phuongxa || "";
+        document.getElementById("suaDiaChiChiTiet").value = btn.dataset.diachi || "";
+        document.getElementById("suaLaMacDinh").checked = btn.dataset.macdinh === "true";
+
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    };
+</script>

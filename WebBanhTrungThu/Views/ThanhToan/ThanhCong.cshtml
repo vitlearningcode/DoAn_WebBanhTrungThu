@@ -1,11 +1,23 @@
 @model WebBanhTrungThu.ViewModels.DonHangThanhCongViewModel
 @{
-    ViewData["Title"] = $"Đặt Hàng Thành Công #{Model.DonHang.MaTraCuuDh}";
-    bool coThiep3D = Model.DonHang.ThiepChucMung3Ds.Any() && Model.DanhSachDotGiaoQr.Any();
-    bool laDonQrMoMo = Model.DonHang.PhuongThucTt == "MOMO_QR"
-                    || Model.DonHang.PhuongThucTt == "VIETQR"
-                    || Model.DonHang.PhuongThucTt == "MOMO";
-    bool coCotPhai = laDonQrMoMo || coThiep3D;
+    var dh = Model.DonHang;
+    bool coThiep3D = dh.ThiepChucMung3Ds.Any() && Model.DanhSachDotGiaoQr.Any();
+    bool laDonQrMoMo = dh.PhuongThucTt == "MOMO_QR"
+                    || dh.PhuongThucTt == "VIETQR"
+                    || dh.PhuongThucTt == "MOMO";
+    bool laTrangThaiA_DaHuy = dh.TrangThaiDh == "DA_HUY"
+                           || dh.TrangThaiTt == "HET_HAN_HUY"
+                           || dh.TrangThaiTt == "HET_HAN_15P";
+    bool laDaThanhToan = !laTrangThaiA_DaHuy
+                      && (dh.TrangThaiTt == "DA_THANH_TOAN" || dh.TrangThaiTt == "DA_TT");
+    bool laTrangThaiB_ChoQr = !laTrangThaiA_DaHuy && !laDaThanhToan && laDonQrMoMo;
+    bool coCotPhai = !laTrangThaiA_DaHuy && (laTrangThaiB_ChoQr || coThiep3D);
+
+    ViewData["Title"] = laTrangThaiA_DaHuy
+        ? $"Đơn Hàng Đã Bị Hủy #{dh.MaTraCuuDh}"
+        : laTrangThaiB_ChoQr
+            ? $"Chờ Thanh Toán Đơn Hàng #{dh.MaTraCuuDh}"
+            : $"Đặt Hàng Thành Công #{dh.MaTraCuuDh}";
 }
 
 @section Styles {
@@ -13,26 +25,17 @@
 }
 
 <section class="trang-thanh-toan-sang">
-    <div class="container" style="max-width: @(coCotPhai ? "1020px" : "680px"); margin: 28px auto;">
-        <!-- Thông báo tự động khi hết hạn 15 phút -->
-        <div id="khungThongBaoHetHan15Phut" class="alert alert-danger border-danger shadow-sm rounded-3 mb-4 p-3"
-             style="display: @(Model.DonHang.TrangThaiTt == "HET_HAN_15P" ? "block" : "none");">
-            <div class="d-flex align-items-center gap-2 fw-bold">
-                <i class="bi bi-clock-history fs-5"></i>
-                <span>Đơn hàng đã hết hạn thanh toán 15 phút. Hệ thống đã hoàn trả sản phẩm về kho.</span>
-            </div>
-        </div>
-
-        <div class="row g-4 align-items-start @(coCotPhai ? "" : "justify-content-center")">
+    <div class="khung-trang-thanh-cong @(coCotPhai ? "co-cot-phai" : "")">
+        <div class="luoi-trang-thanh-cong">
             <!-- CỘT TRÁI: THÔNG TIN BIÊN LAI & BẢNG SẢN PHẨM -->
-            <div class="@(coCotPhai ? "col-lg-7" : "col-12")">
+            <div>
                 @await Html.PartialAsync("~/Views/ThanhToan/PhanKhu/_BienLaiDonHang.cshtml", Model)
             </div>
 
-            <!-- CỘT PHẢI: KHUNG QR THIỆP 3D & TRẠNG THÁI THANH TOÁN MOMO 15 PHÚT -->
+            <!-- CỘT PHẢI: KHUNG QR THANH TOÁN MOMO & THIỆP 3D -->
             @if (coCotPhai)
             {
-                <div class="col-lg-5">
+                <div>
                     @await Html.PartialAsync("~/Views/ThanhToan/PhanKhu/_KhungQrThiepVaMoMo.cshtml", Model)
                 </div>
             }

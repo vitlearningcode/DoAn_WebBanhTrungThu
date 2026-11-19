@@ -105,7 +105,43 @@ else
     </div>
 </div>
 
-<div id="khungNhanTaiCuaHang" class="mb-3" style="display: none;"></div>
+<div id="khung-chon-cua-hang" class="mb-3" style="display: none;">
+    <div class="small fw-semibold text-dark mb-2">Chọn chi nhánh đại lý Nguyệt Cát nhận bánh:</div>
+    <label class="the-cua-hang-nhan dang-chon" for="radCuaHangLongXuyen">
+        <div class="d-flex align-items-start gap-2" style="min-width: 0; flex: 1;">
+            <input type="radio" name="CuaHangNhan" id="radCuaHangLongXuyen" class="form-check-input mt-1 flex-shrink-0" checked
+                   data-tinhthanh="An Giang"
+                   value="[Nhận tại cửa hàng] Nguyệt Cát – Chi nhánh TP. Long Xuyên (Số 18 Đường Hà Hoàng Hổ, Phường Mỹ Xuyên, TP. Long Xuyên, An Giang)"
+                   onchange="dongBoDiaChiGiaoChinh(); if (typeof capNhatBangTinhThanhToan === 'function') capNhatBangTinhThanhToan();" />
+            <div style="min-width: 0;">
+                <strong class="d-block text-dark small">Nguyệt Cát – Chi nhánh TP. Long Xuyên</strong>
+                <small class="text-muted d-block">Số 18 Đường Hà Hoàng Hổ, Phường Mỹ Xuyên, TP. Long Xuyên, An Giang</small>
+                <div class="d-flex align-items-center flex-wrap gap-2 mt-1">
+                    <span class="text-secondary" style="font-size: 0.76rem;">Giờ mở cửa: 07:30 – 22:00</span>
+                    <span class="badge-san-hang-cua-hang">Sẵn hàng • Nhận sau 30 phút</span>
+                </div>
+            </div>
+        </div>
+        <span class="small fw-semibold text-success text-nowrap flex-shrink-0">Miễn phí • 0 đ</span>
+    </label>
+    <label class="the-cua-hang-nhan" for="radCuaHangQ1">
+        <div class="d-flex align-items-start gap-2" style="min-width: 0; flex: 1;">
+            <input type="radio" name="CuaHangNhan" id="radCuaHangQ1" class="form-check-input mt-1 flex-shrink-0"
+                   data-tinhthanh="TP. Hồ Chí Minh"
+                   value="[Nhận tại cửa hàng] Nguyệt Cát – Showroom Trung Tâm Q.1 (128 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh)"
+                   onchange="dongBoDiaChiGiaoChinh(); if (typeof capNhatBangTinhThanhToan === 'function') capNhatBangTinhThanhToan();" />
+            <div style="min-width: 0;">
+                <strong class="d-block text-dark small">Nguyệt Cát – Showroom Trung Tâm Q.1</strong>
+                <small class="text-muted d-block">128 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh</small>
+                <div class="d-flex align-items-center flex-wrap gap-2 mt-1">
+                    <span class="text-secondary" style="font-size: 0.76rem;">Giờ mở cửa: 07:30 – 22:00</span>
+                    <span class="badge-san-hang-cua-hang">Sẵn hàng • Nhận sau 30 phút</span>
+                </div>
+            </div>
+        </div>
+        <span class="small fw-semibold text-success text-nowrap flex-shrink-0">Miễn phí • 0 đ</span>
+    </label>
+</div>
 
 <div class="danh-sach-tuy-chon-manh-bitis mb-4">
     <div class="dong-tuy-chon-manh-bitis">
@@ -146,7 +182,7 @@ else
     <div class="dong-tuy-chon-manh-bitis">
         <div class="form-check d-flex align-items-center gap-2 m-0">
             <input class="form-check-input" type="checkbox" id="chkDonB2B" name="LaDonDoanhNghiepB2B" value="true" checked="@tuDongMoB2B" onchange="capNhatBangTinhThanhToan()">
-            <label class="form-check-label text-dark fw-semibold" for="chkDonB2B">Xuất hóa đơn VAT / Đơn hàng Doanh nghiệp (B2B)</label>
+            <label class="form-check-label text-dark fw-semibold" for="chkDonB2B">Xuất hóa đơn VAT</label>
         </div>
         <div id="khungThongTinB2B" class="mt-2 pt-2" style="display: @(tuDongMoB2B ? "block" : "none");">
             <div class="row g-2">

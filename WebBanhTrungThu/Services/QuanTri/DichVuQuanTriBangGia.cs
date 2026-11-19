@@ -133,7 +133,7 @@ namespace WebBanhTrungThu.Services.QuanTri
         {
             if (string.IsNullOrWhiteSpace(tenMocB2b))
             {
-                return (false, "Vui lòng nhập tên mốc chiết khấu B2B!");
+                return (false, "Vui lòng nhập tên mốc chiết khấu!");
             }
 
             var moc = new BangChietKhauSiB2b
@@ -149,7 +149,7 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             _db.BangChietKhauSiB2bs.Add(moc);
             await _db.SaveChangesAsync();
-            return (true, $"Đã thêm mốc chiết khấu B2B mới: {moc.TenMocB2b} (-{moc.PhanTramChietKhau:N0}%)!");
+            return (true, $"Đã thêm mốc chiết khấu mới: {moc.TenMocB2b} (-{moc.PhanTramChietKhau:N0}%)!");
         }
 
         public async Task<string?> CapNhatMocB2BAsync(
@@ -169,7 +169,7 @@ namespace WebBanhTrungThu.Services.QuanTri
             moc.PhiKhuonInLogo = Math.Round(phiKhuonInLogo, 0);
             moc.MienPhiInLogo = mienPhiInLogo;
             await _db.SaveChangesAsync();
-            return $"Đã cập nhật mốc chiết khấu B2B: {moc.TenMocB2b} (-{moc.PhanTramChietKhau:N0}%)!";
+            return $"Đã cập nhật mốc chiết khấu: {moc.TenMocB2b} (-{moc.PhanTramChietKhau:N0}%)!";
         }
 
         public async Task<string?> XoaMocB2BAsync(int maMocCk)
@@ -180,7 +180,7 @@ namespace WebBanhTrungThu.Services.QuanTri
             string ten = moc.TenMocB2b;
             _db.BangChietKhauSiB2bs.Remove(moc);
             await _db.SaveChangesAsync();
-            return $"Đã xóa mốc chiết khấu B2B: {ten}!";
+            return $"Đã xóa mốc chiết khấu: {ten}!";
         }
 
         public async Task<(bool HopLe, string ThongBao)> ThemComboGiaMoiAsync(

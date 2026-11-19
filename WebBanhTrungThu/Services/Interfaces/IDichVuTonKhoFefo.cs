@@ -14,6 +14,7 @@ namespace WebBanhTrungThu.Services.Interfaces
             int maVh,
             int soLuongCanTru,
             List<NhatKyTruVoHop>? danhSachVoHopDaTru = null);
+        Task HoanTraTonKhoTheoDonAsync(DonHang donHang);
         Task HoanTraTonKhoRollbackAsync(DonHang donHang);
     }
 }

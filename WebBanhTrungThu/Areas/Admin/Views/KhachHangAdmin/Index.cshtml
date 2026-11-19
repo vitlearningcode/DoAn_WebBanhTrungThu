@@ -108,7 +108,7 @@
                     <option value="Bạc">Hạng Bạc</option>
                     <option value="Vàng">Hạng Vàng</option>
                     <option value="Kim Cương">Hạng Kim Cương</option>
-                    <option value="DoanhNghiep">Khách sỉ DoanhNghiep (B2B)</option>
+                    <option value="DoanhNghiep">Khách đặt số lượng lớn / Doanh nghiệp</option>
                 </select>
             </div>
 
@@ -248,7 +248,7 @@
                                                                         </a>
                                                                     </td>
                                                                     <td>@dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</td>
-                                                                    <td>@(dh.LaDonDoanhNghiepB2b ? "Doanh nghiệp B2B" : "Bán lẻ B2C")</td>
+                                                                    <td>@(dh.LaDonDoanhNghiepB2b ? "Đơn sỉ / Doanh nghiệp" : "Khách lẻ")</td>
                                                                     <td>@dh.PhuongThucTt</td>
                                                                     <td class="text-end fw-semibold">@dh.TongThanhToanCuoi.ToString("N0")</td>
                                                                     <td>@dh.TrangThaiDh</td>

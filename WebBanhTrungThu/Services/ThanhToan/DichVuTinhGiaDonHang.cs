@@ -153,6 +153,7 @@ namespace WebBanhTrungThu.Services.ThanhToan
                         if (km.GiamToiDa > 0 && tienGiamVoucher > km.GiamToiDa)
                             tienGiamVoucher = km.GiamToiDa;
                     }
+                    tienGiamVoucher = Math.Min(tienGiamVoucher, tongTienHang);
 
                     if (capNhatLuotDungVoucher)
                     {
@@ -196,21 +197,19 @@ namespace WebBanhTrungThu.Services.ThanhToan
             decimal tienGiamVip = phanTramGiamVip > 0m
                 ? Math.Round(tienHangSauCkVaVoucher * (phanTramGiamVip / 100m), 0)
                 : 0m;
-            decimal tienHangSauVip = Math.Max(0m, tienHangSauCkVaVoucher - tienGiamVip);
+            decimal tienHangSauUuDai = Math.Max(0m, tienHangSauCkVaVoucher - tienGiamVip);
 
-            int diemToiDaTheoDon = (int)Math.Floor((tienHangSauVip * 0.5m) / 1000m);
-            int diemTichLuySeDung = dungDiemTichLuy ? Math.Min(diemTichLuyHienCo, diemToiDaTheoDon) : 0;
+            decimal tienGiamToiDaChoPhep = Math.Floor((tienHangSauUuDai * 0.5m) / 1000m) * 1000m;
+            int soDiemToiDaDuocDung = Math.Min(diemTichLuyHienCo, (int)(tienGiamToiDaChoPhep / 1000m));
+            int diemTichLuySeDung = dungDiemTichLuy ? soDiemToiDaDuocDung : 0;
             decimal tienGiamDiem = diemTichLuySeDung * 1000m;
 
             // 4. Tính phí vận chuyển (Nhận tại cửa hàng / Tiêu chuẩn Freeship 500k / Hỏa tốc 6h TP.HCM & An Giang)
-            decimal tienHangSauGiam = Math.Max(0m, tienHangSauVip - tienGiamDiem);
+            decimal tienHangSauGiam = Math.Max(0m, tienHangSauUuDai - tienGiamDiem);
             bool duMocFreeship500k = tienHangSauGiam >= 500000m;
 
             var cacDotGiao = danhSachDotGiao ?? new List<DotGiaoHangInput>();
-            bool laNhanTaiCuaHang = string.Equals(hinhThucNhanHang, "NHAN_TAI_CUA_HANG", StringComparison.OrdinalIgnoreCase)
-                || cacDotGiao.Any(d => !string.IsNullOrWhiteSpace(d.DiaChiGiaoChiTiet) &&
-                    (d.DiaChiGiaoChiTiet.Contains("[Nhận tại cửa hàng]", StringComparison.OrdinalIgnoreCase) ||
-                     d.DiaChiGiaoChiTiet.Contains("Nhận tại Cửa hàng", StringComparison.OrdinalIgnoreCase)));
+            bool laNhanTaiCuaHang = string.Equals(hinhThucNhanHang, "NHAN_TAI_CUA_HANG", StringComparison.OrdinalIgnoreCase);
 
             bool yeuCauHoaToc = !laNhanTaiCuaHang && (
                 string.Equals(tocDoGiaoHang, "GIAO_HOA_TOC", StringComparison.OrdinalIgnoreCase) ||

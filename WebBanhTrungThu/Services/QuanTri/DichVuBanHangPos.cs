@@ -468,6 +468,14 @@ namespace WebBanhTrungThu.Services.QuanTri
                     PhiInLogo = phiInLogo,
                     TongPhiVanChuyen = phiVanChuyen,
                     TongThanhToanCuoi = tongThanhToanCuoi,
+                    TienGiamHangVip = Math.Round(tienGiamVip, 0),
+                    PhanTramGiamVip = (int)Math.Round(phanTramGiamVip, 0),
+                    SoDiemDaDung = diemDaDung,
+                    TienGiamDiemVip = Math.Round(tienGiamDiem, 0),
+                    HanThanhToanQr = null,
+                    DaCongDiemThuong = false,
+                    DaHoanDiemKhiHuy = false,
+                    LyDoHuy = null,
                     PhuongThucTt = ChuanHoaChuoi(req.PhuongThucTt, "TIEN_MAT"),
                     TrangThaiTt = "DA_TT",
                     TrangThaiDh = laGiaoHang ? "CHO_LAY_HANG" : "HOAN_TAT",
@@ -702,6 +710,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                     var (hangVipMoi, _, _, _) = await DichVuHoiVien.TinhThongTinHangVipAsync(_db, khachMember.MaNd, khachMember.DiemTichLuy);
                     var (_, pctMoi) = ChuanHoaHangVip(hangVipMoi);
                     khachMember.HangTv = pctMoi >= phanTramGiamVip ? hangVipMoi : hangVipLucDat;
+                    donHang.DaCongDiemThuong = diemCong > 0;
                 }
 
                 _db.PhieuThuChis.Add(new PhieuThuChi
@@ -723,14 +732,6 @@ namespace WebBanhTrungThu.Services.QuanTri
                 _kiotMeta.CapNhatMetadataDonHang(donHang.MaDh, meta =>
                 {
                     meta.KenhBan = "POS_TAI_QUAY";
-                    meta.DiemDaDung = diemDaDung;
-                    meta.TienGiamDiem = tienGiamDiem;
-                    meta.HangTvLucDat = hangVipLucDat;
-                    meta.PhanTramGiamVip = phanTramGiamVip;
-                    meta.TienGiamVip = tienGiamVip;
-                    meta.DaCongDiemThuong = diemCong > 0;
-                    meta.DiemThuongDaCong = diemCong;
-                    meta.DaHoanDiemKhiHuy = false;
                     meta.DanhSachLoDaTru = danhSachLoDaTru;
                     meta.DanhSachVoHopDaTru = danhSachVoHopDaTru;
                 });

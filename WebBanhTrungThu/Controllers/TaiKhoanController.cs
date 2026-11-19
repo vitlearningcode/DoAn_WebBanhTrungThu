@@ -121,6 +121,38 @@ namespace WebBanhTrungThu.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SuaDiaChi(
+            int maDiaChi, string? nhanGoiNho, string nguoiNhan, string sdtNhan,
+            string? tinhThanh, string? quanHuyen, string? phuongXa,
+            string diaChiChiTiet, bool laMacDinh = false)
+        {
+            int? maNd = LayMaNguoiDungDangNhap();
+            if (!maNd.HasValue) return RedirectToAction("Index", "Home");
+
+            var (_, thongBao) = await _dichVuHoiVien.CapNhatDiaChiAsync(
+                maNd.Value, maDiaChi, nhanGoiNho, nguoiNhan, sdtNhan, diaChiChiTiet, laMacDinh, tinhThanh, quanHuyen, phuongXa);
+            TempData["ThongBaoHoSo"] = thongBao;
+
+            return RedirectToAction(nameof(HoSo), new { tab = "DIA_CHI" });
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DatDiaChiMacDinh(int maDiaChi)
+        {
+            int? maNd = LayMaNguoiDungDangNhap();
+            if (!maNd.HasValue) return RedirectToAction("Index", "Home");
+
+            var (_, thongBao) = await _dichVuHoiVien.DatDiaChiMacDinhAsync(maNd.Value, maDiaChi);
+            TempData["ThongBaoHoSo"] = thongBao;
+
+            return RedirectToAction(nameof(HoSo), new { tab = "DIA_CHI" });
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> XoaDiaChi(int maDc)
         {
             int? maNd = LayMaNguoiDungDangNhap();

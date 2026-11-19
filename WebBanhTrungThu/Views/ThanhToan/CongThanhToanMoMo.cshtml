@@ -7,6 +7,7 @@
     string noiDungCkHienThi = !string.IsNullOrWhiteSpace(Model.NoiDungChuyenKhoan)
         ? Model.NoiDungChuyenKhoan
         : $"NGUYETCAT {Model.MaTraCuuDh}";
+    long soTienNguyen = (long)Math.Round(Model.TongThanhToan, 0);
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -54,15 +55,25 @@
                         </div>
 
                         <div class="muc-thong-tin-momo">
+                            <span class="nhan-muc-momo">SĐT MoMo</span>
+                            <div class="d-flex align-items-center justify-content-between gap-2 mt-1">
+                                <span class="fw-bold" style="color: #111827; font-size: 0.94rem;">@Model.SoDienThoaiMoMo</span>
+                                <button type="button" class="nut-copy-nho-momo" onclick="saoChepNoiDungMoMo('@Model.SoTaiKhoanMoMo', this)">
+                                    Copy
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="muc-thong-tin-momo">
                             <span class="nhan-muc-momo">Mã đơn hàng</span>
                             <div class="gia-tri-muc-momo fw-bold" style="color: #111827;">@Model.MaTraCuuDh</div>
                         </div>
 
                         <div class="muc-thong-tin-momo">
-                            <span class="nhan-muc-momo">Mô tả</span>
+                            <span class="nhan-muc-momo">Nội dung chuyển khoản</span>
                             <div class="d-flex align-items-center justify-content-between gap-2 mt-1">
                                 <span class="fw-semibold" style="color: #1F2937; font-size: 0.88rem; word-break: break-word;">
-                                    NGUYETCAT @Model.MaTraCuuDh
+                                    @noiDungCkHienThi
                                 </span>
                                 <button type="button" class="nut-copy-nho-momo" onclick="saoChepNoiDungMoMo('@noiDungCkHienThi', this)">
                                     Copy
@@ -72,8 +83,13 @@
 
                         <div class="muc-thong-tin-momo border-bottom-0 pb-1">
                             <span class="nhan-muc-momo">Số tiền</span>
-                            <div class="mt-1" style="font-size: 1.5rem; font-weight: 800; color: #111827; font-variant-numeric: tabular-nums;">
-                                @Model.TongThanhToan.ToString("N0")đ
+                            <div class="d-flex align-items-center justify-content-between gap-2 mt-1">
+                                <span style="font-size: 1.5rem; font-weight: 800; color: #111827; font-variant-numeric: tabular-nums;">
+                                    @Model.TongThanhToan.ToString("N0")đ
+                                </span>
+                                <button type="button" class="nut-copy-nho-momo" onclick="saoChepNoiDungMoMo('@soTienNguyen', this)">
+                                    Copy
+                                </button>
                             </div>
                         </div>
 
@@ -104,21 +120,28 @@
                 </aside>
 
                 <!-- =========================================================================
-                     2. CỘT PHẢI (KHUNG LỚN MÀU HỒNG MOMO #D82D8B + NGÂN HÀNG HỖ TRỢ)
+                     2. CỘT PHẢI (KHUNG LỚN MÀU HỒNG MOMO #D82D8B)
                      ========================================================================= -->
                 <section class="cot-phai-cong-momo">
-                    <!-- Khung Lớn Màu Hồng MoMo #D82D8B, bo góc 12px, padding 32px -->
                     <div class="khung-hong-qr-momo" style="background: #D82D8B; border-radius: 12px; padding: 32px;">
-                        <!-- Dải huy hiệu trắng phía trên mã QR: Ví Trả Sau | MoMo | VIETQR -->
-                        <div class="dai-huy-hieu-momo mb-4">
-                            <span class="muc-huy-hieu-momo">Ví Trả Sau</span>
-                            <span class="vach-ngan-huy-hieu">|</span>
-                            <span class="muc-huy-hieu-momo fw-extrabold">MoMo</span>
-                            <span class="vach-ngan-huy-hieu">|</span>
-                            <span class="muc-huy-hieu-momo">VIETQR</span>
-                        </div>
+                        @if (Model.CoCauHinhVietQrNganHang)
+                        {
+                            <div class="text-center mb-3">
+                                <div class="tab-chuyen-qr-momo">
+                                    <button type="button" class="nut-tab-qr-momo active" id="btnTabQrMoMo" onclick="chuyenKieuQrCongThanhToan('MOMO')">QR Ví MoMo</button>
+                                    <button type="button" class="nut-tab-qr-momo" id="btnTabVietQr" onclick="chuyenKieuQrCongThanhToan('VIETQR')">VietQR Ngân hàng</button>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="dai-huy-hieu-momo mb-4">
+                                <span class="muc-huy-hieu-momo fw-extrabold">Ví MoMo</span>
+                                <span class="vach-ngan-huy-hieu">|</span>
+                                <span class="muc-huy-hieu-momo">Chuyển khoản QR</span>
+                            </div>
+                        }
 
-                        <!-- Khung trắng chứa Mã QR (260x260px) có 4 góc ngắm và Logo momo màu hồng ở chính tâm -->
                         <div class="d-flex justify-content-center my-2">
                             <div class="khung-trang-qr-260">
                                 <span class="goc-ngam-qr goc-tren-trai"></span>
@@ -126,50 +149,68 @@
                                 <span class="goc-ngam-qr goc-duoi-trai"></span>
                                 <span class="goc-ngam-qr goc-duoi-phai"></span>
 
-                                <img src="@Model.AnhQrThanhToanBase64" alt="Mã QR MoMo @Model.MaTraCuuDh" class="anh-qr-momo-chinh" />
+                                <img id="imgQrCongMoMoChinh" src="@Model.AnhQrThanhToanBase64" width="240" height="240" alt="Mã QR MoMo @Model.MaTraCuuDh" class="anh-qr-momo-chinh" />
 
-                                <div class="logo-momo-tam-qr">
+                                <div id="logoTamQrMoMo" class="logo-momo-tam-qr">
                                     <span>momo</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Bên dưới mã QR (chữ trắng trên nền hồng) -->
                         <div class="text-center text-white mt-3">
-                            <div class="fw-semibold d-flex align-items-center justify-content-center gap-2" style="font-size: 0.96rem;">
+                            <div id="lblHuongDanQuetQr" class="fw-semibold d-flex align-items-center justify-content-center gap-2" style="font-size: 0.94rem;">
                                 <i class="bi bi-qr-code-scan"></i>
-                                <span>Sử dụng App MoMo hoặc ứng dụng ngân hàng để quét mã</span>
+                                <span>Mở ứng dụng MoMo → Chọn Quét Mã để chuyển khoản tự động điền sẵn số tiền &amp; nội dung</span>
                             </div>
-                            <div class="mt-2 small" style="color: rgba(255, 255, 255, 0.92); font-weight: 500;">
+                            <div class="mt-2 small" style="color: rgba(255, 255, 255, 0.94); font-weight: 500;">
                                 SĐT MoMo: <strong>@Model.SoDienThoaiMoMo</strong> • Chủ TK: <strong>@Model.TenChuTaiKhoan</strong>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Dải thẻ hiển thị các ngân hàng hỗ trợ -->
                     <div class="khung-ngan-hang-ho-tro mt-3">
-                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
-                            <span class="small fw-semibold" style="color: #374151;">
-                                Ngân hàng hỗ trợ quét mã VietQR / MoMo
-                            </span>
-                            <span class="small text-muted" style="font-size: 0.76rem;">40+ ngân hàng nội địa</span>
-                        </div>
-                        <div class="luoi-the-ngan-hang">
-                            <span class="the-ten-ngan-hang">Vietcombank</span>
-                            <span class="the-ten-ngan-hang">Agribank</span>
-                            <span class="the-ten-ngan-hang">MB Bank</span>
-                            <span class="the-ten-ngan-hang">BIDV</span>
-                            <span class="the-ten-ngan-hang">VPBank</span>
-                            <span class="the-ten-ngan-hang">VietinBank</span>
-                            <span class="the-ten-ngan-hang">ACB</span>
-                            <span class="the-ten-ngan-hang">TPBank</span>
-                            <span class="the-ten-ngan-hang">Techcombank</span>
-                            <span class="the-ten-ngan-hang">Sacombank</span>
-                            <span class="the-ten-ngan-hang">VIB</span>
-                            <span class="the-ten-ngan-hang">HDBank</span>
-                        </div>
+                        @if (Model.CoCauHinhVietQrNganHang)
+                        {
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                                <span class="small fw-semibold" style="color: #374151;">
+                                    Ngân hàng hỗ trợ quét mã VietQR / MoMo
+                                </span>
+                                <span class="small text-muted" style="font-size: 0.76rem;">40+ ngân hàng nội địa</span>
+                            </div>
+                            <div class="luoi-the-ngan-hang">
+                                <span class="the-ten-ngan-hang">Vietcombank</span>
+                                <span class="the-ten-ngan-hang">Agribank</span>
+                                <span class="the-ten-ngan-hang">MB Bank</span>
+                                <span class="the-ten-ngan-hang">BIDV</span>
+                                <span class="the-ten-ngan-hang">VPBank</span>
+                                <span class="the-ten-ngan-hang">VietinBank</span>
+                                <span class="the-ten-ngan-hang">ACB</span>
+                                <span class="the-ten-ngan-hang">TPBank</span>
+                                <span class="the-ten-ngan-hang">Techcombank</span>
+                                <span class="the-ten-ngan-hang">Sacombank</span>
+                                <span class="the-ten-ngan-hang">VIB</span>
+                                <span class="the-ten-ngan-hang">HDBank</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="small fw-semibold mb-2" style="color: #374151;">Hướng dẫn chuyển khoản nhanh bằng Ví MoMo</div>
+                            <div class="d-flex flex-column gap-2">
+                                <div class="buoc-huong-dan-momo">
+                                    <span class="so-buoc-momo">1</span>
+                                    <span>Mở ứng dụng <strong>MoMo</strong> trên điện thoại và chọn mục <strong>Quét Mã</strong>.</span>
+                                </div>
+                                <div class="buoc-huong-dan-momo">
+                                    <span class="so-buoc-momo">2</span>
+                                    <span>Hướng camera vào mã QR phía trên — ứng dụng tự động điền SĐT <strong>@Model.SoDienThoaiMoMo</strong>, số tiền <strong>@Model.TongThanhToan.ToString("N0")đ</strong> và lời nhắn <strong>@noiDungCkHienThi</strong>.</span>
+                                </div>
+                                <div class="buoc-huong-dan-momo">
+                                    <span class="so-buoc-momo">3</span>
+                                    <span>Xác nhận chuyển tiền, hệ thống sẽ tự động cập nhật trạng thái đơn hàng trong vài giây.</span>
+                                </div>
+                            </div>
+                        }
 
-                        <!-- Nút nhỏ phục vụ chấm đồ án: Giả lập Khách đã quét QR thành công (Test Webhook MoMo) -->
                         <div class="mt-3 pt-2 border-top text-center" style="border-color: #E5E7EB !important;">
                             <button type="button" id="btnTestWebhookMoMo" class="nut-gia-lap-webhook-momo"
                                     onclick="giaLapKhachQuetQrThanhCong()">
@@ -184,21 +225,68 @@
 
     <script>
         const MA_TRA_CUU_DON = "@Model.MaTraCuuDh";
-        const TONG_THANH_TOAN_DON = @Math.Round(Model.TongThanhToan, 0);
+        const TONG_THANH_TOAN_DON = @soTienNguyen;
         const NOI_DUNG_CK_CHUAN = "@noiDungCkHienThi";
+        const QR_MOMO_BASE64 = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.AnhQrThanhToanBase64));
+        const URL_VIET_QR = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.UrlVietQr ?? ""));
         let soGiayConLaiQr = @Model.SoGiayConLai;
         let boDemGiayQr = null;
         let boPollingQr = null;
         let dangChoThanhToanQr = true;
         let daXuLyHetHan = false;
 
+        function chuyenKieuQrCongThanhToan(loai) {
+            const img = document.getElementById("imgQrCongMoMoChinh");
+            const logoTam = document.getElementById("logoTamQrMoMo");
+            const btnMomo = document.getElementById("btnTabQrMoMo");
+            const btnVietQr = document.getElementById("btnTabVietQr");
+            const lblHd = document.getElementById("lblHuongDanQuetQr");
+
+            if (loai === "VIETQR" && URL_VIET_QR) {
+                if (img) img.src = URL_VIET_QR;
+                if (logoTam) logoTam.style.display = "none";
+                if (btnMomo) btnMomo.classList.remove("active");
+                if (btnVietQr) btnVietQr.classList.add("active");
+                if (lblHd) lblHd.innerHTML = `<i class="bi bi-qr-code-scan"></i><span>Mở ứng dụng Ngân hàng bất kỳ để quét mã VietQR chuyển khoản nhanh 24/7</span>`;
+            } else {
+                if (img) img.src = QR_MOMO_BASE64;
+                if (logoTam) logoTam.style.display = "flex";
+                if (btnMomo) btnMomo.classList.add("active");
+                if (btnVietQr) btnVietQr.classList.remove("active");
+                if (lblHd) lblHd.innerHTML = `<i class="bi bi-qr-code-scan"></i><span>Mở ứng dụng MoMo → Chọn Quét Mã để chuyển khoản tự động điền sẵn số tiền &amp; nội dung</span>`;
+            }
+        }
+
+        function danhDauDaChep(btn) {
+            if (!btn) return;
+            const textCu = btn.dataset.textCu || btn.innerText;
+            btn.dataset.textCu = textCu;
+            btn.innerText = "Đã chép";
+            setTimeout(() => { btn.innerText = textCu; }, 1500);
+        }
+
         function saoChepNoiDungMoMo(noiDung, btn) {
-            if (!navigator.clipboard) return;
-            navigator.clipboard.writeText(noiDung).then(() => {
-                const textCu = btn.innerText;
-                btn.innerText = "Đã chép";
-                setTimeout(() => { btn.innerText = textCu; }, 1500);
-            });
+            const giaTri = String(noiDung ?? "");
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(giaTri).then(() => danhDauDaChep(btn)).catch(() => saoChepDuPhong(giaTri, btn));
+            } else {
+                saoChepDuPhong(giaTri, btn);
+            }
+        }
+
+        function saoChepDuPhong(noiDung, btn) {
+            const ta = document.createElement("textarea");
+            ta.value = noiDung;
+            ta.style.position = "fixed";
+            ta.style.left = "-9999px";
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand("copy");
+                danhDauDaChep(btn);
+            } finally {
+                document.body.removeChild(ta);
+            }
         }
 
         function capNhatHienThiDongHo(tongGiay) {
@@ -240,7 +328,7 @@
                 console.warn("Lỗi gọi hoàn kho tự động:", e);
             }
 
-            window.location.href = "/";
+            window.location.href = `/ThanhToan/ThanhCong/${encodeURIComponent(MA_TRA_CUU_DON)}`;
         }
 
         async function kiemTraTrangThaiDonDinhKy() {
@@ -272,6 +360,7 @@
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
+                        maDonHang: MA_TRA_CUU_DON,
                         content: NOI_DUNG_CK_CHUAN,
                         transferAmount: TONG_THANH_TOAN_DON
                     })

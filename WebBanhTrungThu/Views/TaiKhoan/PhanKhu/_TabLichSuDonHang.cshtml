@@ -46,7 +46,9 @@
                     @if (buocTienTrinh == 0)
                     {
                         <div class="timeline-don-hang-4-buoc timeline-don-da-huy">
-                            <span class="nhan-don-da-huy"><i class="bi bi-x-circle me-1"></i>Đơn hàng đã hủy</span>
+                            <span class="nhan-don-da-huy">
+                                <i class="bi bi-x-circle me-1"></i>Đơn hàng đã hủy@(!string.IsNullOrWhiteSpace(dh.LyDoHuy) ? $" — {dh.LyDoHuy}" : "")
+                            </span>
                         </div>
                     }
                     else

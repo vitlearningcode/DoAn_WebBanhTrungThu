@@ -12,6 +12,7 @@ const INLINE_FALLBACK_SVG = "data:image/svg+xml;utf8," + encodeURIComponent('<sv
 window.addEventListener("error", function (e) {
     if (e.target && e.target.tagName === "IMG") {
         const img = e.target;
+        if (img.id === "imgCaptchaThanhToan") return;
         if (img.dataset.fallbackApplied) {
             if (!img.src.startsWith("data:image/svg+xml")) {
                 img.src = INLINE_FALLBACK_SVG;

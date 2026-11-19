@@ -24,6 +24,18 @@ namespace WebBanhTrungThu.Services.Interfaces
             string? diaChiCuThe,
             string? nhanDiaChi,
             bool laMacDinh);
+        Task<(bool ThanhCong, string ThongBao)> CapNhatDiaChiAsync(
+            int maNd,
+            int maDiaChi,
+            string? nhanGoiNho,
+            string? nguoiNhan,
+            string? sdtNhan,
+            string? diaChiChiTiet,
+            bool laMacDinh,
+            string? tinhThanh = null,
+            string? quanHuyen = null,
+            string? phuongXa = null);
+        Task<(bool ThanhCong, string ThongBao)> DatDiaChiMacDinhAsync(int maNd, int maDiaChi);
         Task<string?> XoaDiaChiAsync(int maNd, int maDc);
         Task<string> DatLaiHopTuChonVaoGioAsync(int maNd, int maHopTc);
         Task DamBaoVaiTroVaTaiKhoanDemoAsync();

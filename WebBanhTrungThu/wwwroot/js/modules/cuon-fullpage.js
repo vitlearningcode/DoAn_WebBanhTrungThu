@@ -14,6 +14,7 @@ let chiSoTangHienTai = 0;
 let dangChuyenCanh = false;
 let khoaQuanTinhSauChuyen = false;
 let boHenGioDuPhongChuyenCanh = null;
+let daKhoiTaoFullpage = false;
 
 function laCheDoFullpageDesktop() {
     return window.innerWidth >= 992 && document.getElementById("dai-truot-fullpage") !== null;
@@ -29,6 +30,38 @@ function capNhatChamTronActive(selector) {
     });
 }
 
+function datLaiViTriCuonKhungFullpage() {
+    window.scrollTo(0, 0);
+    if (document.documentElement) {
+        document.documentElement.scrollTop = 0;
+    }
+    if (document.body) {
+        document.body.scrollTop = 0;
+    }
+    const khung = document.getElementById("khung-fullpage-trang-chu");
+    if (khung) {
+        khung.scrollTop = 0;
+        khung.scrollLeft = 0;
+    }
+    const daiTruot = document.getElementById("dai-truot-fullpage");
+    if (daiTruot) {
+        daiTruot.scrollTop = 0;
+        daiTruot.scrollLeft = 0;
+    }
+}
+
+function timChiSoTangTheoHash(hashStr) {
+    if (!hashStr || danhSachCacTang.length === 0) return -1;
+    let hashChuan = String(hashStr).trim().toLowerCase();
+    if (!hashChuan.startsWith("#")) {
+        hashChuan = "#" + hashChuan;
+    }
+    if (hashChuan === "#tang-doanh-nghiep") {
+        hashChuan = "#tang-b2b";
+    }
+    return danhSachCacTang.findIndex(el => el && el.id && ("#" + el.id.toLowerCase()) === hashChuan);
+}
+
 function dongBoKhungFullpageTheoManHinh() {
     const daiTruot = document.getElementById("dai-truot-fullpage");
     if (!daiTruot) return;
@@ -40,7 +73,7 @@ function dongBoKhungFullpageTheoManHinh() {
 
     if (window.innerWidth >= 992) {
         document.body.classList.add("trang-chu-fullpage");
-        window.scrollTo(0, 0);
+        datLaiViTriCuonKhungFullpage();
         daiTruot.style.transform = "translate3d(0, -" + (chiSoTangHienTai * 100) + "%, 0)";
     } else {
         document.body.classList.remove("trang-chu-fullpage");
@@ -48,13 +81,44 @@ function dongBoKhungFullpageTheoManHinh() {
     }
 }
 
+function xuLyDieuHuongTheoHash() {
+    if (danhSachCacTang.length === 0) return;
+    const chiSoTang = timChiSoTangTheoHash(window.location.hash);
+    if (chiSoTang < 0) return;
+
+    datLaiViTriCuonKhungFullpage();
+    diChuyenDenTang(chiSoTang, false);
+
+    setTimeout(() => {
+        datLaiViTriCuonKhungFullpage();
+        diChuyenDenTang(chiSoTang, false);
+    }, 50);
+
+    requestAnimationFrame(() => datLaiViTriCuonKhungFullpage());
+}
+
 function khoiTaoBoMayChuyenCanhRoiRac() {
+    if (daKhoiTaoFullpage) return;
     const daiTruot = document.getElementById("dai-truot-fullpage");
     danhSachCacTang = DANH_SACH_PHAN_KHU
         .map(sel => document.querySelector(sel))
         .filter(el => el !== null);
 
     if (danhSachCacTang.length === 0) return;
+    daKhoiTaoFullpage = true;
+
+    if ("scrollRestoration" in history) {
+        history.scrollRestoration = "manual";
+    }
+
+    const khung = document.getElementById("khung-fullpage-trang-chu");
+    if (khung) {
+        khung.addEventListener("scroll", function () {
+            if (laCheDoFullpageDesktop() && khung.scrollTop !== 0) {
+                khung.scrollTop = 0;
+            }
+        });
+    }
 
     dongBoKhungFullpageTheoManHinh();
 
@@ -64,16 +128,7 @@ function khoiTaoBoMayChuyenCanhRoiRac() {
         tangDau.querySelector(".section-reveal")?.classList.add("active");
     }
 
-    if (window.location.hash) {
-        const mucTieuHash = document.querySelector(window.location.hash);
-        const idxHash = danhSachCacTang.indexOf(mucTieuHash);
-        if (idxHash > 0) {
-            setTimeout(() => {
-                window.scrollTo(0, 0);
-                chuyenDenTang(idxHash);
-            }, 60);
-        }
-    }
+    xuLyDieuHuongTheoHash();
 
     if (daiTruot) {
         daiTruot.addEventListener("transitionend", function (e) {
@@ -82,6 +137,14 @@ function khoiTaoBoMayChuyenCanhRoiRac() {
         });
     }
 
+    window.addEventListener("hashchange", xuLyDieuHuongTheoHash);
+    window.addEventListener("load", () => {
+        if (window.location.hash) {
+            xuLyDieuHuongTheoHash();
+        } else if (laCheDoFullpageDesktop()) {
+            datLaiViTriCuonKhungFullpage();
+        }
+    });
     window.addEventListener("wheel", xuLyLanChuotChuyenCanh, { passive: false });
     window.addEventListener("keydown", xuLyPhimMuiTenChuyenCanh);
     window.addEventListener("resize", dongBoKhungFullpageTheoManHinh);
@@ -101,15 +164,48 @@ function hoanTatChuyenCanhGPU() {
     }, 70);
 }
 
-function chuyenDenTang(chiSoMoi) {
+function chuyenDenTang(chiSoMoi, coHieuUng = true) {
     const tongSoTang = danhSachCacTang.length;
     if (tongSoTang === 0) return;
 
     const chiSoHopLe = Math.max(0, Math.min(chiSoMoi, tongSoTang - 1));
-    if (dangChuyenCanh === true || chiSoHopLe === chiSoTangHienTai) return;
+    if (coHieuUng && (dangChuyenCanh === true || chiSoHopLe === chiSoTangHienTai)) return;
 
     const phanTuDich = danhSachCacTang[chiSoHopLe];
     if (!phanTuDich) return;
+
+    if (!coHieuUng) {
+        if (boHenGioDuPhongChuyenCanh) {
+            clearTimeout(boHenGioDuPhongChuyenCanh);
+            boHenGioDuPhongChuyenCanh = null;
+        }
+        dangChuyenCanh = false;
+        khoaQuanTinhSauChuyen = false;
+        chiSoTangHienTai = chiSoHopLe;
+
+        if (laCheDoFullpageDesktop()) {
+            const daiTruot = document.getElementById("dai-truot-fullpage");
+            datLaiViTriCuonKhungFullpage();
+            if (daiTruot) {
+                daiTruot.style.transition = "none";
+                daiTruot.style.transform = "translate3d(0, -" + (chiSoTangHienTai * 100) + "%, 0)";
+                void daiTruot.offsetHeight;
+                daiTruot.style.transition = "";
+            }
+        } else {
+            const chieuCaoThanhMenu = layChieuCaoThanhMenu();
+            window.scrollTo({
+                top: Math.max(0, phanTuDich.offsetTop - chieuCaoThanhMenu),
+                behavior: "auto"
+            });
+        }
+
+        if (phanTuDich.id) {
+            capNhatChamTronActive("#" + phanTuDich.id);
+        }
+        phanTuDich.querySelector(".section-reveal")?.classList.add("active");
+        return;
+    }
 
     if (!laCheDoFullpageDesktop()) {
         chiSoTangHienTai = chiSoHopLe;
@@ -128,7 +224,7 @@ function chuyenDenTang(chiSoMoi) {
 
     const daiTruot = document.getElementById("dai-truot-fullpage");
     if (daiTruot) {
-        window.scrollTo(0, 0);
+        datLaiViTriCuonKhungFullpage();
         daiTruot.style.transform = "translate3d(0, -" + (chiSoTangHienTai * 100) + "%, 0)";
     }
 
@@ -143,6 +239,10 @@ function chuyenDenTang(chiSoMoi) {
     boHenGioDuPhongChuyenCanh = setTimeout(() => {
         hoanTatChuyenCanhGPU();
     }, 880);
+}
+
+function diChuyenDenTang(chiSoMoi, coHieuUng = true) {
+    chuyenDenTang(chiSoMoi, coHieuUng);
 }
 
 function conKhoangCuonTrongKhungCon(phanTuMucTieu, deltaY) {
@@ -565,6 +665,7 @@ function khoiTaoBannerSliderHero258() {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
+    khoiTaoBoMayChuyenCanhRoiRac();
     khoiTaoDongHoDemNguocTrungThu();
     khoiTaoBannerSliderHero258();
 });

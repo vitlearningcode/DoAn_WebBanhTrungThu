@@ -15,8 +15,11 @@ namespace WebBanhTrungThu.Services.TaiKhoan
     /// </summary>
     public class DichVuHoiVien : DichVuCoSo, IDichVuHoiVien
     {
-        public DichVuHoiVien(CSDLBanhTrungThuContext db) : base(db)
+        private readonly IDichVuThanhToan _dichVuThanhToan;
+
+        public DichVuHoiVien(CSDLBanhTrungThuContext db, IDichVuThanhToan dichVuThanhToan) : base(db)
         {
+            _dichVuThanhToan = dichVuThanhToan;
         }
 
         public async Task<(bool HopLe, string ThongBao, NguoiDung? NguoiDung)> XacThucDangNhapAsync(string? tenDangNhap, string? matKhau)
@@ -124,6 +127,8 @@ namespace WebBanhTrungThu.Services.TaiKhoan
 
         public async Task<HoSoThanhVienViewModel?> XayDungHoSoThanhVienAsync(int maNd, string? tab)
         {
+            await _dichVuThanhToan.KiemTraVaHuyDonQrQuaHanAsync();
+
             var nd = await _db.NguoiDungs
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.MaNd == maNd);
@@ -242,20 +247,15 @@ namespace WebBanhTrungThu.Services.TaiKhoan
 
         /// <summary>
         /// Cộng thưởng +1 điểm cho mỗi 10.000 đ thực trả khi đơn thanh toán QR thành công hoặc chuyển sang DA_GIAO / HOAN_TAT.
-        /// Đảm bảo idempotent qua cờ DaCongDiemThuong trong metadata đơn hàng.
+        /// Đảm bảo idempotent qua cột SQL DaCongDiemThuong trên bảng dbo.DonHang.
         /// </summary>
         public static async Task<int> CongDiemThuongDonHangAsync(
             CSDLBanhTrungThuContext db,
-            IDichVuCauHinhHeThong cauHinhHeThong,
             DonHang donHang)
         {
-            if (!donHang.MaNd.HasValue || string.Equals(donHang.TrangThaiDh, "DA_HUY", StringComparison.OrdinalIgnoreCase))
-            {
-                return 0;
-            }
-
-            var meta = cauHinhHeThong.LayMetadataDonHang(donHang.MaDh);
-            if (meta.DaCongDiemThuong)
+            if (!donHang.MaNd.HasValue
+                || string.Equals(donHang.TrangThaiDh, "DA_HUY", StringComparison.OrdinalIgnoreCase)
+                || donHang.DaCongDiemThuong)
             {
                 return 0;
             }
@@ -275,34 +275,25 @@ namespace WebBanhTrungThu.Services.TaiKhoan
                 nd.DiemTichLuy += diemThuong;
             }
 
+            donHang.DaCongDiemThuong = true;
+            await db.SaveChangesAsync();
+
             var (hangVipMoi, _, _, _) = await TinhThongTinHangVipAsync(db, nd.MaNd, nd.DiemTichLuy);
             nd.HangTv = hangVipMoi;
             await db.SaveChangesAsync();
-
-            cauHinhHeThong.CapNhatMetadataDonHang(donHang.MaDh, m =>
-            {
-                m.DaCongDiemThuong = true;
-                m.DiemThuongDaCong = diemThuong;
-            });
 
             return diemThuong;
         }
 
         /// <summary>
         /// Hoàn lại số điểm đã dùng (và thu hồi điểm thưởng nếu đã cộng trước đó) khi đơn hàng chuyển sang DA_HUY.
+        /// Đọc/ghi trực tiếp cột SQL SoDiemDaDung, DaCongDiemThuong, DaHoanDiemKhiHuy trên bảng dbo.DonHang.
         /// </summary>
         public static async Task<int> HoanDiemKhiHuyDonAsync(
             CSDLBanhTrungThuContext db,
-            IDichVuCauHinhHeThong cauHinhHeThong,
             DonHang donHang)
         {
-            if (!donHang.MaNd.HasValue)
-            {
-                return 0;
-            }
-
-            var meta = cauHinhHeThong.LayMetadataDonHang(donHang.MaDh);
-            if (meta.DaHoanDiemKhiHuy)
+            if (!donHang.MaNd.HasValue || donHang.DaHoanDiemKhiHuy)
             {
                 return 0;
             }
@@ -313,25 +304,29 @@ namespace WebBanhTrungThu.Services.TaiKhoan
                 return 0;
             }
 
-            int diemHoan = Math.Max(0, meta.DiemDaDung);
+            int diemHoan = Math.Max(0, donHang.SoDiemDaDung);
             if (diemHoan > 0)
             {
                 nd.DiemTichLuy += diemHoan;
             }
 
-            if (meta.DaCongDiemThuong && meta.DiemThuongDaCong > 0)
+            if (donHang.DaCongDiemThuong)
             {
-                nd.DiemTichLuy = Math.Max(0, nd.DiemTichLuy - meta.DiemThuongDaCong);
+                int diemThuongDaCong = donHang.TongThanhToanCuoi > 0m
+                    ? (int)(donHang.TongThanhToanCuoi / 10000m)
+                    : 0;
+                if (diemThuongDaCong > 0)
+                {
+                    nd.DiemTichLuy = Math.Max(0, nd.DiemTichLuy - diemThuongDaCong);
+                }
             }
+
+            donHang.DaHoanDiemKhiHuy = true;
+            await db.SaveChangesAsync();
 
             var (hangVipMoi, _, _, _) = await TinhThongTinHangVipAsync(db, nd.MaNd, nd.DiemTichLuy);
             nd.HangTv = hangVipMoi;
             await db.SaveChangesAsync();
-
-            cauHinhHeThong.CapNhatMetadataDonHang(donHang.MaDh, m =>
-            {
-                m.DaHoanDiemKhiHuy = true;
-            });
 
             return diemHoan;
         }
@@ -349,10 +344,13 @@ namespace WebBanhTrungThu.Services.TaiKhoan
         {
             if (string.IsNullOrWhiteSpace(tenNguoiNhan) || string.IsNullOrWhiteSpace(sdtNguoiNhan) || string.IsNullOrWhiteSpace(diaChiCuThe))
             {
-                return "⚠️ Vui lòng nhập đầy đủ Tên người nhận, Số điện thoại và Địa chỉ cụ thể!";
+                return "Vui lòng nhập đầy đủ Tên người nhận, Số điện thoại và Địa chỉ cụ thể!";
             }
 
-            if (laMacDinh)
+            bool chuaCoDiaChi = !await _db.SoDiaChis.AnyAsync(d => d.MaNd == maNd);
+            bool macDinhThucTe = laMacDinh || chuaCoDiaChi;
+
+            if (macDinhThucTe)
             {
                 var cacDiaChiCu = await _db.SoDiaChis.Where(d => d.MaNd == maNd && d.LaMacDinh).ToListAsync();
                 foreach (var dc in cacDiaChiCu)
@@ -371,23 +369,127 @@ namespace WebBanhTrungThu.Services.TaiKhoan
                 PhuongXa = ChuanHoaChuoi(phuongXa, "Phường Bến Nghé"),
                 DiaChiCuThe = diaChiCuThe.Trim(),
                 NhanDiaChi = ChuanHoaChuoi(nhanDiaChi, "Biếu Người Thân"),
-                LaMacDinh = laMacDinh
+                LaMacDinh = macDinhThucTe
             };
 
             _db.SoDiaChis.Add(dcMoi);
             await _db.SaveChangesAsync();
 
-            return $"📍 Đã thêm địa chỉ \"{dcMoi.NhanDiaChi} - {dcMoi.TenNguoiNhan}\" vào Sổ địa chỉ biếu tặng!";
+            return $"Đã thêm địa chỉ \"{dcMoi.NhanDiaChi} - {dcMoi.TenNguoiNhan}\" vào Sổ địa chỉ biếu tặng!";
+        }
+
+        public async Task<(bool ThanhCong, string ThongBao)> CapNhatDiaChiAsync(
+            int maNd,
+            int maDiaChi,
+            string? nhanGoiNho,
+            string? nguoiNhan,
+            string? sdtNhan,
+            string? diaChiChiTiet,
+            bool laMacDinh,
+            string? tinhThanh = null,
+            string? quanHuyen = null,
+            string? phuongXa = null)
+        {
+            if (string.IsNullOrWhiteSpace(nguoiNhan) || string.IsNullOrWhiteSpace(sdtNhan) || string.IsNullOrWhiteSpace(diaChiChiTiet))
+            {
+                return (false, "Vui lòng nhập đầy đủ Họ tên người nhận, Số điện thoại và Địa chỉ cụ thể!");
+            }
+
+            return await ThucThiTrongGiaoDichAsync(async () =>
+            {
+                var dc = await _db.SoDiaChis.FirstOrDefaultAsync(d => d.MaDc == maDiaChi && d.MaNd == maNd);
+                if (dc == null)
+                {
+                    return (false, "Không tìm thấy địa chỉ thuộc tài khoản của bạn!");
+                }
+
+                dc.NhanDiaChi = ChuanHoaChuoi(nhanGoiNho, "Biếu Người Thân");
+                dc.TenNguoiNhan = nguoiNhan.Trim();
+                dc.SdtnguoiNhan = sdtNhan.Trim();
+                dc.DiaChiCuThe = diaChiChiTiet.Trim();
+                if (!string.IsNullOrWhiteSpace(tinhThanh)) dc.TinhThanh = tinhThanh.Trim();
+                if (!string.IsNullOrWhiteSpace(quanHuyen)) dc.QuanHuyen = quanHuyen.Trim();
+                if (!string.IsNullOrWhiteSpace(phuongXa)) dc.PhuongXa = phuongXa.Trim();
+
+                if (laMacDinh)
+                {
+                    var cacDiaChiKhac = await _db.SoDiaChis
+                        .Where(d => d.MaNd == maNd && d.MaDc != maDiaChi && d.LaMacDinh)
+                        .ToListAsync();
+                    foreach (var item in cacDiaChiKhac)
+                    {
+                        item.LaMacDinh = false;
+                    }
+                    dc.LaMacDinh = true;
+                }
+                else if (dc.LaMacDinh)
+                {
+                    var diaChiThayThe = await _db.SoDiaChis
+                        .Where(d => d.MaNd == maNd && d.MaDc != maDiaChi)
+                        .OrderByDescending(d => d.MaDc)
+                        .FirstOrDefaultAsync();
+                    if (diaChiThayThe != null)
+                    {
+                        dc.LaMacDinh = false;
+                        diaChiThayThe.LaMacDinh = true;
+                    }
+                }
+
+                await _db.SaveChangesAsync();
+                return (true, $"Đã cập nhật địa chỉ \"{dc.NhanDiaChi} - {dc.TenNguoiNhan}\" thành công!");
+            });
+        }
+
+        public async Task<(bool ThanhCong, string ThongBao)> DatDiaChiMacDinhAsync(int maNd, int maDiaChi)
+        {
+            return await ThucThiTrongGiaoDichAsync(async () =>
+            {
+                var tatCaDiaChi = await _db.SoDiaChis
+                    .Where(d => d.MaNd == maNd)
+                    .ToListAsync();
+
+                var dcChon = tatCaDiaChi.FirstOrDefault(d => d.MaDc == maDiaChi);
+                if (dcChon == null)
+                {
+                    return (false, "Không tìm thấy địa chỉ thuộc tài khoản của bạn!");
+                }
+
+                foreach (var dc in tatCaDiaChi)
+                {
+                    dc.LaMacDinh = dc.MaDc == maDiaChi;
+                }
+
+                await _db.SaveChangesAsync();
+                return (true, $"Đã đặt \"{dcChon.NhanDiaChi ?? dcChon.TenNguoiNhan}\" làm địa chỉ mặc định!");
+            });
         }
 
         public async Task<string?> XoaDiaChiAsync(int maNd, int maDc)
         {
-            var dc = await _db.SoDiaChis.FirstOrDefaultAsync(d => d.MaDc == maDc && d.MaNd == maNd);
-            if (dc == null) return null;
+            return await ThucThiTrongGiaoDichAsync<string?>(async () =>
+            {
+                var dc = await _db.SoDiaChis.FirstOrDefaultAsync(d => d.MaDc == maDc && d.MaNd == maNd);
+                if (dc == null) return null;
 
-            _db.SoDiaChis.Remove(dc);
-            await _db.SaveChangesAsync();
-            return "🗑️ Đã xóa địa chỉ khỏi Sổ địa chỉ biếu tặng!";
+                bool laMacDinhCu = dc.LaMacDinh;
+                _db.SoDiaChis.Remove(dc);
+                await _db.SaveChangesAsync();
+
+                if (laMacDinhCu)
+                {
+                    var diaChiConLai = await _db.SoDiaChis
+                        .Where(d => d.MaNd == maNd)
+                        .OrderByDescending(d => d.MaDc)
+                        .FirstOrDefaultAsync();
+                    if (diaChiConLai != null)
+                    {
+                        diaChiConLai.LaMacDinh = true;
+                        await _db.SaveChangesAsync();
+                    }
+                }
+
+                return "Đã xóa địa chỉ khỏi Sổ địa chỉ biếu tặng!";
+            });
         }
 
         public async Task<string> DatLaiHopTuChonVaoGioAsync(int maNd, int maHopTc)

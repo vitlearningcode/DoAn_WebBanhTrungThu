@@ -72,6 +72,31 @@ public partial class DonHang
     [Column(TypeName = "decimal(18, 2)")]
     public decimal TongThanhToanCuoi { get; set; }
 
+    [Column("TienGiamHangVip", TypeName = "decimal(18, 0)")]
+    public decimal TienGiamHangVip { get; set; }
+
+    [Column("PhanTramGiamVip")]
+    public int PhanTramGiamVip { get; set; }
+
+    [Column("SoDiemDaDung")]
+    public int SoDiemDaDung { get; set; }
+
+    [Column("TienGiamDiemVip", TypeName = "decimal(18, 0)")]
+    public decimal TienGiamDiemVip { get; set; }
+
+    [Column("HanThanhToanQr", TypeName = "datetime")]
+    public DateTime? HanThanhToanQr { get; set; }
+
+    [Column("DaCongDiemThuong")]
+    public bool DaCongDiemThuong { get; set; }
+
+    [Column("DaHoanDiemKhiHuy")]
+    public bool DaHoanDiemKhiHuy { get; set; }
+
+    [Column("LyDoHuy")]
+    [StringLength(500)]
+    public string? LyDoHuy { get; set; }
+
     [Column("PhuongThucTT")]
     [StringLength(30)]
     [Unicode(false)]

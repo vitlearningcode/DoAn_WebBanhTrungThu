@@ -129,12 +129,25 @@
     background-color: #FFFFFF;
     margin-bottom: 8px;
     cursor: pointer;
-    transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.the-cua-hang-nhan.dang-chon,
 .the-cua-hang-nhan:has(input[type="radio"]:checked) {
     border-color: #111827;
     background-color: #F9FAFB;
+}
+
+.badge-san-hang-cua-hang {
+    display: inline-block;
+    background-color: #ECFDF5;
+    color: #065F46;
+    border: 1px solid #A7F3D0;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 /* 3 tùy chọn mở rộng dạng dòng tích chọn mảnh (mặc định đóng gọn) */
@@ -404,6 +417,54 @@
     background-color: #EAB308;
 }
 
+.btn-ap-dung-ma-vang-bitis.dang-ap-dung {
+    background-color: #ECFDF5;
+    color: #065F46;
+    border: 1px solid #6EE7B7;
+}
+
+.hop-thong-bao-voucher-loi {
+    background-color: #FFF7ED;
+    color: #C2410C;
+    border: 1px solid #FDBA74;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1.45;
+}
+
+.hop-thong-bao-voucher-ok {
+    background-color: #ECFDF5;
+    color: #065F46;
+    border: 1px solid #6EE7B7;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.btn-go-ma-voucher {
+    background-color: #FFFFFF;
+    color: #B91C1C;
+    border: 1px solid #FCA5A5;
+    border-radius: 5px;
+    padding: 2px 8px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.btn-go-ma-voucher:hover {
+    background-color: #FEF2F2;
+}
+
 /* =========================================================================
    TRANG CỔNG THANH TOÁN MOMO ĐỘC LẬP & ĐẶT HÀNG THÀNH CÔNG
    ========================================================================= */
@@ -590,11 +651,12 @@
 
 .khung-trang-qr-260 {
     position: relative;
-    width: 260px;
-    height: 260px;
+    width: 276px;
+    height: 276px;
     background-color: #FFFFFF;
+    border: 2px solid #FFFFFF;
     border-radius: 14px;
-    padding: 16px;
+    padding: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -602,8 +664,9 @@
 }
 
 .anh-qr-momo-chinh {
-    width: 224px;
-    height: 224px;
+    width: 240px;
+    height: 240px;
+    display: block;
     object-fit: contain;
 }
 
@@ -646,8 +709,8 @@
 
 .logo-momo-tam-qr {
     position: absolute;
-    width: 40px;
-    height: 40px;
+    width: 34px;
+    height: 34px;
     border-radius: 8px;
     background-color: #FFFFFF;
     padding: 3px;
@@ -663,9 +726,61 @@
     border-radius: 6px;
     background-color: #D82D8B;
     color: #FFFFFF;
-    font-size: 0.62rem;
+    font-size: 0.56rem;
     font-weight: 800;
     display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tab-chuyen-qr-momo {
+    display: inline-flex;
+    background-color: rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 4px;
+    gap: 4px;
+}
+
+.nut-tab-qr-momo {
+    border: none;
+    background: transparent;
+    color: #FFFFFF;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.nut-tab-qr-momo.active {
+    background-color: #FFFFFF;
+    color: #D82D8B;
+}
+
+.buoc-huong-dan-momo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    background-color: #FAFAFA;
+    font-size: 0.82rem;
+    color: #1F2937;
+}
+
+.so-buoc-momo {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 22px;
+    border-radius: 999px;
+    background-color: #FDF2F8;
+    color: #D82D8B;
+    border: 1px solid #FBCFE8;
+    font-size: 0.74rem;
+    font-weight: 800;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
 }
@@ -726,4 +841,99 @@
     border: 1.5px solid #E6D5B8;
     border-radius: 14px;
     padding: 16px;
+}
+
+.khung-trang-thanh-cong {
+    max-width: 720px;
+    margin: 28px auto;
+    padding-inline: 12px;
+}
+
+.khung-trang-thanh-cong.co-cot-phai {
+    max-width: 1120px;
+}
+
+.luoi-trang-thanh-cong {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+@media (min-width: 992px) {
+    .khung-trang-thanh-cong.co-cot-phai .luoi-trang-thanh-cong {
+        grid-template-columns: minmax(0, 1.15fr) minmax(380px, 1fr);
+        gap: 24px;
+    }
+}
+
+.bang-thong-tin-ck-momo {
+    background: #FDFBF7;
+    border: 1px solid #E6D5B8;
+    border-radius: 12px;
+    padding: 10px 12px;
+}
+
+.dong-thong-tin-ck-momo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid #EFE6D5;
+}
+
+.dong-thong-tin-ck-momo:first-child {
+    padding-top: 2px;
+}
+
+.dong-thong-tin-ck-momo:last-child {
+    border-bottom: none;
+    padding-bottom: 2px;
+}
+
+.nhan-ck-momo {
+    white-space: nowrap;
+    font-size: 0.84rem;
+    color: #6B7280;
+    flex-shrink: 0;
+}
+
+.gia-tri-va-nut-ck-momo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.ma-noi-dung-ck-badge {
+    background: #FEF2F2;
+    color: #991B1B;
+    border: 1px dashed #F87171;
+    border-radius: 6px;
+    padding: 2px 7px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.nut-sao-chep-ck {
+    background: #FEF3C7;
+    color: #92400E;
+    border: 1px solid #F59E0B;
+    border-radius: 999px;
+    padding: 2px 9px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: pointer;
+    line-height: 1.45;
+    transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nut-sao-chep-ck:hover {
+    background: #FDE68A;
 }

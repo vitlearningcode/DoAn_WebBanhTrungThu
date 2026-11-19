@@ -17,10 +17,15 @@ namespace WebBanhTrungThu.Services.QuanTri
     public class DichVuQuanTriDonHang : DichVuCoSo, IDichVuQuanTriDonHang
     {
         private readonly IDichVuCauHinhHeThong _cauHinhHeThong;
+        private readonly IDichVuThanhToan _dichVuThanhToan;
 
-        public DichVuQuanTriDonHang(CSDLBanhTrungThuContext db, IDichVuCauHinhHeThong cauHinhHeThong) : base(db)
+        public DichVuQuanTriDonHang(
+            CSDLBanhTrungThuContext db,
+            IDichVuCauHinhHeThong cauHinhHeThong,
+            IDichVuThanhToan dichVuThanhToan) : base(db)
         {
             _cauHinhHeThong = cauHinhHeThong;
+            _dichVuThanhToan = dichVuThanhToan;
         }
 
         public async Task<List<DonHang>> LayDanhSachDonHangLocAsync(
@@ -30,6 +35,8 @@ namespace WebBanhTrungThu.Services.QuanTri
             string? locPhuongThuc,
             string? locThoiGian)
         {
+            await _dichVuThanhToan.KiemTraVaHuyDonQrQuaHanAsync();
+
             var query = _db.DonHangs
                 .AsNoTracking()
                 .Include(d => d.DotGiaoHangDaDiems)
@@ -123,6 +130,8 @@ namespace WebBanhTrungThu.Services.QuanTri
 
         public async Task<DonHangThanhCongViewModel?> XayDungChiTietDonHangQrAsync(int id, string scheme, string host, bool asNoTracking = false)
         {
+            await _dichVuThanhToan.KiemTraVaHuyDonQrQuaHanAsync(id);
+
             IQueryable<DonHang> query = _db.DonHangs
                 .Include(d => d.DotGiaoHangDaDiems)
                 .Include(d => d.ChiTietDonHangs);
@@ -246,7 +255,7 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             await _db.SaveChangesAsync();
 
-            await DichVuHoiVien.CongDiemThuongDonHangAsync(_db, _cauHinhHeThong, donHang);
+            await DichVuHoiVien.CongDiemThuongDonHangAsync(_db, donHang);
 
             _cauHinhHeThong.CapNhatMetadataDonHang(donHang.MaDh, meta =>
             {
@@ -342,18 +351,23 @@ namespace WebBanhTrungThu.Services.QuanTri
                 donHang.TrangThaiTt = trangThaiTt.Trim().ToUpperInvariant();
             }
 
+            if (LaTrangThaiKhoaCung(donHang.TrangThaiDh) && !string.IsNullOrWhiteSpace(ghiChuDieuChinh) && string.IsNullOrWhiteSpace(donHang.LyDoHuy))
+            {
+                donHang.LyDoHuy = ghiChuDieuChinh.Trim();
+            }
+
             await _db.SaveChangesAsync();
 
             if (LaTrangThaiKhoaCung(donHang.TrangThaiDh))
             {
-                await DichVuHoiVien.HoanDiemKhiHuyDonAsync(_db, _cauHinhHeThong, donHang);
+                await DichVuHoiVien.HoanDiemKhiHuyDonAsync(_db, donHang);
             }
             else if (string.Equals(donHang.TrangThaiDh, "DA_GIAO", StringComparison.OrdinalIgnoreCase)
                   || string.Equals(donHang.TrangThaiDh, "HOAN_TAT", StringComparison.OrdinalIgnoreCase)
                   || string.Equals(donHang.TrangThaiTt, "DA_TT", StringComparison.OrdinalIgnoreCase)
                   || string.Equals(donHang.TrangThaiTt, "DA_THANH_TOAN", StringComparison.OrdinalIgnoreCase))
             {
-                await DichVuHoiVien.CongDiemThuongDonHangAsync(_db, _cauHinhHeThong, donHang);
+                await DichVuHoiVien.CongDiemThuongDonHangAsync(_db, donHang);
             }
 
             _cauHinhHeThong.CapNhatMetadataDonHang(donHang.MaDh, meta =>
@@ -458,6 +472,7 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             string trangThaiDich = laTraHangSauGiao ? "HOAN_TIEN_TRA_HANG" : "DA_HUY";
             donHang.TrangThaiDh = trangThaiDich;
+            donHang.LyDoHuy = lyDoLuu;
             foreach (var dot in donHang.DotGiaoHangDaDiems)
             {
                 dot.TrangThaiGiao = trangThaiDich;
@@ -597,7 +612,7 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             await _db.SaveChangesAsync();
 
-            await DichVuHoiVien.HoanDiemKhiHuyDonAsync(_db, _cauHinhHeThong, donHang);
+            await DichVuHoiVien.HoanDiemKhiHuyDonAsync(_db, donHang);
 
             _cauHinhHeThong.CapNhatMetadataDonHang(donHang.MaDh, meta =>
             {

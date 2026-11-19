@@ -134,9 +134,9 @@ async function datHangSiB2BNgay() {
 
     if (isNaN(soHop) || soHop < 10) {
         if (typeof hienThiThongBaoGioHang === "function") {
-            hienThiThongBaoGioHang("Đơn sỉ Doanh nghiệp (B2B) áp dụng từ tối thiểu 10 hộp trở lên!", false);
+            hienThiThongBaoGioHang("Ưu đãi chiết khấu số lượng lớn áp dụng từ tối thiểu 10 hộp trở lên!", false);
         } else {
-            alert("Đơn sỉ Doanh nghiệp (B2B) áp dụng từ tối thiểu 10 hộp trở lên!");
+            alert("Ưu đãi chiết khấu số lượng lớn áp dụng từ tối thiểu 10 hộp trở lên!");
         }
         txtSoHop?.focus();
         return;
@@ -181,9 +181,9 @@ async function datHangSiB2BNgay() {
         }
     } catch (err) {
         if (typeof hienThiThongBaoGioHang === "function") {
-            hienThiThongBaoGioHang("Lỗi kết nối máy chủ khi tạo giỏ hàng sỉ B2B!", false);
+            hienThiThongBaoGioHang("Lỗi kết nối máy chủ khi tạo giỏ hàng số lượng lớn!", false);
         } else {
-            alert("Lỗi kết nối máy chủ khi tạo giỏ hàng sỉ B2B!");
+            alert("Lỗi kết nối máy chủ khi tạo giỏ hàng số lượng lớn!");
         }
     } finally {
         if (btn) {

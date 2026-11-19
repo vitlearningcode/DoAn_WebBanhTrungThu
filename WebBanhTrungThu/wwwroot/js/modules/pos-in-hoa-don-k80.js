@@ -443,7 +443,7 @@
           </table>
           <div class="mt-2" style="font-size: 11.5px;">
             <div class="d-flex justify-content-between"><span>Tổng tiền hàng:</span><strong class="so-tien" id="rcpTongTienHang">0 đ</strong></div>
-            <div class="d-flex justify-content-between" id="rcpRowCkB2B" style="display:none;"><span>Chiết khấu sỉ B2B:</span><strong class="so-tien" id="rcpTienCkB2B">-0 đ</strong></div>
+            <div class="d-flex justify-content-between" id="rcpRowCkB2B" style="display:none;"><span>Chiết khấu số lượng lớn:</span><strong class="so-tien" id="rcpTienCkB2B">-0 đ</strong></div>
             <div class="d-flex justify-content-between" id="rcpRowVoucher" style="display:none;"><span>Chiết khấu / Voucher:</span><strong class="so-tien" id="rcpTienVoucher">-0 đ</strong></div>
             <div class="d-flex justify-content-between" id="rcpRowShip" style="display:none;"><span>Phí giao hàng:</span><strong class="so-tien" id="rcpPhiPhuThu">0 đ</strong></div>
             <div class="duong-ke-net-dut"></div>

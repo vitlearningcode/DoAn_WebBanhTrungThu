@@ -1,3 +1,5 @@
+using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Controllers.CoSo;
@@ -16,10 +18,18 @@ namespace WebBanhTrungThu.Controllers
     public class ThanhToanController : ControllerKhachHangCoSo
     {
         private readonly IDichVuThanhToan _dichVuThanhToan;
+        private readonly IDichVuKhuyenMaiGioHang _dichVuKhuyenMai;
+        private readonly IDichVuBaoMatCaptcha _dichVuBaoMatCaptcha;
 
-        public ThanhToanController(CSDLBanhTrungThuContext db, IDichVuThanhToan dichVuThanhToan) : base(db)
+        public ThanhToanController(
+            CSDLBanhTrungThuContext db,
+            IDichVuThanhToan dichVuThanhToan,
+            IDichVuKhuyenMaiGioHang dichVuKhuyenMai,
+            IDichVuBaoMatCaptcha dichVuBaoMatCaptcha) : base(db)
         {
             _dichVuThanhToan = dichVuThanhToan;
+            _dichVuKhuyenMai = dichVuKhuyenMai;
+            _dichVuBaoMatCaptcha = dichVuBaoMatCaptcha;
         }
 
         private async Task<GioHang?> LayGioHangHienTaiAsync()
@@ -43,10 +53,21 @@ namespace WebBanhTrungThu.Controllers
             int? maNd = ThongTinPhienHelper.LayMaNguoiDung(HttpContext);
             string? maPhienKvl = ThongTinPhienHelper.LayMaPhienKVL(HttpContext);
 
+            await _dichVuKhuyenMai.DamBaoMaKhuyenMaiMauConHanAsync();
+
             var chiPhi = await _dichVuThanhToan.TinhToanChiPhiDonHangAsync(
                 gioHang: gioHang,
                 maNd: maNd,
                 luuCapNhatGiaGioHang: true);
+
+            DateTime bayGio = DateTime.Now;
+            var dsVoucherGoiY = await _db.MaKhuyenMais
+                .AsNoTracking()
+                .Where(k => k.NgayBatDau <= bayGio && k.NgayKetThuc >= bayGio && k.SldaDung < k.SltoiDa)
+                .OrderBy(k => k.DonToiThieu)
+                .ThenByDescending(k => k.GiaTriGiam)
+                .Take(4)
+                .ToListAsync();
 
             var ketQuaKho = await _dichVuThanhToan.KiemTraTonKhoGioHangAsync(gioHang);
             if (!ketQuaKho.HopLe && !string.IsNullOrWhiteSpace(ketQuaKho.TenSanPhamThieu))
@@ -68,6 +89,7 @@ namespace WebBanhTrungThu.Controllers
                 TienGiamVoucher = chiPhi.TienGiamVoucher,
                 CodeKmDangDung = chiPhi.CodeKmDangDung,
                 ThongTinVoucherGoiY = chiPhi.ThongTinVoucherGoiY,
+                DanhSachVoucherGoiY = dsVoucherGoiY,
                 DanhSachCanhBaoTonKho = ketQuaKho.DanhSachCanhBao,
                 DiemTichLuy = chiPhi.DiemTichLuyHienCo,
                 HangTv = chiPhi.HangTv,
@@ -96,9 +118,27 @@ namespace WebBanhTrungThu.Controllers
         }
 
         // =========================================================================
-        // 2. SINH MÃ CAPTCHA HÌNH ẢNH SVG & XÁC THỰC CAPTCHA + KIỂM TRA KHO FEFO
+        // 2. SINH MÃ CAPTCHA HÌNH ẢNH SVG, VOUCHER CHECKOUT & XÁC THỰC KHO FEFO
         // =========================================================================
         [HttpGet]
+        [AllowAnonymous]
+        public IActionResult AnhCaptcha()
+        {
+            string svg = _dichVuThanhToan.TaoChuoiSvgCaptchaThuan(out string maCaptcha);
+
+            HttpContext.Session.SetString("CaptchaThanhToan", maCaptcha);
+            HttpContext.Session.SetString("MaCaptchaThanhToan", maCaptcha);
+            HttpContext.Session.SetString("DaXacThucCaptcha", "false");
+
+            Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
+            Response.Headers.Pragma = "no-cache";
+            Response.Headers.Expires = "0";
+
+            return File(Encoding.UTF8.GetBytes(svg), "image/svg+xml; charset=utf-8");
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
         public IActionResult LayMaCaptchaMoi()
         {
             string anhSvgBase64 = _dichVuThanhToan.TaoAnhSvgCaptcha(out string maCaptcha);
@@ -116,11 +156,45 @@ namespace WebBanhTrungThu.Controllers
         }
 
         [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> ApDungMaKhuyenMai([FromBody] ApDungVoucherRequest? req, [FromQuery] string? codeKm)
+        {
+            var gioHang = await LayGioHangHienTaiAsync();
+            if (gioHang == null || !gioHang.ChiTietGioHangs.Any())
+            {
+                return Json(new { thanhCong = false, thongBao = "Giỏ quà đang trống, vui lòng chọn bánh trước khi áp mã!" });
+            }
+
+            int? maNd = ThongTinPhienHelper.LayMaNguoiDung(HttpContext);
+            var ketQua = await _dichVuKhuyenMai.ApDungVoucherChoGioHangAsync(gioHang, maNd, req, codeKm);
+            return Json(ketQua);
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        public async Task<IActionResult> GoMaKhuyenMai()
+        {
+            var gioHang = await LayGioHangHienTaiAsync();
+            if (gioHang != null && !string.IsNullOrWhiteSpace(gioHang.CodeKmdangApDung))
+            {
+                gioHang.CodeKmdangApDung = null;
+                gioHang.NgayCapNhat = DateTime.Now;
+                await _db.SaveChangesAsync();
+            }
+
+            return Json(new
+            {
+                thanhCong = true,
+                thongBao = "Đã gỡ mã khuyến mãi.",
+                codeKmDangDung = (string?)null,
+                tienGiamVoucher = 0m
+            });
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
         public async Task<IActionResult> XacThucCaptchaVaKiemTraKho([FromBody] XacThucCaptchaMoRongRequest? req, string? maCaptchaNhap = null)
         {
-            string? maTrongSession = HttpContext.Session.GetString("CaptchaThanhToan")
-                                  ?? HttpContext.Session.GetString("MaCaptchaThanhToan");
-
             string maKhachNhap = (!string.IsNullOrWhiteSpace(maCaptchaNhap)
                 ? maCaptchaNhap
                 : (!string.IsNullOrWhiteSpace(req?.MaCaptchaNhap)
@@ -129,14 +203,9 @@ namespace WebBanhTrungThu.Controllers
                         ? req.MaCaptcha
                         : (Request.Form.ContainsKey("maCaptchaNhap") ? Request.Form["maCaptchaNhap"].FirstOrDefault() : null))))?.Trim() ?? string.Empty;
 
-            if (string.IsNullOrWhiteSpace(maKhachNhap)
-                || string.IsNullOrWhiteSpace(maTrongSession)
-                || !string.Equals(maKhachNhap, maTrongSession, StringComparison.OrdinalIgnoreCase))
+            if (!_dichVuBaoMatCaptcha.KiemTraCaptcha(HttpContext.Session, maKhachNhap))
             {
-                string anhMoi = _dichVuThanhToan.TaoAnhSvgCaptcha(out string maMoi);
-                HttpContext.Session.SetString("CaptchaThanhToan", maMoi);
-                HttpContext.Session.SetString("MaCaptchaThanhToan", maMoi);
-                HttpContext.Session.SetString("DaXacThucCaptcha", "false");
+                string anhMoi = _dichVuBaoMatCaptcha.CapMoiCaptchaVaoSession(HttpContext.Session);
 
                 return Json(new
                 {
@@ -193,24 +262,23 @@ namespace WebBanhTrungThu.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
-            string? maTrongSession = HttpContext.Session.GetString("CaptchaThanhToan")
-                                  ?? HttpContext.Session.GetString("MaCaptchaThanhToan");
             string maNhap = (!string.IsNullOrWhiteSpace(maCaptchaNhap)
                 ? maCaptchaNhap
                 : (!string.IsNullOrWhiteSpace(MaCaptcha)
                     ? MaCaptcha
                     : (Request.Form["maCaptchaNhap"].FirstOrDefault() ?? Request.Form["MaCaptcha"].FirstOrDefault() ?? string.Empty))).Trim();
 
-            if (string.IsNullOrWhiteSpace(maNhap)
-                || string.IsNullOrWhiteSpace(maTrongSession)
-                || !string.Equals(maNhap, maTrongSession, StringComparison.OrdinalIgnoreCase))
+            if (!_dichVuBaoMatCaptcha.KiemTraCaptcha(HttpContext.Session, maNhap))
             {
-                _dichVuThanhToan.TaoAnhSvgCaptcha(out string maMoi);
-                HttpContext.Session.SetString("CaptchaThanhToan", maMoi);
-                HttpContext.Session.SetString("MaCaptchaThanhToan", maMoi);
-                HttpContext.Session.SetString("DaXacThucCaptcha", "false");
+                _dichVuBaoMatCaptcha.CapMoiCaptchaVaoSession(HttpContext.Session);
+                TempData["LoiThanhToan"] = "Mã xác thực Captcha không chính xác hoặc chưa được nhập. Vui lòng nhập lại mã hiển thị trong hình!";
+                return RedirectToAction(nameof(Index));
+            }
 
-                TempData["LoiThanhToan"] = "Mã xác thực Captcha không chính xác. Vui lòng nhập lại mã hiển thị trong hình!";
+            if (string.IsNullOrWhiteSpace(req.HoTenNguoiMua) || string.IsNullOrWhiteSpace(req.SdtNguoiMua))
+            {
+                _dichVuBaoMatCaptcha.CapMoiCaptchaVaoSession(HttpContext.Session);
+                TempData["LoiThanhToan"] = "Vui lòng nhập đầy đủ Họ tên và Số điện thoại người mua!";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -225,6 +293,13 @@ namespace WebBanhTrungThu.Controllers
                 ? req.TocDoGiaoHang
                 : (Request.Form["TocDoGiaoHang"].FirstOrDefault() ?? "GIAO_TIEU_CHUAN");
 
+            bool suDungDiem = req.SuDungDiemTichLuy
+                || req.DungDiemTichLuy
+                || string.Equals(Request.Form["SuDungDiemTichLuy"].FirstOrDefault(), "true", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Request.Form["DungDiemTichLuy"].FirstOrDefault(), "true", StringComparison.OrdinalIgnoreCase);
+            req.SuDungDiemTichLuy = suDungDiem;
+            req.DungDiemTichLuy = suDungDiem;
+
             var ketQuaDat = await _dichVuThanhToan.XuLyDatHangAsync(
                 gioHang: gioHang,
                 req: req,
@@ -235,7 +310,10 @@ namespace WebBanhTrungThu.Controllers
 
             if (!ketQuaDat.ThanhCong || ketQuaDat.DonHangDaTao == null)
             {
-                TempData["TenBanhHetHang"] = ketQuaDat.TenSanPhamHetHang ?? "Bánh Trung Thu";
+                if (!string.IsNullOrWhiteSpace(ketQuaDat.TenSanPhamHetHang))
+                {
+                    TempData["TenBanhHetHang"] = ketQuaDat.TenSanPhamHetHang;
+                }
                 TempData["LoiThanhToan"] = ketQuaDat.ThongBaoLoi;
                 return RedirectToAction(nameof(Index));
             }
@@ -266,7 +344,7 @@ namespace WebBanhTrungThu.Controllers
 
             var (trangThaiDieuHuong, vm) = await _dichVuThanhToan.XayDungDuLieuCongMoMoAsync(maTraCuu);
 
-            if (trangThaiDieuHuong == "DA_THANH_TOAN")
+            if (trangThaiDieuHuong == "DA_THANH_TOAN" || trangThaiDieuHuong == "DA_HUY_HET_HAN")
             {
                 return RedirectToAction("ThanhCong", new { id = maTraCuu });
             }
@@ -325,7 +403,7 @@ namespace WebBanhTrungThu.Controllers
                 trangThaiTt = donHang.TrangThaiTt,
                 trangThaiDh = donHang.TrangThaiDh,
                 daThanhToan = donHang.TrangThaiTt == "DA_THANH_TOAN" || donHang.TrangThaiTt == "DA_TT",
-                daHetHan = donHang.TrangThaiTt == "HET_HAN_15P" || donHang.TrangThaiDh == "DA_HUY",
+                daHetHan = donHang.TrangThaiTt == "HET_HAN_HUY" || donHang.TrangThaiTt == "HET_HAN_15P" || donHang.TrangThaiDh == "DA_HUY",
                 soGiayConLai
             });
         }
@@ -340,6 +418,7 @@ namespace WebBanhTrungThu.Controllers
 
             var donHang = await _db.DonHangs
                 .Include(d => d.ChiTietDonHangs)
+                .Include(d => d.DotGiaoHangDaDiems)
                 .FirstOrDefaultAsync(d => d.MaTraCuuDh == maTraCuu.Trim());
 
             if (donHang == null)
@@ -357,14 +436,29 @@ namespace WebBanhTrungThu.Controllers
                 });
             }
 
-            await _dichVuThanhToan.HoanTraTonKhoRollbackAsync(donHang);
+            DateTime hanTt = donHang.HanThanhToanQr ?? donHang.NgayDat.AddMinutes(15);
+            if (DateTime.Now < hanTt.AddSeconds(-2) && donHang.TrangThaiDh != "DA_HUY")
+            {
+                return Json(new
+                {
+                    thanhCong = false,
+                    daThanhToan = false,
+                    thongBao = "Đơn hàng vẫn đang trong thời hạn thanh toán 15 phút."
+                });
+            }
+
+            await _dichVuThanhToan.KiemTraVaHuyDonQrQuaHanAsync(donHang.MaDh);
+            if (donHang.TrangThaiDh != "DA_HUY")
+            {
+                await _dichVuThanhToan.HoanTraTonKhoRollbackAsync(donHang);
+            }
 
             return Json(new
             {
                 thanhCong = true,
                 trangThaiTt = donHang.TrangThaiTt,
                 trangThaiDh = donHang.TrangThaiDh,
-                thongBao = "Đơn hàng đã hết hạn thanh toán 15 phút. Hệ thống đã hoàn trả sản phẩm về kho"
+                thongBao = "Đơn hàng đã tự động hủy do hết hạn thanh toán 15 phút. Sản phẩm và điểm đã dùng đã được hoàn trả."
             });
         }
 
@@ -429,6 +523,7 @@ namespace WebBanhTrungThu.ViewModels
         public string TenChuTaiKhoan { get; set; } = "LE MINH DUC";
         public string AnhQrThanhToanBase64 { get; set; } = string.Empty;
         public string UrlVietQr { get; set; } = string.Empty;
+        public bool CoCauHinhVietQrNganHang => !string.IsNullOrWhiteSpace(UrlVietQr);
         public Services.CauHinhThanhToanQr CauHinhQr { get; set; } = new();
         public DateTime HanThanhToan { get; set; }
         public int SoGiayConLai { get; set; }

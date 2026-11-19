@@ -2,7 +2,7 @@
 @{
     Layout = null;
     var dh = Model.DonHang;
-    decimal tongGiamGia = dh.TienChietKhauB2b + dh.TienGiamVoucher;
+    decimal tongGiamGia = dh.TienChietKhauB2b + dh.TienGiamHangVip + dh.TienGiamVoucher + dh.TienGiamDiemVip;
     decimal tongPhiShipVaLogo = dh.TongPhiVanChuyen + dh.PhiInLogo;
 
     var dotCoQrDauTien = Model.DanhSachDotGiaoQr.FirstOrDefault(x => x.DotGiao.CoKemThiepQr && !string.IsNullOrWhiteSpace(x.AnhQrBase64));
@@ -151,7 +151,7 @@
             @if (laDonB2BVat)
             {
                 <div class="mt-1 p-1 rounded" style="border: 1px solid #111827; background: #FFFBEB;">
-                    <div class="fw-bold">[ĐƠN B2B • XUẤT VAT]</div>
+                    <div class="fw-bold">[ĐƠN SỈ • XUẤT VAT]</div>
                     @if (!string.IsNullOrWhiteSpace(tenCongTyGoc))
                     {
                         <div>Doanh nghiệp: <strong>@tenCongTyGoc</strong></div>

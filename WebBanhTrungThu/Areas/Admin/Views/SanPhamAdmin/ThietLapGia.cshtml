@@ -1,12 +1,12 @@
 @model WebBanhTrungThu.ViewModels.ThietLapGiaAdminViewModel
 @{
-    ViewData["Title"] = "Thiết lập giá - Vỏ Hộp, Chiết Khấu B2B & Combo";
+    ViewData["Title"] = "Thiết lập giá - Vỏ Hộp, Chiết Khấu Số Lượng Lớn & Combo";
 }
 
 <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
     <div>
         <h4 class="fw-bold mb-0" style="color: #111827; font-size: 20px;">Thiết lập bảng giá</h4>
-        <span class="text-muted small">Quản lý đầy đủ Thêm / Sửa / Xóa cho mẫu vỏ hộp, thang chiết khấu B2B và bảng giá Combo</span>
+        <span class="text-muted small">Quản lý đầy đủ Thêm / Sửa / Xóa cho mẫu vỏ hộp, thang chiết khấu số lượng lớn và bảng giá Combo</span>
     </div>
     <div class="d-flex align-items-center gap-2">
         <a href="/Admin/SanPhamAdmin/KiemKho" class="btn-kv-outline">
@@ -107,23 +107,23 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- BẢNG 2: THANG CHIẾT KHẤU SỈ DOANH NGHIỆP B2B (BangChietKhauSiB2b)         -->
+    <!-- BẢNG 2: THANG CHIẾT KHẤU SỐ LƯỢNG LỚN (BangChietKhauSiB2b)                -->
     <!-- ========================================================================= -->
     <div class="col-12">
         <div class="kv-card overflow-hidden">
             <div class="px-3 py-2 border-bottom bg-light d-flex justify-content-between align-items-center">
                 <div class="fw-bold text-dark">
-                    <i class="bi bi-building-check text-primary me-1"></i> 2. Bảng Thang Chiết Khấu Sỉ Doanh Nghiệp B2B &amp; Phí Khuôn Logo (@Model.BangChietKhauB2B.Count mốc)
+                    <i class="bi bi-building-check text-primary me-1"></i> 2. Bảng Thang Chiết Khấu Số Lượng Lớn &amp; Phí Khuôn Logo (@Model.BangChietKhauB2B.Count mốc)
                 </div>
                 <button type="button" class="btn-kv-green py-1 px-3" data-bs-toggle="modal" data-bs-target="#modalThemMocB2BMoi">
-                    <i class="bi bi-plus-lg"></i> Thêm mốc chiết khấu B2B
+                    <i class="bi bi-plus-lg"></i> Thêm mốc chiết khấu
                 </button>
             </div>
             <div class="table-responsive">
                 <table class="kv-table align-middle mb-0">
                     <thead>
                         <tr>
-                            <th>Tên mốc chiết khấu B2B</th>
+                            <th>Tên mốc chiết khấu</th>
                             <th class="text-center" style="width: 125px;">SL hộp tối thiểu</th>
                             <th class="text-center" style="width: 125px;">SL hộp tối đa</th>
                             <th class="text-center" style="width: 135px;">% Chiết khấu sỉ</th>
@@ -180,10 +180,10 @@
                                         </form>
 
                                         <form asp-area="Admin" asp-controller="SanPhamAdmin" asp-action="XoaMocB2B" method="post" class="d-inline"
-                                              onsubmit="return confirm('Xác nhận xóa mốc chiết khấu B2B [@moc.TenMocB2b]?');">
+                                              onsubmit="return confirm('Xác nhận xóa mốc chiết khấu [@moc.TenMocB2b]?');">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="maMocCk" value="@moc.MaMocCk" />
-                                            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 12px;" title="Xóa mốc B2B">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2" style="font-size: 12px;" title="Xóa mốc chiết khấu">
                                                 <i class="bi bi-trash"></i> Xóa
                                             </button>
                                         </form>
@@ -360,7 +360,7 @@
 </div>
 
 <!-- ========================================================================= -->
-<!-- MODAL 2: + THÊM MỐC CHIẾT KHẤU SỈ B2B MỚI                                 -->
+<!-- MODAL 2: + THÊM MỐC CHIẾT KHẤU SỐ LƯỢNG LỚN MỚI                           -->
 <!-- ========================================================================= -->
 <div class="modal fade" id="modalThemMocB2BMoi" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -369,13 +369,13 @@
                 @Html.AntiForgeryToken()
                 <div class="modal-header py-2 px-3" style="background: #F4F6F8; border-bottom: 1px solid #E5E7EB;">
                     <h6 class="modal-title fw-bold text-dark mb-0">
-                        <i class="bi bi-building-check text-primary me-1"></i> Thêm mốc chiết khấu sỉ B2B
+                        <i class="bi bi-building-check text-primary me-1"></i> Thêm mốc chiết khấu số lượng lớn
                     </h6>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-3">
                     <div class="mb-2">
-                        <label class="form-label small fw-bold mb-1">Tên mốc chiết khấu B2B <span class="text-danger">*</span></label>
+                        <label class="form-label small fw-bold mb-1">Tên mốc chiết khấu <span class="text-danger">*</span></label>
                         <input type="text" name="tenMocB2b" class="form-control form-control-sm" required placeholder="VD: Mốc Kim Cương Doanh Nghiệp (Từ 300 hộp)" />
                     </div>
                     <div class="row g-2 mb-2">
@@ -410,7 +410,7 @@
                 </div>
                 <div class="modal-footer py-2 px-3" style="background: #F9FAFB;">
                     <button type="button" class="btn-kv-outline" data-bs-dismiss="modal">Bỏ qua</button>
-                    <button type="submit" class="btn-kv-green"><i class="bi bi-check2"></i> Lưu mốc B2B</button>
+                    <button type="submit" class="btn-kv-green"><i class="bi bi-check2"></i> Lưu mốc chiết khấu</button>
                 </div>
             </form>
         </div>

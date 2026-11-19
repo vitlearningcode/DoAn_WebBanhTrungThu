@@ -53,7 +53,7 @@
     window.chuyenDoiHinhThucNhanHang = function () {
         const laNhanTaiCuaHang = document.getElementById("radNhanTaiCuaHang")?.checked === true;
         const khungDiaChiGiao = document.getElementById("khungDiaChiGiaoTanNoi");
-        const khungCuaHang = document.getElementById("khungNhanTaiCuaHang");
+        const khungCuaHang = document.getElementById("khung-chon-cua-hang") || document.getElementById("khungNhanTaiCuaHang");
 
         document.getElementById("lblChonGiaoTanNoi")?.classList.toggle("dang-chon", !laNhanTaiCuaHang);
         document.getElementById("lblChonNhanTaiCuaHang")?.classList.toggle("dang-chon", laNhanTaiCuaHang);
@@ -82,13 +82,22 @@
     window.dongBoDiaChiGiaoChinh = function () {
         const laNhanTaiCuaHang = document.getElementById("radNhanTaiCuaHang")?.checked === true;
         const inputDiaChiServer = document.getElementById("dot0_DiaChi");
+        const dot0Tinh = document.getElementById("dot0_TinhThanhPho");
         if (!inputDiaChiServer) return;
+
+        document.querySelectorAll("#khung-chon-cua-hang .the-cua-hang-nhan, #khungNhanTaiCuaHang .the-cua-hang-nhan").forEach(the => {
+            const rad = the.querySelector('input[type="radio"]');
+            the.classList.toggle("dang-chon", Boolean(rad && rad.checked));
+        });
 
         if (laNhanTaiCuaHang) {
             const radCuaHang = document.querySelector('input[name="CuaHangNhan"]:checked');
             inputDiaChiServer.value = radCuaHang
                 ? radCuaHang.value
-                : "[Nhận tại cửa hàng] Nguyệt Cát – Quận 1, Nguyễn Huệ (128 Nguyễn Huệ, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh - 0909 123 456)";
+                : "[Nhận tại cửa hàng] Nguyệt Cát – Chi nhánh TP. Long Xuyên (Số 18 Đường Hà Hoàng Hổ, Phường Mỹ Xuyên, TP. Long Xuyên, An Giang)";
+            if (dot0Tinh) {
+                dot0Tinh.value = radCuaHang?.dataset?.tinhthanh || "An Giang";
+            }
         } else {
             const soNha = document.getElementById("txtDiaChiSoNha")?.value.trim() || "";
             const phuongQuan = document.getElementById("txtPhuongXaQuanHuyen")?.value.trim() || "";
@@ -96,6 +105,9 @@
 
             const cacPhan = [soNha, phuongQuan, tinhThanh].filter(p => p.length > 0);
             inputDiaChiServer.value = soNha.length > 0 ? cacPhan.join(", ") : "";
+            if (dot0Tinh && tinhThanh) {
+                dot0Tinh.value = tinhThanh;
+            }
         }
     };
 

@@ -226,88 +226,209 @@ namespace WebBanhTrungThu.Services.ThanhToan
             return danhSachVoHopDaTru;
         }
 
+        private async Task HoanNhapLoFefoAsync(int maBanh, int soLuongHoan, int? maLoUuTien = null)
+        {
+            if (soLuongHoan <= 0) return;
+
+            var banh = await _context.SanPhamBanhs.FirstOrDefaultAsync(b => b.MaBanh == maBanh);
+            if (banh != null)
+            {
+                banh.TongTonKho += soLuongHoan;
+            }
+
+            LoSanXuatBanh? lo = null;
+            if (maLoUuTien.HasValue)
+            {
+                lo = await _context.LoSanXuatBanhs.FirstOrDefaultAsync(l => l.MaLo == maLoUuTien.Value);
+            }
+
+            lo ??= await _context.LoSanXuatBanhs
+                .Where(l => l.MaBanh == maBanh && l.TrangThaiLo != "HET_HAN")
+                .OrderByDescending(l => l.HanSuDung)
+                .FirstOrDefaultAsync();
+
+            lo ??= await _context.LoSanXuatBanhs
+                .Where(l => l.MaBanh == maBanh)
+                .OrderByDescending(l => l.HanSuDung)
+                .FirstOrDefaultAsync();
+
+            if (lo != null)
+            {
+                lo.SlconLai += soLuongHoan;
+            }
+        }
+
+        /// <summary>
+        /// Hoàn trả toàn bộ tồn kho bánh theo lô FEFO và vỏ hộp cho 3 loại sản phẩm (Bánh lẻ, Combo, Hộp tự chọn)
+        /// vào DbContext hiện tại mà không tự mở Transaction hay gọi SaveChangesAsync.
+        /// </summary>
+        public async Task HoanTraTonKhoTheoDonAsync(DonHang donHang)
+        {
+            var meta = _kiotMeta.LayMetadataDonHang(donHang.MaDh);
+            if (meta.DaHoanKhoDoHetHan)
+            {
+                return;
+            }
+
+            if (meta.DanhSachLoDaTru != null && meta.DanhSachLoDaTru.Any())
+            {
+                foreach (var nhatKyLo in meta.DanhSachLoDaTru)
+                {
+                    await HoanNhapLoFefoAsync(nhatKyLo.MaBanh, nhatKyLo.SoLuongDaTru, nhatKyLo.MaLo);
+                }
+
+                if (meta.DanhSachVoHopDaTru != null && meta.DanhSachVoHopDaTru.Any())
+                {
+                    foreach (var nhatKyVo in meta.DanhSachVoHopDaTru)
+                    {
+                        var vo = await _context.MauVoHops.FirstOrDefaultAsync(v => v.MaVh == nhatKyVo.MaVh);
+                        if (vo != null)
+                        {
+                            vo.SltonKhoVo += nhatKyVo.SoLuongDaTru;
+                        }
+                    }
+                }
+                else
+                {
+                    var chiTietsVo = donHang.ChiTietDonHangs != null && donHang.ChiTietDonHangs.Any()
+                        ? donHang.ChiTietDonHangs.ToList()
+                        : await _context.ChiTietDonHangs.Where(c => c.MaDh == donHang.MaDh).ToListAsync();
+
+                    foreach (var ct in chiTietsVo)
+                    {
+                        if (ct.LoaiSanPham == 2 && ct.MaCb.HasValue)
+                        {
+                            var maVh = await _context.ComboMauCoSans.AsNoTracking()
+                                .Where(c => c.MaCb == ct.MaCb.Value)
+                                .Select(c => (int?)c.MaVh)
+                                .FirstOrDefaultAsync();
+                            if (maVh.HasValue)
+                            {
+                                var vo = await _context.MauVoHops.FirstOrDefaultAsync(v => v.MaVh == maVh.Value);
+                                if (vo != null) vo.SltonKhoVo += ct.SoLuong;
+                            }
+                        }
+                        else if (ct.LoaiSanPham == 3 && ct.MaHopTc.HasValue)
+                        {
+                            var maVh = await _context.HopQuaTuChons.AsNoTracking()
+                                .Where(h => h.MaHopTc == ct.MaHopTc.Value)
+                                .Select(h => (int?)h.MaVh)
+                                .FirstOrDefaultAsync();
+                            if (maVh.HasValue)
+                            {
+                                var vo = await _context.MauVoHops.FirstOrDefaultAsync(v => v.MaVh == maVh.Value);
+                                if (vo != null) vo.SltonKhoVo += ct.SoLuong;
+                            }
+                        }
+                    }
+                }
+                return;
+            }
+
+            var chiTiets = donHang.ChiTietDonHangs != null && donHang.ChiTietDonHangs.Any()
+                ? donHang.ChiTietDonHangs.ToList()
+                : await _context.ChiTietDonHangs.Where(c => c.MaDh == donHang.MaDh).ToListAsync();
+
+            foreach (var ct in chiTiets)
+            {
+                if (ct.LoaiSanPham == 1 && ct.MaBanh.HasValue)
+                {
+                    await HoanNhapLoFefoAsync(ct.MaBanh.Value, ct.SoLuong);
+                }
+                else if (ct.LoaiSanPham == 2 && ct.MaCb.HasValue)
+                {
+                    var combo = await _context.ComboMauCoSans
+                        .Include(c => c.ChiTietComboMaus)
+                        .FirstOrDefaultAsync(c => c.MaCb == ct.MaCb.Value);
+
+                    if (combo != null)
+                    {
+                        var vo = await _context.MauVoHops.FirstOrDefaultAsync(v => v.MaVh == combo.MaVh);
+                        if (vo != null)
+                        {
+                            vo.SltonKhoVo += ct.SoLuong;
+                        }
+                        foreach (var ctcb in combo.ChiTietComboMaus)
+                        {
+                            await HoanNhapLoFefoAsync(ctcb.MaBanh, ctcb.SoLuong * ct.SoLuong);
+                        }
+                    }
+                }
+                else if (ct.LoaiSanPham == 3 && ct.MaHopTc.HasValue)
+                {
+                    var hopTc = await _context.HopQuaTuChons
+                        .Include(h => h.ChiTietHopTuChons)
+                        .FirstOrDefaultAsync(h => h.MaHopTc == ct.MaHopTc.Value);
+
+                    if (hopTc != null)
+                    {
+                        var vo = await _context.MauVoHops.FirstOrDefaultAsync(v => v.MaVh == hopTc.MaVh);
+                        if (vo != null)
+                        {
+                            vo.SltonKhoVo += ct.SoLuong;
+                        }
+                        foreach (var cth in hopTc.ChiTietHopTuChons)
+                        {
+                            await HoanNhapLoFefoAsync(cth.MaBanh, ct.SoLuong);
+                        }
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Hoàn trả tồn kho về đúng từng lô sản xuất FEFO và mẫu vỏ hộp khi đơn QR MoMo quá hạn 15 phút,
         /// đảm bảo chạy an toàn bên trong Database Transaction (ThucThiTrongGiaoDichAsync / BeginTransactionAsync).
         /// </summary>
         public async Task HoanTraTonKhoRollbackAsync(DonHang donHang)
         {
-            var meta = _kiotMeta.LayMetadataDonHang(donHang.MaDh);
-            if (meta.DaHoanKhoDoHetHan && donHang.TrangThaiTt == "HET_HAN_15P")
+            if (donHang.TrangThaiDh == "DA_HUY" && (donHang.TrangThaiTt == "HET_HAN_HUY" || donHang.TrangThaiTt == "HET_HAN_15P"))
             {
                 return;
             }
 
             await ThucThiTrongGiaoDichAsync(async () =>
             {
-                if (!meta.DaHoanKhoDoHetHan)
-                {
-                    if (meta.DanhSachLoDaTru != null && meta.DanhSachLoDaTru.Any())
-                    {
-                        foreach (var nhatKyLo in meta.DanhSachLoDaTru)
-                        {
-                            var lo = await _context.LoSanXuatBanhs.FirstOrDefaultAsync(l => l.MaLo == nhatKyLo.MaLo);
-                            if (lo != null)
-                            {
-                                lo.SlconLai += nhatKyLo.SoLuongDaTru;
-                            }
-
-                            var banh = await _context.SanPhamBanhs.FirstOrDefaultAsync(b => b.MaBanh == nhatKyLo.MaBanh);
-                            if (banh != null)
-                            {
-                                banh.TongTonKho += nhatKyLo.SoLuongDaTru;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        var chiTiets = await _context.ChiTietDonHangs
-                            .Where(c => c.MaDh == donHang.MaDh)
-                            .ToListAsync();
-
-                        foreach (var ct in chiTiets)
-                        {
-                            if (ct.LoaiSanPham == 1 && ct.MaBanh.HasValue)
-                            {
-                                var banh = await _context.SanPhamBanhs
-                                    .Include(b => b.LoSanXuatBanhs)
-                                    .FirstOrDefaultAsync(b => b.MaBanh == ct.MaBanh.Value);
-                                if (banh != null)
-                                {
-                                    banh.TongTonKho += ct.SoLuong;
-                                    var loConHan = banh.LoSanXuatBanhs
-                                        .OrderByDescending(l => l.HanSuDung)
-                                        .FirstOrDefault();
-                                    if (loConHan != null) loConHan.SlconLai += ct.SoLuong;
-                                }
-                            }
-                        }
-                    }
-
-                    if (meta.DanhSachVoHopDaTru != null && meta.DanhSachVoHopDaTru.Any())
-                    {
-                        foreach (var nhatKyVo in meta.DanhSachVoHopDaTru)
-                        {
-                            var vo = await _context.MauVoHops.FirstOrDefaultAsync(v => v.MaVh == nhatKyVo.MaVh);
-                            if (vo != null)
-                            {
-                                vo.SltonKhoVo += nhatKyVo.SoLuongDaTru;
-                            }
-                        }
-                    }
-                }
+                await HoanTraTonKhoTheoDonAsync(donHang);
 
                 donHang.TrangThaiDh = "DA_HUY";
-                donHang.TrangThaiTt = "HET_HAN_15P";
+                donHang.TrangThaiTt = "HET_HAN_HUY";
+                donHang.LyDoHuy = "Tự động hủy do quá thời hạn 15 phút chuyển khoản QR";
+
+                var cacDotGiao = donHang.DotGiaoHangDaDiems != null && donHang.DotGiaoHangDaDiems.Any()
+                    ? donHang.DotGiaoHangDaDiems.ToList()
+                    : await _context.DotGiaoHangDaDiems.Where(g => g.MaDh == donHang.MaDh).ToListAsync();
+
+                foreach (var dot in cacDotGiao)
+                {
+                    dot.TrangThaiGiao = "DA_HUY";
+                }
+
+                NguoiDung? ndHoan = null;
+                if (donHang.MaNd.HasValue && donHang.SoDiemDaDung > 0 && !donHang.DaHoanDiemKhiHuy)
+                {
+                    ndHoan = await _context.NguoiDungs.FindAsync(donHang.MaNd.Value);
+                    if (ndHoan != null)
+                    {
+                        ndHoan.DiemTichLuy += donHang.SoDiemDaDung;
+                    }
+                    donHang.DaHoanDiemKhiHuy = true;
+                }
+
                 await _context.SaveChangesAsync();
+
+                if (ndHoan != null)
+                {
+                    var (hangVipMoi, _, _, _) = await DichVuHoiVien.TinhThongTinHangVipAsync(_context, ndHoan.MaNd, ndHoan.DiemTichLuy);
+                    ndHoan.HangTv = hangVipMoi;
+                    await _context.SaveChangesAsync();
+                }
             });
 
             _kiotMeta.CapNhatMetadataDonHang(donHang.MaDh, m =>
             {
                 m.DaHoanKhoDoHetHan = true;
             });
-
-            await DichVuHoiVien.HoanDiemKhiHuyDonAsync(_context, _kiotMeta, donHang);
         }
     }
 }

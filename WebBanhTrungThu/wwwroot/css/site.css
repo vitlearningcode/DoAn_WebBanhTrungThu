@@ -1980,6 +1980,8 @@ body {
 
 .the-dia-chi-ho-so {
     height: 100%;
+    display: flex;
+    flex-direction: column;
     background: #FFFFFF;
     border: 1px solid var(--ho-so-vien-the);
     border-radius: 12px;
@@ -2070,6 +2072,53 @@ body {
     color: var(--ho-so-nau-nhat);
     line-height: 1.5;
     margin-top: 4px;
+}
+
+.chan-the-dia-chi {
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px dashed var(--ho-so-vien);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.nut-sua-dia-chi,
+.nut-mac-dinh-dia-chi {
+    border-radius: 50px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1), color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nut-sua-dia-chi {
+    background: #FDFBF7;
+    color: var(--ho-so-nau-dam);
+    border: 1px solid var(--ho-so-vien-the);
+}
+
+.nut-sua-dia-chi:hover {
+    background: #F6EFE2;
+    border-color: #C89B3C;
+    color: var(--ho-so-do-son-mai);
+}
+
+.nut-mac-dinh-dia-chi {
+    background: #FFF9EB;
+    color: #9A5B13;
+    border: 1px solid #E6C78B;
+}
+
+.nut-mac-dinh-dia-chi:hover {
+    background: #FDE68A;
+    border-color: #D4AF37;
+    color: #7A1215;
 }
 
 /* Bộ sưu tập hộp tự phối */

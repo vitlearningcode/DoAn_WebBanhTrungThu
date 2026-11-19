@@ -27,7 +27,7 @@ namespace WebBanhTrungThu.Models.Entities
         public string? NguoiCapNhatCuoi { get; set; }
 
         [NotMapped]
-        public DateTime? HanThanhToan { get; set; }
+        public DateTime? HanThanhToan => HanThanhToanQr;
 
         [NotMapped]
         public decimal TongThanhToan => TongThanhToanCuoi;
@@ -58,6 +58,7 @@ namespace WebBanhTrungThu.Models.Entities
             "CHO_XAC_MINH_CK" => "Chờ thanh toán QR",
             "DA_TT" => "Đã thanh toán",
             "DA_THANH_TOAN" => "Đã thanh toán",
+            "HET_HAN_HUY" => "Hết hạn thanh toán 15p (Đã hủy)",
             "HET_HAN_15P" => "Hết hạn thanh toán 15p (Đã hoàn kho)",
             "DA_HOAN_TIEN" => "Đã hoàn tiền ngân hàng",
             _ => TrangThaiTt

@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
@@ -96,6 +98,8 @@ namespace WebBanhTrungThu.Services
         // =========================================================================
         // 1. ỦY QUYỀN SANG 3 SERVICE CON CHUYÊN BIỆT (CAPTCHA, TÍNH GIÁ, KHO FEFO)
         // =========================================================================
+        public string TaoChuoiSvgCaptchaThuan(out string maCaptcha) => _dichVuCaptcha.TaoChuoiSvgCaptchaThuan(out maCaptcha);
+
         public string TaoAnhSvgCaptcha(out string maCaptcha) => _dichVuCaptcha.TaoAnhSvgCaptcha(out maCaptcha);
 
         public Task<KetQuaKiemTraTonKhoGioHang> KiemTraTonKhoGioHangAsync(Models.Entities.GioHang gioHang)
@@ -148,8 +152,19 @@ namespace WebBanhTrungThu.Services
             string hinhThucNhanHang,
             string tocDoGiao)
         {
+            bool laNhanTaiCuaHangReq = string.Equals(hinhThucNhanHang, "NHAN_TAI_CUA_HANG", StringComparison.OrdinalIgnoreCase);
+
             if (req.DanhSachDotGiao == null || !req.DanhSachDotGiao.Any())
             {
+                if (!laNhanTaiCuaHangReq)
+                {
+                    return new KetQuaXuLyDatHang
+                    {
+                        ThanhCong = false,
+                        ThongBaoLoi = "Vui lòng nhập đầy đủ thông tin và địa chỉ giao hàng!"
+                    };
+                }
+
                 req.DanhSachDotGiao = new List<DotGiaoHangInput>
                 {
                     new DotGiaoHangInput
@@ -161,6 +176,14 @@ namespace WebBanhTrungThu.Services
                         KhungGioGiao = "Sáng (08:00 - 11:30)",
                         CoKemThiepQr = req.CoThiep3D
                     }
+                };
+            }
+            else if (!laNhanTaiCuaHangReq && req.DanhSachDotGiao.Any(d => string.IsNullOrWhiteSpace(d.DiaChiGiaoChiTiet)))
+            {
+                return new KetQuaXuLyDatHang
+                {
+                    ThanhCong = false,
+                    ThongBaoLoi = "Vui lòng nhập đầy đủ địa chỉ nhận hàng!"
                 };
             }
 
@@ -189,15 +212,17 @@ namespace WebBanhTrungThu.Services
                     gioHang, maNd, req.LaDonDoanhNghiepB2B, req.YeuCauInLogo,
                     hinhThucNhanHang, tocDoGiao, req.DanhSachDotGiao,
                     capNhatLuotDungVoucher: true, luuCapNhatGiaGioHang: false,
-                    dungDiemTichLuy: req.DungDiemTichLuy);
+                    dungDiemTichLuy: req.SuDungDiemTichLuy || req.DungDiemTichLuy);
 
                 if (chiPhi.LaNhanTaiCuaHang && req.DanhSachDotGiao.Count > 1)
                 {
                     req.DanhSachDotGiao = req.DanhSachDotGiao.Take(1).ToList();
                 }
 
-                string phuongThucTt = ChuanHoaChuoi(req.PhuongThucTt, "COD").ToUpperInvariant();
-                bool laThanhToanQrMoMo = phuongThucTt == "MOMO_QR" || phuongThucTt == "VIETQR" || phuongThucTt == "MOMO";
+                string phuongThucRaw = ChuanHoaChuoi(req.PhuongThucTt, "COD").ToUpperInvariant();
+                bool laThanhToanQrMoMo = phuongThucRaw == "MOMO_QR" || phuongThucRaw == "VIETQR" || phuongThucRaw == "MOMO";
+                string phuongThucTt = laThanhToanQrMoMo ? "MOMO_QR" : "COD";
+                DateTime thoiDiemDat = LayThoiGianHeThong();
 
                 var donHang = new DonHang
                 {
@@ -217,10 +242,18 @@ namespace WebBanhTrungThu.Services
                     PhiInLogo = chiPhi.PhiInLogo,
                     TongPhiVanChuyen = chiPhi.PhiVanChuyen,
                     TongThanhToanCuoi = chiPhi.TongThanhToanCuoi,
+                    TienGiamHangVip = Math.Round(chiPhi.TienGiamVip, 0),
+                    PhanTramGiamVip = (int)Math.Round(chiPhi.PhanTramGiamVip, 0),
+                    SoDiemDaDung = chiPhi.DiemTichLuySeDung,
+                    TienGiamDiemVip = Math.Round(chiPhi.TienGiamDiem, 0),
+                    HanThanhToanQr = laThanhToanQrMoMo ? thoiDiemDat.AddMinutes(15) : null,
+                    DaCongDiemThuong = false,
+                    DaHoanDiemKhiHuy = false,
+                    LyDoHuy = null,
                     PhuongThucTt = phuongThucTt,
                     TrangThaiTt = laThanhToanQrMoMo ? "CHO_THANH_TOAN" : "CHUA_TT",
                     TrangThaiDh = "CHO_XAC_NHAN",
-                    NgayDat = LayThoiGianHeThong()
+                    NgayDat = thoiDiemDat
                 };
 
                 _context.DonHangs.Add(donHang);
@@ -258,9 +291,7 @@ namespace WebBanhTrungThu.Services
                         };
                     }
 
-                    bool dotNhanTaiCuaHang = chiPhi.LaNhanTaiCuaHang || (!string.IsNullOrWhiteSpace(dotInput.DiaChiGiaoChiTiet) &&
-                        (dotInput.DiaChiGiaoChiTiet.Contains("[Nhận tại cửa hàng]", StringComparison.OrdinalIgnoreCase) ||
-                         dotInput.DiaChiGiaoChiTiet.Contains("Nhận tại Cửa hàng", StringComparison.OrdinalIgnoreCase)));
+                    bool dotNhanTaiCuaHang = chiPhi.LaNhanTaiCuaHang;
 
                     var dotEntity = new DotGiaoHangDaDiem
                     {
@@ -404,16 +435,7 @@ namespace WebBanhTrungThu.Services
                 _kiotMeta.CapNhatMetadataDonHang(donHang.MaDh, meta =>
                 {
                     meta.KenhBan = "WEB_ONLINE";
-                    meta.HanThanhToan = laThanhToanQrMoMo ? donHang.NgayDat.AddMinutes(15) : null;
                     meta.DaHoanKhoDoHetHan = false;
-                    meta.DiemDaDung = chiPhi.DiemTichLuySeDung;
-                    meta.TienGiamDiem = chiPhi.TienGiamDiem;
-                    meta.HangTvLucDat = chiPhi.HangTv;
-                    meta.PhanTramGiamVip = chiPhi.PhanTramGiamVip;
-                    meta.TienGiamVip = chiPhi.TienGiamVip;
-                    meta.DaCongDiemThuong = false;
-                    meta.DiemThuongDaCong = 0;
-                    meta.DaHoanDiemKhiHuy = false;
                     meta.DanhSachLoDaTru = danhSachLoDaTru;
                     meta.DanhSachVoHopDaTru = danhSachVoHopDaTru;
                     meta.Thiep3DTheoToken = mapThiepMeta;
@@ -434,10 +456,94 @@ namespace WebBanhTrungThu.Services
         }
 
         // =========================================================================
-        // 3. CỔNG THANH TOÁN QR MOMO, TRANG THÀNH CÔNG & WEBHOOK TỰ ĐỘNG
+        // 3. TỰ ĐỘNG HỦY ĐƠN QR QUÁ HẠN 15 PHÚT, CỔNG MOMO, TRANG THÀNH CÔNG & WEBHOOK
         // =========================================================================
+        public async Task<int> KiemTraVaHuyDonQrQuaHanAsync(int? maDonHang = null)
+        {
+            var bayGio = LayThoiGianHeThong();
+            var truyVan = _context.DonHangs
+                .Include(d => d.ChiTietDonHangs)
+                .Include(d => d.DotGiaoHangDaDiems)
+                .Where(d => (d.TrangThaiTt == "CHO_THANH_TOAN" || d.TrangThaiTt == "CHO_XAC_MINH_CK")
+                         && d.TrangThaiDh != "DA_HUY"
+                         && (d.PhuongThucTt == "MOMO_QR" || d.PhuongThucTt == "VIETQR" || d.PhuongThucTt == "MOMO"));
+
+            if (maDonHang.HasValue)
+            {
+                truyVan = truyVan.Where(d => d.MaDh == maDonHang.Value);
+            }
+
+            var cacDonCho = await truyVan.ToListAsync();
+            var cacDonQuaHan = cacDonCho
+                .Where(d => bayGio >= (d.HanThanhToanQr ?? d.NgayDat.AddMinutes(15)))
+                .ToList();
+
+            if (cacDonQuaHan.Count == 0) return 0;
+
+            int soDonDaHuy = 0;
+            foreach (var donHang in cacDonQuaHan)
+            {
+                bool daHuyDonNay = false;
+
+                await ThucThiTrongGiaoDichAsync(async () =>
+                {
+                    if ((donHang.TrangThaiTt != "CHO_THANH_TOAN" && donHang.TrangThaiTt != "CHO_XAC_MINH_CK")
+                        || donHang.TrangThaiDh == "DA_HUY")
+                    {
+                        return;
+                    }
+
+                    donHang.TrangThaiDh = "DA_HUY";
+                    donHang.TrangThaiTt = "HET_HAN_HUY";
+                    donHang.LyDoHuy = "Tự động hủy do quá thời hạn 15 phút chuyển khoản QR";
+
+                    foreach (var dot in donHang.DotGiaoHangDaDiems)
+                    {
+                        dot.TrangThaiGiao = "DA_HUY";
+                    }
+
+                    await _dichVuTonKho.HoanTraTonKhoTheoDonAsync(donHang);
+
+                    NguoiDung? ndHoan = null;
+                    if (donHang.MaNd.HasValue && donHang.SoDiemDaDung > 0 && !donHang.DaHoanDiemKhiHuy)
+                    {
+                        ndHoan = await _context.NguoiDungs.FindAsync(donHang.MaNd.Value);
+                        if (ndHoan != null)
+                        {
+                            ndHoan.DiemTichLuy += donHang.SoDiemDaDung;
+                        }
+                        donHang.DaHoanDiemKhiHuy = true;
+                    }
+
+                    await _context.SaveChangesAsync();
+
+                    if (ndHoan != null)
+                    {
+                        var (hangVipMoi, _, _, _) = await DichVuHoiVien.TinhThongTinHangVipAsync(_context, ndHoan.MaNd, ndHoan.DiemTichLuy);
+                        ndHoan.HangTv = hangVipMoi;
+                        await _context.SaveChangesAsync();
+                    }
+
+                    daHuyDonNay = true;
+                });
+
+                if (daHuyDonNay)
+                {
+                    _kiotMeta.CapNhatMetadataDonHang(donHang.MaDh, m =>
+                    {
+                        m.DaHoanKhoDoHetHan = true;
+                    });
+                    soDonDaHuy++;
+                }
+            }
+
+            return soDonDaHuy;
+        }
+
         public async Task<(string TrangThaiDieuHuong, CongThanhToanMoMoViewModel? DuLieuView)> XayDungDuLieuCongMoMoAsync(string maTraCuu)
         {
+            await KiemTraVaHuyDonQrQuaHanAsync();
+
             var donHang = await _context.DonHangs
                 .Include(d => d.DotGiaoHangDaDiems)
                 .Include(d => d.ChiTietDonHangs)
@@ -452,20 +558,12 @@ namespace WebBanhTrungThu.Services
                 return ("DA_THANH_TOAN", null);
             }
 
-            DateTime hanThanhToan = donHang.HanThanhToan ?? donHang.NgayDat.AddMinutes(15);
-            donHang.HanThanhToan = hanThanhToan;
-
-            if ((donHang.TrangThaiTt == "CHO_THANH_TOAN" || donHang.TrangThaiTt == "CHO_XAC_MINH_CK") && LayThoiGianHeThong() >= hanThanhToan)
+            if (donHang.TrangThaiTt == "HET_HAN_HUY" || donHang.TrangThaiTt == "HET_HAN_15P" || donHang.TrangThaiDh == "DA_HUY")
             {
-                await _dichVuTonKho.HoanTraTonKhoRollbackAsync(donHang);
-                return ("VE_TRANG_CHU", null);
+                return ("DA_HUY_HET_HAN", null);
             }
 
-            if (donHang.TrangThaiTt == "HET_HAN_15P" || donHang.TrangThaiDh == "DA_HUY")
-            {
-                return ("VE_TRANG_CHU", null);
-            }
-
+            DateTime hanThanhToan = donHang.HanThanhToanQr ?? donHang.NgayDat.AddMinutes(15);
             int soGiayConLai = Math.Max(0, (int)Math.Ceiling((hanThanhToan - LayThoiGianHeThong()).TotalSeconds));
             var (cauHinhQr, noiDungCk, sdtMoMoRaw, sdtMoMoHienThi, tenChuTk, qrThanhToanBase64, urlVietQr) = TaoMaQrThanhToanMoMo(donHang);
 
@@ -489,6 +587,8 @@ namespace WebBanhTrungThu.Services
 
         public async Task<DonHangThanhCongViewModel?> XayDungDuLieuDonHangThanhCongAsync(string maTraCuu, string scheme, string host)
         {
+            await KiemTraVaHuyDonQrQuaHanAsync();
+
             var donHang = await _context.DonHangs
                 .Include(d => d.DotGiaoHangDaDiems)
                 .Include(d => d.ChiTietDonHangs)
@@ -518,23 +618,22 @@ namespace WebBanhTrungThu.Services
             _kiotMeta.GanMetadataChoDonHang(donHang);
 
             bool laDonQrMoMo = donHang.PhuongThucTt == "MOMO_QR" || donHang.PhuongThucTt == "VIETQR" || donHang.PhuongThucTt == "MOMO";
-            DateTime hanThanhToan = donHang.HanThanhToan ?? donHang.NgayDat.AddMinutes(15);
-            donHang.HanThanhToan = hanThanhToan;
+            bool laDaHuyHoacHetHan = donHang.TrangThaiDh == "DA_HUY"
+                || donHang.TrangThaiTt == "HET_HAN_HUY"
+                || donHang.TrangThaiTt == "HET_HAN_15P";
+            DateTime hanThanhToan = donHang.HanThanhToanQr ?? donHang.NgayDat.AddMinutes(15);
 
-            if (laDonQrMoMo && (donHang.TrangThaiTt == "CHO_THANH_TOAN" || donHang.TrangThaiTt == "CHO_XAC_MINH_CK") && LayThoiGianHeThong() >= hanThanhToan)
-            {
-                await _dichVuTonKho.HoanTraTonKhoRollbackAsync(donHang);
-            }
-
-            bool dangChoThanhToanQr = laDonQrMoMo && (donHang.TrangThaiTt == "CHO_THANH_TOAN" || donHang.TrangThaiTt == "CHO_XAC_MINH_CK");
+            bool dangChoThanhToanQr = !laDaHuyHoacHetHan
+                && laDonQrMoMo
+                && (donHang.TrangThaiTt == "CHO_THANH_TOAN" || donHang.TrangThaiTt == "CHO_XAC_MINH_CK");
             int soGiayConLai = dangChoThanhToanQr ? Math.Max(0, (int)Math.Ceiling((hanThanhToan - LayThoiGianHeThong()).TotalSeconds)) : 0;
 
-            var (cauHinhQr, noiDungCk, _, _, _, qrThanhToanBase64, urlVietQr) = TaoMaQrThanhToanMoMo(donHang, laDonQrMoMo);
+            var (cauHinhQr, noiDungCk, _, _, _, qrThanhToanBase64, urlVietQr) = TaoMaQrThanhToanMoMo(donHang, dangChoThanhToanQr);
 
             var vm = new DonHangThanhCongViewModel
             {
                 DonHang = donHang,
-                DiemCongThem = donHang.MaNd.HasValue ? (int)(donHang.TongThanhToanCuoi / 10000m) : 0,
+                DiemCongThem = (!laDaHuyHoacHetHan && donHang.MaNd.HasValue) ? (int)(donHang.TongThanhToanCuoi / 10000m) : 0,
                 CauHinhQr = cauHinhQr,
                 NoiDungChuyenKhoan = noiDungCk,
                 AnhQrThanhToanBase64 = qrThanhToanBase64,
@@ -569,48 +668,89 @@ namespace WebBanhTrungThu.Services
             return vm;
         }
 
+        private static string BoDauTiengViet(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+            string formD = input.Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder(formD.Length);
+            foreach (char ch in formD)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
+                {
+                    sb.Append(ch);
+                }
+            }
+            string khongDau = sb.ToString()
+                .Normalize(NormalizationForm.FormC)
+                .Replace('đ', 'd')
+                .Replace('Đ', 'D');
+            return Regex.Replace(khongDau, @"\s+", " ").Trim();
+        }
+
         private (CauHinhThanhToanQr CauHinhQr, string NoiDungCk, string SdtMoMoRaw, string SdtMoMoHienThi, string TenChuTk, string QrBase64, string UrlVietQr) TaoMaQrThanhToanMoMo(DonHang donHang, bool sinhAnhQr = true)
         {
             var cauHinhQr = _kiotMeta.LayCauHinhQr();
-            string sdtMoMoRaw = ChuanHoaChuoi(cauHinhQr.SoTaiKhoanMoMo, "0814585526");
-            string sdtMoMoHienThi = ChuanHoaChuoi(cauHinhQr.SoDienThoaiHienThi, "0814 585 526");
-            string tenChuTk = ChuanHoaChuoi(cauHinhQr.TenChuTaiKhoan, "LE MINH DUC");
+            string sdtMoMoRaw = Regex.Replace(cauHinhQr.SoTaiKhoanMoMo ?? string.Empty, @"\D", "");
+            if (string.IsNullOrWhiteSpace(sdtMoMoRaw)) sdtMoMoRaw = "0814585526";
 
-            string noiDungCk = (cauHinhQr.MauNoiDungCk ?? "NGUYETCAT {MaTraCuuDh}")
-                .Replace("{MaTraCuuDh}", donHang.MaTraCuuDh, StringComparison.OrdinalIgnoreCase);
+            string sdtMoMoHienThi = !string.IsNullOrWhiteSpace(cauHinhQr.SoDienThoaiHienThi)
+                ? cauHinhQr.SoDienThoaiHienThi.Trim()
+                : (sdtMoMoRaw.Length == 10
+                    ? $"{sdtMoMoRaw[..4]} {sdtMoMoRaw.Substring(4, 3)} {sdtMoMoRaw.Substring(7, 3)}"
+                    : sdtMoMoRaw);
+
+            string tenChuTk = BoDauTiengViet(ChuanHoaChuoi(cauHinhQr.TenChuTaiKhoan, "LE MINH DUC")).ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(tenChuTk)) tenChuTk = "LE MINH DUC";
+
+            string noiDungCk = BoDauTiengViet((cauHinhQr.MauNoiDungCk ?? "NGUYETCAT {MaTraCuuDh}")
+                .Replace("{MaTraCuuDh}", donHang.MaTraCuuDh, StringComparison.OrdinalIgnoreCase)).ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(noiDungCk)) noiDungCk = $"NGUYETCAT {donHang.MaTraCuuDh}".ToUpperInvariant();
 
             if (!sinhAnhQr)
             {
                 return (cauHinhQr, noiDungCk, sdtMoMoRaw, sdtMoMoHienThi, tenChuTk, string.Empty, string.Empty);
             }
 
-            string bin = ChuanHoaChuoi(cauHinhQr.MaBinVietQr, "970422");
             long soTienNguyen = (long)Math.Round(donHang.TongThanhToanCuoi, 0);
-            string urlVietQr = $"https://img.vietqr.io/image/{bin}-{Uri.EscapeDataString(sdtMoMoRaw)}-compact2.png?amount={soTienNguyen}&addInfo={Uri.EscapeDataString(noiDungCk)}&accountName={Uri.EscapeDataString(tenChuTk)}";
+            string urlVietQr = string.Empty;
+            bool coCauHinhNganHang = !string.IsNullOrWhiteSpace(cauHinhQr.SoTaiKhoanNganHang)
+                || (!string.Equals(cauHinhQr.TenNganHangVi, "MOMO", StringComparison.OrdinalIgnoreCase)
+                    && !string.IsNullOrWhiteSpace(cauHinhQr.MaBinVietQr));
+
+            if (coCauHinhNganHang)
+            {
+                string bin = ChuanHoaChuoi(cauHinhQr.MaBinVietQr, "970422");
+                string stkNganHang = !string.IsNullOrWhiteSpace(cauHinhQr.SoTaiKhoanNganHang)
+                    ? Regex.Replace(cauHinhQr.SoTaiKhoanNganHang, @"\D", "")
+                    : sdtMoMoRaw;
+                if (!string.IsNullOrWhiteSpace(stkNganHang))
+                {
+                    urlVietQr = $"https://img.vietqr.io/image/{bin}-{Uri.EscapeDataString(stkNganHang)}-compact2.png?amount={soTienNguyen}&addInfo={Uri.EscapeDataString(noiDungCk)}&accountName={Uri.EscapeDataString(tenChuTk)}";
+                }
+            }
 
             using var qrGenerator = new QRCodeGenerator();
             string payloadQrMoMo = $"2|99|{sdtMoMoRaw}|{tenChuTk}||0|0|{soTienNguyen}|{noiDungCk}|transfer_myqr";
-            using QRCodeData dataQrTt = qrGenerator.CreateQrCode(payloadQrMoMo, QRCodeGenerator.ECCLevel.Q);
+            using QRCodeData dataQrTt = qrGenerator.CreateQrCode(payloadQrMoMo, QRCodeGenerator.ECCLevel.H);
             using var pngQrTt = new PngByteQRCode(dataQrTt);
-            string qrThanhToanBase64 = "data:image/png;base64," + Convert.ToBase64String(pngQrTt.GetGraphic(10));
+            string qrThanhToanBase64 = "data:image/png;base64," + Convert.ToBase64String(pngQrTt.GetGraphic(10, true));
 
             return (cauHinhQr, noiDungCk, sdtMoMoRaw, sdtMoMoHienThi, tenChuTk, qrThanhToanBase64, urlVietQr);
         }
 
         public async Task<(DonHang? DonHang, int SoGiayConLai)> KiemTraVaCapNhatTrangThaiDonAsync(string maTraCuu)
         {
+            await KiemTraVaHuyDonQrQuaHanAsync();
+
             var donHang = await _context.DonHangs.FirstOrDefaultAsync(d => d.MaTraCuuDh == maTraCuu.Trim());
             if (donHang == null) return (null, 0);
 
             _kiotMeta.GanMetadataChoDonHang(donHang);
-            DateTime hanTt = donHang.HanThanhToan ?? donHang.NgayDat.AddMinutes(15);
+            DateTime hanTt = donHang.HanThanhToanQr ?? donHang.NgayDat.AddMinutes(15);
 
-            if ((donHang.TrangThaiTt == "CHO_THANH_TOAN" || donHang.TrangThaiTt == "CHO_XAC_MINH_CK") && LayThoiGianHeThong() >= hanTt)
-            {
-                await _dichVuTonKho.HoanTraTonKhoRollbackAsync(donHang);
-            }
-
-            int soGiayConLai = Math.Max(0, (int)Math.Ceiling((hanTt - LayThoiGianHeThong()).TotalSeconds));
+            int soGiayConLai = (donHang.TrangThaiDh == "DA_HUY" || donHang.TrangThaiTt == "HET_HAN_HUY" || donHang.TrangThaiTt == "HET_HAN_15P")
+                ? 0
+                : Math.Max(0, (int)Math.Ceiling((hanTt - LayThoiGianHeThong()).TotalSeconds));
             return (donHang, soGiayConLai);
         }
 
@@ -655,10 +795,18 @@ namespace WebBanhTrungThu.Services
             }
 
             _kiotMeta.GanMetadataChoDonHang(donHang);
-            DateTime hanTt = donHang.HanThanhToan ?? donHang.NgayDat.AddMinutes(15);
+            DateTime hanTt = donHang.HanThanhToanQr ?? donHang.NgayDat.AddMinutes(15);
 
-            if (donHang.TrangThaiTt == "HET_HAN_15P" || donHang.TrangThaiDh == "DA_HUY" || LayThoiGianHeThong() > hanTt)
+            if (donHang.TrangThaiTt == "HET_HAN_HUY"
+                || donHang.TrangThaiTt == "HET_HAN_15P"
+                || donHang.TrangThaiDh == "DA_HUY"
+                || LayThoiGianHeThong() >= hanTt)
             {
+                if (donHang.TrangThaiDh != "DA_HUY")
+                {
+                    await KiemTraVaHuyDonQrQuaHanAsync(donHang.MaDh);
+                }
+
                 return new KetQuaXuLyWebhookMoMo
                 {
                     MaTrangThaiHttp = 200,
@@ -667,7 +815,7 @@ namespace WebBanhTrungThu.Services
                 };
             }
 
-            if (soTienNhan < donHang.TongThanhToanCuoi)
+            if (soTienNhan < Math.Round(donHang.TongThanhToanCuoi, 0))
             {
                 return new KetQuaXuLyWebhookMoMo
                 {
@@ -677,13 +825,13 @@ namespace WebBanhTrungThu.Services
                 };
             }
 
-            if (donHang.TrangThaiTt != "DA_THANH_TOAN")
+            if (donHang.TrangThaiTt != "DA_THANH_TOAN" && donHang.TrangThaiTt != "DA_TT")
             {
                 donHang.TrangThaiTt = "DA_THANH_TOAN";
                 donHang.TrangThaiDh = "DA_XAC_NHAN";
                 await _context.SaveChangesAsync();
 
-                await DichVuHoiVien.CongDiemThuongDonHangAsync(_context, _kiotMeta, donHang);
+                await DichVuHoiVien.CongDiemThuongDonHangAsync(_context, donHang);
 
                 _kiotMeta.CapNhatMetadataDonHang(donHang.MaDh, m => m.SoTienKhachDaTra = soTienNhan);
                 _kiotMeta.GhiNhanPhieuThuChi(new PhieuThuChiMoRong

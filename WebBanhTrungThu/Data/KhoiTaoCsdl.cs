@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services;
@@ -27,6 +28,7 @@ namespace WebBanhTrungThu.Data
                 await ChuanHoaMaKhuyenMaiVaLoBanhFefoAsync(db);
                 await CapNhatAnhKhayHop6OSonMaiAsync(db);
                 await CapNhatDuongDanAnhBanhHatSenHueAsync(db);
+                await ChuanHoaTenMocChietKhauAsync(db);
             }
             catch
             {
@@ -81,6 +83,26 @@ namespace WebBanhTrungThu.Data
                         MoTa NVARCHAR(255) NULL,
                         NgayCapNhat DATETIME NOT NULL DEFAULT(GETDATE())
                     );
+                END;
+
+                IF OBJECT_ID('dbo.DonHang', 'U') IS NOT NULL
+                BEGIN
+                    IF COL_LENGTH('dbo.DonHang', 'TienGiamHangVip') IS NULL
+                        ALTER TABLE dbo.DonHang ADD TienGiamHangVip DECIMAL(18,0) NOT NULL DEFAULT 0;
+                    IF COL_LENGTH('dbo.DonHang', 'PhanTramGiamVip') IS NULL
+                        ALTER TABLE dbo.DonHang ADD PhanTramGiamVip INT NOT NULL DEFAULT 0;
+                    IF COL_LENGTH('dbo.DonHang', 'SoDiemDaDung') IS NULL
+                        ALTER TABLE dbo.DonHang ADD SoDiemDaDung INT NOT NULL DEFAULT 0;
+                    IF COL_LENGTH('dbo.DonHang', 'TienGiamDiemVip') IS NULL
+                        ALTER TABLE dbo.DonHang ADD TienGiamDiemVip DECIMAL(18,0) NOT NULL DEFAULT 0;
+                    IF COL_LENGTH('dbo.DonHang', 'HanThanhToanQr') IS NULL
+                        ALTER TABLE dbo.DonHang ADD HanThanhToanQr DATETIME NULL;
+                    IF COL_LENGTH('dbo.DonHang', 'DaCongDiemThuong') IS NULL
+                        ALTER TABLE dbo.DonHang ADD DaCongDiemThuong BIT NOT NULL DEFAULT 0;
+                    IF COL_LENGTH('dbo.DonHang', 'DaHoanDiemKhiHuy') IS NULL
+                        ALTER TABLE dbo.DonHang ADD DaHoanDiemKhiHuy BIT NOT NULL DEFAULT 0;
+                    IF COL_LENGTH('dbo.DonHang', 'LyDoHuy') IS NULL
+                        ALTER TABLE dbo.DonHang ADD LyDoHuy NVARCHAR(500) NULL;
                 END;
             ");
         }
@@ -242,6 +264,26 @@ namespace WebBanhTrungThu.Data
                 coCapNhatKm = true;
             }
 
+            var quaTang15k = dsKm.FirstOrDefault(k => k.CodeKm == "QUATANG15K");
+            if (quaTang15k == null)
+            {
+                db.MaKhuyenMais.Add(new MaKhuyenMai
+                {
+                    CodeKm = "QUATANG15K",
+                    TenChuongTrinh = "Quà Tặng Tri Ân (-15.000đ)",
+                    LoaiGiam = "TIEN_MAT",
+                    GiaTriGiam = 15000m,
+                    GiamToiDa = 15000m,
+                    DonToiThieu = 100000m,
+                    SltoiDa = 1000,
+                    SldaDung = 0,
+                    ChoPhepKhachVangLai = true,
+                    NgayBatDau = new DateTime(2026, 1, 1),
+                    NgayKetThuc = mocHetHanChuan
+                });
+                coCapNhatKm = true;
+            }
+
             foreach (var km in dsKm)
             {
                 if (km.NgayBatDau > DateTime.Now)
@@ -377,6 +419,33 @@ namespace WebBanhTrungThu.Data
                 ch.GiaTriJson = ch.GiaTriJson.Replace(tenAnhCu, tenAnhMoi, StringComparison.OrdinalIgnoreCase);
                 ch.NgayCapNhat = DateTime.Now;
                 coThayDoi = true;
+            }
+
+            if (coThayDoi)
+            {
+                await db.SaveChangesAsync();
+            }
+        }
+
+        private static async Task ChuanHoaTenMocChietKhauAsync(CSDLBanhTrungThuContext db)
+        {
+            var dsMoc = await db.BangChietKhauSiB2bs.ToListAsync();
+            bool coThayDoi = false;
+
+            foreach (var moc in dsMoc)
+            {
+                if (!string.IsNullOrWhiteSpace(moc.TenMocB2b)
+                    && moc.TenMocB2b.Contains("B2B", StringComparison.OrdinalIgnoreCase))
+                {
+                    string tenMoi = Regex.Replace(moc.TenMocB2b, @"\(\s*b2b\s*\)|\bb2b\b", string.Empty, RegexOptions.IgnoreCase);
+                    tenMoi = Regex.Replace(tenMoi, @"\s{2,}", " ").Trim(' ', '-', '–');
+                    if (string.IsNullOrWhiteSpace(tenMoi))
+                    {
+                        tenMoi = $"Mốc Chiết Khấu ({moc.SlhopToiThieu}-{moc.SlhopToiDa} hộp)";
+                    }
+                    moc.TenMocB2b = tenMoi;
+                    coThayDoi = true;
+                }
             }
 
             if (coThayDoi)

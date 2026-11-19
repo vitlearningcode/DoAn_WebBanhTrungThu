@@ -17,6 +17,7 @@ namespace WebBanhTrungThu.ViewModels
         public decimal TienGiamVoucher { get; set; }
         public string? CodeKmDangDung { get; set; }
         public string ThongTinVoucherGoiY { get; set; } = "HSD: 31/12/2027 • Đơn từ 200k";
+        public List<MaKhuyenMai> DanhSachVoucherGoiY { get; set; } = new();
         public List<string> DanhSachCanhBaoTonKho { get; set; } = new();
         public int DiemTichLuy { get; set; }
         public string HangTv { get; set; } = "Đồng";
@@ -72,6 +73,7 @@ namespace WebBanhTrungThu.ViewModels
         public string? MaCaptcha { get; set; }
         public bool DaXacThucCaptcha { get; set; }
         public bool DungDiemTichLuy { get; set; }
+        public bool SuDungDiemTichLuy { get; set; }
 
         // 2. Tùy chọn Doanh nghiệp B2B
         public bool LaDonDoanhNghiepB2B { get; set; }
@@ -106,6 +108,7 @@ namespace WebBanhTrungThu.ViewModels
         public CauHinhThanhToanQr CauHinhQr { get; set; } = new();
         public string AnhQrThanhToanBase64 { get; set; } = string.Empty;
         public string UrlVietQr { get; set; } = string.Empty;
+        public bool CoCauHinhVietQrNganHang => !string.IsNullOrWhiteSpace(UrlVietQr);
         public string NoiDungChuyenKhoan { get; set; } = string.Empty;
         public DateTime HanThanhToan { get; set; }
         public int SoGiayConLai { get; set; }

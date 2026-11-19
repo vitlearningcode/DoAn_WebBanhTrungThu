@@ -170,6 +170,14 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.Property(e => e.PhuongThucTt).HasDefaultValue("COD");
             entity.Property(e => e.TrangThaiDh).HasDefaultValue("CHO_XAC_NHAN");
             entity.Property(e => e.TrangThaiTt).HasDefaultValue("CHUA_TT");
+            entity.Property(e => e.TienGiamHangVip).HasColumnType("decimal(18, 0)").HasDefaultValue(0m);
+            entity.Property(e => e.PhanTramGiamVip).HasDefaultValue(0);
+            entity.Property(e => e.SoDiemDaDung).HasDefaultValue(0);
+            entity.Property(e => e.TienGiamDiemVip).HasColumnType("decimal(18, 0)").HasDefaultValue(0m);
+            entity.Property(e => e.HanThanhToanQr).HasColumnType("datetime");
+            entity.Property(e => e.DaCongDiemThuong).HasDefaultValue(false);
+            entity.Property(e => e.DaHoanDiemKhiHuy).HasDefaultValue(false);
+            entity.Property(e => e.LyDoHuy).HasMaxLength(500);
 
             entity.HasOne(d => d.MaNdNavigation).WithMany(p => p.DonHangs).HasConstraintName("FK_DH_NguoiDung");
 

@@ -6,6 +6,7 @@ namespace WebBanhTrungThu.Services.Interfaces
 {
     public interface IDichVuThanhToan : IDichVuCoSo
     {
+        string TaoChuoiSvgCaptchaThuan(out string maCaptcha);
         string TaoAnhSvgCaptcha(out string maCaptcha);
         Task<KetQuaKiemTraTonKhoGioHang> KiemTraTonKhoGioHangAsync(Models.Entities.GioHang gioHang);
         Task<KetQuaTinhChiPhiDonHang> TinhToanChiPhiDonHangAsync(
@@ -21,6 +22,7 @@ namespace WebBanhTrungThu.Services.Interfaces
             bool dungDiemTichLuy = false);
         Task<List<NhatKyTruLoFefo>> TruTonKhoFefoAsync(int maBanh, int soLuongCanTru, List<NhatKyTruLoFefo>? danhSachLoDaTru = null);
         Task HoanTraTonKhoRollbackAsync(DonHang donHang);
+        Task<int> KiemTraVaHuyDonQrQuaHanAsync(int? maDonHang = null);
         Task<Models.Entities.GioHang?> LayGioHangDayDuAsync(int? maNd, string? maPhienKvl);
         Task<KetQuaXuLyDatHang> XuLyDatHangAsync(
             Models.Entities.GioHang gioHang,

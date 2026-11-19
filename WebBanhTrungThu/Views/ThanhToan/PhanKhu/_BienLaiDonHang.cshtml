@@ -1,35 +1,84 @@
 @model WebBanhTrungThu.ViewModels.DonHangThanhCongViewModel
 @{
-    bool laDonQrMoMo = Model.DonHang.PhuongThucTt == "MOMO_QR"
-                    || Model.DonHang.PhuongThucTt == "VIETQR"
-                    || Model.DonHang.PhuongThucTt == "MOMO";
+    var dh = Model.DonHang;
+    bool laDonQrMoMo = dh.PhuongThucTt == "MOMO_QR"
+                    || dh.PhuongThucTt == "VIETQR"
+                    || dh.PhuongThucTt == "MOMO";
+    bool laTrangThaiA_DaHuy = dh.TrangThaiDh == "DA_HUY"
+                           || dh.TrangThaiTt == "HET_HAN_HUY"
+                           || dh.TrangThaiTt == "HET_HAN_15P";
+    bool laDaThanhToan = !laTrangThaiA_DaHuy
+                      && (dh.TrangThaiTt == "DA_THANH_TOAN" || dh.TrangThaiTt == "DA_TT");
+    bool laTrangThaiB_ChoQr = !laTrangThaiA_DaHuy && !laDaThanhToan && laDonQrMoMo;
+    bool laTrangThaiC_ThanhCong = !laTrangThaiA_DaHuy && !laTrangThaiB_ChoQr;
 }
 
 <div class="card-hoang-gia p-4">
-    <!-- Tiêu đề gọn + Lời cảm ơn ngắn gọn 1 dòng -->
+    <!-- Trạng thái biên lai chuẩn xác theo 3 luồng A / B / C -->
     <div class="mb-3">
         <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
-            <h1 class="font-co-phong fs-2 fw-bold chu-do-son-mai mb-0">
-                <i class="bi bi-check-circle-fill text-success me-2"></i>Đặt Hàng Thành Công!
-            </h1>
-            <div class="d-flex align-items-center gap-2">
+            @if (laTrangThaiA_DaHuy)
+            {
+                <h1 class="font-co-phong fs-3 fw-bold mb-0" style="color: #B91C1C;">
+                    <i class="bi bi-x-circle-fill text-danger me-2"></i>Đơn Hàng Đã Bị Hủy (Quá Hạn Thanh Toán)
+                </h1>
+            }
+            else if (laTrangThaiB_ChoQr)
+            {
+                <h1 class="font-co-phong fs-3 fw-bold mb-0" style="color: #B45309;">
+                    <i class="bi bi-hourglass-split me-2" style="color: #D97706;"></i>Đơn hàng đặt của quý khách đang chờ – Vui lòng thanh toán
+                </h1>
+            }
+            else
+            {
+                <h1 class="font-co-phong fs-2 fw-bold mb-0" style="color: #15803D;">
+                    <i class="bi bi-check-circle-fill text-success me-2"></i>Đặt Hàng Thành Công!
+                </h1>
+            }
+
+            <div class="d-flex align-items-center flex-wrap gap-2">
                 <span id="badgeTrangThaiThanhToanDon" class="badge rounded-pill px-3 py-1"
-                      style="background: @(Model.DonHang.TrangThaiTt == "DA_THANH_TOAN" ? "#ECFDF5" : (Model.DonHang.TrangThaiTt == "HET_HAN_15P" ? "#FEF2F2" : "#FFFBEB"));
-                             color: @(Model.DonHang.TrangThaiTt == "DA_THANH_TOAN" ? "#065F46" : (Model.DonHang.TrangThaiTt == "HET_HAN_15P" ? "#991B1B" : "#92400E"));
-                             border: 1px solid @(Model.DonHang.TrangThaiTt == "DA_THANH_TOAN" ? "#10B981" : (Model.DonHang.TrangThaiTt == "HET_HAN_15P" ? "#EF4444" : "#F59E0B"));">
-                    @Model.DonHang.TenTrangThaiThanhToanHienThi
+                      style="background: @(laDaThanhToan ? "#ECFDF5" : (laTrangThaiA_DaHuy ? "#FEF2F2" : "#FFFBEB"));
+                             color: @(laDaThanhToan ? "#065F46" : (laTrangThaiA_DaHuy ? "#991B1B" : "#92400E"));
+                             border: 1px solid @(laDaThanhToan ? "#10B981" : (laTrangThaiA_DaHuy ? "#EF4444" : "#F59E0B"));">
+                    @dh.TenTrangThaiThanhToanHienThi
                 </span>
-                @if (Model.DiemCongThem > 0)
+                @if (laTrangThaiC_ThanhCong && Model.DiemCongThem > 0)
                 {
-                    <span class="badge rounded-pill px-3 py-1" style="background: #F4FBF5; color: #198754; border: 1px solid #81C784;">
-                        +@Model.DiemCongThem điểm thưởng
-                    </span>
+                    if (laDaThanhToan || dh.DaCongDiemThuong)
+                    {
+                        <span class="badge rounded-pill px-3 py-1" style="background: #F4FBF5; color: #198754; border: 1px solid #81C784;">
+                            +@Model.DiemCongThem điểm thưởng đã cộng
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge rounded-pill px-3 py-1" style="background: #F3F4F6; color: #4B5563; border: 1px solid #D1D5DB;">
+                            Dự kiến +@Model.DiemCongThem điểm khi hoàn tất giao hàng
+                        </span>
+                    }
                 }
             </div>
         </div>
-        <p class="chu-nau-phu small mb-0">
-            Cảm ơn Quý khách <strong>@Model.DonHang.HoTenNguoiMua</strong> đã tin chọn lễ hộp Trung Thu Nguyệt Cát.
-        </p>
+
+        @if (laTrangThaiA_DaHuy)
+        {
+            <div class="p-3 rounded-3 mt-2 small" style="background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B;">
+                Đơn hàng đã tự động hủy do không nhận được thanh toán trong 15 phút. Sản phẩm và điểm tích lũy đã sử dụng (nếu có) đã được hoàn trả.
+            </div>
+        }
+        else if (laTrangThaiB_ChoQr)
+        {
+            <p class="chu-nau-phu small mb-0 mt-1">
+                Hệ thống tạm giữ hàng trong 15 phút. Điểm thưởng sẽ được cộng ngay sau khi chuyển khoản hoàn tất.
+            </p>
+        }
+        else
+        {
+            <p class="chu-nau-phu small mb-0">
+                Cảm ơn Quý khách <strong>@dh.HoTenNguoiMua</strong> đã tin chọn lễ hộp Trung Thu Nguyệt Cát.
+            </p>
+        }
     </div>
 
     <!-- 3 thông tin chính trên 1 hàng ngang nhỏ gọn -->
@@ -37,12 +86,12 @@
          style="background: #FDFBF7; border: 1px solid #EADBC8;">
         <div>
             <span class="chu-nau-phu">Mã đơn:</span>
-            <strong class="chu-do-son-mai">@Model.DonHang.MaTraCuuDh</strong>
+            <strong class="chu-do-son-mai">@dh.MaTraCuuDh</strong>
         </div>
         <span class="text-muted d-none d-sm-inline">|</span>
         <div>
             <span class="chu-nau-phu">SĐT:</span>
-            <strong class="chu-nau-tram">@Model.DonHang.SdtnguoiMua</strong>
+            <strong class="chu-nau-tram">@dh.SdtnguoiMua</strong>
         </div>
         <span class="text-muted d-none d-sm-inline">|</span>
         <div>
@@ -62,7 +111,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var ct in Model.DonHang.ChiTietDonHangs)
+                @foreach (var ct in dh.ChiTietDonHangs)
                 {
                     <tr>
                         <td>
@@ -105,51 +154,65 @@
             <tfoot style="border-top: 2px solid #E6D5B8;">
                 <tr>
                     <td colspan="2" class="text-end chu-nau-phu small">Tạm tính:</td>
-                    <td class="text-end fw-semibold chu-nau-tram text-nowrap">@Model.DonHang.TongTienHang.ToString("N0") đ</td>
+                    <td class="text-end fw-semibold chu-nau-tram text-nowrap">@dh.TongTienHang.ToString("N0") đ</td>
                 </tr>
-                @if (Model.DonHang.TienChietKhauB2b > 0)
+                @if (dh.TienChietKhauB2b > 0)
                 {
                     <tr>
-                        <td colspan="2" class="text-end small" style="color: #9A5B13;">Chiết khấu B2B (@Model.DonHang.PhanTramCkB2b%):</td>
-                        <td class="text-end fw-semibold text-nowrap" style="color: #9A5B13;">-@Model.DonHang.TienChietKhauB2b.ToString("N0") đ</td>
+                        <td colspan="2" class="text-end small" style="color: #9A5B13;">Chiết khấu số lượng lớn (@dh.PhanTramCkB2b.ToString("0.##")%):</td>
+                        <td class="text-end fw-semibold text-nowrap" style="color: #9A5B13;">-@dh.TienChietKhauB2b.ToString("N0") đ</td>
                     </tr>
                 }
-                @if (Model.DonHang.TienGiamVoucher > 0)
+                @if (dh.TienGiamHangVip > 0)
+                {
+                    <tr>
+                        <td colspan="2" class="text-end text-primary small">Ưu đãi Hạng VIP (-@dh.PhanTramGiamVip%):</td>
+                        <td class="text-end fw-semibold text-primary text-nowrap">-@dh.TienGiamHangVip.ToString("N0") đ</td>
+                    </tr>
+                }
+                @if (dh.TienGiamVoucher > 0)
                 {
                     <tr>
                         <td colspan="2" class="text-end text-success small">Giảm giá Voucher:</td>
-                        <td class="text-end fw-semibold text-success text-nowrap">-@Model.DonHang.TienGiamVoucher.ToString("N0") đ</td>
+                        <td class="text-end fw-semibold text-success text-nowrap">-@dh.TienGiamVoucher.ToString("N0") đ</td>
                     </tr>
                 }
-                @if (Model.DonHang.PhiInLogo > 0)
+                @if (dh.TienGiamDiemVip > 0)
                 {
                     <tr>
-                        <td colspan="2" class="text-end chu-nau-phu small">Phí khuôn ép kim Logo B2B:</td>
-                        <td class="text-end fw-semibold chu-nau-tram text-nowrap">+@Model.DonHang.PhiInLogo.ToString("N0") đ</td>
+                        <td colspan="2" class="text-end text-success small">Tiêu điểm tích lũy (@dh.SoDiemDaDung.ToString("N0") điểm):</td>
+                        <td class="text-end fw-semibold text-success text-nowrap">-@dh.TienGiamDiemVip.ToString("N0") đ</td>
+                    </tr>
+                }
+                @if (dh.PhiInLogo > 0)
+                {
+                    <tr>
+                        <td colspan="2" class="text-end chu-nau-phu small">Phí khuôn ép kim Logo:</td>
+                        <td class="text-end fw-semibold chu-nau-tram text-nowrap">+@dh.PhiInLogo.ToString("N0") đ</td>
                     </tr>
                 }
                 <tr>
                     <td colspan="2" class="text-end chu-nau-phu small">Phí giao hàng:</td>
-                    <td class="text-end fw-semibold text-nowrap @(Model.DonHang.TongPhiVanChuyen <= 0 ? "text-success" : "chu-nau-tram")">
-                        @(Model.DonHang.TongPhiVanChuyen <= 0 ? "0 đ (Miễn phí)" : $"+{Model.DonHang.TongPhiVanChuyen:N0} đ")
+                    <td class="text-end fw-semibold text-nowrap @(dh.TongPhiVanChuyen <= 0 ? "text-success" : "chu-nau-tram")">
+                        @(dh.TongPhiVanChuyen <= 0 ? "0 đ (Miễn phí)" : $"+{dh.TongPhiVanChuyen:N0} đ")
                     </td>
                 </tr>
                 <tr>
                     <td colspan="2" class="text-end fw-bold" style="color: #2C1810; font-size: 1.02rem;">Tổng thanh toán:</td>
-                    <td class="text-end fw-bold text-nowrap" style="color: #7A1215; font-size: 1.3rem;">@Model.DonHang.TongThanhToan.ToString("N0") đ</td>
+                    <td class="text-end fw-bold text-nowrap" style="color: #7A1215; font-size: 1.3rem;">@dh.TongThanhToan.ToString("N0") đ</td>
                 </tr>
             </tfoot>
         </table>
     </div>
 
     <!-- Thông tin địa chỉ nhận hàng -->
-    @if (Model.DonHang.DotGiaoHangDaDiems.Any())
+    @if (dh.DotGiaoHangDaDiems.Any())
     {
         <div class="p-3 rounded-3 mb-3 small" style="background: #FFFDF9; border: 1px solid #EADBC8;">
             <strong class="chu-do-son-mai d-block mb-1">
-                <i class="bi bi-geo-alt-fill me-1"></i>Địa điểm nhận quà (@Model.DonHang.DotGiaoHangDaDiems.Count điểm):
+                <i class="bi bi-geo-alt-fill me-1"></i>Địa điểm nhận quà (@dh.DotGiaoHangDaDiems.Count điểm):
             </strong>
-            @foreach (var dot in Model.DonHang.DotGiaoHangDaDiems)
+            @foreach (var dot in dh.DotGiaoHangDaDiems)
             {
                 <div class="text-muted mt-1">
                     • <strong>@dot.TenNguoiNhan</strong> (@dot.SdtnguoiNhan) — @dot.DiaChiGiaoChiTiet
@@ -158,12 +221,12 @@
         </div>
     }
 
-    <!-- Nút Tiếp tục mua sắm nằm gọn ở đáy cột trái -->
+    <!-- Nút điều hướng đáy cột trái -->
     <div class="pt-2 border-top d-flex justify-content-between align-items-center flex-wrap gap-2" style="border-color: #EADBC8 !important;">
         <a asp-controller="Home" asp-action="Index" class="btn btn-sm btn-do-son-mai rounded-pill px-4 py-2">
-            ← Tiếp tục mua sắm
+            @(laTrangThaiA_DaHuy ? "Đặt lại đơn hàng mới" : "← Tiếp tục mua sắm")
         </a>
-        @if (Model.DonHang.MaNd.HasValue)
+        @if (dh.MaNd.HasValue)
         {
             <a asp-controller="TaiKhoan" asp-action="HoSo" class="btn btn-sm btn-outline-dark rounded-pill px-3 py-2">
                 Xem Lịch sử đơn hàng
