@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 
@@ -58,7 +58,7 @@ namespace WebBanhTrungThu.Middlewares
                     context.Response.Cookies.Append(TenCookieKVL, maPhien, new CookieOptions
                     {
                         HttpOnly = true,
-                        Secure = true,
+                        Secure = context.Request.IsHttps,
                         SameSite = SameSiteMode.Lax,
                         IsEssential = true,
                         Expires = DateTimeOffset.UtcNow.AddDays(14)

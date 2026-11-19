@@ -460,6 +460,15 @@ namespace WebBanhTrungThu.Data
             await db.Database.ExecuteSqlRawAsync(@"
                 IF OBJECT_ID('dbo.NguoiDung', 'U') IS NOT NULL
                 BEGIN
+                    UPDATE dbo.NguoiDung
+                    SET Email = REPLACE(LTRIM(RTRIM(Email)), ' ', '')
+                    WHERE Email LIKE '% %' AND Email LIKE '%@%'
+                      AND NOT EXISTS (
+                          SELECT 1 FROM dbo.NguoiDung nd2
+                          WHERE nd2.MaND <> dbo.NguoiDung.MaND
+                            AND nd2.Email = REPLACE(LTRIM(RTRIM(dbo.NguoiDung.Email)), ' ', '')
+                      );
+
                     IF EXISTS (SELECT 1 FROM dbo.NguoiDung WHERE Email LIKE 'admin@nguy%c%' AND Email <> 'admin@nguyetcat.vn')
                     BEGIN
                         IF NOT EXISTS (SELECT 1 FROM dbo.NguoiDung WHERE Email = 'admin@nguyetcat.vn')

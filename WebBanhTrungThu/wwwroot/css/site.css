@@ -1042,7 +1042,7 @@ body {
 /* Thanh Điều Hướng Điểm Dọc (Right Side Section Dots) */
 .side-section-dots {
     position: fixed;
-    right: 22px;
+    right: 8px;
     top: 50%;
     transform: translateY(-50%);
     z-index: 1035;
@@ -1051,7 +1051,7 @@ body {
     gap: 14px;
     list-style: none;
     margin: 0;
-    padding: 10px 8px;
+    padding: 8px 6px;
     background: rgba(255, 255, 255, 0.82);
     backdrop-filter: blur(8px);
     border: 1px solid var(--mau-vien-vang-dong);
@@ -1087,14 +1087,15 @@ body {
 
 .side-dot-label {
     position: absolute;
-    right: 28px;
+    right: 20px;
     white-space: nowrap;
     background: linear-gradient(135deg, #6E0D10 0%, #4A0709 100%);
     color: var(--mau-kem-vang);
     border: 1px solid var(--mau-vang-anh-kim);
-    font-size: 0.78rem;
+    font-size: 0.68rem;
     font-weight: 600;
-    padding: 5px 12px;
+    line-height: 1.25;
+    padding: 3px 8px;
     border-radius: 20px;
     box-shadow: 0 6px 16px rgba(74, 7, 9, 0.25);
     opacity: 0;
@@ -1114,6 +1115,19 @@ body {
 @media (max-width: 767.98px) {
     .side-section-dots {
         display: none;
+    }
+}
+
+@media (min-width: 1080px) {
+    #tang-tu-chon-hop > .container {
+        padding-right: 68px;
+    }
+}
+
+@media (min-width: 1200px) and (max-width: 1279.98px),
+       (min-width: 1400px) and (max-width: 1459.98px) {
+    #tang-tu-chon-hop > .container {
+        padding-right: 86px;
     }
 }
 
@@ -1341,14 +1355,26 @@ body {
 }
 
 #selComboDatHangB2B {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    display: block;
     width: 100%;
-    padding-right: 2.25rem !important;
+    height: 34px;
     min-height: 34px;
-    line-height: 1.35;
-    text-overflow: ellipsis;
+    line-height: 1.25;
     white-space: nowrap;
     overflow: hidden;
-    background-position: right 0.75rem center;
+    text-overflow: ellipsis;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    padding-left: 0.6rem;
+    padding-right: 2rem !important;
+    background-position: right 0.65rem center;
+}
+
+#selComboDatHangB2B::picker-icon {
+    display: none;
 }
 
 /* Bảng B2B truyền thống trên nền sáng */

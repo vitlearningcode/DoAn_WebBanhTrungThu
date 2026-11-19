@@ -93,15 +93,33 @@ html, body {
     display: inline-block;
 }
 
+.form-select.form-select-sm,
 .kv-role-select {
-    max-width: 225px;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    display: block;
+    height: 34px;
+    min-height: 34px;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    padding-left: 0.55rem;
+    padding-right: 2rem !important;
+    background-position: right 0.55rem center;
 }
 
-.form-select.form-select-sm {
-    padding-right: 2rem !important;
-    min-height: 30px;
-    line-height: 1.3;
-    background-position: right 0.55rem center;
+.form-select.form-select-sm::picker-icon,
+.kv-role-select::picker-icon {
+    display: none;
+}
+
+.kv-role-select {
+    width: auto;
+    max-width: 225px;
 }
 
 .kv-top-link:hover {

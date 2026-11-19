@@ -77,7 +77,7 @@ namespace WebBanhTrungThu.Services
                     httpContext.Response.Cookies.Append(PhienKhachVangLaiMiddleware.TenCookieKVL, maPhienKvl, new CookieOptions
                     {
                         HttpOnly = true,
-                        Secure = true,
+                        Secure = httpContext.Request.IsHttps,
                         SameSite = SameSiteMode.Lax,
                         IsEssential = true,
                         Expires = DateTimeOffset.UtcNow.AddDays(14)

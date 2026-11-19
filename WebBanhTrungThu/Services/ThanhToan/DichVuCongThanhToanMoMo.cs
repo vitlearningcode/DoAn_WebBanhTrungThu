@@ -159,6 +159,7 @@ namespace WebBanhTrungThu.Services.ThanhToan
         {
             var bayGio = LayThoiGianHeThong();
             var truyVan = _context.DonHangs
+                .AsSplitQuery()
                 .Include(d => d.ChiTietDonHangs)
                 .Include(d => d.DotGiaoHangDaDiems)
                 .Where(d => (d.TrangThaiTt == "CHO_THANH_TOAN" || d.TrangThaiTt == "CHO_XAC_MINH_CK")
@@ -250,6 +251,7 @@ namespace WebBanhTrungThu.Services.ThanhToan
             await KiemTraVaHuyDonQrQuaHanAsync();
 
             var donHang = await _context.DonHangs
+                .AsSplitQuery()
                 .Include(d => d.DotGiaoHangDaDiems)
                 .Include(d => d.ChiTietDonHangs)
                 .FirstOrDefaultAsync(d => d.MaTraCuuDh == maTraCuu);
@@ -324,6 +326,7 @@ namespace WebBanhTrungThu.Services.ThanhToan
             }
 
             var donHang = await _context.DonHangs
+                .AsSplitQuery()
                 .Include(d => d.ChiTietDonHangs)
                 .Include(d => d.DotGiaoHangDaDiems)
                 .FirstOrDefaultAsync(d => d.MaTraCuuDh == maTraCuu.Trim());

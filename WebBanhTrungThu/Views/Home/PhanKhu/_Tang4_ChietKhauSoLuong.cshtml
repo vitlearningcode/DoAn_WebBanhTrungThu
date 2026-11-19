@@ -49,7 +49,7 @@
 
                     <div class="mt-2 mb-3">
                         <label for="selComboDatHangB2B" class="form-label small fw-semibold chu-nau-tram mb-1">Chọn mẫu lễ hộp sỉ dự kiến:</label>
-                        <select id="selComboDatHangB2B" class="form-select form-select-sm" style="width: 100%; padding-right: 2.25rem; border-color: var(--mau-vang-dong-co);" onchange="tinhGiaSiB2B(document.getElementById('txtSoHopB2BDuKien').value, true)">
+                        <select id="selComboDatHangB2B" class="form-select form-select-sm" style="border-color: var(--mau-vang-dong-co);" onchange="tinhGiaSiB2B(document.getElementById('txtSoHopB2BDuKien').value, true)">
                             @if (Model.DanhSachCombo.Any())
                             {
                                 foreach (var cb in Model.DanhSachCombo)
