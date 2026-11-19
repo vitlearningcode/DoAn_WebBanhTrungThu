@@ -126,10 +126,35 @@
         font-size: 1.85rem;
         margin-bottom: 6px;
     }
+
+    @@media (max-width: 575.98px) {
+        .san-khau-thiep-3d {
+            max-width: 100%;
+        }
+
+        .mat-ngoai-thiep,
+        .mat-trong-thiep {
+            padding: 20px 14px;
+            min-height: 350px;
+        }
+
+        .nap-phong-bi-son-mai {
+            height: 122px;
+        }
+
+        .san-khau-thiep-3d h2,
+        .san-khau-thiep-3d h3 {
+            font-size: 1.3rem !important;
+        }
+
+        .san-khau-thiep-3d p.fs-4 {
+            font-size: 1.05rem !important;
+        }
+    }
 </style>
 
 <section class="d-flex align-items-center justify-content-center py-4" style="min-height: calc(100vh - 180px);">
-    <div class="container text-center">
+    <div class="container px-3 text-center">
         <!-- SÂN KHẤU LẬT THIỆP 3D GỌN TRONG 1 KHUNG MÀN HÌNH -->
         <div class="san-khau-thiep-3d">
             <div id="khungThiep3D" class="khung-thiep-lat-3d">

@@ -3,6 +3,7 @@ using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Middlewares;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Services.TaiKhoan
@@ -12,7 +13,7 @@ namespace WebBanhTrungThu.Services.TaiKhoan
     /// tổng hợp dữ liệu HoSoThanhVienViewModel, tính hạng VIP, quản lý Sổ địa chỉ biếu tặng và đặt lại hộp quà tự chọn.
     /// Kế thừa từ DichVuCoSo.
     /// </summary>
-    public class DichVuHoiVien : DichVuCoSo
+    public class DichVuHoiVien : DichVuCoSo, IDichVuHoiVien
     {
         public DichVuHoiVien(CSDLBanhTrungThuContext db) : base(db)
         {
@@ -140,10 +141,36 @@ namespace WebBanhTrungThu.Services.TaiKhoan
                 .AsNoTracking()
                 .Include(d => d.DotGiaoHangDaDiems)
                 .Include(d => d.ChiTietDonHangs)
-                .Include(d => d.ThiepChucMung3Ds)
                 .Where(d => d.MaNd == maNd)
                 .OrderByDescending(d => d.NgayDat)
                 .ToListAsync();
+
+            if (lichSuDonHangs.Count > 0)
+            {
+                var danhSachMaDon = lichSuDonHangs.Select(d => d.MaDh).ToList();
+                var danhSachThiep = await _db.ThiepChucMung3ds
+                    .AsNoTracking()
+                    .Where(t => danhSachMaDon.Contains(t.MaDonHang))
+                    .ToListAsync();
+
+                var thiepTheoDon = danhSachThiep.ToLookup(t => t.MaDonHang);
+                foreach (var donHang in lichSuDonHangs)
+                {
+                    foreach (var thiep in thiepTheoDon[donHang.MaDh])
+                    {
+                        var dot = donHang.DotGiaoHangDaDiems.FirstOrDefault(g => g.MaDotGh == thiep.MaDotGiao)
+                            ?? donHang.DotGiaoHangDaDiems.FirstOrDefault(g => g.MaTokenThiepQr == thiep.MaTokenQr);
+                        if (dot == null) continue;
+
+                        if (!dot.CoKemThiepQr) dot.CoKemThiepQr = true;
+                        if (string.IsNullOrWhiteSpace(dot.MaTokenThiepQr)) dot.MaTokenThiepQr = thiep.MaTokenQr;
+                        if (string.IsNullOrWhiteSpace(dot.LoiChucThiep)) dot.LoiChucThiep = thiep.LoiChuc;
+                        if (string.IsNullOrWhiteSpace(dot.MauGiaoDienThiep)) dot.MauGiaoDienThiep = thiep.MauGiaoDien;
+                        if (string.IsNullOrWhiteSpace(dot.TenNguoiNhanThiep)) dot.TenNguoiNhanThiep = thiep.TenNguoiNhan;
+                        if (string.IsNullOrWhiteSpace(dot.TenNguoiGuiThiep)) dot.TenNguoiGuiThiep = thiep.TenNguoiGui;
+                    }
+                }
+            }
 
             var danhSachHopTuChons = await _db.HopQuaTuChons
                 .AsNoTracking()
@@ -219,7 +246,7 @@ namespace WebBanhTrungThu.Services.TaiKhoan
         /// </summary>
         public static async Task<int> CongDiemThuongDonHangAsync(
             CSDLBanhTrungThuContext db,
-            DichVuCauHinhHeThong cauHinhHeThong,
+            IDichVuCauHinhHeThong cauHinhHeThong,
             DonHang donHang)
         {
             if (!donHang.MaNd.HasValue || string.Equals(donHang.TrangThaiDh, "DA_HUY", StringComparison.OrdinalIgnoreCase))
@@ -266,7 +293,7 @@ namespace WebBanhTrungThu.Services.TaiKhoan
         /// </summary>
         public static async Task<int> HoanDiemKhiHuyDonAsync(
             CSDLBanhTrungThuContext db,
-            DichVuCauHinhHeThong cauHinhHeThong,
+            IDichVuCauHinhHeThong cauHinhHeThong,
             DonHang donHang)
         {
             if (!donHang.MaNd.HasValue)

@@ -1,5 +1,9 @@
 @model WebBanhTrungThu.ViewModels.LandingPageViewModel
 @using WebBanhTrungThu.Services
+@{
+    var voHopMacDinh = Model.DanhSachVoHop.FirstOrDefault(v => v.MaVh == 1) ?? Model.DanhSachVoHop.FirstOrDefault();
+    decimal giaVoMacDinh = voHopMacDinh?.GiaVoHopRieng ?? 85000m;
+}
 
 <!-- =========================================================================
      TẦNG 2 (02): KHUNG TỰ PHỐI LỄ HỘP QUÀ TẶNG 3 BƯỚC (NỀN KEM GIẤY DÓ ẤM)
@@ -95,7 +99,7 @@
                             </button>
                         </div>
 
-                        <div id="khungKhayHop" class="khung-khay-hop my-1 d-flex align-items-stretch justify-content-center flex-grow-1">
+                        <div id="khungKhayHop" class="khung-khay-hop my-1 d-flex align-items-center justify-content-center flex-grow-1">
                             <div id="luoiOBanh" class="luoi-hop-2x2 w-100 h-100">
                                 <!-- Các ô trống được render động bằng JS -->
                             </div>
@@ -108,9 +112,12 @@
                             <input type="text" id="txtTenHopTuDat" class="form-control py-1" style="border-color: var(--mau-vien-vang-dong); color: var(--mau-chu-nau-tram); font-size: 0.78rem;" value="Hộp Quà Đoàn Viên Tự Phối" />
                         </div>
 
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="small chu-nau-phu fw-medium" style="font-size: 0.78rem;">Giá trọn bộ (Ưu đãi 5% giá vỏ hộp):</span>
-                            <span id="lblTongGiaHop" class="fs-6 fw-bold chu-do-son-mai">80.750 đ</span>
+                        <div class="d-flex justify-content-between align-items-baseline gap-2 mb-1">
+                            <div class="min-w-0">
+                                <span class="small chu-nau-phu fw-medium d-block lh-sm" style="font-size: 0.78rem;">Giá trọn bộ (Ưu đãi 5% giá vỏ hộp):</span>
+                                <small id="lblChuThichGiaHop" class="chu-nau-phu d-block lh-sm" style="font-size: 0.7rem;">(Vỏ hộp: @giaVoMacDinh.ToString("N0")đ • Chưa chọn bánh)</small>
+                            </div>
+                            <span id="lblTongGiaHop" class="fs-6 fw-bold chu-do-son-mai text-nowrap flex-shrink-0">0 đ</span>
                         </div>
 
                         <button id="btnThemHopVaoGio" class="btn btn-sm btn-do-son-mai w-100 py-1 rounded-pill" style="font-size: 0.8rem;" disabled onclick="xacNhanThemHopTuChon()">

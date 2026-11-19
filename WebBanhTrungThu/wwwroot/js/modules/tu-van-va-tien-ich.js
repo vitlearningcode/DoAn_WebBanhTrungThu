@@ -570,13 +570,34 @@ document.addEventListener("keydown", function (e) {
 });
 
 function khoiChayDongHoDemNguoc() {
-    const el = document.getElementById("cd-giay");
-    if (!el) return;
-    let giay = 30;
-    setInterval(() => {
-        giay = giay > 0 ? giay - 1 : 59;
-        el.innerText = giay.toString().padStart(2, "0");
-    }, 1000);
+    if (typeof khoiTaoDongHoDemNguocTrungThu === "function") {
+        khoiTaoDongHoDemNguocTrungThu();
+        return;
+    }
+
+    const elNgay = document.getElementById("cd-ngay");
+    const elGio = document.getElementById("cd-gio");
+    const elPhut = document.getElementById("cd-phut");
+    const elGiay = document.getElementById("cd-giay");
+    if (!elNgay || !elGio || !elPhut || !elGiay) return;
+
+    const capNhat = () => {
+        const bayGio = Date.now();
+        const cacMoc = [
+            new Date(2026, 8, 25, 20, 0, 0).getTime(),
+            new Date(2027, 8, 15, 20, 0, 0).getTime(),
+            new Date(2028, 9, 3, 20, 0, 0).getTime()
+        ];
+        const mocDich = cacMoc.find(m => m > bayGio) || new Date(new Date().getFullYear() + 1, 8, 15, 20, 0, 0).getTime();
+        const tongGiay = Math.floor(Math.max(0, mocDich - bayGio) / 1000);
+        elNgay.textContent = Math.floor(tongGiay / 86400).toString().padStart(2, "0");
+        elGio.textContent = Math.floor((tongGiay % 86400) / 3600).toString().padStart(2, "0");
+        elPhut.textContent = Math.floor((tongGiay % 3600) / 60).toString().padStart(2, "0");
+        elGiay.textContent = (tongGiay % 60).toString().padStart(2, "0");
+    };
+
+    capNhat();
+    setInterval(capNhat, 1000);
 }
 
 function chuanHoaChuoiCaptchaNhap(chuoi) {

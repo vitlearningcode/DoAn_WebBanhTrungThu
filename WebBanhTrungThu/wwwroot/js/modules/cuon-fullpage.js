@@ -356,3 +356,215 @@ function truotBstBanh(huong) {
         behavior: "smooth"
     });
 }
+
+// =========================================================================
+// ĐỒNG HỒ ĐẾM NGƯỢC TRUNG THU THỰC TẾ & HERO BANNER SLIDER LUCIAN #258
+// =========================================================================
+let boHenGioDemNguocTrungThu = null;
+
+function tinhMocTrungThuKeTiep() {
+    const bayGio = Date.now();
+    const cacMocTrungThu = [
+        new Date(2026, 8, 25, 20, 0, 0).getTime(), // 25/09/2026 20:00:00
+        new Date(2027, 8, 15, 20, 0, 0).getTime(), // 15/09/2027 20:00:00
+        new Date(2028, 9, 3, 20, 0, 0).getTime()   // 03/10/2028 20:00:00
+    ];
+
+    const mocSapToi = cacMocTrungThu.find(moc => moc > bayGio);
+    if (mocSapToi) return mocSapToi;
+
+    return new Date(new Date().getFullYear() + 1, 8, 15, 20, 0, 0).getTime();
+}
+
+function capNhatDongHoDemNguocTrungThu() {
+    const elNgay = document.getElementById("cd-ngay");
+    const elGio = document.getElementById("cd-gio");
+    const elPhut = document.getElementById("cd-phut");
+    const elGiay = document.getElementById("cd-giay");
+    if (!elNgay || !elGio || !elPhut || !elGiay) return false;
+
+    const mocDich = tinhMocTrungThuKeTiep();
+    const khoangMs = Math.max(0, mocDich - Date.now());
+    const tongGiay = Math.floor(khoangMs / 1000);
+
+    const soNgay = Math.floor(tongGiay / 86400);
+    const soGio = Math.floor((tongGiay % 86400) / 3600);
+    const soPhut = Math.floor((tongGiay % 3600) / 60);
+    const soGiay = tongGiay % 60;
+
+    elNgay.textContent = soNgay.toString().padStart(2, "0");
+    elGio.textContent = soGio.toString().padStart(2, "0");
+    elPhut.textContent = soPhut.toString().padStart(2, "0");
+    elGiay.textContent = soGiay.toString().padStart(2, "0");
+    return true;
+}
+
+function khoiTaoDongHoDemNguocTrungThu() {
+    if (!capNhatDongHoDemNguocTrungThu()) return;
+    if (boHenGioDemNguocTrungThu) {
+        clearInterval(boHenGioDemNguocTrungThu);
+    }
+    boHenGioDemNguocTrungThu = setInterval(capNhatDongHoDemNguocTrungThu, 1000);
+}
+
+function khoiTaoBannerSliderHero258() {
+    const root = document.getElementById("heroBannerSlider258");
+    if (!root || root.dataset.initialized === "1") return;
+    root.dataset.initialized = "1";
+
+    let danhSachSlide = [];
+    try {
+        danhSachSlide = JSON.parse(root.dataset.slides || "[]");
+    } catch {
+        danhSachSlide = [];
+    }
+    if (!Array.isArray(danhSachSlide) || danhSachSlide.length === 0) return;
+
+    const imgEl = document.getElementById("u258Image");
+    const pgEl = document.getElementById("u258Progress");
+    const cpEl = document.getElementById("u258Caption");
+    const cpIdxEl = document.getElementById("u258CaptionIndex");
+    const cpTitleEl = document.getElementById("u258CaptionTitle");
+    const badgeEl = document.getElementById("heroSlideBadge258");
+    const descEl = document.getElementById("u258SlideDesc");
+    const dotsWrap = document.getElementById("u258Dots");
+    const btnPrev = document.getElementById("btnPrevSlide258");
+    const btnNext = document.getElementById("btnNextSlide258");
+    if (!imgEl) return;
+
+    const giamChuyenDong = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let chiSoHienTai = 0;
+    let timerTuDong = null;
+    let timerBlurUp = null;
+    let phienTai = 0;
+
+    function capNhatDotActive(idx) {
+        if (!dotsWrap) return;
+        dotsWrap.querySelectorAll(".u258-dot").forEach((dot, i) => {
+            dot.classList.toggle("active", i === idx);
+            dot.setAttribute("aria-selected", i === idx ? "true" : "false");
+        });
+    }
+
+    function chayHieuUngBlurUp(slide) {
+        phienTai += 1;
+        const phienHienTai = phienTai;
+
+        if (timerBlurUp) {
+            clearTimeout(timerBlurUp);
+            timerBlurUp = null;
+        }
+
+        imgEl.classList.remove("is-loaded");
+        if (cpEl) cpEl.classList.remove("is-loaded");
+        if (pgEl) {
+            pgEl.classList.remove("is-running", "is-done");
+            void pgEl.offsetWidth;
+            pgEl.classList.add("is-running");
+        }
+
+        if (badgeEl) badgeEl.textContent = slide.nhan || "";
+        if (descEl) descEl.textContent = slide.moTa || "";
+        if (cpIdxEl) cpIdxEl.textContent = `${String(chiSoHienTai + 1).padStart(2, "0")} / ${String(danhSachSlide.length).padStart(2, "0")}`;
+        if (cpTitleEl) cpTitleEl.textContent = slide.tieuDe || "";
+
+        imgEl.setAttribute("data-fit", slide.fit || "cover");
+        imgEl.alt = slide.tieuDe || "Lễ hộp Trung Thu Nguyệt Cát";
+
+        const hoanTatHienAnh = () => {
+            if (phienHienTai !== phienTai) return;
+            imgEl.classList.add("is-loaded");
+            if (cpEl) cpEl.classList.add("is-loaded");
+            if (pgEl) {
+                pgEl.classList.remove("is-running");
+                pgEl.classList.add("is-done");
+            }
+        };
+
+        const treBlurMs = giamChuyenDong ? 20 : 280;
+        let anhDaTai = false;
+        let hetTreToiThieu = false;
+
+        const kiemTraHien = () => {
+            if (anhDaTai && hetTreToiThieu) {
+                hoanTatHienAnh();
+            }
+        };
+
+        imgEl.onload = () => {
+            anhDaTai = true;
+            kiemTraHien();
+        };
+        imgEl.onerror = () => {
+            anhDaTai = true;
+            kiemTraHien();
+        };
+
+        imgEl.src = slide.anh;
+        if (imgEl.complete && imgEl.naturalWidth > 0) {
+            anhDaTai = true;
+        }
+
+        timerBlurUp = setTimeout(() => {
+            hetTreToiThieu = true;
+            kiemTraHien();
+        }, treBlurMs);
+    }
+
+    function hienSlide(chiSoMoi) {
+        const tong = danhSachSlide.length;
+        chiSoHienTai = ((chiSoMoi % tong) + tong) % tong;
+        capNhatDotActive(chiSoHienTai);
+        chayHieuUngBlurUp(danhSachSlide[chiSoHienTai]);
+    }
+
+    function datLaiAutoSlide() {
+        if (timerTuDong) clearInterval(timerTuDong);
+        timerTuDong = setInterval(() => {
+            hienSlide(chiSoHienTai + 1);
+        }, 4500);
+    }
+
+    if (btnPrev) {
+        btnPrev.addEventListener("click", () => {
+            hienSlide(chiSoHienTai - 1);
+            datLaiAutoSlide();
+        });
+    }
+
+    if (btnNext) {
+        btnNext.addEventListener("click", () => {
+            hienSlide(chiSoHienTai + 1);
+            datLaiAutoSlide();
+        });
+    }
+
+    if (dotsWrap) {
+        dotsWrap.querySelectorAll(".u258-dot").forEach(dot => {
+            dot.addEventListener("click", () => {
+                const idx = parseInt(dot.getAttribute("data-index") || "0", 10);
+                hienSlide(idx);
+                datLaiAutoSlide();
+            });
+        });
+    }
+
+    root.addEventListener("mouseenter", () => {
+        if (timerTuDong) {
+            clearInterval(timerTuDong);
+            timerTuDong = null;
+        }
+    });
+
+    root.addEventListener("mouseleave", () => {
+        datLaiAutoSlide();
+    });
+
+    hienSlide(0);
+    datLaiAutoSlide();
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    khoiTaoDongHoDemNguocTrungThu();
+    khoiTaoBannerSliderHero258();
+});

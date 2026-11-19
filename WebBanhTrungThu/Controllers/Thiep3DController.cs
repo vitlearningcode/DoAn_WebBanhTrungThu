@@ -3,15 +3,15 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Controllers.CoSo;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
-using WebBanhTrungThu.Services;
+using WebBanhTrungThu.Services.Interfaces;
 
 namespace WebBanhTrungThu.Controllers
 {
     public class Thiep3DController : ControllerKhachHangCoSo
     {
-        private readonly DichVuCauHinhHeThong _kiotMeta;
+        private readonly IDichVuCauHinhHeThong _kiotMeta;
 
-        public Thiep3DController(CSDLBanhTrungThuContext db, DichVuCauHinhHeThong kiotMeta) : base(db)
+        public Thiep3DController(CSDLBanhTrungThuContext db, IDichVuCauHinhHeThong kiotMeta) : base(db)
         {
             _kiotMeta = kiotMeta;
         }

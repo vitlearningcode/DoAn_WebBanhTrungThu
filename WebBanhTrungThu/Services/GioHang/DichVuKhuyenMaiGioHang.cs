@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Services.GioHang
@@ -10,7 +11,7 @@ namespace WebBanhTrungThu.Services.GioHang
     /// Dịch vụ chuyên trách kiểm tra điều kiện mã giảm giá, tính chiết khấu sỉ B2B
     /// và tổng kết tiền giỏ hàng chuẩn xác từ CSDL. Kế thừa từ DichVuCoSo.
     /// </summary>
-    public class DichVuKhuyenMaiGioHang : DichVuCoSo
+    public class DichVuKhuyenMaiGioHang : DichVuCoSo, IDichVuKhuyenMaiGioHang
     {
         public DichVuKhuyenMaiGioHang(CSDLBanhTrungThuContext db) : base(db)
         {

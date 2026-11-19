@@ -7,6 +7,7 @@ using WebBanhTrungThu.Middlewares;
 using WebBanhTrungThu.Services;
 using WebBanhTrungThu.Services.GiaoDien;
 using WebBanhTrungThu.Services.GioHang;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.Services.QuanTri;
 using WebBanhTrungThu.Services.TaiKhoan;
 using WebBanhTrungThu.Services.ThanhToan;
@@ -25,24 +26,24 @@ builder.Services.AddControllersWithViews()
 builder.Services.AddDbContext<CSDLBanhTrungThuContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("ChuoiKetNoiCSDL")));
 
-// 3. Đăng ký các Service nghiệp vụ theo kiến trúc phân tầng rễ cây (Clean MVC 3 tầng)
-builder.Services.AddScoped<DichVuHinhAnh>();
-builder.Services.AddScoped<DichVuHoiVien>();
-builder.Services.AddScoped<DichVuHopQuaTuChon>();
-builder.Services.AddScoped<DichVuKhuyenMaiGioHang>();
-builder.Services.AddScoped<DichVuGioHang>();
-builder.Services.AddScoped<DichVuBaoMatCaptcha>();
-builder.Services.AddScoped<DichVuTinhGiaDonHang>();
-builder.Services.AddScoped<DichVuTonKhoFefo>();
-builder.Services.AddScoped<DichVuThanhToan>();
-builder.Services.AddScoped<DichVuQuanTriSanPham>();
-builder.Services.AddScoped<DichVuQuanTriBangGia>();
-builder.Services.AddScoped<DichVuQuanTriKhoFefo>();
-builder.Services.AddScoped<DichVuQuanTriDonHang>();
-builder.Services.AddScoped<DichVuBanHangPos>();
-builder.Services.AddScoped<DichVuTrangChu>();
-builder.Services.AddScoped<DichVuThongKeVaSoQuy>();
-builder.Services.AddSingleton<DichVuCauHinhHeThong>();
+// 3. Đăng ký các Service nghiệp vụ theo chuẩn Dependency Inversion (Interface -> Implementation)
+builder.Services.AddScoped<IDichVuHinhAnh, DichVuHinhAnh>();
+builder.Services.AddScoped<IDichVuHoiVien, DichVuHoiVien>();
+builder.Services.AddScoped<IDichVuHopQuaTuChon, DichVuHopQuaTuChon>();
+builder.Services.AddScoped<IDichVuKhuyenMaiGioHang, DichVuKhuyenMaiGioHang>();
+builder.Services.AddScoped<IDichVuGioHang, DichVuGioHang>();
+builder.Services.AddScoped<IDichVuBaoMatCaptcha, DichVuBaoMatCaptcha>();
+builder.Services.AddScoped<IDichVuTinhGiaDonHang, DichVuTinhGiaDonHang>();
+builder.Services.AddScoped<IDichVuTonKhoFefo, DichVuTonKhoFefo>();
+builder.Services.AddScoped<IDichVuThanhToan, DichVuThanhToan>();
+builder.Services.AddScoped<IDichVuQuanTriSanPham, DichVuQuanTriSanPham>();
+builder.Services.AddScoped<IDichVuQuanTriBangGia, DichVuQuanTriBangGia>();
+builder.Services.AddScoped<IDichVuQuanTriKhoFefo, DichVuQuanTriKhoFefo>();
+builder.Services.AddScoped<IDichVuQuanTriDonHang, DichVuQuanTriDonHang>();
+builder.Services.AddScoped<IDichVuBanHangPos, DichVuBanHangPos>();
+builder.Services.AddScoped<IDichVuTrangChu, DichVuTrangChu>();
+builder.Services.AddScoped<IDichVuThongKeVaSoQuy, DichVuThongKeVaSoQuy>();
+builder.Services.AddScoped<IDichVuCauHinhHeThong, DichVuCauHinhHeThong>();
 
 // 4. Cấu hình Cookie Authentication thuần
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

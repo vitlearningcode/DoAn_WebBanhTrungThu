@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Services.QuanTri
@@ -9,11 +10,11 @@ namespace WebBanhTrungThu.Services.QuanTri
     /// Dịch vụ chuyên trách Thống kê KPI Dashboard Quản trị, Khôi phục dữ liệu gốc và Báo cáo Sổ quỹ Thu/Chi &amp; Cấu hình VietQR.
     /// Kế thừa từ DichVuCoSo.
     /// </summary>
-    public class DichVuThongKeVaSoQuy : DichVuCoSo
+    public class DichVuThongKeVaSoQuy : DichVuCoSo, IDichVuThongKeVaSoQuy
     {
-        private readonly DichVuCauHinhHeThong _kiotMeta;
+        private readonly IDichVuCauHinhHeThong _kiotMeta;
 
-        public DichVuThongKeVaSoQuy(CSDLBanhTrungThuContext db, DichVuCauHinhHeThong kiotMeta) : base(db)
+        public DichVuThongKeVaSoQuy(CSDLBanhTrungThuContext db, IDichVuCauHinhHeThong kiotMeta) : base(db)
         {
             _kiotMeta = kiotMeta;
         }

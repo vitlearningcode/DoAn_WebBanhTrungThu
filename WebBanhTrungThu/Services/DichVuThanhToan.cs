@@ -5,8 +5,8 @@ using QRCoder;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.Services.TaiKhoan;
-using WebBanhTrungThu.Services.ThanhToan;
 using WebBanhTrungThu.ViewModels;
 using GioHang = WebBanhTrungThu.Models.Entities.GioHang;
 
@@ -73,19 +73,19 @@ namespace WebBanhTrungThu.Services
     /// Dịch vụ Facade điều phối 3 dịch vụ chuyên biệt (DichVuBaoMatCaptcha, DichVuTinhGiaDonHang, DichVuTonKhoFefo),
     /// lưu DonHang, tạo ThiepChucMung3D (chỉ khi CoThiep3D == true) và xử lý Webhook /api/webhook/momo.
     /// </summary>
-    public class DichVuThanhToan : DichVuCoSo
+    public class DichVuThanhToan : DichVuCoSo, IDichVuThanhToan
     {
-        private readonly DichVuCauHinhHeThong _kiotMeta;
-        private readonly DichVuBaoMatCaptcha _dichVuCaptcha;
-        private readonly DichVuTinhGiaDonHang _dichVuTinhGia;
-        private readonly DichVuTonKhoFefo _dichVuTonKho;
+        private readonly IDichVuCauHinhHeThong _kiotMeta;
+        private readonly IDichVuBaoMatCaptcha _dichVuCaptcha;
+        private readonly IDichVuTinhGiaDonHang _dichVuTinhGia;
+        private readonly IDichVuTonKhoFefo _dichVuTonKho;
 
         public DichVuThanhToan(
             CSDLBanhTrungThuContext context,
-            DichVuCauHinhHeThong kiotMeta,
-            DichVuBaoMatCaptcha dichVuCaptcha,
-            DichVuTinhGiaDonHang dichVuTinhGia,
-            DichVuTonKhoFefo dichVuTonKho) : base(context)
+            IDichVuCauHinhHeThong kiotMeta,
+            IDichVuBaoMatCaptcha dichVuCaptcha,
+            IDichVuTinhGiaDonHang dichVuTinhGia,
+            IDichVuTonKhoFefo dichVuTonKho) : base(context)
         {
             _kiotMeta = kiotMeta;
             _dichVuCaptcha = dichVuCaptcha;
@@ -495,6 +495,25 @@ namespace WebBanhTrungThu.Services
                 .FirstOrDefaultAsync(d => d.MaTraCuuDh == maTraCuu);
 
             if (donHang == null) return null;
+
+            var danhSachThiep = await _context.ThiepChucMung3ds
+                .AsNoTracking()
+                .Where(t => t.MaDonHang == donHang.MaDh)
+                .ToListAsync();
+
+            foreach (var thiep in danhSachThiep)
+            {
+                var dot = donHang.DotGiaoHangDaDiems.FirstOrDefault(g => g.MaDotGh == thiep.MaDotGiao)
+                    ?? donHang.DotGiaoHangDaDiems.FirstOrDefault(g => g.MaTokenThiepQr == thiep.MaTokenQr);
+                if (dot == null) continue;
+
+                if (!dot.CoKemThiepQr) dot.CoKemThiepQr = true;
+                if (string.IsNullOrWhiteSpace(dot.MaTokenThiepQr)) dot.MaTokenThiepQr = thiep.MaTokenQr;
+                if (string.IsNullOrWhiteSpace(dot.LoiChucThiep)) dot.LoiChucThiep = thiep.LoiChuc;
+                if (string.IsNullOrWhiteSpace(dot.MauGiaoDienThiep)) dot.MauGiaoDienThiep = thiep.MauGiaoDien;
+                if (string.IsNullOrWhiteSpace(dot.TenNguoiNhanThiep)) dot.TenNguoiNhanThiep = thiep.TenNguoiNhan;
+                if (string.IsNullOrWhiteSpace(dot.TenNguoiGuiThiep)) dot.TenNguoiGuiThiep = thiep.TenNguoiGui;
+            }
 
             _kiotMeta.GanMetadataChoDonHang(donHang);
 

@@ -4,7 +4,7 @@ using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Middlewares;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
-using WebBanhTrungThu.Services.GioHang;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Services
@@ -13,15 +13,15 @@ namespace WebBanhTrungThu.Services
     /// Dịch vụ Facade (< 18KB) điều phối thêm/sửa/xóa món trong giỏ, gọi DichVuHopQuaTuChon và DichVuKhuyenMaiGioHang,
     /// xử lý GopGioHangAsync và DatLaiDonHangAsync. Kế thừa từ DichVuCoSo.
     /// </summary>
-    public class DichVuGioHang : DichVuCoSo
+    public class DichVuGioHang : DichVuCoSo, IDichVuGioHang
     {
-        private readonly DichVuHopQuaTuChon _dichVuHopTuChon;
-        private readonly DichVuKhuyenMaiGioHang _dichVuKhuyenMai;
+        private readonly IDichVuHopQuaTuChon _dichVuHopTuChon;
+        private readonly IDichVuKhuyenMaiGioHang _dichVuKhuyenMai;
 
         public DichVuGioHang(
             CSDLBanhTrungThuContext db,
-            DichVuHopQuaTuChon dichVuHopTuChon,
-            DichVuKhuyenMaiGioHang dichVuKhuyenMai) : base(db)
+            IDichVuHopQuaTuChon dichVuHopTuChon,
+            IDichVuKhuyenMaiGioHang dichVuKhuyenMai) : base(db)
         {
             _dichVuHopTuChon = dichVuHopTuChon;
             _dichVuKhuyenMai = dichVuKhuyenMai;

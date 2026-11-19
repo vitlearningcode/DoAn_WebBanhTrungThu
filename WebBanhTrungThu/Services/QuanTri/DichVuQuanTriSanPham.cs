@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Services.QuanTri
@@ -12,17 +13,17 @@ namespace WebBanhTrungThu.Services.QuanTri
     /// Dịch vụ chuyên trách quản trị Danh mục Hàng hóa Đại lý Nguyệt Cát ERP (~22KB):
     /// Danh mục bánh, sản phẩm bánh, vỏ hộp và combo mẫu. Kế thừa từ DichVuCoSo.
     /// </summary>
-    public class DichVuQuanTriSanPham : DichVuCoSo
+    public class DichVuQuanTriSanPham : DichVuCoSo, IDichVuQuanTriSanPham
     {
-        private readonly DichVuHinhAnh _dichVuHinhAnh;
-        private readonly DichVuCauHinhHeThong _cauHinhHeThong;
+        private readonly IDichVuHinhAnh _dichVuHinhAnh;
+        private readonly IDichVuCauHinhHeThong _cauHinhHeThong;
         private readonly IWebHostEnvironment _env;
         private static bool _daKiemTraDanhMuc = false;
 
         public DichVuQuanTriSanPham(
             CSDLBanhTrungThuContext db,
-            DichVuHinhAnh dichVuHinhAnh,
-            DichVuCauHinhHeThong cauHinhHeThong,
+            IDichVuHinhAnh dichVuHinhAnh,
+            IDichVuCauHinhHeThong cauHinhHeThong,
             IWebHostEnvironment env) : base(db)
         {
             _dichVuHinhAnh = dichVuHinhAnh;

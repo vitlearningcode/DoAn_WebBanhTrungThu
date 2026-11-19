@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Services
@@ -10,7 +11,7 @@ namespace WebBanhTrungThu.Services
     /// <summary>
     /// Dịch vụ quản lý và ánh xạ từ điển hình ảnh đa nguồn (WebRoot, Ổ cứng, Google Drive), kế thừa từ DichVuCoSo.
     /// </summary>
-    public class DichVuHinhAnh : DichVuCoSo
+    public class DichVuHinhAnh : DichVuCoSo, IDichVuHinhAnh
     {
         public DichVuHinhAnh(CSDLBanhTrungThuContext db) : base(db)
         {

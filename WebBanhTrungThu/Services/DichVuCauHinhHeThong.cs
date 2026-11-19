@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
+using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 
 namespace WebBanhTrungThu.Services
 {
@@ -145,7 +147,7 @@ namespace WebBanhTrungThu.Services
     /// Dịch vụ quản lý dữ liệu Sổ quỹ (PhieuThuChi), Thiệp Chúc Mừng 3D (ThiepChucMung3D),
     /// Cấu hình QR MoMo (CauHinhHeThong) và Dữ liệu mở rộng Đại lý Nguyệt Cát ERP lưu trữ 100% trong SQL Server.
     /// </summary>
-    public class DichVuCauHinhHeThong
+    public class DichVuCauHinhHeThong : DichVuCoSo, IDichVuCauHinhHeThong
     {
         public const string KHOA_CAU_HINH_QR_MOMO = "CAU_HINH_QR_MOMO";
         public const string KHOA_CAU_HINH_MORONG = "CAUHINH_MORONG_NGUYETCAT";
@@ -160,7 +162,7 @@ namespace WebBanhTrungThu.Services
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
-        public DichVuCauHinhHeThong(IServiceScopeFactory scopeFactory)
+        public DichVuCauHinhHeThong(CSDLBanhTrungThuContext context, IServiceScopeFactory scopeFactory) : base(context)
         {
             _scopeFactory = scopeFactory;
         }

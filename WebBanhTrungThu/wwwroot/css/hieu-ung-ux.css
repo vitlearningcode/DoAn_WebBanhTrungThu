@@ -1,0 +1,655 @@
+/* =========================================================================
+   HIỆU ỨNG UX & CHỐNG GIẬT BỐ CỤC (TÁCH KHỎI SITE.CSS)
+   ========================================================================= */
+
+/* 1. Khóa chống giật layout Bootstrap Modal / Offcanvas */
+body.modal-open,
+body.offcanvas-open,
+body[style*="padding-right"],
+.navbar[style*="padding-right"],
+.fixed-top[style*="padding-right"],
+.sticky-top[style*="padding-right"] {
+    padding-right: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* 2. Dải chữ chạy ưu đãi đầu trang (#thanh-thong-bao-uu-dai-chay) */
+#thanh-thong-bao-uu-dai-chay {
+    height: 28px;
+    min-height: 28px;
+    max-height: 28px;
+    line-height: 28px;
+    background: #580A0C;
+    color: #F7E7CE;
+    font-size: 0.78rem;
+    overflow: hidden;
+    white-space: nowrap;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.28);
+    width: 100%;
+    position: relative;
+}
+
+.dai-chu-chay-uu-dai {
+    display: inline-flex;
+    align-items: center;
+    width: max-content;
+    will-change: transform;
+    animation: chayThongBaoUuDai 38s linear infinite;
+}
+
+#thanh-thong-bao-uu-dai-chay:hover .dai-chu-chay-uu-dai {
+    animation-play-state: paused;
+}
+
+.muc-thong-bao-uu-dai {
+    display: inline-block;
+    flex-shrink: 0;
+    margin-right: 320px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+}
+
+@keyframes chayThongBaoUuDai {
+    0% {
+        transform: translate3d(0, 0, 0);
+    }
+
+    100% {
+        transform: translate3d(-50%, 0, 0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dai-chu-chay-uu-dai {
+        animation: none;
+    }
+}
+
+/* 3. Hiệu ứng trồi nhẹ khi tầng lộ ra – chỉ chuyển động opacity & transform để giữ 60fps */
+.section-reveal {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.section-reveal.active {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .section-reveal,
+    .section-reveal.active {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+}
+
+/* 4. Nâng cấp vi tương tác Studio phối hộp, VIP, Timeline đơn hàng & Chip tra cứu */
+td,
+th,
+.so-tien,
+.ton-kho,
+.kpi-value {
+    font-variant-numeric: tabular-nums;
+}
+
+#khung-do-chi-so-gi .thanh-do-gi-nen {
+    height: 8px;
+    border-radius: 999px;
+    background: #EAE0D5;
+    overflow: hidden;
+}
+
+#thanh-mau-gi {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.35s ease;
+}
+
+@keyframes nayOBanhVuaChon {
+    0% {
+        transform: scale(0.92);
+        border-color: #C89B3C;
+        box-shadow: 0 0 0 3px rgba(200, 155, 60, 0.35);
+    }
+
+    55% {
+        transform: scale(1.03);
+        border-color: #C89B3C;
+        box-shadow: 0 0 12px rgba(200, 155, 60, 0.45);
+    }
+
+    100% {
+        transform: scale(1);
+        border-color: #C89B3C;
+        box-shadow: 0 3px 10px rgba(122, 18, 21, 0.08);
+    }
+}
+
+.o-banh-slot.o-banh-vua-chon {
+    border-color: #C89B3C !important;
+    animation: nayOBanhVuaChon 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.khung-tien-trinh-vip-ho-so {
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.thanh-tien-trinh-vip-nen {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.18);
+    overflow: hidden;
+}
+
+.thanh-tien-trinh-vip-vang {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #C89B3C 0%, #F3D078 50%, #D4AF37 100%);
+    box-shadow: 0 0 8px rgba(243, 208, 120, 0.55);
+    transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nhac-thang-hang-vip {
+    font-size: 0.74rem;
+    line-height: 1.35;
+    color: rgba(255, 253, 249, 0.9);
+}
+
+.nhac-thang-hang-vip strong {
+    color: #F3D078;
+}
+
+.timeline-don-hang-4-buoc {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    background: #FDFBF7;
+    border-bottom: 1px solid #EAE0D5;
+    gap: 6px;
+}
+
+.timeline-don-hang-4-buoc.timeline-don-da-huy {
+    justify-content: center;
+    background: #F9F1F1;
+    color: #884A4A;
+}
+
+.nhan-don-da-huy {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #991B1B;
+}
+
+.buoc-timeline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: #8A7566;
+    white-space: nowrap;
+}
+
+.cham-buoc-timeline {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #EAE0D5;
+    color: #6E5041;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.buoc-timeline.da-hoan-thanh {
+    color: #7A1215;
+    font-weight: 700;
+}
+
+.buoc-timeline.da-hoan-thanh .cham-buoc-timeline {
+    background: #7A1215;
+    color: #FFFDF9;
+    box-shadow: 0 2px 6px rgba(122, 18, 21, 0.25);
+}
+
+.duong-noi-timeline {
+    flex: 1 1 16px;
+    height: 2px;
+    background: #E2D5C4;
+    border-radius: 999px;
+}
+
+.duong-noi-timeline.da-hoan-thanh {
+    background: #7A1215;
+}
+
+.nut-dat-lai-don-ho-so {
+    background: #FFFDF9;
+    border-color: #C89B3C;
+    color: #7A1215;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.nut-dat-lai-don-ho-so:hover {
+    background: #7A1215;
+    border-color: #7A1215;
+    color: #FFFDF9;
+}
+
+#con-dau-sap-mo-thiep {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #F3D078, #C89B3C 65%, #8C6218);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+}
+
+.chip-don-vua-dat {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #FFFDF9;
+    border: 1px solid #C89B3C;
+    color: #7A1215;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.chip-don-vua-dat:hover {
+    background: #7A1215;
+    border-color: #7A1215;
+    color: #FFFDF9;
+}
+
+@media (max-width: 767.98px) {
+    .timeline-don-hang-4-buoc {
+        flex-wrap: wrap;
+        padding: 10px 14px;
+        gap: 8px;
+    }
+
+    .duong-noi-timeline {
+        display: none;
+    }
+}
+
+/* =========================================================================
+   5. LUCIAN UX/UI PROMPT #258: BLUR-UP PHOTO LOADING HERO SLIDER (.u258)
+   MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#258
+   ========================================================================= */
+.u258 {
+    --ux-surface: #FFFFFF;
+    --ux-surface-2: #FDF8EE;
+    --ux-border: #E6D5B8;
+    --ux-text: #2C1810;
+    --ux-muted: #6E5041;
+    --ux-accent: #7A1215;
+    --ux-gold: #C89B3C;
+    --ux-gold-bright: #D4AF37;
+    --ux-cream: #FAF0CA;
+    position: relative;
+    width: 100%;
+}
+
+.u258-stage {
+    position: relative;
+    width: 100%;
+    height: 242px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--ux-border);
+    background: radial-gradient(circle at center, #FFFDF9 0%, #F6EFE2 68%, #EADBC0 100%);
+}
+
+.u258-pg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--ux-gold) 0%, var(--ux-gold-bright) 55%, var(--ux-accent) 100%);
+    transform-origin: left center;
+    transform: scaleX(0);
+    opacity: 0;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.u258-pg.is-running {
+    opacity: 1;
+    transform: scaleX(0.92);
+    transition: transform 0.36s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.16s ease;
+}
+
+.u258-pg.is-done {
+    opacity: 0;
+    transform: scaleX(1);
+    transition: transform 0.18s cubic-bezier(0.23, 1, 0.32, 1), opacity 0.26s ease 0.14s;
+}
+
+.u258-img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    filter: blur(12px) saturate(.75);
+    transform: scale(1.15);
+    opacity: 0.78;
+    will-change: transform, filter, opacity;
+    transition: filter 0.72s cubic-bezier(0.16, 1, 0.3, 1), transform 0.84s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.44s ease-out;
+}
+
+.u258-img[data-fit="cover"] {
+    object-fit: cover;
+}
+
+.u258-img[data-fit="contain"] {
+    object-fit: contain;
+    padding: 16px 38px 54px;
+}
+
+.u258-img.is-loaded {
+    filter: blur(0) saturate(1);
+    transform: scale(1);
+    opacity: 1;
+}
+
+.u258-cp {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 3;
+    padding: 22px 14px 10px;
+    text-align: left;
+    background: linear-gradient(180deg, rgba(44, 10, 12, 0) 0%, rgba(58, 7, 9, 0.88) 60%, rgba(44, 5, 7, 0.96) 100%);
+    color: var(--ux-cream);
+    transform: translateY(10px);
+    opacity: 0;
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.38s ease-out;
+}
+
+.u258-cp.is-loaded {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.u258-cp-index {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--ux-gold-bright);
+    margin-bottom: 2px;
+    font-variant-numeric: tabular-nums;
+}
+
+.u258-cp-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #FFFFFF;
+}
+
+.u258-arrow {
+    position: absolute;
+    top: 46%;
+    transform: translateY(-50%);
+    z-index: 4;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(212, 175, 55, 0.7);
+    background: rgba(74, 7, 9, 0.78);
+    color: var(--ux-cream);
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0 0 2px 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.u258-arrow-prev {
+    left: 10px;
+}
+
+.u258-arrow-next {
+    right: 10px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .u258-arrow:hover {
+        background: var(--ux-gold-bright);
+        color: var(--ux-text);
+        transform: translateY(-50%) scale(1.06);
+    }
+}
+
+.u258-dots {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.u258-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    border: none;
+    padding: 0;
+    background: #DFC9A4;
+    cursor: pointer;
+    transition: width 0.28s cubic-bezier(0.23, 1, 0.32, 1), background-color 0.22s ease;
+}
+
+.u258-dot.active {
+    width: 24px;
+    background: var(--ux-accent);
+}
+
+/* =========================================================================
+   6. LUCIAN UX/UI PROMPT #264: EMAIL INPUT THAT CATCHES TYPOS (.u264)
+   MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#264
+   ========================================================================= */
+.u264 {
+    --ux-surface: #FFFFFF;
+    --ux-surface-2: #FDF8EE;
+    --ux-border: #E6D5B8;
+    --ux-text: #2C1810;
+    --ux-muted: #6E5041;
+    --ux-accent: #7A1215;
+    --ux-gold: #C89B3C;
+    --ux-ok: #15803D;
+    --ux-amber-bg: #FEF3C7;
+    --ux-amber-border: #F59E0B;
+    --ux-amber-text: #92400E;
+    position: relative;
+    width: 100%;
+}
+
+.u264-in-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.u264-in {
+    padding-right: 36px !important;
+}
+
+.u264-ck {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%) scale(0.84);
+    color: var(--ux-ok);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.28s cubic-bezier(.3, 1.5, .5, 1);
+}
+
+.u264-ck-path {
+    stroke-dasharray: 20;
+    stroke-dashoffset: 20;
+    transition: stroke-dashoffset 0.34s cubic-bezier(0.22, 1, 0.36, 1) 0.05s;
+}
+
+.u264.is-valid .u264-ck {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+}
+
+.u264.is-valid .u264-ck-path {
+    stroke-dashoffset: 0;
+}
+
+.u264-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 0;
+    margin-top: 0;
+    opacity: 0;
+    overflow: hidden;
+    transform: translateY(-4px) scale(0.97);
+    transform-origin: top left;
+    pointer-events: none;
+    transition: opacity 0.22s cubic-bezier(.3, 1.5, .5, 1), transform 0.26s cubic-bezier(.3, 1.5, .5, 1), max-height 0.22s ease, margin-top 0.18s ease;
+}
+
+.u264-chips.is-open {
+    max-height: 96px;
+    margin-top: 6px;
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+.u264-chip {
+    border: 1px solid var(--ux-gold);
+    background: var(--ux-surface-2);
+    color: var(--ux-text);
+    border-radius: 999px;
+    padding: 3px 10px;
+    font-size: 0.74rem;
+    font-weight: 600;
+    line-height: 1.3;
+    cursor: pointer;
+    transform: scale(0.92);
+    opacity: 0;
+    transition: transform 0.26s cubic-bezier(.3, 1.5, .5, 1) calc(var(--chip-i, 0) * 28ms), opacity 0.2s ease calc(var(--chip-i, 0) * 28ms), background-color 0.18s ease, color 0.18s ease;
+}
+
+.u264-chips.is-open .u264-chip {
+    transform: scale(1);
+    opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .u264-chip:hover {
+        background: var(--ux-accent);
+        border-color: var(--ux-accent);
+        color: #FFFFFF;
+    }
+}
+
+.u264-hint-slot:not(:empty) {
+    margin-top: 6px;
+}
+
+.u264-typo-btn {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+    text-align: left;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: var(--ux-amber-bg);
+    border: 1px solid var(--ux-amber-border);
+    color: var(--ux-amber-text);
+    font-size: 0.78rem;
+    line-height: 1.35;
+    cursor: pointer;
+    animation: u264HintPop 0.24s cubic-bezier(.3, 1.5, .5, 1) both;
+    transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .u264-typo-btn:hover {
+        background: #FDE68A;
+        border-color: #D97706;
+    }
+}
+
+.u264-typo-ul {
+    text-decoration: underline;
+    text-decoration-color: #B45309;
+    text-underline-offset: 2px;
+}
+
+.u264-typo-old {
+    font-size: 0.72rem;
+    opacity: 0.85;
+}
+
+.u264-typo-bad {
+    text-decoration: underline wavy #DC2626;
+    text-underline-offset: 2px;
+}
+
+@keyframes u264HintPop {
+    from {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .u258-img,
+    .u258-cp,
+    .u258-pg,
+    .u264-chips,
+    .u264-chip,
+    .u264-ck,
+    .u264-ck-path,
+    .u264-typo-btn {
+        transition: none !important;
+        animation: none !important;
+    }
+
+    .u258-img {
+        filter: none;
+        transform: none;
+        opacity: 1;
+    }
+
+    .u258-cp {
+        transform: none;
+        opacity: 1;
+    }
+}

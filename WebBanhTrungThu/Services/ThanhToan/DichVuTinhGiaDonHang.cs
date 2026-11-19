@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.Services.TaiKhoan;
 using WebBanhTrungThu.ViewModels;
 using GioHang = WebBanhTrungThu.Models.Entities.GioHang;
@@ -12,7 +13,7 @@ namespace WebBanhTrungThu.Services.ThanhToan
     /// Dịch vụ chuyên trách tính tiền hàng từ CSDL (Anti-Tampering), tra bảng chiết khấu sỉ BangChietKhauSiB2b,
     /// kiểm tra 4 điều kiện hạn dùng của MaKhuyenMai và tính phí vận chuyển chuẩn xác.
     /// </summary>
-    public class DichVuTinhGiaDonHang : DichVuCoSo
+    public class DichVuTinhGiaDonHang : DichVuCoSo, IDichVuTinhGiaDonHang
     {
         public DichVuTinhGiaDonHang(CSDLBanhTrungThuContext context) : base(context)
         {

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Services.QuanTri
@@ -11,7 +12,7 @@ namespace WebBanhTrungThu.Services.QuanTri
     /// Cập nhật giá bán/giá vốn hàng loạt, quản lý giá vỏ hộp, quản lý bậc chiết khấu sỉ BangChietKhauSiB2b,
     /// bảng giá Combo lễ hộp và quản lý chương trình MaKhuyenMai. Kế thừa từ DichVuCoSo.
     /// </summary>
-    public class DichVuQuanTriBangGia : DichVuCoSo
+    public class DichVuQuanTriBangGia : DichVuCoSo, IDichVuQuanTriBangGia
     {
         public DichVuQuanTriBangGia(CSDLBanhTrungThuContext db) : base(db)
         {

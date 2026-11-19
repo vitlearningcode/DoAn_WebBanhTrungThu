@@ -2,13 +2,14 @@ using System.Text;
 using Microsoft.AspNetCore.Http;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 
 namespace WebBanhTrungThu.Services.ThanhToan
 {
     /// <summary>
     /// Dịch vụ chuyên trách bảo mật Captcha hình ảnh SVG chống bot và đối chiếu xác thực mã Captcha với Session.
     /// </summary>
-    public class DichVuBaoMatCaptcha : DichVuCoSo
+    public class DichVuBaoMatCaptcha : DichVuCoSo, IDichVuBaoMatCaptcha
     {
         public DichVuBaoMatCaptcha(CSDLBanhTrungThuContext context) : base(context)
         {

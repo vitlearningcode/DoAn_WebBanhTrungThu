@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Services.GioHang
@@ -10,7 +11,7 @@ namespace WebBanhTrungThu.Services.GioHang
     /// Dịch vụ chuyên trách tạo/cập nhật hộp quà tự phối, tính mã băm cấu hình MaBamCauHinh
     /// và sao chép hộp quà khi đặt lại đơn hàng. Kế thừa từ DichVuCoSo.
     /// </summary>
-    public class DichVuHopQuaTuChon : DichVuCoSo
+    public class DichVuHopQuaTuChon : DichVuCoSo, IDichVuHopQuaTuChon
     {
         public DichVuHopQuaTuChon(CSDLBanhTrungThuContext db) : base(db)
         {

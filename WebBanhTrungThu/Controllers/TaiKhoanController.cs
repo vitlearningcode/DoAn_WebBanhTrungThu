@@ -7,8 +7,7 @@ using WebBanhTrungThu.Controllers.CoSo;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Middlewares;
 using WebBanhTrungThu.Models.Entities;
-using WebBanhTrungThu.Services;
-using WebBanhTrungThu.Services.TaiKhoan;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Controllers
@@ -19,13 +18,13 @@ namespace WebBanhTrungThu.Controllers
     /// </summary>
     public class TaiKhoanController : ControllerKhachHangCoSo
     {
-        private readonly DichVuHoiVien _dichVuHoiVien;
-        private readonly DichVuGioHang _dichVuGioHang;
+        private readonly IDichVuHoiVien _dichVuHoiVien;
+        private readonly IDichVuGioHang _dichVuGioHang;
 
         public TaiKhoanController(
             CSDLBanhTrungThuContext db,
-            DichVuHoiVien dichVuHoiVien,
-            DichVuGioHang dichVuGioHang) : base(db)
+            IDichVuHoiVien dichVuHoiVien,
+            IDichVuGioHang dichVuGioHang) : base(db)
         {
             _dichVuHoiVien = dichVuHoiVien;
             _dichVuGioHang = dichVuGioHang;

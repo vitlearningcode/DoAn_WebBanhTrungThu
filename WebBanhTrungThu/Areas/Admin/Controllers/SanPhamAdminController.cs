@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebBanhTrungThu.Areas.Admin.Controllers.CoSo;
 using WebBanhTrungThu.Data;
-using WebBanhTrungThu.Services.QuanTri;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Areas.Admin.Controllers
@@ -14,15 +14,15 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN,GIAO_HANG")]
     public class SanPhamAdminController : ControllerQuanTriCoSo
     {
-        private readonly DichVuQuanTriSanPham _dichVuSanPham;
-        private readonly DichVuQuanTriKhoFefo _dichVuKhoFefo;
-        private readonly DichVuQuanTriBangGia _dichVuBangGia;
+        private readonly IDichVuQuanTriSanPham _dichVuSanPham;
+        private readonly IDichVuQuanTriKhoFefo _dichVuKhoFefo;
+        private readonly IDichVuQuanTriBangGia _dichVuBangGia;
 
         public SanPhamAdminController(
             CSDLBanhTrungThuContext db,
-            DichVuQuanTriSanPham dichVuSanPham,
-            DichVuQuanTriKhoFefo dichVuKhoFefo,
-            DichVuQuanTriBangGia dichVuBangGia) : base(db)
+            IDichVuQuanTriSanPham dichVuSanPham,
+            IDichVuQuanTriKhoFefo dichVuKhoFefo,
+            IDichVuQuanTriBangGia dichVuBangGia) : base(db)
         {
             _dichVuSanPham = dichVuSanPham;
             _dichVuKhoFefo = dichVuKhoFefo;

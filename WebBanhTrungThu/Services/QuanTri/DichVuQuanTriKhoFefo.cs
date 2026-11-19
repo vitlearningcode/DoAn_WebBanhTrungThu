@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Services.QuanTri
@@ -10,7 +11,7 @@ namespace WebBanhTrungThu.Services.QuanTri
     /// Dịch vụ chuyên trách quản trị Lô sản xuất FEFO, Kiểm kho hạn sử dụng,
     /// Xóa/hủy lô hết hạn và Kích hoạt xả kho cận Date (-30%). Kế thừa từ DichVuCoSo.
     /// </summary>
-    public class DichVuQuanTriKhoFefo : DichVuCoSo
+    public class DichVuQuanTriKhoFefo : DichVuCoSo, IDichVuQuanTriKhoFefo
     {
         public DichVuQuanTriKhoFefo(CSDLBanhTrungThuContext db) : base(db)
         {

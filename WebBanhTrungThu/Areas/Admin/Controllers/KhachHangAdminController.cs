@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Areas.Admin.Controllers.CoSo;
 using WebBanhTrungThu.Data;
-using WebBanhTrungThu.Services.QuanTri;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Areas.Admin.Controllers
@@ -11,9 +11,9 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN,GIAO_HANG")]
     public class KhachHangAdminController : ControllerQuanTriCoSo
     {
-        private readonly DichVuQuanTriBangGia _dichVuBangGia;
+        private readonly IDichVuQuanTriBangGia _dichVuBangGia;
 
-        public KhachHangAdminController(CSDLBanhTrungThuContext db, DichVuQuanTriBangGia dichVuBangGia) : base(db)
+        public KhachHangAdminController(CSDLBanhTrungThuContext db, IDichVuQuanTriBangGia dichVuBangGia) : base(db)
         {
             _dichVuBangGia = dichVuBangGia;
         }

@@ -1,0 +1,29 @@
+@model WebBanhTrungThu.ViewModels.TrangThanhToanViewModel
+
+<div class="mb-4">
+    <h2 class="fs-5 fw-bold text-dark mb-3">Phương thức thanh toán</h2>
+    <div id="nhomPhuongThucThanhToan" class="danh-sach-phuong-thuc-tt-bitis">
+        <label class="dong-phuong-thuc-tt-bitis dang-chon">
+            <input type="radio" name="PhuongThucTt" value="COD" checked class="form-check-input mt-0" onchange="capNhatTrangThaiPhuongThucTt()" />
+            <span class="fw-medium text-dark">Thanh toán khi nhận hàng (COD)</span>
+        </label>
+        <label class="dong-phuong-thuc-tt-bitis">
+            <input type="radio" name="PhuongThucTt" value="MOMO_QR" class="form-check-input mt-0" onchange="capNhatTrangThaiPhuongThucTt()" />
+            <span class="d-inline-flex align-items-center gap-2 fw-medium text-dark"><span class="logo-momo-badge">momo</span><span>Ví MoMo / Quét mã QR Ngân hàng (0814 585 526)</span></span>
+        </label>
+    </div>
+</div>
+
+<div class="khung-captcha-ngang-bitis mb-3">
+    <div class="d-flex align-items-center gap-2 flex-nowrap">
+        <img id="imgCaptchaThanhToan" src="" alt="Mã Captcha" style="width: 135px; height: 44px; border-radius: 6px; border: 1px solid #D1D5DB; background: #F9FAFB; flex-shrink: 0;" />
+        <button type="button" class="btn-doi-captcha-bitis" title="Đổi mã Captcha mới" onclick="taiMaCaptchaMoi(true)">↻</button>
+        <input type="text" id="txtMaCaptchaNhap" name="maCaptchaNhap" class="input-phang-bitis text-uppercase fw-bold" placeholder="Nhập mã xác thực *" maxlength="5" required autocomplete="off" style="letter-spacing: 2px; flex: 1; min-width: 0;" oninput="xuLyGoMaCaptchaTuDong(this)" />
+    </div>
+    <small id="lblTrangThaiCaptchaKho" class="d-block mt-1 text-secondary">Nhập đủ 5 ký tự trong hình để hệ thống tự động xác thực &amp; kiểm tra tồn kho.</small>
+</div>
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 pt-2">
+    <a href="javascript:void(0)" onclick="moNganKeoGioHang()" class="lien-ket-quay-lai-gio-bitis">← Quay lại giỏ hàng</a>
+    <button type="submit" id="btnHoanTatDatHang" class="btn-hoan-tat-dat-hang-bitis" disabled>HOÀN TẤT ĐẶT HÀNG</button>
+</div>

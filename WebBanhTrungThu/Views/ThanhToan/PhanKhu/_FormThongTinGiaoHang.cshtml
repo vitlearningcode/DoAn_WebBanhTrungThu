@@ -1,0 +1,188 @@
+@model WebBanhTrungThu.ViewModels.TrangThanhToanViewModel
+@{
+    var dc0 = Model.DanhSachSoDiaChi.FirstOrDefault();
+    string soNhaBanDau = dc0?.DiaChiCuThe ?? "";
+    string tinhThanhBanDau = dc0?.TinhThanh ?? "TP. Hồ Chí Minh";
+    string phuongQuanBanDau = dc0 != null ? $"{dc0.PhuongXa}, {dc0.QuanHuyen}" : "";
+    bool cheDoB2BTuUrl = string.Equals(Context.Request.Query["cheDoB2B"], "true", StringComparison.OrdinalIgnoreCase);
+    bool tuDongMoB2B = cheDoB2BTuUrl || Model.TongSoHop >= 10;
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+@if (!Model.DaDangNhap)
+{
+    <div class="small text-secondary">Bạn đã có tài khoản? <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#modalTaiKhoan" class="fw-bold text-decoration-underline ms-1 text-dark">Đăng nhập ngay</a></div>
+}
+else
+{
+    <div class="small fw-semibold text-dark">Xin chào, <strong>@Model.HoTenNguoiMua</strong></div>
+}
+
+@if (Model.DaDangNhap && Model.DanhSachSoDiaChi.Any())
+{
+    <select id="ddlSoDiaChiDaLuu" class="form-select form-select-sm w-auto" onchange="chonTuDropdownSoDiaChi(this)">
+        <option value="">Chọn nhanh từ Sổ địa chỉ...</option>
+        @foreach (var dc in Model.DanhSachSoDiaChi)
+        {
+            <option value="@dc.DiaChiCuThe" data-ten="@dc.TenNguoiNhan" data-sdt="@dc.SdtnguoiNhan" data-tinhthanh="@dc.TinhThanh" data-phuongquan="@($"{dc.PhuongXa}, {dc.QuanHuyen}")">
+                @(dc.NhanDiaChi ?? dc.TenNguoiNhan) - @dc.DiaChiCuThe, @dc.QuanHuyen
+            </option>
+        }
+    </select>
+}
+</div>
+
+<h2 class="fs-5 fw-bold text-dark mb-3">Thông tin giao hàng</h2>
+
+<div class="tab-hinh-thuc-nhan-bitis mb-3">
+    <label class="nut-tab-nhan-bitis dang-chon" id="lblChonGiaoTanNoi">
+        <input type="radio" name="HinhThucNhanHang" id="radGiaoTanNoi" value="GIAO_TAN_NOI" checked onchange="chuyenDoiHinhThucNhanHang()" />
+        <span>Giao tận nơi</span>
+    </label>
+    <label class="nut-tab-nhan-bitis" id="lblChonNhanTaiCuaHang">
+        <input type="radio" name="HinhThucNhanHang" id="radNhanTaiCuaHang" value="NHAN_TAI_CUA_HANG" onchange="chuyenDoiHinhThucNhanHang()" />
+        <span>Nhận tại cửa hàng</span>
+    </label>
+</div>
+
+<div class="row g-2 mb-2">
+    <div class="col-12"><input type="text" name="HoTenNguoiMua" id="txtHoTenNguoiMua" required class="input-phang-bitis" value="@Model.HoTenNguoiMua" placeholder="Họ và tên *" oninput="dongBoNguoiMuaSangNguoiNhan()" /></div>
+    <div class="col-md-6">
+        <!-- Lucian UX/UI Prompt #264 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#264 -->
+        <div class="u264" data-u264>
+            <div class="u264-in-wrap">
+                <input type="email" name="EmailNguoiMua" id="txtEmailNguoiMua" class="input-phang-bitis u264-in" value="@Model.EmailNguoiMua" placeholder="Email" autocomplete="email" />
+                <span class="u264-ck" aria-hidden="true">
+                    <svg viewBox="0 0 18 18" width="16" height="16" fill="none">
+                        <circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.5" opacity="0.22" />
+                        <path class="u264-ck-path" d="M5.2 9.3l2.4 2.4 5.2-5.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </span>
+            </div>
+            <div class="u264-chips" role="listbox" aria-label="Gợi ý tên miền email"></div>
+            <div class="u264-hint-slot" aria-live="polite"></div>
+        </div>
+    </div>
+    <div class="col-md-6"><input type="text" name="SdtNguoiMua" id="txtSdtNguoiMua" required class="input-phang-bitis" value="@Model.SdtNguoiMua" placeholder="Số điện thoại *" oninput="dongBoNguoiMuaSangNguoiNhan()" /></div>
+</div>
+
+<div id="khungDiaChiGiaoTanNoi">
+    <div class="row g-2 mb-2">
+        <div class="col-12"><input type="text" id="txtDiaChiSoNha" class="input-phang-bitis" value="@soNhaBanDau" placeholder="Địa chỉ *" oninput="dongBoDiaChiGiaoChinh()" /></div>
+        <div class="col-md-6">
+            <select id="ddlTinhThanh" class="input-phang-bitis" onchange="dongBoDiaChiGiaoChinh(); kiemTraTinhThanhVaCapNhatHoaToc();">
+                <option value="TP. Hồ Chí Minh" selected="@(tinhThanhBanDau.Contains("Hồ Chí Minh"))">TP. Hồ Chí Minh</option>
+                <option value="An Giang" selected="@(tinhThanhBanDau.Contains("An Giang"))">An Giang (TP. Long Xuyên)</option>
+                <option value="Hà Nội" selected="@(tinhThanhBanDau.Contains("Hà Nội"))">Hà Nội</option>
+                <option value="Đà Nẵng" selected="@(tinhThanhBanDau.Contains("Đà Nẵng"))">Đà Nẵng</option>
+                <option value="Cần Thơ" selected="@(tinhThanhBanDau.Contains("Cần Thơ"))">Cần Thơ</option>
+                <option value="Bình Dương" selected="@(tinhThanhBanDau.Contains("Bình Dương"))">Bình Dương</option>
+                <option value="Đồng Nai" selected="@(tinhThanhBanDau.Contains("Đồng Nai"))">Đồng Nai</option>
+            </select>
+        </div>
+        <div class="col-md-6">
+            <input type="text" id="txtPhuongXaQuanHuyen" list="goiYPhuongQuan" class="input-phang-bitis" value="@phuongQuanBanDau" placeholder="Quận/Huyện, Phường/Xã *" oninput="dongBoDiaChiGiaoChinh()" />
+            <datalist id="goiYPhuongQuan">
+                <option value="Phường Bến Nghé, Quận 1"></option>
+                <option value="Phường Võ Thị Sáu, Quận 3"></option>
+                <option value="Phường Mỹ Xuyên, TP. Long Xuyên"></option>
+            </datalist>
+        </div>
+    </div>
+
+    <div id="khungPhuongThucVanChuyen" class="mb-3">
+        <div class="hang-toc-do-giao-bitis">
+            <label class="o-toc-do-giao-bitis dang-chon" id="lblDongGiaoTieuChuan">
+                <input type="radio" name="GoiTocDoGiao" id="radGiaoTieuChuan" value="GIAO_TIEU_CHUAN" checked class="form-check-input mt-0" onchange="capNhatBangTinhThanhToan()" />
+                <span>Giao tiêu chuẩn (<span id="lblGiaShipTieuChuan">30.000đ</span> - Miễn phí cho đơn từ 500.000đ)</span>
+            </label>
+            <label class="o-toc-do-giao-bitis" id="lblDongGiaoHoaToc">
+                <input type="radio" name="GoiTocDoGiao" id="radGiaoHoaToc" value="GIAO_HOA_TOC" class="form-check-input mt-0" onchange="capNhatBangTinhThanhToan()" />
+                <span>Giao hỏa tốc 6h (<span id="lblGiaShipHoaToc">60.000đ</span> - Hỗ trợ TP.HCM &amp; TP. Long Xuyên, An Giang)</span>
+            </label>
+        </div>
+        <div id="thongBaoGioiHanHoaToc" class="mt-1 small text-danger" style="display: none;">Giao hỏa tốc 6h hiện chỉ hỗ trợ tại TP. Hồ Chí Minh và TP. Long Xuyên (An Giang).</div>
+    </div>
+</div>
+
+<div id="khungNhanTaiCuaHang" class="mb-3" style="display: none;"></div>
+
+<div class="danh-sach-tuy-chon-manh-bitis mb-4">
+    <div class="dong-tuy-chon-manh-bitis">
+        <div class="form-check d-flex align-items-center gap-2 m-0">
+            <input class="form-check-input" type="checkbox" id="chkThiepQr_0" name="DanhSachDotGiao[0].CoKemThiepQr" value="true" onchange="xuLyBatTatThiepQrChinh(this)">
+            <label class="form-check-label text-dark" for="chkThiepQr_0">Đính kèm Thiệp Chúc Tết Đoàn Viên QR 3D (Miễn phí)</label>
+        </div>
+        <div id="khungChiTietThiepQr" class="mt-2 pt-2" style="display: none;">
+            <div class="row g-2 mb-2">
+                <div class="col-md-5"><input type="text" name="DanhSachDotGiao[0].TenNguoiNhanThiep" id="txtKinhGuiTrenThiep_0" class="input-phang-bitis" placeholder="Kính gửi *" oninput="kiemTraTrungTenThiep3D()" /></div>
+                <div class="col-md-4"><input type="text" name="DanhSachDotGiao[0].TenNguoiGuiThiep" id="txtNguoiGuiTrenThiep_0" class="input-phang-bitis" value="@Model.HoTenNguoiMua" placeholder="Người gửi *" oninput="kiemTraTrungTenThiep3D()" /></div>
+                <div class="col-md-3">
+                    <select name="DanhSachDotGiao[0].MauGiaoDienThiep" class="input-phang-bitis">
+                        <option value="CO_PHONG_HOANG_GIA">Cổ Phong Hoàng Gia</option>
+                        <option value="TRANG_RAM_HIEN_DAI">Trăng Rằm Hiện Đại</option>
+                        <option value="SUM_VAY_AM_AP">Sum Vầy Ấm Áp</option>
+                    </select>
+                </div>
+            </div>
+            <div id="canhBaoTrungTenThiep3D" class="mb-2 small text-warning" style="display: none;">Lưu ý: Tên Kính gửi và Người gửi trên thiệp đang trùng nhau.</div>
+            <textarea name="DanhSachDotGiao[0].LoiChucThiep" id="txtLoiChucThiep_0" rows="2" class="form-control" placeholder="Lời chúc *">Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên, Hạnh Phúc &amp; Vạn Sự An Khang!</textarea>
+        </div>
+    </div>
+
+    <div class="dong-tuy-chon-manh-bitis">
+        <div class="form-check d-flex align-items-center gap-2 m-0">
+            <input class="form-check-input" type="checkbox" id="chkGoiNguoiKhacNhan" onchange="xuLyBatTatNguoiKhacNhan()">
+            <label class="form-check-label text-dark" id="lblChkGoiNguoiKhacNhan" for="chkGoiNguoiKhacNhan">Gọi người khác nhận hàng thay (nếu có)</label>
+        </div>
+        <div id="khungNguoiKhacNhanHang" class="mt-2 pt-2" style="display: none;">
+            <div class="row g-2">
+                <div class="col-md-6"><input type="text" name="DanhSachDotGiao[0].TenNguoiNhan" id="dot0_TenNguoiNhan" class="input-phang-bitis" value="@(dc0?.TenNguoiNhan ?? Model.HoTenNguoiMua)" placeholder="Họ tên người nhận thay *" /></div>
+                <div class="col-md-6"><input type="text" name="DanhSachDotGiao[0].SdtNguoiNhan" id="dot0_SdtNguoiNhan" class="input-phang-bitis" value="@(dc0?.SdtnguoiNhan ?? Model.SdtNguoiMua)" placeholder="Số điện thoại người nhận thay *" /></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="dong-tuy-chon-manh-bitis">
+        <div class="form-check d-flex align-items-center gap-2 m-0">
+            <input class="form-check-input" type="checkbox" id="chkDonB2B" name="LaDonDoanhNghiepB2B" value="true" checked="@tuDongMoB2B" onchange="capNhatBangTinhThanhToan()">
+            <label class="form-check-label text-dark fw-semibold" for="chkDonB2B">Xuất hóa đơn VAT / Đơn hàng Doanh nghiệp (B2B)</label>
+        </div>
+        <div id="khungThongTinB2B" class="mt-2 pt-2" style="display: @(tuDongMoB2B ? "block" : "none");">
+            <div class="row g-2">
+                <div class="col-md-7">
+                    <input type="text" name="TenCongTy" id="txtTenCongTyB2B" class="input-phang-bitis" placeholder="Tên doanh nghiệp / Cơ quan *" />
+                </div>
+                <div class="col-md-5">
+                    <input type="text" name="MaSoThue" id="txtMaSoThueB2B" class="input-phang-bitis" placeholder="Mã số thuế *" />
+                </div>
+                <div class="col-12">
+                    <!-- Lucian UX/UI Prompt #264 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#264 -->
+                    <div class="u264" data-u264>
+                        <div class="u264-in-wrap">
+                            <input type="email" id="txtEmailNhanVatB2B" class="input-phang-bitis u264-in" value="@Model.EmailNguoiMua" placeholder="Email nhận hóa đơn VAT" autocomplete="email" />
+                            <span class="u264-ck" aria-hidden="true">
+                                <svg viewBox="0 0 18 18" width="16" height="16" fill="none">
+                                    <circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.5" opacity="0.22" />
+                                    <path class="u264-ck-path" d="M5.2 9.3l2.4 2.4 5.2-5.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            </span>
+                        </div>
+                        <div class="u264-chips" role="listbox" aria-label="Gợi ý tên miền email hóa đơn VAT"></div>
+                        <div class="u264-hint-slot" aria-live="polite"></div>
+                    </div>
+                </div>
+                <div class="col-12 pt-1">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div class="form-check m-0">
+                            <input class="form-check-input" type="checkbox" id="chkYeuCauInLogo" name="YeuCauInLogo" value="true" onchange="capNhatBangTinhThanhToan()">
+                            <label class="form-check-label small text-dark fw-medium" for="chkYeuCauInLogo">Yêu cầu ép kim Logo doanh nghiệp lên vỏ hộp (Miễn phí từ 20 hộp)</label>
+                        </div>
+                        <span class="small @(Model.MienPhiInLogo ? "fw-semibold text-success" : "text-muted")">@(Model.MienPhiInLogo ? $"Đạt {Model.TongSoHop} hộp: Miễn phí khuôn Logo" : $"Phụ phí khuôn: +{Model.PhiInLogoMacDinh:N0}đ")</span>
+                    </div>
+                    <input type="text" id="txtNoiDungEpKimLogo" class="input-phang-bitis mt-2" placeholder="Ghi chú nội dung / yêu cầu ép kim Logo lên vỏ hộp (nếu có)" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

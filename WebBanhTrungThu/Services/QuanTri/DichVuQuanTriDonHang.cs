@@ -3,6 +3,7 @@ using QRCoder;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.Services.TaiKhoan;
 using WebBanhTrungThu.ViewModels;
 
@@ -13,11 +14,11 @@ namespace WebBanhTrungThu.Services.QuanTri
     /// Lọc danh sách đơn hàng, xác nhận chuyển khoản QR, cập nhật trạng thái điều phối giao hàng đa điểm,
     /// hủy đơn hoàn kho và lập phiếu chi hoàn tiền vào Sổ quỹ. Kế thừa từ DichVuCoSo.
     /// </summary>
-    public class DichVuQuanTriDonHang : DichVuCoSo
+    public class DichVuQuanTriDonHang : DichVuCoSo, IDichVuQuanTriDonHang
     {
-        private readonly DichVuCauHinhHeThong _cauHinhHeThong;
+        private readonly IDichVuCauHinhHeThong _cauHinhHeThong;
 
-        public DichVuQuanTriDonHang(CSDLBanhTrungThuContext db, DichVuCauHinhHeThong cauHinhHeThong) : base(db)
+        public DichVuQuanTriDonHang(CSDLBanhTrungThuContext db, IDichVuCauHinhHeThong cauHinhHeThong) : base(db)
         {
             _cauHinhHeThong = cauHinhHeThong;
         }
@@ -79,6 +80,21 @@ namespace WebBanhTrungThu.Services.QuanTri
             }
 
             var danhSach = await query.OrderByDescending(d => d.NgayDat).ToListAsync();
+            if (danhSach.Count > 0)
+            {
+                var danhSachMaDon = danhSach.Select(d => d.MaDh).ToList();
+                var danhSachThiep = await _db.ThiepChucMung3ds
+                    .AsNoTracking()
+                    .Where(t => danhSachMaDon.Contains(t.MaDonHang))
+                    .ToListAsync();
+
+                var thiepTheoDon = danhSachThiep.ToLookup(t => t.MaDonHang);
+                foreach (var dh in danhSach)
+                {
+                    GanThiep3DChoDonHangTrongBoNho(dh, thiepTheoDon[dh.MaDh]);
+                }
+            }
+
             var store = _cauHinhHeThong.DocDuLieu();
             foreach (var dh in danhSach)
             {
@@ -86,6 +102,23 @@ namespace WebBanhTrungThu.Services.QuanTri
             }
 
             return danhSach;
+        }
+
+        private static void GanThiep3DChoDonHangTrongBoNho(DonHang donHang, IEnumerable<ThiepChucMung3d> danhSachThiep)
+        {
+            foreach (var thiep in danhSachThiep)
+            {
+                var dot = donHang.DotGiaoHangDaDiems.FirstOrDefault(g => g.MaDotGh == thiep.MaDotGiao)
+                    ?? donHang.DotGiaoHangDaDiems.FirstOrDefault(g => g.MaTokenThiepQr == thiep.MaTokenQr);
+                if (dot == null) continue;
+
+                if (!dot.CoKemThiepQr) dot.CoKemThiepQr = true;
+                if (string.IsNullOrWhiteSpace(dot.MaTokenThiepQr)) dot.MaTokenThiepQr = thiep.MaTokenQr;
+                if (string.IsNullOrWhiteSpace(dot.LoiChucThiep)) dot.LoiChucThiep = thiep.LoiChuc;
+                if (string.IsNullOrWhiteSpace(dot.MauGiaoDienThiep)) dot.MauGiaoDienThiep = thiep.MauGiaoDien;
+                if (string.IsNullOrWhiteSpace(dot.TenNguoiNhanThiep)) dot.TenNguoiNhanThiep = thiep.TenNguoiNhan;
+                if (string.IsNullOrWhiteSpace(dot.TenNguoiGuiThiep)) dot.TenNguoiGuiThiep = thiep.TenNguoiGui;
+            }
         }
 
         public async Task<DonHangThanhCongViewModel?> XayDungChiTietDonHangQrAsync(int id, string scheme, string host, bool asNoTracking = false)
@@ -98,6 +131,12 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             var donHang = await query.FirstOrDefaultAsync(d => d.MaDh == id);
             if (donHang == null) return null;
+
+            var danhSachThiep = await _db.ThiepChucMung3ds
+                .AsNoTracking()
+                .Where(t => t.MaDonHang == donHang.MaDh)
+                .ToListAsync();
+            GanThiep3DChoDonHangTrongBoNho(donHang, danhSachThiep);
 
             _cauHinhHeThong.GanMetadataChoDonHang(donHang, _cauHinhHeThong.DocDuLieu());
 

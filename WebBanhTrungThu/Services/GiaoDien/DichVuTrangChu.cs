@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Services.GiaoDien
@@ -29,15 +30,15 @@ namespace WebBanhTrungThu.Services.GiaoDien
     /// Dịch vụ chuyên trách dữ liệu Trang chủ (Storefront Landing Page), thuật toán gợi ý bánh theo gu
     /// và tra cứu đơn hàng nhanh cho Khách vãng lai. Kế thừa từ DichVuCoSo.
     /// </summary>
-    public class DichVuTrangChu : DichVuCoSo
+    public class DichVuTrangChu : DichVuCoSo, IDichVuTrangChu
     {
-        private readonly DichVuHinhAnh _dichVuHinhAnh;
-        private readonly DichVuCauHinhHeThong _kiotMeta;
+        private readonly IDichVuHinhAnh _dichVuHinhAnh;
+        private readonly IDichVuCauHinhHeThong _kiotMeta;
 
         public DichVuTrangChu(
             CSDLBanhTrungThuContext db,
-            DichVuHinhAnh dichVuHinhAnh,
-            DichVuCauHinhHeThong kiotMeta) : base(db)
+            IDichVuHinhAnh dichVuHinhAnh,
+            IDichVuCauHinhHeThong kiotMeta) : base(db)
         {
             _dichVuHinhAnh = dichVuHinhAnh;
             _kiotMeta = kiotMeta;

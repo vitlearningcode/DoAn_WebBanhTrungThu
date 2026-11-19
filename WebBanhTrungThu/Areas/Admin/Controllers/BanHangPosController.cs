@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebBanhTrungThu.Areas.Admin.Controllers.CoSo;
 using WebBanhTrungThu.Data;
-using WebBanhTrungThu.Services.QuanTri;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Areas.Admin.Controllers
@@ -14,13 +14,13 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN")]
     public class BanHangPosController : ControllerQuanTriCoSo
     {
-        private readonly DichVuBanHangPos _dichVuPos;
-        private readonly DichVuQuanTriKhoFefo _dichVuKhoFefo;
+        private readonly IDichVuBanHangPos _dichVuPos;
+        private readonly IDichVuQuanTriKhoFefo _dichVuKhoFefo;
 
         public BanHangPosController(
             CSDLBanhTrungThuContext db,
-            DichVuBanHangPos dichVuPos,
-            DichVuQuanTriKhoFefo dichVuKhoFefo) : base(db)
+            IDichVuBanHangPos dichVuPos,
+            IDichVuQuanTriKhoFefo dichVuKhoFefo) : base(db)
         {
             _dichVuPos = dichVuPos;
             _dichVuKhoFefo = dichVuKhoFefo;

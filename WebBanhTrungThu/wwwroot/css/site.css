@@ -20,7 +20,7 @@
 /* Tắt cuộn mặc định của trình duyệt để site.js điều khiển trượt tầng mượt 60fps qua requestAnimationFrame */
 html,
 body {
-    overflow-x: hidden;
+    overflow-x: hidden !important;
     overflow-y: scroll;
     scroll-behavior: auto !important;
 }
@@ -98,16 +98,53 @@ body {
 }
 
 /* =========================================================================
-   NHÁNH 2.0.4: HEADER MENU SƠN MÀI & PURE CSS HOVER DROPDOWN (BUM97RACING STYLE)
+   NHÁNH 2.0.4: HEADER MENU SƠN MÀI & PURE CSS HOVER DROPDOWN
    ========================================================================= */
 .navbar-kinh-mo {
     background: linear-gradient(90deg, #5C0A0D 0%, #6E0D10 50%, #4A0709 100%);
     border-bottom: 2px solid rgba(212, 175, 55, 0.55);
     box-shadow: 0 6px 24px rgba(74, 7, 9, 0.28);
-    transition: all 0.3s ease;
+    transition: box-shadow 0.25s ease;
+    height: auto;
+    min-height: 96px;
+    max-height: none;
+}
+
+.navbar-chinh-nguyet-cat {
     height: 68px;
     min-height: 68px;
-    max-height: 68px;
+}
+
+.logo-nguyet-cat-svg {
+    display: block;
+    width: 40px;
+    height: 40px;
+}
+
+.header-right-actions {
+    flex-shrink: 0;
+}
+
+.btn-tai-khoan-menu {
+    max-width: 155px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.ten-tai-khoan-rut-gon {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.btn-gio-qua-menu {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
 }
 
 .navbar-kinh-mo a,
@@ -238,7 +275,15 @@ body {
 @media (max-width: 991.98px) {
     .navbar-kinh-mo {
         height: auto;
+        min-height: 90px;
         max-height: none;
+    }
+
+    .navbar-chinh-nguyet-cat {
+        height: auto;
+        min-height: 62px;
+        padding-top: 6px !important;
+        padding-bottom: 6px !important;
     }
 
     .hover-dropdown-panel {
@@ -437,9 +482,9 @@ body {
     background-image: radial-gradient(circle at center, #7A1215 0%, #58090C 65%, #3D0507 100%) !important;
     border: 2.5px solid var(--mau-vang-dong-co);
     border-radius: 16px;
-    padding: 14px 16px;
+    padding: 0;
     box-shadow: inset 0 0 28px rgba(42, 3, 5, 0.45), 0 8px 20px rgba(110, 13, 16, 0.12);
-    min-height: 276px;
+    min-height: 252px;
     overflow: hidden;
     width: 100%;
     box-sizing: border-box;
@@ -448,29 +493,37 @@ body {
 .luoi-hop-2x2 {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: repeat(2, minmax(0, 1fr));
-    gap: 14px;
+    grid-template-rows: repeat(2, minmax(106px, 128px));
+    align-content: center;
+    justify-content: center;
+    padding: 26px;
+    gap: 18px;
     width: 100%;
     max-width: 100%;
     height: 100%;
     margin: 0 auto;
+    box-sizing: border-box;
 }
 
 .luoi-hop-3x2 {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    grid-template-rows: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    grid-template-rows: repeat(2, minmax(106px, 128px));
+    align-content: center;
+    justify-content: center;
+    padding: 26px;
+    gap: 18px;
     width: 100%;
     max-width: 100%;
     height: 100%;
     margin: 0 auto;
+    box-sizing: border-box;
 }
 
 .o-banh-slot {
-    min-height: 125px;
+    min-height: 106px;
     height: 100%;
-    max-height: 146px;
+    max-height: none;
     min-width: 0;
     width: 100%;
     overflow: hidden;
@@ -487,6 +540,20 @@ body {
     cursor: pointer;
     transition: all 0.25s ease;
     color: var(--mau-chu-nau-tram);
+}
+
+@media (max-width: 575.98px) {
+    .luoi-hop-2x2 {
+        padding: 16px;
+        gap: 12px;
+    }
+
+    .luoi-hop-3x2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: repeat(3, minmax(100px, 120px));
+        padding: 16px;
+        gap: 12px;
+    }
 }
 
 .o-banh-slot.da-co-banh {
@@ -742,13 +809,17 @@ body {
    NHÁNH 2.0.3.4: KIẾN TRÚC FULLPAGE SLIDE DECK GPU (SAO.AGU.EDU.VN)
    ========================================================================= */
 .tang-phan-khu {
-    min-height: calc(100vh - 68px);
+    min-height: calc(100vh - 96px);
     display: flex;
     align-items: center;
     position: relative;
     box-sizing: border-box;
-    padding: 2.5rem 0;
-    scroll-margin-top: 68px;
+    padding: 2.25rem 0;
+    scroll-margin-top: 96px;
+}
+
+#tang-tu-chon-hop {
+    padding-bottom: 32px;
 }
 
 .min-h-0 {
@@ -766,14 +837,14 @@ body {
     }
 
     #khung-fullpage-trang-chu {
-        height: calc(100vh - 68px);
+        height: calc(100vh - 96px);
         width: 100%;
         overflow: hidden;
         position: relative;
     }
 
     #dai-truot-fullpage {
-        height: calc(100vh - 68px);
+        height: calc(100vh - 96px);
         width: 100%;
         will-change: transform;
         transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
@@ -786,9 +857,9 @@ body {
     #tang-bo-suu-tap,
     #tang-b2b,
     #tang-thiep-qr {
-        height: calc(100vh - 68px) !important;
-        min-height: calc(100vh - 68px) !important;
-        max-height: calc(100vh - 68px) !important;
+        height: calc(100vh - 96px) !important;
+        min-height: calc(100vh - 96px) !important;
+        max-height: calc(100vh - 96px) !important;
         width: 100%;
         overflow: hidden !important;
         position: relative;
@@ -796,22 +867,26 @@ body {
         flex-direction: column;
         justify-content: center;
         box-sizing: border-box;
-        padding: 20px 0 !important;
+        padding: 18px 0 !important;
+    }
+
+    #tang-tu-chon-hop {
+        padding: 14px 0 32px 0 !important;
     }
 
     #tang-thiep-qr {
         justify-content: space-between !important;
-        padding: 20px 0 0 0 !important;
+        padding: 18px 0 0 0 !important;
     }
 
     .studio-phoi-hop-row,
     .studio-phoi-hop-col {
-        max-height: calc(100vh - 180px) !important;
-        height: calc(100vh - 180px);
+        max-height: calc(100vh - 232px) !important;
+        height: calc(100vh - 232px);
     }
 
     .studio-phoi-hop-col>.card-hoang-gia {
-        max-height: calc(100vh - 180px) !important;
+        max-height: calc(100vh - 232px) !important;
         height: 100%;
         overflow: hidden;
     }
@@ -838,29 +913,6 @@ body {
     .overflow-auto::-webkit-scrollbar-thumb {
         background: var(--mau-vang-dong-co);
         border-radius: 6px;
-    }
-}
-
-/* Hiệu ứng trồi nhẹ khi tầng lộ ra – chỉ chuyển động opacity & transform để giữ 60 khung hình/giây */
-.section-reveal {
-    opacity: 0;
-    transform: translate3d(0, 24px, 0);
-    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.section-reveal.active {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-}
-
-/* Người dùng bật giảm chuyển động: hiện nội dung ngay, không trồi */
-@media (prefers-reduced-motion: reduce) {
-
-    .section-reveal,
-    .section-reveal.active {
-        opacity: 1;
-        transform: none;
-        transition: none;
     }
 }
 
@@ -2112,214 +2164,5 @@ body {
 
     .tieu-de-pane-ho-so {
         font-size: 1.5rem;
-    }
-}
-
-
-/* =========================================================================
-   NÂNG CẤP NHÁNH 2.1.5 + 3.2.4 + 4.2.4 + 4.2.5 + 5.0.1
-   ========================================================================= */
-
-/* 1. Chuẩn hóa số liệu thẳng hàng dọc tuyệt đối (Nhánh 5.0.1) */
-td,
-th,
-.so-tien,
-.ton-kho,
-.kpi-value {
-    font-variant-numeric: tabular-nums;
-}
-
-/* 2. Thanh đo GI & Vi tương tác khi đặt bánh vào ô trên khay (Nhánh 2.1.5) */
-#khung-do-chi-so-gi .thanh-do-gi-nen {
-    height: 8px;
-    border-radius: 999px;
-    background: #EAE0D5;
-    overflow: hidden;
-}
-
-#thanh-mau-gi {
-    height: 100%;
-    border-radius: 999px;
-    transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.35s ease;
-}
-
-@keyframes nayOBanhVuaChon {
-    0% {
-        transform: scale(0.92);
-        border-color: #C89B3C;
-        box-shadow: 0 0 0 3px rgba(200, 155, 60, 0.35);
-    }
-
-    55% {
-        transform: scale(1.03);
-        border-color: #C89B3C;
-        box-shadow: 0 0 12px rgba(200, 155, 60, 0.45);
-    }
-
-    100% {
-        transform: scale(1);
-        border-color: #C89B3C;
-        box-shadow: 0 3px 10px rgba(122, 18, 21, 0.08);
-    }
-}
-
-.o-banh-slot.o-banh-vua-chon {
-    border-color: #C89B3C !important;
-    animation: nayOBanhVuaChon 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-/* 3. Thanh tiến trình thăng hạng VIP trên Thẻ Hội Viên (Nhánh 3.2.4) */
-.khung-tien-trinh-vip-ho-so {
-    border-top: 1px solid rgba(255, 255, 255, 0.16);
-}
-
-.thanh-tien-trinh-vip-nen {
-    height: 8px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.18);
-    overflow: hidden;
-}
-
-.thanh-tien-trinh-vip-vang {
-    height: 100%;
-    border-radius: 999px;
-    background: linear-gradient(90deg, #C89B3C 0%, #F3D078 50%, #D4AF37 100%);
-    box-shadow: 0 0 8px rgba(243, 208, 120, 0.55);
-    transition: width 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.nhac-thang-hang-vip {
-    font-size: 0.74rem;
-    line-height: 1.35;
-    color: rgba(255, 253, 249, 0.9);
-}
-
-.nhac-thang-hang-vip strong {
-    color: #F3D078;
-}
-
-/* 4. Thanh Timeline 4 bước theo dõi tiến độ đơn hàng (Nhánh 3.2.4) */
-.timeline-don-hang-4-buoc {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 20px;
-    background: #FDFBF7;
-    border-bottom: 1px solid #EAE0D5;
-    gap: 6px;
-}
-
-.timeline-don-hang-4-buoc.timeline-don-da-huy {
-    justify-content: center;
-    background: #F9F1F1;
-    color: #884A4A;
-}
-
-.nhan-don-da-huy {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: #991B1B;
-}
-
-.buoc-timeline {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: #8A7566;
-    white-space: nowrap;
-}
-
-.cham-buoc-timeline {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: #EAE0D5;
-    color: #6E5041;
-    font-size: 0.72rem;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.buoc-timeline.da-hoan-thanh {
-    color: #7A1215;
-    font-weight: 700;
-}
-
-.buoc-timeline.da-hoan-thanh .cham-buoc-timeline {
-    background: #7A1215;
-    color: #FFFDF9;
-    box-shadow: 0 2px 6px rgba(122, 18, 21, 0.25);
-}
-
-.duong-noi-timeline {
-    flex: 1 1 16px;
-    height: 2px;
-    background: #E2D5C4;
-    border-radius: 999px;
-}
-
-.duong-noi-timeline.da-hoan-thanh {
-    background: #7A1215;
-}
-
-.nut-dat-lai-don-ho-so {
-    background: #FFFDF9;
-    border-color: #C89B3C;
-    color: #7A1215;
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.nut-dat-lai-don-ho-so:hover {
-    background: #7A1215;
-    border-color: #7A1215;
-    color: #FFFDF9;
-}
-
-/* 5. Con dấu sáp tròn vàng đồng mở thiệp 3D (Nhánh 4.2.4) */
-#con-dau-sap-mo-thiep {
-    width: 84px;
-    height: 84px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 30% 30%, #F3D078, #C89B3C 65%, #8C6218);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
-}
-
-/* 6. Chip lịch sử đơn vừa đặt trong Modal Tra Cứu (Nhánh 4.2.5) */
-.chip-don-vua-dat {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: #FFFDF9;
-    border: 1px solid #C89B3C;
-    color: #7A1215;
-    font-size: 0.75rem;
-    font-variant-numeric: tabular-nums;
-    cursor: pointer;
-    transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.chip-don-vua-dat:hover {
-    background: #7A1215;
-    border-color: #7A1215;
-    color: #FFFDF9;
-}
-
-@media (max-width: 767.98px) {
-    .timeline-don-hang-4-buoc {
-        flex-wrap: wrap;
-        padding: 10px 14px;
-        gap: 8px;
-    }
-
-    .duong-noi-timeline {
-        display: none;
     }
 }

@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebBanhTrungThu.Areas.Admin.Controllers.CoSo;
 using WebBanhTrungThu.Data;
-using WebBanhTrungThu.Services.QuanTri;
+using WebBanhTrungThu.Services.Interfaces;
 
 namespace WebBanhTrungThu.Areas.Admin.Controllers
 {
@@ -13,9 +13,9 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN,GIAO_HANG")]
     public class DonHangAdminController : ControllerQuanTriCoSo
     {
-        private readonly DichVuQuanTriDonHang _dichVuQuanTriDonHang;
+        private readonly IDichVuQuanTriDonHang _dichVuQuanTriDonHang;
 
-        public DonHangAdminController(CSDLBanhTrungThuContext db, DichVuQuanTriDonHang dichVuQuanTriDonHang) : base(db)
+        public DonHangAdminController(CSDLBanhTrungThuContext db, IDichVuQuanTriDonHang dichVuQuanTriDonHang) : base(db)
         {
             _dichVuQuanTriDonHang = dichVuQuanTriDonHang;
         }

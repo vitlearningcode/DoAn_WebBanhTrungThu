@@ -1,8 +1,20 @@
 <!-- THANH MENU ĐẦU TRANG SƠN MÀI HOÀNG GIA & HOVER DROPDOWN MENU -->
 <header class="sticky-top navbar-kinh-mo">
-    <nav class="navbar navbar-expand-lg navbar-dark container-fluid px-3 px-xl-4 py-0 h-100">
+    <!-- DẢI CHỮ CHẠY ƯU ĐÃI ĐẦU TRANG -->
+    <div id="thanh-thong-bao-uu-dai-chay" role="region" aria-label="Thông báo ưu đãi Nguyệt Cát">
+        <div class="dai-chu-chay-uu-dai">
+            <span class="muc-thong-bao-uu-dai">✦ Ưu đãi Lễ Hội Trăng Rằm: Nhập mã TRANGTRON2026 giảm ngay 10% tại bước Thanh toán (Đơn từ 400.000đ)</span>
+            <span class="muc-thong-bao-uu-dai">✦ Miễn phí giao hàng tiêu chuẩn toàn quốc cho mọi đơn quà biếu từ 500.000đ</span>
+            <span class="muc-thong-bao-uu-dai">✦ Đặc quyền Doanh nghiệp B2B: Chiết khấu sỉ lên đến 22% &amp; Miễn phí khuôn ép kim Logo từ 20 hộp</span>
+            <span class="muc-thong-bao-uu-dai" aria-hidden="true">✦ Ưu đãi Lễ Hội Trăng Rằm: Nhập mã TRANGTRON2026 giảm ngay 10% tại bước Thanh toán (Đơn từ 400.000đ)</span>
+            <span class="muc-thong-bao-uu-dai" aria-hidden="true">✦ Miễn phí giao hàng tiêu chuẩn toàn quốc cho mọi đơn quà biếu từ 500.000đ</span>
+            <span class="muc-thong-bao-uu-dai" aria-hidden="true">✦ Đặc quyền Doanh nghiệp B2B: Chiết khấu sỉ lên đến 22% &amp; Miễn phí khuôn ép kim Logo từ 20 hộp</span>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg navbar-dark container-fluid px-3 px-xl-4 py-0 navbar-chinh-nguyet-cat">
         <a class="navbar-brand d-flex align-items-center gap-2 text-nowrap py-0" asp-controller="Home" asp-action="Index">
-            <span class="fs-4">🏮</span>
+            <img src="~/images/logo-nguyet-cat.svg" alt="Logo Nguyệt Cát" width="40" height="40" class="flex-shrink-0 logo-nguyet-cat-svg" />
             <div>
                 <span class="font-co-phong fs-4 fw-bold chu-vang-kim d-block lh-1">NGUYỆT CÁT</span>
                 <small class="chu-kem-vang opacity-75 d-block" style="font-size: 0.62rem; letter-spacing: 1.5px;">TINH HOA TRĂNG RẰM</small>
@@ -160,16 +172,36 @@
                 {
                     string hangTv = User.FindFirst("HangTV")?.Value ?? "Kim Cương";
                     bool laQuanTri = User.IsInRole("QUAN_TRI") || User.IsInRole("NHAN_VIEN") || User.IsInRole("THU_NGAN") || User.IsInRole("GIAO_HANG");
-                    string nhanVaiTro = User.IsInRole("QUAN_TRI") ? " (Admin)" : (laQuanTri ? " (Staff)" : "");
+                    string tenDayDu = User.Identity.Name ?? "Hội viên";
+                    string hoTenHienThi = tenDayDu;
+                    string vaiTroDropdown = string.Empty;
+                    int viTriNgoac = tenDayDu.IndexOf('(');
+                    if (viTriNgoac > 0)
+                    {
+                        hoTenHienThi = tenDayDu.Substring(0, viTriNgoac).Trim();
+                        vaiTroDropdown = tenDayDu.Substring(viTriNgoac).Trim();
+                    }
+                    else if (User.IsInRole("QUAN_TRI"))
+                    {
+                        vaiTroDropdown = "(Admin)";
+                    }
+                    else if (laQuanTri)
+                    {
+                        vaiTroDropdown = "(Nhân viên)";
+                    }
 
                     <div class="nav-item-dropdown position-relative">
-                        <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-3 text-nowrap d-inline-flex align-items-center gap-1">
-                            <span>👑 @User.Identity.Name</span>
-                            <span class="nav-caret-icon">▾</span>
+                        <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-3 d-inline-flex align-items-center gap-1 btn-tai-khoan-menu" title="@tenDayDu">
+                            <span class="ten-tai-khoan-rut-gon">@hoTenHienThi</span>
+                            <span class="nav-caret-icon flex-shrink-0">▾</span>
                         </button>
                         <ul class="hover-dropdown-panel hover-dropdown-panel-end" style="min-width: 265px;">
                             <li class="px-3 py-2 border-bottom" style="border-color: var(--mau-vien-vang-dong) !important; background: var(--mau-nen-giay-do);">
-                                <div class="fw-bold chu-do-son-mai small text-nowrap">@User.Identity.Name@nhanVaiTro</div>
+                                <div class="fw-bold chu-do-son-mai small">@hoTenHienThi</div>
+                                @if (!string.IsNullOrWhiteSpace(vaiTroDropdown))
+                                {
+                                    <div class="small chu-nau-phu" style="font-size: 0.74rem;">@vaiTroDropdown</div>
+                                }
                                 <span class="badge badge-thuong-hang rounded-pill mt-1">Hạng @hangTv</span>
                             </li>
                             <li>
@@ -201,12 +233,12 @@
                 else
                 {
                     <button class="btn btn-sm btn-vien-vang rounded-pill px-3 text-nowrap" data-bs-toggle="modal" data-bs-target="#modalTaiKhoan">
-                        👤 Tài Khoản
+                        Tài Khoản
                     </button>
                 }
 
                 <!-- 3. Nút mở Ngăn kéo Giỏ quà -->
-                <button class="btn btn-sm btn-vang-kim rounded-pill px-3 position-relative text-nowrap" data-bs-toggle="offcanvas" data-bs-target="#nganKeoGioHang">
+                <button class="btn btn-sm btn-vang-kim rounded-pill px-3 position-relative text-nowrap btn-gio-qua-menu" data-bs-toggle="offcanvas" data-bs-target="#nganKeoGioHang">
                     🛒 Giỏ Quà (<span id="badgeSoLuongGio">0</span>)
                 </button>
             </div>

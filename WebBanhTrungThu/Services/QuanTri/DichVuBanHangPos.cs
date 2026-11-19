@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.Services.TaiKhoan;
 using WebBanhTrungThu.ViewModels;
 
@@ -14,15 +15,15 @@ namespace WebBanhTrungThu.Services.QuanTri
     /// Tìm/mở thẻ khách hàng thành viên, Tạo đơn tại quầy POS, Trừ kho FEFO tại quầy và Ghi phiếu thu POS vào Sổ quỹ.
     /// Kế thừa từ DichVuCoSo.
     /// </summary>
-    public class DichVuBanHangPos : DichVuCoSo
+    public class DichVuBanHangPos : DichVuCoSo, IDichVuBanHangPos
     {
-        private readonly DichVuHinhAnh _dichVuHinhAnh;
-        private readonly DichVuCauHinhHeThong _kiotMeta;
+        private readonly IDichVuHinhAnh _dichVuHinhAnh;
+        private readonly IDichVuCauHinhHeThong _kiotMeta;
 
         public DichVuBanHangPos(
             CSDLBanhTrungThuContext db,
-            DichVuHinhAnh dichVuHinhAnh,
-            DichVuCauHinhHeThong kiotMeta) : base(db)
+            IDichVuHinhAnh dichVuHinhAnh,
+            IDichVuCauHinhHeThong kiotMeta) : base(db)
         {
             _dichVuHinhAnh = dichVuHinhAnh;
             _kiotMeta = kiotMeta;

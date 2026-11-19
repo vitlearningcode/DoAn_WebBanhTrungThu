@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WebBanhTrungThu.Controllers.CoSo;
 using WebBanhTrungThu.Data;
-using WebBanhTrungThu.Services;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Controllers
@@ -12,9 +12,9 @@ namespace WebBanhTrungThu.Controllers
     /// </summary>
     public class GioHangController : ControllerKhachHangCoSo
     {
-        private readonly DichVuGioHang _dichVuGioHang;
+        private readonly IDichVuGioHang _dichVuGioHang;
 
-        public GioHangController(CSDLBanhTrungThuContext db, DichVuGioHang dichVuGioHang) : base(db)
+        public GioHangController(CSDLBanhTrungThuContext db, IDichVuGioHang dichVuGioHang) : base(db)
         {
             _dichVuGioHang = dichVuGioHang;
         }

@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.Services.TaiKhoan;
 using GioHang = WebBanhTrungThu.Models.Entities.GioHang;
 
@@ -11,11 +12,11 @@ namespace WebBanhTrungThu.Services.ThanhToan
     /// Dịch vụ chuyên trách kiểm tra tồn kho thực tế, trừ kho theo lô LoSanXuatBanh (thuật toán FEFO)
     /// và Rollback hoàn kho khi đơn QR MoMo quá hạn 15 phút.
     /// </summary>
-    public class DichVuTonKhoFefo : DichVuCoSo
+    public class DichVuTonKhoFefo : DichVuCoSo, IDichVuTonKhoFefo
     {
-        private readonly DichVuCauHinhHeThong _kiotMeta;
+        private readonly IDichVuCauHinhHeThong _kiotMeta;
 
-        public DichVuTonKhoFefo(CSDLBanhTrungThuContext context, DichVuCauHinhHeThong kiotMeta) : base(context)
+        public DichVuTonKhoFefo(CSDLBanhTrungThuContext context, IDichVuCauHinhHeThong kiotMeta) : base(context)
         {
             _kiotMeta = kiotMeta;
         }

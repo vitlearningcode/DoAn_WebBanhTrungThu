@@ -1,22 +1,14 @@
 @model WebBanhTrungThu.ViewModels.TrangThanhToanViewModel
 @{
     ViewData["Title"] = "Thanh Toán Đơn Hàng - Nguyệt Cát";
-    int tongSoMon = Model.DanhSachMon.Sum(x => x.SoLuong);
-    decimal tienHangSauGiamBanDau = Math.Max(0m, Model.TongTienHang - Model.TienChietKhauB2B - Model.TienGiamVoucher - Model.TienGiamVip);
-    bool duMienPhiShip = tienHangSauGiamBanDau >= 500000m;
-    decimal tongThanhToanBanDau = Math.Max(0m, tienHangSauGiamBanDau + (duMienPhiShip ? 0m : 30000m));
     string ngayHenMacDinh = DateTime.Now.AddDays(2).ToString("yyyy-MM-dd");
 
     var dc0 = Model.DanhSachSoDiaChi.FirstOrDefault();
-    string soNhaBanDau = dc0?.DiaChiCuThe ?? "";
     string tinhThanhBanDau = dc0?.TinhThanh ?? "TP. Hồ Chí Minh";
-    string phuongQuanBanDau = dc0 != null ? $"{dc0.PhuongXa}, {dc0.QuanHuyen}" : "";
     string diaChiGhepBanDau = dc0 != null ? $"{dc0.DiaChiCuThe}, {dc0.PhuongXa}, {dc0.QuanHuyen}, {dc0.TinhThanh}" : "";
 
     string? tenBanhHetHangBanDau = TempData["TenBanhHetHang"] as string ?? ViewBag.TenBanhHetHangKhiTaiTrang as string;
     string? thongBaoHetHangBanDau = TempData["LoiThanhToan"] as string ?? ViewBag.ThongBaoHetHangKhiTaiTrang as string;
-    bool cheDoB2BTuUrl = string.Equals(Context.Request.Query["cheDoB2B"], "true", StringComparison.OrdinalIgnoreCase);
-    bool tuDongMoB2B = cheDoB2BTuUrl || Model.TongSoHop >= 10;
 }
 
 @section Styles {
@@ -41,282 +33,16 @@
 <input type="hidden" name="DanhSachDotGiao[0].KhungGioGiao" value="Sáng (08:00 - 11:30)" />
 
 <div class="row g-4 align-items-start">
-<!-- CỘT TRÁI (col-lg-7, nền trắng phẳng #FFFFFF) -->
-<div class="col-lg-7 cot-trai-bitis">
-<div class="khung-cot-trai-bitis">
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-@if (!Model.DaDangNhap)
-{
-    <div class="small text-secondary">Bạn đã có tài khoản? <a href="javascript:void(0)" data-bs-toggle="modal" data-bs-target="#modalTaiKhoan" class="fw-bold text-decoration-underline ms-1 text-dark">Đăng nhập ngay</a></div>
-}
-else
-{
-    <div class="small fw-semibold text-dark">Xin chào, <strong>@Model.HoTenNguoiMua</strong></div>
-}
-
-@if (Model.DaDangNhap && Model.DanhSachSoDiaChi.Any())
-{
-    <select id="ddlSoDiaChiDaLuu" class="form-select form-select-sm w-auto" onchange="chonTuDropdownSoDiaChi(this)">
-        <option value="">Chọn nhanh từ Sổ địa chỉ...</option>
-        @foreach (var dc in Model.DanhSachSoDiaChi)
-        {
-            <option value="@dc.DiaChiCuThe" data-ten="@dc.TenNguoiNhan" data-sdt="@dc.SdtnguoiNhan" data-tinhthanh="@dc.TinhThanh" data-phuongquan="@($"{dc.PhuongXa}, {dc.QuanHuyen}")">
-                @(dc.NhanDiaChi ?? dc.TenNguoiNhan) - @dc.DiaChiCuThe, @dc.QuanHuyen
-            </option>
-        }
-    </select>
-}
-</div>
-
-<h2 class="fs-5 fw-bold text-dark mb-3">Thông tin giao hàng</h2>
-
-<div class="tab-hinh-thuc-nhan-bitis mb-3">
-    <label class="nut-tab-nhan-bitis dang-chon" id="lblChonGiaoTanNoi">
-        <input type="radio" name="HinhThucNhanHang" id="radGiaoTanNoi" value="GIAO_TAN_NOI" checked onchange="chuyenDoiHinhThucNhanHang()" />
-        <span>Giao tận nơi</span>
-    </label>
-    <label class="nut-tab-nhan-bitis" id="lblChonNhanTaiCuaHang">
-        <input type="radio" name="HinhThucNhanHang" id="radNhanTaiCuaHang" value="NHAN_TAI_CUA_HANG" onchange="chuyenDoiHinhThucNhanHang()" />
-        <span>Nhận tại cửa hàng</span>
-    </label>
-</div>
-
-<div class="row g-2 mb-2">
-    <div class="col-12"><input type="text" name="HoTenNguoiMua" id="txtHoTenNguoiMua" required class="input-phang-bitis" value="@Model.HoTenNguoiMua" placeholder="Họ và tên *" oninput="dongBoNguoiMuaSangNguoiNhan()" /></div>
-    <div class="col-md-6"><input type="email" name="EmailNguoiMua" id="txtEmailNguoiMua" class="input-phang-bitis" value="@Model.EmailNguoiMua" placeholder="Email" /></div>
-    <div class="col-md-6"><input type="text" name="SdtNguoiMua" id="txtSdtNguoiMua" required class="input-phang-bitis" value="@Model.SdtNguoiMua" placeholder="Số điện thoại *" oninput="dongBoNguoiMuaSangNguoiNhan()" /></div>
-</div>
-
-<div id="khungDiaChiGiaoTanNoi">
-    <div class="row g-2 mb-2">
-        <div class="col-12"><input type="text" id="txtDiaChiSoNha" class="input-phang-bitis" value="@soNhaBanDau" placeholder="Địa chỉ *" oninput="dongBoDiaChiGiaoChinh()" /></div>
-        <div class="col-md-6">
-            <select id="ddlTinhThanh" class="input-phang-bitis" onchange="dongBoDiaChiGiaoChinh(); kiemTraTinhThanhVaCapNhatHoaToc();">
-                <option value="TP. Hồ Chí Minh" selected="@(tinhThanhBanDau.Contains("Hồ Chí Minh"))">TP. Hồ Chí Minh</option>
-                <option value="An Giang" selected="@(tinhThanhBanDau.Contains("An Giang"))">An Giang (TP. Long Xuyên)</option>
-                <option value="Hà Nội" selected="@(tinhThanhBanDau.Contains("Hà Nội"))">Hà Nội</option>
-                <option value="Đà Nẵng" selected="@(tinhThanhBanDau.Contains("Đà Nẵng"))">Đà Nẵng</option>
-                <option value="Cần Thơ" selected="@(tinhThanhBanDau.Contains("Cần Thơ"))">Cần Thơ</option>
-                <option value="Bình Dương" selected="@(tinhThanhBanDau.Contains("Bình Dương"))">Bình Dương</option>
-                <option value="Đồng Nai" selected="@(tinhThanhBanDau.Contains("Đồng Nai"))">Đồng Nai</option>
-            </select>
-        </div>
-        <div class="col-md-6">
-            <input type="text" id="txtPhuongXaQuanHuyen" list="goiYPhuongQuan" class="input-phang-bitis" value="@phuongQuanBanDau" placeholder="Quận/Huyện, Phường/Xã *" oninput="dongBoDiaChiGiaoChinh()" />
-            <datalist id="goiYPhuongQuan">
-                <option value="Phường Bến Nghé, Quận 1"></option>
-                <option value="Phường Võ Thị Sáu, Quận 3"></option>
-                <option value="Phường Mỹ Xuyên, TP. Long Xuyên"></option>
-            </datalist>
+    <div class="col-lg-7 cot-trai-bitis">
+        <div class="khung-cot-trai-bitis">
+            @await Html.PartialAsync("~/Views/ThanhToan/PhanKhu/_FormThongTinGiaoHang.cshtml", Model)
+            @await Html.PartialAsync("~/Views/ThanhToan/PhanKhu/_PhuongThucThanhToanVaCaptcha.cshtml", Model)
         </div>
     </div>
 
-    <div id="khungPhuongThucVanChuyen" class="mb-3">
-        <div class="hang-toc-do-giao-bitis">
-            <label class="o-toc-do-giao-bitis dang-chon" id="lblDongGiaoTieuChuan">
-                <input type="radio" name="GoiTocDoGiao" id="radGiaoTieuChuan" value="GIAO_TIEU_CHUAN" checked class="form-check-input mt-0" onchange="capNhatBangTinhThanhToan()" />
-                <span>Giao tiêu chuẩn (<span id="lblGiaShipTieuChuan">30.000đ</span> - Miễn phí cho đơn từ 500.000đ)</span>
-            </label>
-            <label class="o-toc-do-giao-bitis" id="lblDongGiaoHoaToc">
-                <input type="radio" name="GoiTocDoGiao" id="radGiaoHoaToc" value="GIAO_HOA_TOC" class="form-check-input mt-0" onchange="capNhatBangTinhThanhToan()" />
-                <span>Giao hỏa tốc 6h (<span id="lblGiaShipHoaToc">60.000đ</span> - Hỗ trợ TP.HCM &amp; TP. Long Xuyên, An Giang)</span>
-            </label>
-        </div>
-        <div id="thongBaoGioiHanHoaToc" class="mt-1 small text-danger" style="display: none;">Giao hỏa tốc 6h hiện chỉ hỗ trợ tại TP. Hồ Chí Minh và TP. Long Xuyên (An Giang).</div>
+    <div class="col-lg-5 cot-phai-bitis">
+        @await Html.PartialAsync("~/Views/ThanhToan/PhanKhu/_TomTatDonHangVaVoucher.cshtml", Model)
     </div>
-</div>
-
-<div id="khungNhanTaiCuaHang" class="mb-3" style="display: none;"></div>
-
-<div class="danh-sach-tuy-chon-manh-bitis mb-4">
-    <div class="dong-tuy-chon-manh-bitis">
-        <div class="form-check d-flex align-items-center gap-2 m-0">
-            <input class="form-check-input" type="checkbox" id="chkThiepQr_0" name="DanhSachDotGiao[0].CoKemThiepQr" value="true" onchange="xuLyBatTatThiepQrChinh(this)">
-            <label class="form-check-label text-dark" for="chkThiepQr_0">Đính kèm Thiệp Chúc Tết Đoàn Viên QR 3D (Miễn phí)</label>
-        </div>
-        <div id="khungChiTietThiepQr" class="mt-2 pt-2" style="display: none;">
-            <div class="row g-2 mb-2">
-                <div class="col-md-5"><input type="text" name="DanhSachDotGiao[0].TenNguoiNhanThiep" id="txtKinhGuiTrenThiep_0" class="input-phang-bitis" placeholder="Kính gửi *" oninput="kiemTraTrungTenThiep3D()" /></div>
-                <div class="col-md-4"><input type="text" name="DanhSachDotGiao[0].TenNguoiGuiThiep" id="txtNguoiGuiTrenThiep_0" class="input-phang-bitis" value="@Model.HoTenNguoiMua" placeholder="Người gửi *" oninput="kiemTraTrungTenThiep3D()" /></div>
-                <div class="col-md-3">
-                    <select name="DanhSachDotGiao[0].MauGiaoDienThiep" class="input-phang-bitis">
-                        <option value="CO_PHONG_HOANG_GIA">Cổ Phong Hoàng Gia</option>
-                        <option value="TRANG_RAM_HIEN_DAI">Trăng Rằm Hiện Đại</option>
-                        <option value="SUM_VAY_AM_AP">Sum Vầy Ấm Áp</option>
-                    </select>
-                </div>
-            </div>
-            <div id="canhBaoTrungTenThiep3D" class="mb-2 small text-warning" style="display: none;">Lưu ý: Tên Kính gửi và Người gửi trên thiệp đang trùng nhau.</div>
-            <textarea name="DanhSachDotGiao[0].LoiChucThiep" id="txtLoiChucThiep_0" rows="2" class="form-control" placeholder="Lời chúc *">Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên, Hạnh Phúc &amp; Vạn Sự An Khang!</textarea>
-        </div>
-    </div>
-
-    <div class="dong-tuy-chon-manh-bitis">
-        <div class="form-check d-flex align-items-center gap-2 m-0">
-            <input class="form-check-input" type="checkbox" id="chkGoiNguoiKhacNhan" onchange="xuLyBatTatNguoiKhacNhan()">
-            <label class="form-check-label text-dark" id="lblChkGoiNguoiKhacNhan" for="chkGoiNguoiKhacNhan">Gọi người khác nhận hàng thay (nếu có)</label>
-        </div>
-        <div id="khungNguoiKhacNhanHang" class="mt-2 pt-2" style="display: none;">
-            <div class="row g-2">
-                <div class="col-md-6"><input type="text" name="DanhSachDotGiao[0].TenNguoiNhan" id="dot0_TenNguoiNhan" class="input-phang-bitis" value="@(dc0?.TenNguoiNhan ?? Model.HoTenNguoiMua)" placeholder="Họ tên người nhận thay *" /></div>
-                <div class="col-md-6"><input type="text" name="DanhSachDotGiao[0].SdtNguoiNhan" id="dot0_SdtNguoiNhan" class="input-phang-bitis" value="@(dc0?.SdtnguoiNhan ?? Model.SdtNguoiMua)" placeholder="Số điện thoại người nhận thay *" /></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="dong-tuy-chon-manh-bitis">
-        <div class="form-check d-flex align-items-center gap-2 m-0">
-            <input class="form-check-input" type="checkbox" id="chkDonB2B" name="LaDonDoanhNghiepB2B" value="true" checked="@tuDongMoB2B" onchange="capNhatBangTinhThanhToan()">
-            <label class="form-check-label text-dark fw-semibold" for="chkDonB2B">Xuất hóa đơn VAT / Đơn hàng Doanh nghiệp (B2B)</label>
-        </div>
-        <div id="khungThongTinB2B" class="mt-2 pt-2" style="display: @(tuDongMoB2B ? "block" : "none");">
-            <div class="row g-2">
-                <div class="col-md-7">
-                    <input type="text" name="TenCongTy" id="txtTenCongTyB2B" class="input-phang-bitis" placeholder="Tên doanh nghiệp / Cơ quan *" />
-                </div>
-                <div class="col-md-5">
-                    <input type="text" name="MaSoThue" id="txtMaSoThueB2B" class="input-phang-bitis" placeholder="Mã số thuế *" />
-                </div>
-                <div class="col-12">
-                    <input type="email" id="txtEmailNhanVatB2B" class="input-phang-bitis" value="@Model.EmailNguoiMua" placeholder="Email nhận hóa đơn VAT" />
-                </div>
-                <div class="col-12 pt-1">
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <div class="form-check m-0">
-                            <input class="form-check-input" type="checkbox" id="chkYeuCauInLogo" name="YeuCauInLogo" value="true" onchange="capNhatBangTinhThanhToan()">
-                            <label class="form-check-label small text-dark fw-medium" for="chkYeuCauInLogo">Yêu cầu ép kim Logo doanh nghiệp lên vỏ hộp (Miễn phí từ 20 hộp)</label>
-                        </div>
-                        <span class="small @(Model.MienPhiInLogo ? "fw-semibold text-success" : "text-muted")">@(Model.MienPhiInLogo ? $"Đạt {Model.TongSoHop} hộp: Miễn phí khuôn Logo" : $"Phụ phí khuôn: +{Model.PhiInLogoMacDinh:N0}đ")</span>
-                    </div>
-                    <input type="text" id="txtNoiDungEpKimLogo" class="input-phang-bitis mt-2" placeholder="Ghi chú nội dung / yêu cầu ép kim Logo lên vỏ hộp (nếu có)" />
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="mb-4">
-    <h2 class="fs-5 fw-bold text-dark mb-3">Phương thức thanh toán</h2>
-    <div id="nhomPhuongThucThanhToan" class="danh-sach-phuong-thuc-tt-bitis">
-        <label class="dong-phuong-thuc-tt-bitis dang-chon">
-            <input type="radio" name="PhuongThucTt" value="COD" checked class="form-check-input mt-0" onchange="capNhatTrangThaiPhuongThucTt()" />
-            <span class="fw-medium text-dark">Thanh toán khi nhận hàng (COD)</span>
-        </label>
-        <label class="dong-phuong-thuc-tt-bitis">
-            <input type="radio" name="PhuongThucTt" value="MOMO_QR" class="form-check-input mt-0" onchange="capNhatTrangThaiPhuongThucTt()" />
-            <span class="d-inline-flex align-items-center gap-2 fw-medium text-dark"><span class="logo-momo-badge">momo</span><span>Ví MoMo / Quét mã QR Ngân hàng (0814 585 526)</span></span>
-        </label>
-    </div>
-</div>
-
-<div class="khung-captcha-ngang-bitis mb-3">
-    <div class="d-flex align-items-center gap-2 flex-nowrap">
-        <img id="imgCaptchaThanhToan" src="" alt="Mã Captcha" style="width: 135px; height: 44px; border-radius: 6px; border: 1px solid #D1D5DB; background: #F9FAFB; flex-shrink: 0;" />
-        <button type="button" class="btn-doi-captcha-bitis" title="Đổi mã Captcha mới" onclick="taiMaCaptchaMoi(true)">↻</button>
-        <input type="text" id="txtMaCaptchaNhap" name="maCaptchaNhap" class="input-phang-bitis text-uppercase fw-bold" placeholder="Nhập mã xác thực *" maxlength="5" required autocomplete="off" style="letter-spacing: 2px; flex: 1; min-width: 0;" oninput="xuLyGoMaCaptchaTuDong(this)" />
-    </div>
-    <small id="lblTrangThaiCaptchaKho" class="d-block mt-1 text-secondary">Nhập đủ 5 ký tự trong hình để hệ thống tự động xác thực &amp; kiểm tra tồn kho.</small>
-</div>
-
-<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 pt-2">
-    <a href="javascript:void(0)" onclick="moNganKeoGioHang()" class="lien-ket-quay-lai-gio-bitis">← Quay lại giỏ hàng</a>
-    <button type="submit" id="btnHoanTatDatHang" class="btn-hoan-tat-dat-hang-bitis" disabled>HOÀN TẤT ĐẶT HÀNG</button>
-</div>
-</div>
-</div>
-
-<!-- CỘT PHẢI (col-lg-5, nền #FAFAFA viền mảnh) -->
-<div class="col-lg-5 cot-phai-bitis">
-<div class="khung-cot-phai-bitis">
-<div class="danh-sach-san-pham-bitis mb-3">
-@foreach (var item in Model.DanhSachMon)
-{
-    string tenMon = Model.LayTenMon(item);
-    string anhSanPham = Model.LayAnhMon(item);
-
-    <div class="dong-san-pham-bitis">
-        <div class="d-flex align-items-center justify-content-between gap-3">
-            <div class="khung-anh-san-pham-bitis">
-                <img src="@anhSanPham" alt="@tenMon" class="anh-thu-nho-bitis" />
-                <span class="cham-so-luong-bitis">@item.SoLuong</span>
-            </div>
-            <div class="ten-san-pham-bitis"><strong class="d-block text-dark">@tenMon</strong></div>
-            <div class="gia-san-pham-bitis">@((item.SoLuong * item.DonGiaTamTinh).ToString("N0")) đ</div>
-        </div>
-
-        @if (item.LoaiSanPham == 3 && item.MaHopTcNavigation != null)
-        {
-            var danhSachO = item.MaHopTcNavigation.ChiTietHopTuChons.OrderBy(x => x.ViTriOtrongHop).ToList();
-            if (danhSachO.Any())
-            {
-                <div class="bang-thanh-phan-hop-2-cot mt-2">
-                    @foreach (var o in danhSachO)
-                    {
-                        <div class="dong-thanh-phan-hop">
-                            <span class="cot-o-banh">Ô @o.ViTriOtrongHop</span>
-                            <span class="cot-ten-banh">@(o.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu")</span>
-                        </div>
-                    }
-                </div>
-            }
-        }
-    </div>
-}
-</div>
-
-<div class="khung-ma-khuyen-mai-bitis py-3 border-top border-bottom">
-    <div class="d-flex gap-2 mb-2">
-        <input type="text" id="txtMaGiamGiaCheckout" class="input-phang-bitis" value="@Model.CodeKmDangDung" placeholder="Mã khuyến mãi" style="flex: 1; min-width: 0;" />
-        <button type="button" class="btn-su-dung-ma-bitis" onclick="apDungMaGiamGiaTrangThanhToan()">Sử dụng</button>
-    </div>
-    <small id="lblKetQuaVoucherCheckout" class="d-block mb-2 text-success fw-medium">
-        @if (!string.IsNullOrEmpty(Model.CodeKmDangDung))
-        {
-            <span>✓ Đang áp dụng mã <strong>@Model.CodeKmDangDung</strong></span>
-        }
-    </small>
-    <div class="the-voucher-truc-quan-bitis">
-        <div class="icon-hop-qua-voucher"><i class="bi bi-gift-fill"></i></div>
-        <div class="noi-dung-the-voucher">
-            <div class="fw-bold text-dark small">Giảm 10% đơn Lễ Hội</div>
-            <div class="d-flex align-items-center flex-wrap gap-1 mt-1">
-                <span class="nhan-ma-vang-bitis">TRANGTRON2026</span>
-                <span class="text-muted small">HSD: 31/12/2027</span>
-            </div>
-        </div>
-        <button type="button" class="btn-ap-dung-ma-vang-bitis" onclick="chonNhanhMaCheckout('TRANGTRON2026')">Áp dụng mã</button>
-    </div>
-</div>
-
-@if (Model.DaDangNhap && Model.DiemTichLuy > 0)
-{
-    <div class="py-3 border-bottom">
-        <div class="form-check form-switch d-flex align-items-center gap-2 m-0">
-            <input class="form-check-input mt-0" type="checkbox" role="switch" id="chkDungDiemTichLuy" name="DungDiemTichLuy" value="true" onchange="capNhatBangTinhThanhToan()" />
-            <label class="form-check-label text-dark small fw-medium" for="chkDungDiemTichLuy">
-                Dùng @Model.DiemTichLuy điểm tích lũy (Giảm -@((Model.DiemTichLuy * 1000).ToString("N0")) đ)
-            </label>
-        </div>
-        <small id="lblGhiChuDiemTichLuyCheckout" class="text-muted d-block mt-1" style="display: none !important;"></small>
-    </div>
-}
-
-<div class="pt-3">
-    <div class="d-flex justify-content-between align-items-center py-1"><span class="text-secondary">Tạm tính</span><strong class="text-dark">@Model.TongTienHang.ToString("N0") đ</strong></div>
-    @if (Model.TienChietKhauB2B > 0)
-    {
-        <div class="d-flex justify-content-between align-items-center py-1 text-warning"><span>Chiết khấu sỉ B2B (@Model.PhanTramCkB2B%)</span><strong>-@Model.TienChietKhauB2B.ToString("N0") đ</strong></div>
-    }
-    <div id="dongGiamGiaVoucherCheckout" class="d-flex justify-content-between align-items-center py-1 text-success" style="display: @(Model.TienGiamVoucher > 0 ? "flex" : "none") !important;"><span>Giảm giá khuyến mãi</span><strong id="lblTienGiamVoucherCheckout">-@Model.TienGiamVoucher.ToString("N0") đ</strong></div>
-    <div id="dongGiamGiaHangVipCheckout" class="d-flex justify-content-between align-items-center py-1 text-primary" style="display: @(Model.TienGiamVip > 0 ? "flex" : "none") !important;"><span>Ưu đãi Hạng @Model.HangTv (@Model.PhanTramGiamVip.ToString("0.##")%)</span><strong id="lblTienGiamHangVipCheckout">-@Model.TienGiamVip.ToString("N0") đ</strong></div>
-    <div id="dongGiamGiaDiemCheckout" class="d-flex justify-content-between align-items-center py-1 text-success" style="display: none !important;"><span>Giảm giá điểm VIP (<span id="lblSoDiemSuDungCheckout">0</span> điểm)</span><strong id="lblTienGiamDiemCheckout">-0 đ</strong></div>
-    <div id="dongPhiLogoB2BCheckout" class="d-flex justify-content-between align-items-center py-1 text-secondary" style="display: none !important;"><span>Phí khuôn ép kim Logo B2B</span><strong id="lblPhiInLogoCheckout" class="text-dark">0 đ</strong></div>
-    <div class="d-flex justify-content-between align-items-center py-1"><span class="text-secondary">Phí vận chuyển <span id="lblSoDiemGiaoCheckout" class="d-none">1</span></span><strong id="lblPhiShipCheckout" class="text-dark">@(duMienPhiShip ? "0 đ" : "30.000 đ")</strong></div>
-    <hr class="my-3" />
-    <div class="d-flex justify-content-between align-items-baseline"><span class="fw-bold text-dark">Tổng cộng</span><strong id="lblTongThanhToanCuoiCheckout" class="fs-4 fw-bold text-dark">@tongThanhToanBanDau.ToString("N0") đ</strong></div>
-</div>
-</div>
-</div>
 </div>
 </form>
 </div>

@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebBanhTrungThu.Areas.Admin.Controllers.CoSo;
 using WebBanhTrungThu.Data;
-using WebBanhTrungThu.Services;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Areas.Admin.Controllers
@@ -11,12 +11,12 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     public class KhoAnhAdminController : ControllerQuanTriCoSo
     {
         private readonly IWebHostEnvironment _env;
-        private readonly DichVuHinhAnh _dichVuHinhAnh;
+        private readonly IDichVuHinhAnh _dichVuHinhAnh;
 
         public KhoAnhAdminController(
             CSDLBanhTrungThuContext db,
             IWebHostEnvironment env,
-            DichVuHinhAnh dichVuHinhAnh) : base(db)
+            IDichVuHinhAnh dichVuHinhAnh) : base(db)
         {
             _env = env;
             _dichVuHinhAnh = dichVuHinhAnh;

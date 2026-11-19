@@ -1,15 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using WebBanhTrungThu.Controllers.CoSo;
 using WebBanhTrungThu.Data;
-using WebBanhTrungThu.Services.GiaoDien;
+using WebBanhTrungThu.Services.Interfaces;
 
 namespace WebBanhTrungThu.Controllers
 {
     public class HomeController : ControllerKhachHangCoSo
     {
-        private readonly DichVuTrangChu _dichVuTrangChu;
+        private readonly IDichVuTrangChu _dichVuTrangChu;
 
-        public HomeController(CSDLBanhTrungThuContext db, DichVuTrangChu dichVuTrangChu) : base(db)
+        public HomeController(CSDLBanhTrungThuContext db, IDichVuTrangChu dichVuTrangChu) : base(db)
         {
             _dichVuTrangChu = dichVuTrangChu;
         }

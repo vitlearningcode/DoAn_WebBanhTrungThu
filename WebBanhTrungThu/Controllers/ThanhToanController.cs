@@ -4,6 +4,7 @@ using WebBanhTrungThu.Controllers.CoSo;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services;
+using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Controllers
@@ -14,9 +15,9 @@ namespace WebBanhTrungThu.Controllers
     /// </summary>
     public class ThanhToanController : ControllerKhachHangCoSo
     {
-        private readonly DichVuThanhToan _dichVuThanhToan;
+        private readonly IDichVuThanhToan _dichVuThanhToan;
 
-        public ThanhToanController(CSDLBanhTrungThuContext db, DichVuThanhToan dichVuThanhToan) : base(db)
+        public ThanhToanController(CSDLBanhTrungThuContext db, IDichVuThanhToan dichVuThanhToan) : base(db)
         {
             _dichVuThanhToan = dichVuThanhToan;
         }

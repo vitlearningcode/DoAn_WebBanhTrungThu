@@ -159,7 +159,17 @@ function renderKhayHop() {
     viTriOVuaChon = -1;
     capNhatThanhDoChiSoGi(soBanhDaXep, tongChiSoGi);
 
-    let tongGiaHop = (cauHinhHop.giaVo * 0.95) + tongTienBanh;
+    const giaVoGoc = Math.round(cauHinhHop.giaVo || 0);
+    const tongGiaHop = soBanhDaXep === 0 ? 0 : (cauHinhHop.giaVo * 0.95) + tongTienBanh;
+    const lblChuThichGia = document.getElementById("lblChuThichGiaHop");
+    if (lblChuThichGia) {
+        if (soBanhDaXep === 0) {
+            lblChuThichGia.innerText = `(Vỏ hộp: ${giaVoGoc.toLocaleString("vi-VN")}đ • Chưa chọn bánh)`;
+        } else {
+            const giaVoUuDai = Math.round(cauHinhHop.giaVo * 0.95);
+            lblChuThichGia.innerText = `(Đã gồm vỏ hộp ưu đãi ${giaVoUuDai.toLocaleString("vi-VN")}đ + ${soBanhDaXep} bánh)`;
+        }
+    }
 
     document.getElementById("lblSoODaXep").innerText = `${soBanhDaXep} / ${cauHinhHop.sucChua} bánh`;
     document.getElementById("lblTongCalo").innerText = `${tongCalo.toLocaleString("vi-VN")} Kcal`;
