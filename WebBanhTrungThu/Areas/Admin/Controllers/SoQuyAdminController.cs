@@ -17,11 +17,37 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(string? locPhuongThuc)
+        public async Task<IActionResult> Index(string? locPhuongThuc, string? locLoaiPhieu, string? tuKhoa)
         {
-            var (vm, locHienTai) = await _dichVuThongKeVaSoQuy.XayDungSoQuyAsync(locPhuongThuc);
+            var (vm, locHienTai) = await _dichVuThongKeVaSoQuy.XayDungSoQuyAsync(locPhuongThuc, locLoaiPhieu, tuKhoa);
             ViewBag.LocPhuongThuc = locHienTai;
             return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LapPhieuThuChi(
+            string loaiPhieu,
+            string hangMuc,
+            decimal soTien,
+            string phuongThuc,
+            string doiTuong,
+            string? maTraCuuDh,
+            string? ghiChu)
+        {
+            var (thanhCong, thongBao) = await _dichVuThongKeVaSoQuy.LapPhieuThuChiThuCongAsync(
+                loaiPhieu, hangMuc, soTien, phuongThuc, doiTuong, maTraCuuDh, ghiChu);
+
+            if (thanhCong)
+            {
+                TempData["ThongBaoAdmin"] = thongBao;
+            }
+            else
+            {
+                TempData["LoiAdmin"] = thongBao;
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]

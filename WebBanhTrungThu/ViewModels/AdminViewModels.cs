@@ -280,21 +280,40 @@ namespace WebBanhTrungThu.ViewModels
         public DateTime? NgayKetThuc { get; set; }
     }
 
+    public class PhieuThuChiSoQuyItem
+    {
+        public int MaPhieuId { get; set; }
+        public string MaPhieu { get; set; } = string.Empty;
+        public string LoaiPhieu { get; set; } = "THU";
+        public string HangMuc { get; set; } = string.Empty;
+        public decimal SoTien { get; set; }
+        public string PhuongThuc { get; set; } = string.Empty;
+        public string DoiTuong { get; set; } = string.Empty;
+        public string? SdtDoiTuong { get; set; }
+        public int? MaDh { get; set; }
+        public string? MaTraCuuDh { get; set; }
+        public string? GhiChu { get; set; }
+        public DateTime NgayLap { get; set; }
+    }
+
     public class SoQuyAdminViewModel
     {
         public decimal QuyDauKy { get; set; } = 25000000m;
         public decimal TongThuTrongKy { get; set; }
-        public decimal ThuTienMatCod { get; set; }
-        public decimal ThuChuyenKhoanVietQr { get; set; }
-        public decimal ThuViMoMo { get; set; }
-        public decimal ThuVnPay { get; set; }
-        public decimal TongGiaVonUocTinh { get; set; }
-        public decimal TongTienHoanKhach { get; set; }
-        public decimal LoiNhuanGop { get; set; }
-        public decimal TonQuyCuoiKy => QuyDauKy + TongThuTrongKy - TongTienHoanKhach;
-        public List<DonHang> DanhSachPhieuThuDonHang { get; set; } = new();
-        public List<DonHang> DanhSachPhieuHoanTien { get; set; } = new();
+        public decimal TongChiTrongKy { get; set; }
+        public decimal TonQuyCuoiKy => QuyDauKy + TongThuTrongKy - TongChiTrongKy;
+        public int TongSoPhieu { get; set; }
+        public int SoPhieuThu { get; set; }
+        public int SoPhieuChi { get; set; }
+        public int SoPhieuTienMat { get; set; }
+        public int SoPhieuChuyenKhoan { get; set; }
+        public int SoPhieuViDienTu { get; set; }
+        public int SoPhieuTheNganHang { get; set; }
+        public string LocLoaiPhieu { get; set; } = "ALL";
+        public string LocPhuongThuc { get; set; } = "ALL";
+        public string TuKhoa { get; set; } = string.Empty;
+        public bool DaLocServer { get; set; }
+        public List<PhieuThuChiSoQuyItem> DanhSachPhieuThuChi { get; set; } = new();
         public CauHinhThanhToanQr CauHinhQr { get; set; } = new();
-        public List<PhieuThuChiMoRong> DanhSachPhieuThuChiWebhook { get; set; } = new();
     }
 }

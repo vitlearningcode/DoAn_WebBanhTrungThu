@@ -25,7 +25,9 @@ builder.Services.AddControllersWithViews()
 
 // 2. Đăng ký DbContext kết nối tới SQL Server (25 bảng)
 builder.Services.AddDbContext<CSDLBanhTrungThuContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("ChuoiKetNoiCSDL")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("ChuoiKetNoiCSDL"),
+        sql => sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
 // 3. Đăng ký các Service nghiệp vụ theo chuẩn Dependency Inversion (Interface -> Implementation)
 builder.Services.AddScoped<IDichVuHinhAnh, DichVuHinhAnh>();

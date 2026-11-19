@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
+using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services.CoSo;
 using WebBanhTrungThu.Services.Interfaces;
 using WebBanhTrungThu.ViewModels;
@@ -181,75 +182,247 @@ namespace WebBanhTrungThu.Services.QuanTri
         }
 
         // =================================================================================
-        // 2. SỔ QUỸ THU CHI & CẤU HÌNH TÀI KHOẢN VIETQR / MOMO
+        // 2. SỔ QUỸ THU CHI (SQL-FIRST TRỰC TIẾP TRÊN dbo.PhieuThuChi) & CẤU HÌNH VIETQR / MOMO
         // =================================================================================
-        public async Task<(SoQuyAdminViewModel ViewModel, string LocPhuongThucHienTai)> XayDungSoQuyAsync(string? locPhuongThuc)
+        public async Task<(SoQuyAdminViewModel ViewModel, string LocPhuongThucHienTai)> XayDungSoQuyAsync(
+            string? locPhuongThuc,
+            string? locLoaiPhieu = null,
+            string? tuKhoa = null)
         {
-            var tatCaDon = await _db.DonHangs
+            var dsPhieuDb = await _context.PhieuThuChis
                 .AsNoTracking()
-                .Include(d => d.ChiTietDonHangs)
-                .OrderByDescending(d => d.NgayDat)
+                .OrderByDescending(p => p.NgayLap)
+                .ThenByDescending(p => p.MaPhieu)
                 .ToListAsync();
 
-            var store = _kiotMeta.DocDuLieu();
-            foreach (var d in tatCaDon)
+            var dsMaDhLienKet = dsPhieuDb
+                .Where(p => p.MaDonHangLienKet.HasValue)
+                .Select(p => p.MaDonHangLienKet!.Value)
+                .Distinct()
+                .ToList();
+
+            var mapDonHang = new Dictionary<int, (string MaTraCuuDh, string? Sdt, string HoTen)>();
+            if (dsMaDhLienKet.Count > 0)
             {
-                _kiotMeta.GanMetadataChoDonHang(d, store);
+                var dsDh = await _context.DonHangs
+                    .AsNoTracking()
+                    .Where(d => dsMaDhLienKet.Contains(d.MaDh))
+                    .Select(d => new { d.MaDh, d.MaTraCuuDh, d.SdtnguoiMua, d.HoTenNguoiMua })
+                    .ToListAsync();
+
+                foreach (var dh in dsDh)
+                {
+                    mapDonHang[dh.MaDh] = (dh.MaTraCuuDh, dh.SdtnguoiMua, dh.HoTenNguoiMua);
+                }
             }
 
-            // 1. Các đơn hợp lệ (TrangThaiDh != "DA_HUY") dùng để ghi nhận Phiếu Thu
-            var danhSachDonHieuLuc = tatCaDon
-                .Where(d => d.TrangThaiDh != "DA_HUY")
-                .ToList();
-
-            // 2. Các đơn đã hủy và đã hoàn tiền ngân hàng cho khách (TrangThaiTt == "DA_HOAN_TIEN")
-            var danhSachDonHoanTien = tatCaDon
-                .Where(d => d.TrangThaiTt == "DA_HOAN_TIEN")
-                .ToList();
-
-            // Tổng thu tính theo các đơn hiệu lực (ưu tiên đơn DA_TT / DA_THANH_TOAN hoặc đơn đang vận hành)
-            var donDaThu = danhSachDonHieuLuc
-                .Where(d => d.TrangThaiTt == "DA_TT" || d.TrangThaiTt == "DA_THANH_TOAN")
-                .ToList();
-            var tapTinhThu = donDaThu.Any() ? donDaThu : danhSachDonHieuLuc;
-
-            decimal tongThu = tapTinhThu.Sum(d => d.TongThanhToanCuoi);
-            decimal thuCod = tapTinhThu.Where(d => d.PhuongThucTt == "COD").Sum(d => d.TongThanhToanCuoi);
-            decimal thuVietQr = tapTinhThu.Where(d => d.PhuongThucTt == "VIETQR").Sum(d => d.TongThanhToanCuoi);
-            decimal thuMoMo = tapTinhThu.Where(d => d.PhuongThucTt == "MOMO" || d.PhuongThucTt == "MOMO_QR").Sum(d => d.TongThanhToanCuoi);
-            decimal thuVnPay = tapTinhThu.Where(d => d.PhuongThucTt == "VNPAY").Sum(d => d.TongThanhToanCuoi);
-
-            decimal tongHoanTien = danhSachDonHoanTien.Sum(d => d.TongThanhToanCuoi);
-
-            // Ước tính tổng giá vốn (~ 54% doanh thu tiền hàng trước giảm của các đơn chưa hủy)
-            decimal tongTienHang = danhSachDonHieuLuc.Sum(d => d.TongTienHang);
-            decimal tongGiaVon = Math.Round(tongTienHang * 0.54m, 0);
-            decimal loiNhuanGop = tongThu - tongGiaVon;
-
-            var dsHienThi = danhSachDonHieuLuc;
-            if (!string.IsNullOrWhiteSpace(locPhuongThuc) && locPhuongThuc != "ALL")
+            var tatCaPhieu = dsPhieuDb.Select(p =>
             {
-                dsHienThi = danhSachDonHieuLuc.Where(d => d.PhuongThucTt == locPhuongThuc).ToList();
+                string loai = string.Equals(p.LoaiPhieu?.Trim(), "CHI", StringComparison.OrdinalIgnoreCase) ? "CHI" : "THU";
+                string maPhieu = !string.IsNullOrWhiteSpace(p.MaPhieuHienThi)
+                    ? p.MaPhieuHienThi.Trim()
+                    : $"{(loai == "CHI" ? "PCH" : "PTH")}-{p.MaPhieu:D6}";
+                string phuongThuc = string.IsNullOrWhiteSpace(p.PhuongThuc)
+                    ? "TIEN_MAT"
+                    : p.PhuongThuc.Trim().ToUpperInvariant();
+
+                string? maTraCuuDh = null;
+                string? sdtDoiTuong = null;
+                string doiTuong = string.IsNullOrWhiteSpace(p.NguoiNopNhan)
+                    ? "Khách Hàng Nguyệt Cát"
+                    : p.NguoiNopNhan.Trim();
+
+                if (p.MaDonHangLienKet.HasValue && mapDonHang.TryGetValue(p.MaDonHangLienKet.Value, out var dhInfo))
+                {
+                    maTraCuuDh = dhInfo.MaTraCuuDh;
+                    sdtDoiTuong = dhInfo.Sdt;
+                    if (string.IsNullOrWhiteSpace(p.NguoiNopNhan))
+                    {
+                        doiTuong = dhInfo.HoTen;
+                    }
+                }
+
+                return new PhieuThuChiSoQuyItem
+                {
+                    MaPhieuId = p.MaPhieu,
+                    MaPhieu = maPhieu,
+                    LoaiPhieu = loai,
+                    HangMuc = string.IsNullOrWhiteSpace(p.HangMuc)
+                        ? (loai == "CHI" ? "Chi khác" : "Thu tiền bán hàng")
+                        : p.HangMuc.Trim(),
+                    SoTien = p.SoTien,
+                    PhuongThuc = phuongThuc,
+                    DoiTuong = doiTuong,
+                    SdtDoiTuong = sdtDoiTuong,
+                    MaDh = p.MaDonHangLienKet,
+                    MaTraCuuDh = maTraCuuDh,
+                    GhiChu = p.GhiChu,
+                    NgayLap = p.NgayLap
+                };
+            }).ToList();
+
+            decimal tongThu = tatCaPhieu.Where(p => p.LoaiPhieu == "THU").Sum(p => p.SoTien);
+            decimal tongChi = tatCaPhieu.Where(p => p.LoaiPhieu == "CHI").Sum(p => p.SoTien);
+            int soPhieuThu = tatCaPhieu.Count(p => p.LoaiPhieu == "THU");
+            int soPhieuChi = tatCaPhieu.Count(p => p.LoaiPhieu == "CHI");
+
+            int soPhieuTienMat = tatCaPhieu.Count(p => LayNhomPhuongThuc(p.PhuongThuc) == "TIEN_MAT");
+            int soPhieuChuyenKhoan = tatCaPhieu.Count(p => LayNhomPhuongThuc(p.PhuongThuc) == "CHUYEN_KHOAN");
+            int soPhieuViDienTu = tatCaPhieu.Count(p => LayNhomPhuongThuc(p.PhuongThuc) == "VI_DIEN_TU");
+            int soPhieuTheNganHang = tatCaPhieu.Count(p => LayNhomPhuongThuc(p.PhuongThuc) == "THE_NGAN_HANG");
+
+            string locLoaiChuan = string.IsNullOrWhiteSpace(locLoaiPhieu)
+                ? "ALL"
+                : locLoaiPhieu.Trim().ToUpperInvariant();
+            if (locLoaiChuan != "THU" && locLoaiChuan != "CHI")
+            {
+                locLoaiChuan = "ALL";
+            }
+
+            string locPtChuan = string.IsNullOrWhiteSpace(locPhuongThuc)
+                ? "ALL"
+                : locPhuongThuc.Trim().ToUpperInvariant();
+            string tuKhoaChuan = string.IsNullOrWhiteSpace(tuKhoa) ? string.Empty : tuKhoa.Trim();
+
+            bool daLocServer = locLoaiChuan != "ALL"
+                || locPtChuan != "ALL"
+                || !string.IsNullOrEmpty(tuKhoaChuan);
+
+            IEnumerable<PhieuThuChiSoQuyItem> truyVanLoc = tatCaPhieu;
+
+            if (locLoaiChuan != "ALL")
+            {
+                truyVanLoc = truyVanLoc.Where(p => p.LoaiPhieu == locLoaiChuan);
+            }
+
+            if (locPtChuan != "ALL")
+            {
+                truyVanLoc = truyVanLoc.Where(p =>
+                    p.PhuongThuc == locPtChuan || LayNhomPhuongThuc(p.PhuongThuc) == locPtChuan);
+            }
+
+            if (!string.IsNullOrEmpty(tuKhoaChuan))
+            {
+                truyVanLoc = truyVanLoc.Where(p =>
+                    p.MaPhieu.Contains(tuKhoaChuan, StringComparison.OrdinalIgnoreCase)
+                    || (!string.IsNullOrEmpty(p.MaTraCuuDh) && p.MaTraCuuDh.Contains(tuKhoaChuan, StringComparison.OrdinalIgnoreCase))
+                    || p.HangMuc.Contains(tuKhoaChuan, StringComparison.OrdinalIgnoreCase)
+                    || p.DoiTuong.Contains(tuKhoaChuan, StringComparison.OrdinalIgnoreCase)
+                    || (!string.IsNullOrEmpty(p.SdtDoiTuong) && p.SdtDoiTuong.Contains(tuKhoaChuan, StringComparison.OrdinalIgnoreCase))
+                    || (!string.IsNullOrEmpty(p.GhiChu) && p.GhiChu.Contains(tuKhoaChuan, StringComparison.OrdinalIgnoreCase))
+                    || p.PhuongThuc.Contains(tuKhoaChuan, StringComparison.OrdinalIgnoreCase)
+                    || p.LoaiPhieu.Contains(tuKhoaChuan, StringComparison.OrdinalIgnoreCase));
             }
 
             var vm = new SoQuyAdminViewModel
             {
                 QuyDauKy = 25000000m,
                 TongThuTrongKy = tongThu,
-                ThuTienMatCod = thuCod,
-                ThuChuyenKhoanVietQr = thuVietQr,
-                ThuViMoMo = thuMoMo,
-                ThuVnPay = thuVnPay,
-                TongGiaVonUocTinh = tongGiaVon,
-                TongTienHoanKhach = tongHoanTien,
-                LoiNhuanGop = loiNhuanGop,
-                DanhSachPhieuThuDonHang = dsHienThi,
-                DanhSachPhieuHoanTien = danhSachDonHoanTien,
-                CauHinhQr = _kiotMeta.LayCauHinhQr(),
-                DanhSachPhieuThuChiWebhook = store.DanhSachPhieuThuChi ?? new List<PhieuThuChiMoRong>()
+                TongChiTrongKy = tongChi,
+                TongSoPhieu = tatCaPhieu.Count,
+                SoPhieuThu = soPhieuThu,
+                SoPhieuChi = soPhieuChi,
+                SoPhieuTienMat = soPhieuTienMat,
+                SoPhieuChuyenKhoan = soPhieuChuyenKhoan,
+                SoPhieuViDienTu = soPhieuViDienTu,
+                SoPhieuTheNganHang = soPhieuTheNganHang,
+                LocLoaiPhieu = locLoaiChuan,
+                LocPhuongThuc = locPtChuan,
+                TuKhoa = tuKhoaChuan,
+                DaLocServer = daLocServer,
+                DanhSachPhieuThuChi = truyVanLoc.ToList(),
+                CauHinhQr = _kiotMeta.LayCauHinhQr()
             };
 
-            return (vm, locPhuongThuc ?? "ALL");
+            return (vm, locPtChuan);
+        }
+
+        public async Task<(bool ThanhCong, string ThongBao)> LapPhieuThuChiThuCongAsync(
+            string loaiPhieu,
+            string hangMuc,
+            decimal soTien,
+            string phuongThuc,
+            string doiTuong,
+            string? maTraCuuDh,
+            string? ghiChu)
+        {
+            string loai = string.Equals(loaiPhieu?.Trim(), "CHI", StringComparison.OrdinalIgnoreCase) ? "CHI" : "THU";
+            decimal soTienLamTron = Math.Round(soTien, 0);
+            if (soTienLamTron <= 0m)
+            {
+                return (false, "Số tiền lập phiếu phải lớn hơn 0 đ.");
+            }
+
+            string hangMucChuan = ChuanHoaChuoi(hangMuc, loai == "CHI" ? "Chi khác" : "Thu khác");
+            if (hangMucChuan.Length > 100) hangMucChuan = hangMucChuan[..100];
+
+            string doiTuongChuan = ChuanHoaChuoi(doiTuong, loai == "CHI" ? "Đối tác / Nhà cung cấp" : "Khách lẻ");
+            if (doiTuongChuan.Length > 150) doiTuongChuan = doiTuongChuan[..150];
+
+            string phuongThucChuan = ChuanHoaChuoi(phuongThuc, "TIEN_MAT").ToUpperInvariant();
+            if (phuongThucChuan.Length > 30) phuongThucChuan = phuongThucChuan[..30];
+
+            string? ghiChuChuan = string.IsNullOrWhiteSpace(ghiChu) ? null : ghiChu.Trim();
+            if (ghiChuChuan != null && ghiChuChuan.Length > 500) ghiChuChuan = ghiChuChuan[..500];
+
+            int? maDhLienKet = null;
+            if (!string.IsNullOrWhiteSpace(maTraCuuDh))
+            {
+                string maChuan = maTraCuuDh.Trim().TrimStart('#').ToUpperInvariant();
+                var dh = await _context.DonHangs
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(d => d.MaTraCuuDh == maChuan);
+
+                if (dh == null)
+                {
+                    return (false, $"Không tìm thấy đơn hàng #{maChuan} trong hệ thống.");
+                }
+
+                maDhLienKet = dh.MaDh;
+            }
+
+            DateTime bayGio = LayThoiGianHeThong();
+            string tienTo = loai == "CHI" ? "PCH" : "PTH";
+            string maPhieuHienThi = $"{tienTo}-{bayGio:yyMMddHHmmss}";
+
+            if (await _context.PhieuThuChis.AnyAsync(p => p.MaPhieuHienThi == maPhieuHienThi))
+            {
+                maPhieuHienThi = $"{maPhieuHienThi}-{bayGio:fff}";
+                if (await _context.PhieuThuChis.AnyAsync(p => p.MaPhieuHienThi == maPhieuHienThi))
+                {
+                    maPhieuHienThi = $"{tienTo}-{bayGio:yyMMddHHmmssfff}-{Random.Shared.Next(10, 99)}";
+                }
+            }
+
+            _context.PhieuThuChis.Add(new PhieuThuChi
+            {
+                MaPhieuHienThi = maPhieuHienThi,
+                LoaiPhieu = loai,
+                HangMuc = hangMucChuan,
+                SoTien = soTienLamTron,
+                PhuongThuc = phuongThucChuan,
+                MaDonHangLienKet = maDhLienKet,
+                NguoiNopNhan = doiTuongChuan,
+                GhiChu = ghiChuChuan,
+                NgayLap = bayGio
+            });
+
+            await _context.SaveChangesAsync();
+
+            string nhanLoai = loai == "CHI" ? "Phiếu chi" : "Phiếu thu";
+            return (true, $"Đã lập {nhanLoai} {maPhieuHienThi} ({soTienLamTron:N0} đ) vào Sổ quỹ thành công!");
+        }
+
+        private static string LayNhomPhuongThuc(string? phuongThuc)
+        {
+            return (phuongThuc ?? string.Empty).Trim().ToUpperInvariant() switch
+            {
+                "TIEN_MAT" or "COD" => "TIEN_MAT",
+                "CHUYEN_KHOAN" or "VIETQR" => "CHUYEN_KHOAN",
+                "MOMO" or "MOMO_QR" or "VNPAY" => "VI_DIEN_TU",
+                "THE_NGAN_HANG" => "THE_NGAN_HANG",
+                var khac => khac
+            };
         }
 
         public string CapNhatCauHinhQrMoMo(
