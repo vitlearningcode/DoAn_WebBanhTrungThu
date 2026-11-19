@@ -49,6 +49,7 @@
             </div>
             <select id="fltDhTrangThai" class="kv-select" onchange="locHoaDonClient()">
                 <option value="ALL" selected="@(locTrangThai == "ALL")">Tất cả</option>
+                <option value="GIAO_HANG" selected="@(locTrangThai == "GIAO_HANG")">Đơn giao hàng (Chờ lấy &amp; Đang giao)</option>
                 <option value="CHO_XAC_NHAN" selected="@(locTrangThai == "CHO_XAC_NHAN")">Chờ xác nhận</option>
                 <option value="CHO_LAY_HANG" selected="@(locTrangThai == "CHO_LAY_HANG" || locTrangThai == "DANG_DONG_GOI_HOP")">Chờ lấy hàng (Đã đóng gói)</option>
                 <option value="DANG_GIAO" selected="@(locTrangThai == "DANG_GIAO")">Đang giao hàng</option>

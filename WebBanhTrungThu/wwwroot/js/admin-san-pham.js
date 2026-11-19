@@ -428,13 +428,6 @@
         }
     };
 
-    window.moModalThemLoNhanh = function (maBanh, tenBanh) {
-        document.getElementById('hidThemLoMaBanh').value = maBanh;
-        document.getElementById('lblThemLoTenBanh').innerText = tenBanh;
-        const m = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalThemLoNhanhInline'));
-        m.show();
-    };
-
     window.xemTruocAnhKiot = function (input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();

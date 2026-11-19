@@ -1,0 +1,25 @@
+@model WebBanhTrungThu.ViewModels.ChiTietSanPhamViewModel
+@{
+    ViewData["Title"] = Model.SanPham.TenBanh;
+}
+
+<section class="trang-chi-tiet-san-pham nen-giay-do-sang py-4">
+    <div class="container">
+        <nav aria-label="Điều hướng chi tiết sản phẩm" class="mb-3">
+            <ol class="breadcrumb sp-ct-breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="/">Trang chủ</a></li>
+                <li class="breadcrumb-item"><a href="/#tang-bo-suu-tap">Bộ sưu tập bánh</a></li>
+                <li class="breadcrumb-item"><span class="chu-nau-phu">@Model.TenDanhMuc</span></li>
+                <li class="breadcrumb-item active chu-do-son-mai fw-semibold" aria-current="page">@Model.SanPham.TenBanh</li>
+            </ol>
+        </nav>
+
+        @await Html.PartialAsync("~/Views/SanPham/PhanKhu/_ThongTinChinhVaMuaHang.cshtml", Model)
+        @await Html.PartialAsync("~/Views/SanPham/PhanKhu/_BangDinhDuongVaMoTa.cshtml", Model)
+        @await Html.PartialAsync("~/Views/SanPham/PhanKhu/_SanPhamLienQuan.cshtml", Model)
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/js/modules/chi-tiet-san-pham.js" asp-append-version="true"></script>
+}

@@ -99,4 +99,56 @@
             });
         });
     });
+
+    window.moModalKhachHuyDon = function (maDh, maTraCuu) {
+        const modalEl = document.getElementById("modalKhachHuyDonCod");
+        if (!modalEl || typeof bootstrap === "undefined") return;
+        if (modalEl.parentElement !== document.body) {
+            document.body.appendChild(modalEl);
+        }
+
+        const inpMaDh = document.getElementById("inpKhachHuyMaDh");
+        const lblMa = document.getElementById("lblKhachHuyMaTraCuu");
+        const sel = document.getElementById("selLyDoHuyKhach");
+        const txtKhac = document.getElementById("txtLyDoHuyKhacKhach");
+
+        if (inpMaDh) inpMaDh.value = String(maDh || 0);
+        if (lblMa) lblMa.textContent = "#" + (maTraCuu || "");
+        if (sel) sel.selectedIndex = 0;
+        if (txtKhac) txtKhac.value = "";
+        window.dongBoLyDoHuyKhach();
+
+        bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    };
+
+    window.dongBoLyDoHuyKhach = function () {
+        const sel = document.getElementById("selLyDoHuyKhach");
+        const boxKhac = document.getElementById("khungNhapLyDoKhacKhach");
+        const txtKhac = document.getElementById("txtLyDoHuyKhacKhach");
+        if (!sel || !boxKhac) return;
+
+        const laLyDoKhac = sel.value === "KHAC";
+        boxKhac.style.display = laLyDoKhac ? "block" : "none";
+        if (txtKhac) {
+            txtKhac.required = laLyDoKhac;
+        }
+    };
+
+    window.chuanBiGuiLyDoHuyDon = function () {
+        const sel = document.getElementById("selLyDoHuyKhach");
+        const txtKhac = document.getElementById("txtLyDoHuyKhacKhach");
+        const inpCuoi = document.getElementById("inpKhachHuyLyDoCuoi");
+        if (!inpCuoi) return true;
+
+        let lyDo = sel ? sel.value : "Thay đổi nhu cầu mua hàng";
+        if (lyDo === "KHAC") {
+            lyDo = (txtKhac ? txtKhac.value : "").trim();
+            if (!lyDo) {
+                if (txtKhac) txtKhac.focus();
+                return false;
+            }
+        }
+        inpCuoi.value = lyDo;
+        return true;
+    };
 })();

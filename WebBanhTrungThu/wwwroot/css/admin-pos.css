@@ -176,6 +176,27 @@ html, body {
     color: #FFFFFF;
 }
 
+.pos-btn-logout {
+    height: 33px;
+    padding: 0 12px;
+    border-radius: 5px;
+    background: #DC2626;
+    color: #FFFFFF;
+    font-weight: 600;
+    font-size: 12.5px;
+    border: 1px solid #B91C1C;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.pos-btn-logout:hover {
+    background: #B91C1C;
+    color: #FFFFFF;
+}
+
 /* ================================================================= */
 /* 2. BỐ CỤC CHÍNH 2 KHU VỰC: TRÁI (65%) & PHẢI (35%)               */
 /* ================================================================= */

@@ -1,0 +1,57 @@
+<div class="modal fade" id="modalImportKiemKho" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form id="frmImportKiemKho" asp-area="Admin" asp-controller="KiemKhoAdmin" asp-action="ImportExcel" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header py-2 px-3" style="background: #F4F6F8; border-bottom: 1px solid #E5E7EB;">
+                    <h6 class="modal-title fw-bold text-dark mb-0">
+                        <i class="bi bi-file-earmark-spreadsheet text-primary me-1"></i> Nhập file Excel đối soát kiểm kho
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body p-3">
+                    <div class="p-2 rounded mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2" style="background: #F2F8FE; border: 1px solid #BFDBFE;">
+                        <span class="small text-dark">Tải file mẫu kèm tồn hệ thống hiện tại:</span>
+                        <div class="d-flex gap-2">
+                            <a href="/Admin/KiemKhoAdmin/TaiFileMauExcel?dinhDang=xlsx" class="btn btn-sm btn-outline-primary py-1 px-2">
+                                <i class="bi bi-download"></i> Mẫu .xlsx
+                            </a>
+                            <a href="/Admin/KiemKhoAdmin/TaiFileMauExcel?dinhDang=csv" class="btn btn-sm btn-outline-secondary py-1 px-2">
+                                <i class="bi bi-filetype-csv"></i> Mẫu .csv
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold mb-1">Chọn file Excel (.xlsx) hoặc CSV (.csv) đã điền Tồn thực tế <span class="text-danger">*</span></label>
+                        <input type="file" id="kk_FileImportExcel" name="fileExcel" accept=".xlsx,.csv" class="form-control form-control-sm" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold mb-1">Ghi chú phiếu kiểm kho</label>
+                        <input type="text" name="ghiChu" class="form-control form-control-sm" placeholder="VD: Kiểm kê thực tế cuối ca chiều..." />
+                    </div>
+
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="chkCanBangNgayExcel" name="canBangNgay" value="true" />
+                        <label class="form-check-label small fw-semibold text-dark" for="chkCanBangNgayExcel">
+                            Tự động cân bằng kho ngay sau khi Import (sinh phiếu xuất nếu thiếu)
+                        </label>
+                    </div>
+                    <div id="kk_ImportMsg" class="small text-danger" style="display:none;"></div>
+                </div>
+
+                <div class="modal-footer bg-light py-2 px-3 justify-content-between">
+                    <button type="button" class="btn-kv-outline" onclick="napExcelVaoModalKiemKho()">
+                        <i class="bi bi-eye"></i> Xem trước &amp; Sửa trước khi lưu
+                    </button>
+                    <button type="submit" class="btn-kv-green">
+                        <i class="bi bi-upload"></i> Tạo phiếu từ Excel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

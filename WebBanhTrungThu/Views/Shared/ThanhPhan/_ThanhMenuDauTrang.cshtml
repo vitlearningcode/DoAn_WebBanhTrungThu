@@ -171,7 +171,10 @@
                 @if (User.Identity != null && User.Identity.IsAuthenticated)
                 {
                     string hangTv = User.FindFirst("HangTV")?.Value ?? "Kim Cương";
-                    bool laQuanTri = User.IsInRole("QUAN_TRI") || User.IsInRole("NHAN_VIEN") || User.IsInRole("THU_NGAN") || User.IsInRole("GIAO_HANG");
+                    bool laChuCuaHang = User.IsInRole("QUAN_TRI") || User.IsInRole("ADMIN");
+                    bool laNhanVienBanHang = User.IsInRole("NHAN_VIEN") || User.IsInRole("THU_NGAN") || User.IsInRole("NV_BAN_HANG");
+                    bool laGiaoHang = User.IsInRole("GIAO_HANG");
+                    bool laQuanTri = laChuCuaHang || laNhanVienBanHang || laGiaoHang;
                     string tenDayDu = User.Identity.Name ?? "Hội viên";
                     string hoTenHienThi = tenDayDu;
                     string vaiTroDropdown = string.Empty;
@@ -181,7 +184,7 @@
                         hoTenHienThi = tenDayDu.Substring(0, viTriNgoac).Trim();
                         vaiTroDropdown = tenDayDu.Substring(viTriNgoac).Trim();
                     }
-                    else if (User.IsInRole("QUAN_TRI"))
+                    else if (laChuCuaHang)
                     {
                         vaiTroDropdown = "(Admin)";
                     }
@@ -210,12 +213,36 @@
                                     <small>Chi tiết</small>
                                 </a>
                             </li>
-                            @if (laQuanTri)
+                            @if (laChuCuaHang)
                             {
                                 <li>
                                     <a class="hover-dropdown-item" href="/Admin/Dashboard/Index">
                                         <span>Quản trị Cửa hàng</span>
                                         <small>Admin</small>
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="hover-dropdown-item" href="/Admin/BanHangPos/Index">
+                                        <span>Bán hàng (POS)</span>
+                                        <small>Tại quầy</small>
+                                    </a>
+                                </li>
+                            }
+                            else if (laNhanVienBanHang)
+                            {
+                                <li>
+                                    <a class="hover-dropdown-item" href="/Admin/BanHangPos/Index">
+                                        <span>Màn hình Bán hàng (POS)</span>
+                                        <small>POS</small>
+                                    </a>
+                                </li>
+                            }
+                            else if (laGiaoHang)
+                            {
+                                <li>
+                                    <a class="hover-dropdown-item" href="/Admin/DonHangAdmin/Index?tab=GIAO_HANG">
+                                        <span>Đơn giao hàng</span>
+                                        <small>Vận chuyển</small>
                                     </a>
                                 </li>
                             }

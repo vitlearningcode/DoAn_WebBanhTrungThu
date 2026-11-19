@@ -1,0 +1,109 @@
+@model WebBanhTrungThu.ViewModels.ChiTietSanPhamViewModel
+@{
+    var sp = Model.SanPham;
+    var dd = Model.ThongSoDinhDuong;
+    int calo = dd?.NangLuongCalo ?? 380;
+    decimal duong = dd?.LuongDuongGram ?? 14m;
+    decimal dam = dd?.ChatDamGram ?? 8m;
+    decimal beo = dd?.ChatBeoGram ?? 11m;
+    int gi = dd?.ChiSoDuongHuyetGi ?? 52;
+    string canhBaoDiUng = string.IsNullOrWhiteSpace(dd?.CanhBaoDiUng) ? "Không ghi nhận thành phần gây dị ứng đặc biệt" : dd.CanhBaoDiUng;
+    bool isomalt = string.Equals(sp.MucDoNgot, "ISOMALT_TIEUDUONG", StringComparison.OrdinalIgnoreCase);
+
+    string mucGiNhan = gi <= 35 ? "Thấp (Phù hợp ăn kiêng)" : (gi <= 55 ? "Trung bình (Cân bằng)" : "Cao (Giàu năng lượng)");
+    string mucGiMau = gi <= 35 ? "#166534" : (gi <= 55 ? "#92400E" : "#991B1B");
+    string mucGiNen = gi <= 35 ? "#DCFCE7" : (gi <= 55 ? "#FEF3C7" : "#FEE2E2");
+}
+
+<div class="row g-4 mb-4">
+    <!-- Bảng Thông số Dinh dưỡng thật từ dbo.ThongSoDinhDuong -->
+    <div class="col-lg-5">
+        <div class="card-hoang-gia p-3 p-lg-4 h-100">
+            <h2 class="font-co-phong fs-4 fw-bold chu-do-son-mai border-bottom pb-2 mb-3" style="border-color: var(--mau-vien-vang-dong) !important;">
+                Thông Số Dinh Dưỡng (@sp.TrongLuongGram g)
+            </h2>
+
+            <table class="table table-sm align-middle sp-ct-bang-dinh-duong mb-3">
+                <tbody>
+                    <tr>
+                        <td class="chu-nau-phu">Năng lượng</td>
+                        <td class="text-end fw-bold chu-nau-tram">@calo Kcal</td>
+                    </tr>
+                    <tr>
+                        <td class="chu-nau-phu">Lượng đường</td>
+                        <td class="text-end fw-bold chu-do-son-mai">@duong.ToString("0.##") g</td>
+                    </tr>
+                    <tr>
+                        <td class="chu-nau-phu">Chất đạm (Protein)</td>
+                        <td class="text-end fw-bold chu-nau-tram">@dam.ToString("0.##") g</td>
+                    </tr>
+                    <tr>
+                        <td class="chu-nau-phu">Chất béo (Lipid)</td>
+                        <td class="text-end fw-bold chu-nau-tram">@beo.ToString("0.##") g</td>
+                    </tr>
+                    <tr>
+                        <td class="chu-nau-phu">Chỉ số đường huyết (GI)</td>
+                        <td class="text-end">
+                            <span class="badge rounded-pill px-2 py-1" style="background: @mucGiNen; color: @mucGiMau;">
+                                GI @gi • @mucGiNhan
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <span class="sp-ct-the-dinh-duong @(sp.LaBanhChay ? "dat-chuan" : "")">
+                    Thuần chay: @(sp.LaBanhChay ? "Có (100% thực vật)" : "Không")
+                </span>
+                <span class="sp-ct-the-dinh-duong @(isomalt ? "dat-chuan" : "")">
+                    Đường Isomalt: @(isomalt ? "Có (Ít đường huyết)" : "Đường truyền thống")
+                </span>
+            </div>
+
+            <div class="sp-ct-hop-canh-bao p-2 px-3 rounded">
+                <strong class="d-block small chu-do-son-mai mb-1">Cảnh báo dị ứng:</strong>
+                <span class="small chu-nau-tram">@canhBaoDiUng</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mô tả chi tiết, Hướng dẫn bảo quản & Thưởng trà -->
+    <div class="col-lg-7">
+        <div class="card-hoang-gia p-3 p-lg-4 h-100">
+            <h2 class="font-co-phong fs-4 fw-bold chu-do-son-mai border-bottom pb-2 mb-3" style="border-color: var(--mau-vien-vang-dong) !important;">
+                Mô Tả Chi Tiết &amp; Nghệ Thuật Thưởng Trà
+            </h2>
+
+            <div class="mb-3">
+                <h3 class="h6 fw-bold chu-nau-tram mb-1">Hương vị &amp; Tuyển chọn nguyên liệu</h3>
+                <p class="chu-nau-phu mb-0" style="line-height: 1.7;">
+                    @(string.IsNullOrWhiteSpace(sp.CauChuyenBanh)
+                        ? (string.IsNullOrWhiteSpace(sp.MoTaNgan)
+                            ? $"{sp.TenBanh} thuộc dòng bánh tuyển chọn của thương hiệu {Model.ThuongHieu}, cân bằng lớp vỏ nướng vàng ươm và phần nhân đậm đà chuẩn vị Trung Thu truyền thống."
+                            : sp.MoTaNgan)
+                        : sp.CauChuyenBanh)
+                </p>
+            </div>
+
+            <div class="row g-3 mt-1">
+                <div class="col-md-6">
+                    <div class="sp-ct-o-huong-dan p-3 h-100">
+                        <h4 class="h6 fw-bold chu-do-son-mai mb-1">
+                            <i class="bi bi-cup-hot me-1"></i> Gợi ý thưởng trà
+                        </h4>
+                        <p class="small chu-nau-phu mb-0" style="line-height: 1.6;">@Model.GoiYThuongTra</p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="sp-ct-o-huong-dan p-3 h-100">
+                        <h4 class="h6 fw-bold chu-do-son-mai mb-1">
+                            <i class="bi bi-shield-check me-1"></i> Hướng dẫn bảo quản
+                        </h4>
+                        <p class="small chu-nau-phu mb-0" style="line-height: 1.6;">@Model.HuongDanBaoQuan</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -11,7 +11,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     /// Controller điều phối màn hình Bán hàng tại quầy Nguyệt Cát ERP Web POS,
     /// kế thừa từ ControllerQuanTriCoSo và ủy quyền nghiệp vụ sang DichVuBanHangPos & DichVuQuanTriKhoFefo.
     /// </summary>
-    [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN")]
+    [Authorize(Roles = "QUAN_TRI,ADMIN,NHAN_VIEN,THU_NGAN,NV_BAN_HANG")]
     public class BanHangPosController : ControllerQuanTriCoSo
     {
         private readonly IDichVuBanHangPos _dichVuPos;

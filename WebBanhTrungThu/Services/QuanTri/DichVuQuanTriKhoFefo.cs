@@ -195,6 +195,12 @@ namespace WebBanhTrungThu.Services.QuanTri
                 lo.MaBanhNavigation.TongTonKho = Math.Max(0, lo.MaBanhNavigation.TongTonKho - lo.SlconLai);
             }
 
+            var ctNhaps = await _db.ChiTietPhieuNhaps.Where(c => c.MaLo == maLo).ToListAsync();
+            foreach (var ct in ctNhaps) ct.MaLo = null;
+
+            var ctXuats = await _db.ChiTietPhieuXuats.Where(c => c.MaLo == maLo).ToListAsync();
+            foreach (var ct in ctXuats) ct.MaLo = null;
+
             _db.LoSanXuatBanhs.Remove(lo);
             await _db.SaveChangesAsync();
             return $"Đã xóa lô [{code}] của sản phẩm '{tenBanh}' và đồng bộ lại tồn kho!";

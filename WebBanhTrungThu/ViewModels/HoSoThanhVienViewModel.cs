@@ -107,6 +107,7 @@ namespace WebBanhTrungThu.ViewModels
             switch ((maTrangThai ?? string.Empty).Trim().ToUpperInvariant())
             {
                 case "CHO_XAC_NHAN":
+                case "CHO_DUYET":
                     return ("Chờ xác nhận", "huy-hieu-cho-xac-nhan");
                 case "DA_XAC_NHAN":
                 case "CHO_DONG_GOI":
@@ -150,6 +151,7 @@ namespace WebBanhTrungThu.ViewModels
                 case "DA_HUY":
                     return 0;
                 case "CHO_XAC_NHAN":
+                case "CHO_DUYET":
                     return 1;
                 case "DA_XAC_NHAN":
                 case "CHO_DONG_GOI":

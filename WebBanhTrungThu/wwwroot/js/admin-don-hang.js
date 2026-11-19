@@ -255,7 +255,12 @@
             }
 
             if (hien && trangThai !== 'ALL') {
-                if (tr.getAttribute('data-trangthai') !== trangThai) hien = false;
+                const stRow = tr.getAttribute('data-trangthai');
+                if (trangThai === 'GIAO_HANG') {
+                    if (stRow !== 'CHO_LAY_HANG' && stRow !== 'DANG_GIAO') hien = false;
+                } else if (stRow !== trangThai) {
+                    hien = false;
+                }
             }
 
             if (hien && loaiDon !== 'ALL') {

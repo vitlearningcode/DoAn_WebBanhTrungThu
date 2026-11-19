@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
@@ -478,6 +479,341 @@ namespace WebBanhTrungThu.Services.QuanTri
             await _db.SaveChangesAsync();
             if (store.Items.TryGetValue($"BANH_{idGoc}", out var mb)) { mb.BanTrucTiep = false; _cauHinhHeThong.LuuDuLieu(store); }
             return $"Đã ngừng bán trực tiếp hàng hóa [{banh.MaSku}] {banh.TenBanh}.";
+        }
+
+        private static readonly string[] _tieuDeExcelHangHoa =
+        {
+            "Mã SP", "Tên bánh", "Thương hiệu", "Danh mục",
+            "Giá bán", "Giá vốn", "Tồn kho", "Kcal", "Đường (g)", "GI", "Trạng thái"
+        };
+
+        public async Task<(byte[] NoiDung, string ContentType, string TenFile)> XuatExcelHangHoaAsync(string dinhDang = "xlsx")
+        {
+            var store = _cauHinhHeThong.DocDuLieu();
+            var dsBanh = await _db.SanPhamBanhs
+                .AsNoTracking()
+                .Include(b => b.MaDmNavigation)
+                .Include(b => b.ThongSoDinhDuong)
+                .OrderBy(b => b.MaBanh)
+                .ToListAsync();
+
+            var dongXlsx = new List<object?[]>();
+            var dongCsv = new List<string[]>();
+
+            foreach (var b in dsBanh)
+            {
+                _cauHinhHeThong.GanMetadataChoBanh(b, store);
+                int kcal = b.ThongSoDinhDuong?.NangLuongCalo ?? 380;
+                decimal duong = Math.Round(b.ThongSoDinhDuong?.LuongDuongGram ?? 14m, 0);
+                int gi = b.ThongSoDinhDuong?.ChiSoDuongHuyetGi ?? 52;
+                string trangThai = b.TrangThaiBan ? "Đang bán" : "Ngừng bán";
+                string danhMuc = b.MaDmNavigation?.TenDm ?? "Bánh Nướng";
+
+                dongXlsx.Add(new object?[]
+                {
+                    b.MaSku, b.TenBanh, b.ThuongHieu, danhMuc,
+                    Math.Round(b.DonGiaLe, 0), Math.Round(b.GiaVon, 0), b.TongTonKho,
+                    kcal, duong, gi, trangThai
+                });
+                dongCsv.Add(new[]
+                {
+                    b.MaSku, b.TenBanh, b.ThuongHieu, danhMuc,
+                    Math.Round(b.DonGiaLe, 0).ToString("0"), Math.Round(b.GiaVon, 0).ToString("0"),
+                    b.TongTonKho.ToString(), kcal.ToString(), duong.ToString("0"), gi.ToString(), trangThai
+                });
+            }
+
+            if (string.Equals(dinhDang, "csv", StringComparison.OrdinalIgnoreCase))
+            {
+                byte[] csvBytes = TienIchExcelCsv.TaoFileCsvUtf8Bom(_tieuDeExcelHangHoa, dongCsv);
+                return (csvBytes, "text/csv; charset=utf-8", $"DanhMucHangHoa_{DateTime.Now:yyyyMMdd_HHmm}.csv");
+            }
+
+            var cotSo = new HashSet<int> { 4, 5, 6, 7, 8, 9 };
+            byte[] xlsxBytes = TienIchExcelCsv.TaoFileXlsx("HangHoa", _tieuDeExcelHangHoa, dongXlsx, cotSo);
+            return (xlsxBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"DanhMucHangHoa_{DateTime.Now:yyyyMMdd_HHmm}.xlsx");
+        }
+
+        public Task<(byte[] NoiDung, string ContentType, string TenFile)> TaoFileMauImportHangHoaAsync(string dinhDang = "xlsx")
+        {
+            var dongMauXlsx = new List<object?[]>
+            {
+                new object?[] { "NC-TRAM-01", "Bánh Trung Thu Đậu Xanh Lá Dứa (2 Trứng)", "Kinh Đô", "Bánh Nướng", 95000m, 55000m, 80, 390, 15m, 54, "Đang bán" },
+                new object?[] { "NC-CHAY-02", "Bánh Trung Thu Hạt Sen Hạnh Nhân Đường Ăn Kiêng", "Như Lan", "Bánh Ít Đường", 115000m, 68000m, 50, 320, 6m, 42, "Đang bán" }
+            };
+            var dongMauCsv = new List<string[]>
+            {
+                new[] { "NC-TRAM-01", "Bánh Trung Thu Đậu Xanh Lá Dứa (2 Trứng)", "Kinh Đô", "Bánh Nướng", "95000", "55000", "80", "390", "15", "54", "Đang bán" },
+                new[] { "NC-CHAY-02", "Bánh Trung Thu Hạt Sen Hạnh Nhân Đường Ăn Kiêng", "Như Lan", "Bánh Ít Đường", "115000", "68000", "50", "320", "6", "42", "Đang bán" }
+            };
+
+            if (string.Equals(dinhDang, "csv", StringComparison.OrdinalIgnoreCase))
+            {
+                return Task.FromResult((
+                    TienIchExcelCsv.TaoFileCsvUtf8Bom(_tieuDeExcelHangHoa, dongMauCsv),
+                    "text/csv; charset=utf-8",
+                    "MauImport_HangHoa.csv"));
+            }
+
+            return Task.FromResult((
+                TienIchExcelCsv.TaoFileXlsx("MauHangHoa", _tieuDeExcelHangHoa, dongMauXlsx, new HashSet<int> { 4, 5, 6, 7, 8, 9 }),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                "MauImport_HangHoa.xlsx"));
+        }
+
+        public async Task<KetQuaImportExcelSanPham> NhapExcelHangHoaAsync(IFormFile? fileExcel)
+        {
+            var kq = new KetQuaImportExcelSanPham();
+            if (fileExcel == null || fileExcel.Length == 0)
+            {
+                kq.ThongBao = "Vui lòng chọn tệp Excel (.xlsx) hoặc CSV (.csv) cần nhập.";
+                return kq;
+            }
+
+            List<List<string>> bang;
+            try
+            {
+                using var stream = fileExcel.OpenReadStream();
+                bang = TienIchExcelCsv.DocBangDuLieu(stream, fileExcel.FileName);
+            }
+            catch (Exception ex)
+            {
+                kq.ThongBao = ex.Message;
+                return kq;
+            }
+
+            if (bang.Count <= 1)
+            {
+                kq.ThongBao = "Tệp không có dữ liệu sản phẩm nào phía dưới dòng tiêu đề.";
+                return kq;
+            }
+
+            var store = _cauHinhHeThong.DocDuLieu();
+            int soThemMoi = 0;
+            int soCapNhat = 0;
+            int soBoQua = 0;
+            var loiChiTiet = new List<string>();
+
+            await ThucThiTrongGiaoDichAsync(async () =>
+            {
+                var dsDanhMuc = await _db.DanhMucBanhs.ToListAsync();
+                int maDmMacDinh = dsDanhMuc.FirstOrDefault()?.MaDm ?? 1;
+                var dsBanhHienTai = await _db.SanPhamBanhs
+                    .Include(b => b.ThongSoDinhDuong)
+                    .Include(b => b.LoSanXuatBanhs)
+                    .ToListAsync();
+
+                for (int r = 1; r < bang.Count; r++)
+                {
+                    var row = bang[r];
+                    string LayO(int idx) => idx < row.Count ? row[idx].Trim() : string.Empty;
+
+                    string maSku = LayO(0);
+                    string tenBanh = LayO(1);
+                    string thuongHieu = ChuanHoaChuoi(LayO(2), "Đồng Khánh");
+                    string tenDanhMuc = LayO(3);
+                    decimal giaBan = TienIchExcelCsv.ParseDecimal(LayO(4), 0m);
+                    decimal giaVon = TienIchExcelCsv.ParseDecimal(LayO(5), 0m);
+                    int tonKho = TienIchExcelCsv.ParseInt(LayO(6), 0);
+                    int kcal = Math.Max(0, TienIchExcelCsv.ParseInt(LayO(7), 380));
+                    decimal duong = Math.Max(0m, TienIchExcelCsv.ParseDecimal(LayO(8), 14m));
+                    int gi = Math.Max(0, TienIchExcelCsv.ParseInt(LayO(9), 52));
+                    string trangThaiRaw = LayO(10);
+
+                    if (string.IsNullOrWhiteSpace(tenBanh))
+                    {
+                        soBoQua++;
+                        loiChiTiet.Add($"Dòng {r + 1}: Bỏ qua vì Tên bánh trống.");
+                        continue;
+                    }
+                    if (giaBan <= 0m)
+                    {
+                        soBoQua++;
+                        loiChiTiet.Add($"Dòng {r + 1} ({tenBanh}): Bỏ qua vì Giá bán phải > 0.");
+                        continue;
+                    }
+                    if (giaVon < 0m || tonKho < 0)
+                    {
+                        soBoQua++;
+                        loiChiTiet.Add($"Dòng {r + 1} ({tenBanh}): Bỏ qua vì Giá vốn/Tồn kho âm.");
+                        continue;
+                    }
+
+                    bool dangBan = !trangThaiRaw.Contains("ngừng", StringComparison.OrdinalIgnoreCase)
+                                && !trangThaiRaw.Equals("false", StringComparison.OrdinalIgnoreCase)
+                                && !trangThaiRaw.Equals("0", StringComparison.OrdinalIgnoreCase);
+
+                    var dm = string.IsNullOrWhiteSpace(tenDanhMuc)
+                        ? null
+                        : dsDanhMuc.FirstOrDefault(d => string.Equals(d.TenDm, tenDanhMuc, StringComparison.OrdinalIgnoreCase));
+                    if (dm == null && !string.IsNullOrWhiteSpace(tenDanhMuc))
+                    {
+                        dm = new DanhMucBanh
+                        {
+                            TenDm = tenDanhMuc,
+                            DuongDanSlug = "nhom-" + DateTime.Now.ToString("MMddHHmmss") + "-" + Random.Shared.Next(10, 99),
+                            MoTa = $"Nhóm hàng {tenDanhMuc}",
+                            ThuTuSx = 20,
+                            TrangThai = true
+                        };
+                        _db.DanhMucBanhs.Add(dm);
+                        await _db.SaveChangesAsync();
+                        dsDanhMuc.Add(dm);
+                    }
+                    int maDm = dm?.MaDm ?? maDmMacDinh;
+
+                    SanPhamBanh? banh = !string.IsNullOrWhiteSpace(maSku)
+                        ? dsBanhHienTai.FirstOrDefault(b => string.Equals(b.MaSku, maSku, StringComparison.OrdinalIgnoreCase))
+                        : null;
+                    banh ??= dsBanhHienTai.FirstOrDefault(b => string.Equals(b.TenBanh, tenBanh, StringComparison.OrdinalIgnoreCase));
+
+                    if (banh == null)
+                    {
+                        string skuMoi = string.IsNullOrWhiteSpace(maSku)
+                            ? $"SP{Random.Shared.Next(100000, 999999)}"
+                            : maSku.ToUpperInvariant();
+                        while (dsBanhHienTai.Any(b => string.Equals(b.MaSku, skuMoi, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            skuMoi = $"{skuMoi}-{Random.Shared.Next(10, 99)}";
+                        }
+
+                        banh = new SanPhamBanh
+                        {
+                            MaDm = maDm,
+                            MaSku = skuMoi,
+                            TenBanh = tenBanh,
+                            DonGiaLe = Math.Round(giaBan, 0),
+                            GiaVon = Math.Round(giaVon, 0),
+                            TrongLuongGram = 150,
+                            SoTrungMuoi = 1,
+                            MucDoNgot = gi <= 45 ? "ISOMALT_TIEUDUONG" : "BINH_THUONG",
+                            LaBanhChay = tenBanh.Contains("Chay", StringComparison.OrdinalIgnoreCase),
+                            LaBanhThuongHang = giaBan >= 150000m,
+                            NhomHuongVi = "MAN_TRUYENTHONG",
+                            TheDoiTuongPhuHop = "ONG_BA,SEP_VIP,BAN_BE",
+                            MoTaNgan = $"Bánh Trung Thu {thuongHieu}",
+                            TongTonKho = tonKho,
+                            TrangThaiBan = dangBan
+                        };
+                        _db.SanPhamBanhs.Add(banh);
+                        await _db.SaveChangesAsync();
+
+                        _db.ThongSoDinhDuongs.Add(new ThongSoDinhDuong
+                        {
+                            MaBanh = banh.MaBanh,
+                            NangLuongCalo = kcal > 0 ? kcal : 380,
+                            LuongDuongGram = duong,
+                            ChatDamGram = 8m,
+                            ChatBeoGram = 11m,
+                            ChiSoDuongHuyetGi = gi > 0 ? gi : 52,
+                            CanhBaoDiUng = "Không"
+                        });
+
+                        _db.LoSanXuatBanhs.Add(new LoSanXuatBanh
+                        {
+                            MaBanh = banh.MaBanh,
+                            MaLoCode = $"LO-IMP-{DateTime.Now:yyyyMMdd}-{banh.MaBanh:D2}-{Random.Shared.Next(10, 99)}",
+                            NgaySanXuat = LayNgayHienTai(),
+                            HanSuDung = LayNgayHienTai().AddDays(40),
+                            SlnhapBanDau = Math.Max(1, tonKho),
+                            SlconLai = tonKho,
+                            PhanTramGiamCanDate = 0m,
+                            TrangThaiLo = "DANG_BAN"
+                        });
+                        await _db.SaveChangesAsync();
+                        dsBanhHienTai.Add(banh);
+                        soThemMoi++;
+                    }
+                    else
+                    {
+                        banh.TenBanh = tenBanh;
+                        banh.MaDm = maDm;
+                        banh.DonGiaLe = Math.Round(giaBan, 0);
+                        if (giaVon >= 0m) banh.GiaVon = Math.Round(giaVon, 0);
+                        banh.TrangThaiBan = dangBan;
+
+                        if (banh.ThongSoDinhDuong != null)
+                        {
+                            if (kcal > 0) banh.ThongSoDinhDuong.NangLuongCalo = kcal;
+                            banh.ThongSoDinhDuong.LuongDuongGram = duong;
+                            if (gi > 0) banh.ThongSoDinhDuong.ChiSoDuongHuyetGi = gi;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(LayO(6)))
+                        {
+                            int tonHienTai = banh.LoSanXuatBanhs.Where(l => l.TrangThaiLo != "DA_HUY").Sum(l => l.SlconLai);
+                            int lech = tonKho - tonHienTai;
+                            if (lech > 0)
+                            {
+                                var loMoiNhat = banh.LoSanXuatBanhs
+                                    .Where(l => l.TrangThaiLo != "DA_HUY")
+                                    .OrderByDescending(l => l.HanSuDung)
+                                    .FirstOrDefault();
+                                if (loMoiNhat != null)
+                                {
+                                    loMoiNhat.SlconLai += lech;
+                                }
+                                else
+                                {
+                                    _db.LoSanXuatBanhs.Add(new LoSanXuatBanh
+                                    {
+                                        MaBanh = banh.MaBanh,
+                                        MaLoCode = $"LO-IMP-{DateTime.Now:yyyyMMdd}-{banh.MaBanh:D2}-{Random.Shared.Next(10, 99)}",
+                                        NgaySanXuat = LayNgayHienTai(),
+                                        HanSuDung = LayNgayHienTai().AddDays(40),
+                                        SlnhapBanDau = lech,
+                                        SlconLai = lech,
+                                        PhanTramGiamCanDate = 0m,
+                                        TrangThaiLo = "DANG_BAN"
+                                    });
+                                }
+                            }
+                            else if (lech < 0)
+                            {
+                                int conTru = Math.Abs(lech);
+                                foreach (var lo in banh.LoSanXuatBanhs
+                                    .Where(l => l.TrangThaiLo != "DA_HUY" && l.SlconLai > 0)
+                                    .OrderBy(l => l.HanSuDung)
+                                    .ThenBy(l => l.MaLo))
+                                {
+                                    if (conTru <= 0) break;
+                                    int tru = Math.Min(lo.SlconLai, conTru);
+                                    lo.SlconLai -= tru;
+                                    conTru -= tru;
+                                }
+                            }
+                            banh.TongTonKho = tonKho;
+                        }
+
+                        await _db.SaveChangesAsync();
+                        soCapNhat++;
+                    }
+
+                    if (!store.DanhSachThuongHieu.Contains(thuongHieu)) store.DanhSachThuongHieu.Add(thuongHieu);
+                    string keyBanh = $"BANH_{banh.MaBanh}";
+                    if (!store.Items.TryGetValue(keyBanh, out var metaBanh))
+                    {
+                        metaBanh = new CauHinhHangHoaMoRong { Key = keyBanh };
+                        store.Items[keyBanh] = metaBanh;
+                    }
+                    metaBanh.ThuongHieu = thuongHieu;
+                    metaBanh.BanTrucTiep = dangBan;
+                }
+            });
+
+            _cauHinhHeThong.LuuDuLieu(store);
+
+            kq.ThanhCong = true;
+            kq.SoThemMoi = soThemMoi;
+            kq.SoCapNhat = soCapNhat;
+            kq.SoBoQua = soBoQua;
+            kq.DanhSachLoi = loiChiTiet;
+            kq.ThongBao = $"Import hoàn tất: Thêm mới {soThemMoi} sản phẩm, Cập nhật {soCapNhat} sản phẩm, Bỏ qua {soBoQua} dòng.";
+            if (loiChiTiet.Count > 0)
+            {
+                kq.ThongBao += " (" + string.Join(" | ", loiChiTiet.Take(3)) + ")";
+            }
+            return kq;
         }
     }
 }

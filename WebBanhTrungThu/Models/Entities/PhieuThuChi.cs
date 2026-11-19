@@ -32,6 +32,12 @@ public partial class PhieuThuChi
 
     public int? MaDonHangLienKet { get; set; }
 
+    public int? MaPhieuNhapLienKet { get; set; }
+
+    [ForeignKey("MaPhieuNhapLienKet")]
+    [InverseProperty("PhieuThuChis")]
+    public virtual PhieuNhapKho? MaPhieuNhapLienKetNavigation { get; set; }
+
     [StringLength(150)]
     public string NguoiNopNhan { get; set; } = string.Empty;
 

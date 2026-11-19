@@ -261,10 +261,10 @@
                                             <span class="fw-bold text-dark" style="font-size: 13px;">
                                                 <i class="bi bi-calendar2-check text-primary me-1"></i> Quản lý Lô sản xuất &amp; Giảm giá xả kho cận Date (@item.DanhSachLo.Count lô)
                                             </span>
-                                            <button type="button" class="btn-kv-outline py-1 px-2" style="font-size: 12px;"
-                                                    onclick="event.stopPropagation(); moModalThemLoNhanh(@item.IdGoc, '@Html.Raw(item.TenHang.Replace("'", "\\'"))')">
-                                                <i class="bi bi-plus-circle text-primary"></i> + Thêm lô mới
-                                            </button>
+                                            <a href="/Admin/NhapKhoAdmin/Index" class="btn-kv-outline py-1 px-2 text-decoration-none" style="font-size: 12px;"
+                                               onclick="event.stopPropagation();">
+                                                <i class="bi bi-box-arrow-in-down text-primary"></i> Nhập hàng theo phiếu
+                                            </a>
                                         </div>
 
                                         @if (item.DanhSachLo.Count > 0)
@@ -329,7 +329,7 @@
                                         }
                                         else
                                         {
-                                            <div class="text-muted small">Sản phẩm chưa có lô hạn sử dụng. Bấm <strong>[+ Thêm lô mới]</strong> để nhập lô vào kho.</div>
+                                            <div class="text-muted small">Sản phẩm chưa có lô hạn sử dụng. Truy cập <a href="/Admin/NhapKhoAdmin/Index" class="text-primary fw-semibold" onclick="event.stopPropagation();">Nhập hàng (Phiếu nhập)</a> để nhập lô vào kho.</div>
                                         }
                                     }
                                 </div>

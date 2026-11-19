@@ -1,6 +1,14 @@
 @model WebBanhTrungThu.ViewModels.BanHangPosViewModel
 @{
     Layout = null;
+    bool laChuCuaHang = User.IsInRole("QUAN_TRI") || User.IsInRole("ADMIN");
+    string tenVaiTroHienThi = (Model.VaiTroThuNgan ?? string.Empty).Trim().ToUpperInvariant() switch
+    {
+        "QUAN_TRI" or "ADMIN" => "Chủ cửa hàng",
+        "THU_NGAN" => "Thu ngân",
+        "NHAN_VIEN" or "NV_BAN_HANG" => "Nhân viên bán hàng",
+        _ => Model.VaiTroThuNgan ?? "Nhân viên"
+    };
 }
 <!DOCTYPE html>
 <html lang="vi">
@@ -34,8 +42,21 @@ window.kvImgFallback = function (img) {
         🎁 Đóng Hộp Quà Tự Chọn (F6)
     </button>
     <div class="d-flex align-items-center gap-2">
-        <span class="badge bg-light text-primary fw-semibold px-2 py-1"><i class="bi bi-person-badge me-1"></i>@Model.TenThuNgan (@Model.VaiTroThuNgan)</span>
-        <a href="/Admin/Dashboard/Index" class="pos-btn-manage" title="Quay về giao diện Quản lý Nguyệt Cát ERP"><i class="bi bi-bar-chart-line-fill"></i> Về trang Quản lý</a>
+        <span class="badge bg-light text-primary fw-semibold px-2 py-1">
+            <i class="bi bi-person-badge me-1"></i>@Model.TenThuNgan (@tenVaiTroHienThi)
+        </span>
+        @if (laChuCuaHang)
+        {
+            <a href="/Admin/Dashboard/Index" class="pos-btn-manage" title="Quay về Trang Quản Trị Nguyệt Cát ERP">
+                <i class="bi bi-arrow-left"></i> Về Trang Quản Trị
+            </a>
+        }
+        <form asp-area="" asp-controller="TaiKhoan" asp-action="DangXuat" method="post" class="d-inline m-0">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="pos-btn-logout" title="Đăng xuất tài khoản">
+                <i class="bi bi-box-arrow-right"></i> Đăng xuất
+            </button>
+        </form>
     </div>
 </header>
 

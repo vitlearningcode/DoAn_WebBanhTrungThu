@@ -1,0 +1,156 @@
+@model WebBanhTrungThu.ViewModels.ChiTietSanPhamViewModel
+@{
+    var sp = Model.SanPham;
+    bool isomalt = string.Equals(sp.MucDoNgot, "ISOMALT_TIEUDUONG", StringComparison.OrdinalIgnoreCase);
+    int toiDaMua = Math.Max(1, Model.TonKhoKhaDung);
+}
+
+<div class="card-hoang-gia p-3 p-lg-4 mb-4">
+    <div class="row g-4 align-items-start">
+        <!-- Cột trái: Thư viện ảnh sản phẩm -->
+        <div class="col-lg-5">
+            <div class="sp-ct-gallery-main khung-anh-banh-sang">
+                @if (Model.DangGiamCanDate)
+                {
+                    <span class="sp-ct-badge-giam">-@Model.PhanTramGiamCanDate.ToString("N0")% Cận Date</span>
+                }
+                <img id="imgSanPhamChiTietChinh" src="@Model.AnhChinh" alt="@sp.TenBanh" class="img-fluid" />
+            </div>
+
+            @if (Model.DanhSachAnh.Count > 1)
+            {
+                <div class="sp-ct-thumbs mt-2">
+                    @for (int i = 0; i < Model.DanhSachAnh.Count; i++)
+                    {
+                        string url = Model.DanhSachAnh[i];
+                        <button type="button"
+                                class="sp-ct-thumb-btn @(i == 0 ? "active" : "")"
+                                onclick="doiAnhChinhChiTietSp(this, '@url')"
+                                aria-label="Xem ảnh @(i + 1) của @sp.TenBanh">
+                            <img src="@url" alt="@sp.TenBanh ảnh @(i + 1)" />
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Cột phải: Thông tin chính & Mua hàng -->
+        <div class="col-lg-7">
+            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                <span class="tem-lua-thuong-hieu">@Model.ThuongHieu</span>
+                <span class="sp-ct-chip-danh-muc">@Model.TenDanhMuc</span>
+                @if (sp.LaBanhThuongHang)
+                {
+                    <span class="badge badge-thuong-hang rounded-pill">Thượng Hạng</span>
+                }
+                @if (sp.LaBanhChay)
+                {
+                    <span class="badge rounded-pill" style="background: #ECFDF5; color: #166534; border: 1px solid #BBF7D0;">Thuần Chay</span>
+                }
+                @if (isomalt)
+                {
+                    <span class="badge badge-isomalt rounded-pill">Đường Ăn Kiêng Isomalt</span>
+                }
+            </div>
+
+            <h1 class="font-co-phong fw-bold chu-nau-tram mb-2 sp-ct-tieu-de">@sp.TenBanh</h1>
+
+            <div class="d-flex flex-wrap gap-3 small chu-nau-phu mb-3">
+                <span>Mã sản phẩm: <strong class="chu-nau-tram">@sp.MaSku</strong></span>
+                <span>Trọng lượng: <strong class="chu-nau-tram">@sp.TrongLuongGram g</strong></span>
+                <span>Nhân trứng muối: <strong class="chu-nau-tram">@(sp.SoTrungMuoi > 0 ? $"{sp.SoTrungMuoi} trứng" : "Không trứng")</strong></span>
+                <span>Độ ngọt: <strong class="chu-nau-tram">@Model.NhanMucDoNgot</strong></span>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(sp.MoTaNgan))
+            {
+                <p class="chu-nau-phu mb-3 sp-ct-mo-ta-ngan">@sp.MoTaNgan</p>
+            }
+
+            <!-- Khối giá bán -->
+            <div class="sp-ct-khung-gia p-3 mb-3">
+                <div class="d-flex flex-wrap align-items-baseline gap-3">
+                    <span class="sp-ct-gia-ban chu-do-son-mai">@Model.GiaBanThucTe.ToString("N0") đ</span>
+                    @if (Model.DangGiamCanDate)
+                    {
+                        <del class="chu-nau-phu fs-6">@Model.GiaGoc.ToString("N0") đ</del>
+                        <span class="badge rounded-pill" style="background: #FEE2E2; color: #B91C1C; border: 1px solid #FECACA;">
+                            Ưu đãi cận date -@Model.PhanTramGiamCanDate.ToString("N0")%
+                        </span>
+                    }
+                    <span class="small chu-nau-phu">/ @sp.DonViTinh</span>
+                </div>
+            </div>
+
+            <!-- Tình trạng tồn kho & Hạn sử dụng lô FEFO gần nhất -->
+            <div class="sp-ct-khung-fefo p-3 mb-4">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div>
+                        <span class="small chu-nau-phu d-block">Tình trạng kho hàng:</span>
+                        @if (Model.ConHang)
+                        {
+                            <strong class="text-success">Còn hàng (@Model.TonKhoKhaDung.ToString("N0") @sp.DonViTinh khả dụng)</strong>
+                        }
+                        else
+                        {
+                            <strong class="text-danger">Tạm hết hàng</strong>
+                        }
+                    </div>
+
+                    @if (Model.LoFefoGanNhat != null)
+                    {
+                        <div class="text-md-end">
+                            <span class="small chu-nau-phu d-block">Hạn sử dụng lô xuất trước (FEFO):</span>
+                            <strong class="chu-do-son-mai">
+                                HSD: @Model.LoFefoGanNhat.HanSuDung.ToString("dd/MM/yyyy")
+                                @if (Model.SoNgayConLaiHsd.HasValue)
+                                {
+                                    <span class="fw-normal chu-nau-phu">(còn @Model.SoNgayConLaiHsd ngày • lô còn @Model.LoFefoGanNhat.SlconLai.ToString("N0"))</span>
+                                }
+                            </strong>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-md-end">
+                            <span class="small chu-nau-phu d-block">Lô sản xuất mới:</span>
+                            <strong class="chu-nau-tram">Bánh nướng tươi theo đợt lễ hội</strong>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Chọn số lượng & 3 nút hành động -->
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                <span class="small fw-semibold chu-nau-tram">Số lượng:</span>
+                <div class="sp-ct-qty-group" role="group" aria-label="Chọn số lượng mua">
+                    <button type="button" class="sp-ct-qty-btn" onclick="thayDoiSoLuongChiTietSp(-1)" @(Model.ConHang ? "" : "disabled")>-</button>
+                    <input type="number" id="txtSoLuongChiTietSp" class="sp-ct-qty-input"
+                           value="1" min="1" max="@toiDaMua"
+                           onchange="laySoLuongChiTietSp()" @(Model.ConHang ? "" : "disabled") />
+                    <button type="button" class="sp-ct-qty-btn" onclick="thayDoiSoLuongChiTietSp(1)" @(Model.ConHang ? "" : "disabled")>+</button>
+                </div>
+                <span class="small chu-nau-phu">Nhà phân phối: @Model.NhaCungCap</span>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                <button type="button" class="btn btn-vien-vang rounded-pill px-4 py-2 fw-semibold"
+                        onclick="themBanhLeVaoGio(@sp.MaBanh, laySoLuongChiTietSp(), this)"
+                        @(Model.ConHang ? "" : "disabled")>
+                    <i class="bi bi-bag-plus me-1"></i> Thêm vào giỏ quà
+                </button>
+
+                <button type="button" class="btn btn-do-son-mai rounded-pill px-4 py-2 fw-semibold"
+                        onclick="muaNgaySanPhamChiTiet(@sp.MaBanh, this)"
+                        @(Model.ConHang ? "" : "disabled")>
+                    <i class="bi bi-lightning-charge-fill me-1"></i> Mua ngay
+                </button>
+
+                <a href="/?chonBanh=@sp.MaBanh#tang-tu-chon-hop"
+                   class="btn btn-vang-kim rounded-pill px-4 py-2 fw-semibold text-decoration-none">
+                    <i class="bi bi-box2-heart me-1"></i> Đưa vào Studio Tự Phối Hộp
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

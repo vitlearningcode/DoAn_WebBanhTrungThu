@@ -460,8 +460,12 @@ async function thucHienDangNhapAjax() {
         if (data.thanhCong) {
             hienThiThongBaoGioHang(`${data.thongBao} Kính chào ${data.hoTen} (Hạng ${data.hangTv} • ${data.diem} điểm)!`, true);
             setTimeout(() => {
-                window.location.reload();
-            }, 900);
+                if (data.redirectUrl && String(data.redirectUrl).trim() !== "") {
+                    window.location.href = data.redirectUrl;
+                } else {
+                    window.location.reload();
+                }
+            }, 650);
         } else {
             if (boxLoi) {
                 boxLoi.innerText = data.thongBao || "Đăng nhập không thành công!";

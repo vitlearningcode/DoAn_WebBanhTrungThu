@@ -1,0 +1,58 @@
+@model WebBanhTrungThu.ViewModels.CaiDatHeThongViewModel
+@{
+    var vc = Model.CauHinhVanChuyen;
+}
+
+<div class="kv-card p-4">
+    <div class="border-bottom pb-3 mb-4">
+        <h2 class="h5 fw-bold text-dark mb-1">Vận chuyển &amp; Phí giao hàng</h2>
+        <p class="text-muted small mb-0">Thiết lập ngưỡng miễn phí giao hàng tiêu chuẩn, phí giao tiêu chuẩn, phí giao hỏa tốc 6h và khu vực hỗ trợ.</p>
+    </div>
+
+    <form asp-area="Admin" asp-controller="CaiDatAdmin" asp-action="LuuVanChuyen" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="kv-field-label" for="inpVcFreeship">Mốc miễn phí giao hàng tiêu chuẩn (đ)</label>
+                <input id="inpVcFreeship" type="number" min="0" step="10000" name="MocFreeship"
+                       class="kv-form-control fw-bold" value="@vc.MocFreeship" />
+                <small class="text-muted">Mặc định: 500.000 đ</small>
+            </div>
+            <div class="col-md-6">
+                <label class="kv-field-label" for="inpVcTieuChuan">Phí giao hàng tiêu chuẩn (đ / điểm giao)</label>
+                <input id="inpVcTieuChuan" type="number" min="0" step="5000" name="PhiGiaoTieuChuan"
+                       class="kv-form-control fw-bold" value="@vc.PhiGiaoTieuChuan" />
+                <small class="text-muted">Mặc định: 30.000 đ (0 đ khi đạt mốc Freeship)</small>
+            </div>
+            <div class="col-md-6">
+                <label class="kv-field-label" for="inpVcHoaToc">Phí giao hỏa tốc 6h (đ / điểm giao)</label>
+                <input id="inpVcHoaToc" type="number" min="0" step="5000" name="PhiGiaoHoaToc6h"
+                       class="kv-form-control fw-bold" value="@vc.PhiGiaoHoaToc6h" />
+                <small class="text-muted">Mặc định: 60.000 đ</small>
+            </div>
+            <div class="col-md-6">
+                <label class="kv-field-label" for="inpVcHoaTocFreeship">Phí giao hỏa tốc 6h khi đạt mốc Freeship (đ)</label>
+                <input id="inpVcHoaTocFreeship" type="number" min="0" step="5000" name="PhiHoaTocSauFreeship"
+                       class="kv-form-control fw-bold" value="@vc.PhiHoaTocSauFreeship" />
+                <small class="text-muted">Mặc định: 30.000 đ</small>
+            </div>
+            <div class="col-12">
+                <label class="kv-field-label" for="inpVcKhuVuc">Khu vực hỗ trợ giao hỏa tốc 6h</label>
+                <input id="inpVcKhuVuc" type="text" name="KhuVucHoTroHoaToc" class="kv-form-control"
+                       value="@vc.KhuVucHoTroHoaToc" />
+            </div>
+            <div class="col-12">
+                <label class="kv-field-label" for="inpVcGhiChu">Ghi chú chính sách giao hàng</label>
+                <textarea id="inpVcGhiChu" name="GhiChuGiaoHang" rows="3"
+                          class="form-control form-control-sm">@vc.GhiChuGiaoHang</textarea>
+            </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-top d-flex justify-content-end">
+            <button type="submit" class="btn-kv-blue px-4 py-2">
+                <i class="bi bi-check2-circle me-1"></i> Lưu cấu hình Vận chuyển
+            </button>
+        </div>
+    </form>
+</div>

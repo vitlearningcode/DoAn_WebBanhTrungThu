@@ -68,6 +68,18 @@ public partial class CSDLBanhTrungThuContext : DbContext
 
     public virtual DbSet<CauHinhHeThong> CauHinhHeThongs { get; set; }
 
+    public virtual DbSet<PhieuNhapKho> PhieuNhapKhos { get; set; }
+
+    public virtual DbSet<ChiTietPhieuNhap> ChiTietPhieuNhaps { get; set; }
+
+    public virtual DbSet<PhieuXuatKho> PhieuXuatKhos { get; set; }
+
+    public virtual DbSet<ChiTietPhieuXuat> ChiTietPhieuXuats { get; set; }
+
+    public virtual DbSet<PhieuKiemKho> PhieuKiemKhos { get; set; }
+
+    public virtual DbSet<ChiTietKiemKho> ChiTietKiemKhos { get; set; }
+
 //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
 //        => optionsBuilder.UseSqlServer("Server=DESKTOP-R0BDS56;Database=CSDL_BanhTrungThu;Trusted_Connection=True;TrustServerCertificate=True;");
@@ -333,6 +345,112 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.ToTable("PhieuThuChi");
             entity.HasKey(e => e.MaPhieu);
             entity.Property(e => e.NgayLap).HasDefaultValueSql("(getdate())");
+            entity.HasOne(d => d.MaPhieuNhapLienKetNavigation)
+                .WithMany(p => p.PhieuThuChis)
+                .HasForeignKey(d => d.MaPhieuNhapLienKet)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PhieuThuChi_PhieuNhapKho");
+        });
+
+        modelBuilder.Entity<PhieuNhapKho>(entity =>
+        {
+            entity.ToTable("PhieuNhapKho");
+            entity.HasKey(e => e.MaPn);
+            entity.HasIndex(e => e.SoPhieuNhap, "UQ_PhieuNhapKho_SoPhieuNhap").IsUnique();
+            entity.Property(e => e.NgayNhap).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.TrangThai).HasDefaultValue("PHIEU_TAM");
+            entity.Property(e => e.TrangThaiThanhToan).HasDefaultValue("CHUA_THANH_TOAN");
+            entity.HasOne(d => d.MaNdLapNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaNdLap)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PhieuNhapKho_NguoiDung");
+        });
+
+        modelBuilder.Entity<ChiTietPhieuNhap>(entity =>
+        {
+            entity.ToTable("ChiTietPhieuNhap");
+            entity.HasKey(e => e.MaCtpn);
+            entity.HasOne(d => d.MaPnNavigation)
+                .WithMany(p => p.ChiTietPhieuNhaps)
+                .HasForeignKey(d => d.MaPn)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_CTPN_PhieuNhap");
+            entity.HasOne(d => d.MaSpNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaSp)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_CTPN_SanPham");
+            entity.HasOne(d => d.MaLoNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaLo)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_CTPN_LoSanXuat");
+        });
+
+        modelBuilder.Entity<PhieuXuatKho>(entity =>
+        {
+            entity.ToTable("PhieuXuatKho");
+            entity.HasKey(e => e.MaPx);
+            entity.HasIndex(e => e.SoPhieuXuat, "UQ_PhieuXuatKho_SoPhieuXuat").IsUnique();
+            entity.Property(e => e.NgayXuat).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.TrangThai).HasDefaultValue("HOAN_THANH");
+            entity.HasOne(d => d.MaNdLapNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaNdLap)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PhieuXuatKho_NguoiDung");
+        });
+
+        modelBuilder.Entity<ChiTietPhieuXuat>(entity =>
+        {
+            entity.ToTable("ChiTietPhieuXuat");
+            entity.HasKey(e => e.MaCtpx);
+            entity.HasOne(d => d.MaPxNavigation)
+                .WithMany(p => p.ChiTietPhieuXuats)
+                .HasForeignKey(d => d.MaPx)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_CTPX_PhieuXuat");
+            entity.HasOne(d => d.MaSpNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaSp)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_CTPX_SanPham");
+            entity.HasOne(d => d.MaLoNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaLo)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_CTPX_LoSanXuat");
+        });
+
+        modelBuilder.Entity<PhieuKiemKho>(entity =>
+        {
+            entity.ToTable("PhieuKiemKho");
+            entity.HasKey(e => e.MaPkk);
+            entity.HasIndex(e => e.SoPhieuKiem, "UQ_PhieuKiemKho_SoPhieuKiem").IsUnique();
+            entity.Property(e => e.NgayKiem).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.TrangThai).HasDefaultValue("PHIEU_TAM");
+            entity.HasOne(d => d.MaPxLienKetNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaPxLienKet)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PhieuKiemKho_PhieuXuat");
+        });
+
+        modelBuilder.Entity<ChiTietKiemKho>(entity =>
+        {
+            entity.ToTable("ChiTietKiemKho");
+            entity.HasKey(e => e.MaCtkk);
+            entity.HasOne(d => d.MaPkkNavigation)
+                .WithMany(p => p.ChiTietKiemKhos)
+                .HasForeignKey(d => d.MaPkk)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_CTKK_PhieuKiemKho");
+            entity.HasOne(d => d.MaSpNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaSp)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_CTKK_SanPham");
         });
 
         modelBuilder.Entity<ThiepChucMung3d>(entity =>

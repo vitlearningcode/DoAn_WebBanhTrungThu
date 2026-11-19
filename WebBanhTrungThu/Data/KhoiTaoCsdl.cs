@@ -105,6 +105,117 @@ namespace WebBanhTrungThu.Data
                     IF COL_LENGTH('dbo.DonHang', 'LyDoHuy') IS NULL
                         ALTER TABLE dbo.DonHang ADD LyDoHuy NVARCHAR(500) NULL;
                 END;
+
+                IF OBJECT_ID('dbo.PhieuNhapKho', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.PhieuNhapKho (
+                        MaPn INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                        SoPhieuNhap NVARCHAR(50) NOT NULL UNIQUE,
+                        NhaCungCap NVARCHAR(200) NOT NULL,
+                        NgayNhap DATETIME NOT NULL DEFAULT(GETDATE()),
+                        TongTienHang DECIMAL(18,2) NOT NULL DEFAULT(0),
+                        GiamGia DECIMAL(18,2) NOT NULL DEFAULT(0),
+                        TongPhaiTra DECIMAL(18,2) NOT NULL DEFAULT(0),
+                        DaThanhToan DECIMAL(18,2) NOT NULL DEFAULT(0),
+                        TrangThai VARCHAR(30) NOT NULL DEFAULT('PHIEU_TAM'),
+                        TrangThaiThanhToan VARCHAR(30) NOT NULL DEFAULT('CHUA_THANH_TOAN'),
+                        GhiChu NVARCHAR(500) NULL,
+                        NguoiLap NVARCHAR(150) NOT NULL,
+                        MaNdLap INT NULL,
+                        CONSTRAINT FK_PhieuNhapKho_NguoiDung FOREIGN KEY (MaNdLap) REFERENCES dbo.NguoiDung(MaND)
+                    );
+                END;
+
+                IF OBJECT_ID('dbo.ChiTietPhieuNhap', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.ChiTietPhieuNhap (
+                        MaCtpn INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                        MaPn INT NOT NULL,
+                        MaSp INT NOT NULL,
+                        MaLo INT NULL,
+                        SoLuong INT NOT NULL,
+                        DonGiaNhap DECIMAL(18,2) NOT NULL,
+                        ThanhTien DECIMAL(18,2) NOT NULL,
+                        NgaySanXuat DATE NOT NULL,
+                        HanSuDung DATE NOT NULL,
+                        CONSTRAINT FK_CTPN_PhieuNhap FOREIGN KEY (MaPn) REFERENCES dbo.PhieuNhapKho(MaPn) ON DELETE CASCADE,
+                        CONSTRAINT FK_CTPN_SanPham FOREIGN KEY (MaSp) REFERENCES dbo.SanPhamBanh(MaBanh),
+                        CONSTRAINT FK_CTPN_LoSanXuat FOREIGN KEY (MaLo) REFERENCES dbo.LoSanXuatBanh(MaLo)
+                    );
+                END;
+
+                IF OBJECT_ID('dbo.PhieuXuatKho', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.PhieuXuatKho (
+                        MaPx INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                        SoPhieuXuat NVARCHAR(50) NOT NULL UNIQUE,
+                        LoaiXuat VARCHAR(40) NOT NULL,
+                        DoiTuongLienQuan NVARCHAR(250) NOT NULL,
+                        NgayXuat DATETIME NOT NULL DEFAULT(GETDATE()),
+                        TongGiaTriVon DECIMAL(18,2) NOT NULL DEFAULT(0),
+                        TrangThai VARCHAR(30) NOT NULL DEFAULT('HOAN_THANH'),
+                        GhiChu NVARCHAR(500) NULL,
+                        NguoiLap NVARCHAR(150) NOT NULL,
+                        MaNdLap INT NULL,
+                        CONSTRAINT FK_PhieuXuatKho_NguoiDung FOREIGN KEY (MaNdLap) REFERENCES dbo.NguoiDung(MaND)
+                    );
+                END;
+
+                IF OBJECT_ID('dbo.ChiTietPhieuXuat', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.ChiTietPhieuXuat (
+                        MaCtpx INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                        MaPx INT NOT NULL,
+                        MaSp INT NOT NULL,
+                        MaLo INT NULL,
+                        SoLuongXuat INT NOT NULL,
+                        GiaVonLucXuat DECIMAL(18,2) NOT NULL,
+                        ThanhTienVon DECIMAL(18,2) NOT NULL,
+                        GhiChuDong NVARCHAR(300) NULL,
+                        CONSTRAINT FK_CTPX_PhieuXuat FOREIGN KEY (MaPx) REFERENCES dbo.PhieuXuatKho(MaPx) ON DELETE CASCADE,
+                        CONSTRAINT FK_CTPX_SanPham FOREIGN KEY (MaSp) REFERENCES dbo.SanPhamBanh(MaBanh),
+                        CONSTRAINT FK_CTPX_LoSanXuat FOREIGN KEY (MaLo) REFERENCES dbo.LoSanXuatBanh(MaLo)
+                    );
+                END;
+
+                IF OBJECT_ID('dbo.PhieuKiemKho', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.PhieuKiemKho (
+                        MaPkk INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                        SoPhieuKiem NVARCHAR(50) NOT NULL UNIQUE,
+                        NgayKiem DATETIME NOT NULL DEFAULT(GETDATE()),
+                        NguoiKiem NVARCHAR(150) NOT NULL,
+                        TrangThai VARCHAR(30) NOT NULL DEFAULT('PHIEU_TAM'),
+                        TongLechTang INT NOT NULL DEFAULT(0),
+                        TongLechGiam INT NOT NULL DEFAULT(0),
+                        TongGiaTriLech DECIMAL(18,2) NOT NULL DEFAULT(0),
+                        GhiChu NVARCHAR(500) NULL,
+                        MaPxLienKet INT NULL,
+                        CONSTRAINT FK_PhieuKiemKho_PhieuXuat FOREIGN KEY (MaPxLienKet) REFERENCES dbo.PhieuXuatKho(MaPx)
+                    );
+                END;
+
+                IF OBJECT_ID('dbo.ChiTietKiemKho', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.ChiTietKiemKho (
+                        MaCtkk INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                        MaPkk INT NOT NULL,
+                        MaSp INT NOT NULL,
+                        TonHeThong INT NOT NULL,
+                        TonThucTe INT NOT NULL,
+                        SoLuongLech INT NOT NULL,
+                        GiaTriLech DECIMAL(18,2) NOT NULL,
+                        LyDoLech NVARCHAR(300) NULL,
+                        CONSTRAINT FK_CTKK_PhieuKiemKho FOREIGN KEY (MaPkk) REFERENCES dbo.PhieuKiemKho(MaPkk) ON DELETE CASCADE,
+                        CONSTRAINT FK_CTKK_SanPham FOREIGN KEY (MaSp) REFERENCES dbo.SanPhamBanh(MaBanh)
+                    );
+                END;
+
+                IF OBJECT_ID('dbo.PhieuThuChi', 'U') IS NOT NULL AND COL_LENGTH('dbo.PhieuThuChi', 'MaPhieuNhapLienKet') IS NULL
+                BEGIN
+                    ALTER TABLE dbo.PhieuThuChi ADD MaPhieuNhapLienKet INT NULL;
+                    ALTER TABLE dbo.PhieuThuChi ADD CONSTRAINT FK_PhieuThuChi_PhieuNhapKho FOREIGN KEY (MaPhieuNhapLienKet) REFERENCES dbo.PhieuNhapKho(MaPn);
+                END;
             ");
         }
 

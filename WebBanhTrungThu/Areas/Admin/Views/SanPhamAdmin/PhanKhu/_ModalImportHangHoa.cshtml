@@ -1,0 +1,45 @@
+<div class="modal fade" id="modalImportHangHoa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form asp-area="Admin" asp-controller="SanPhamAdmin" asp-action="NhapExcel" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header py-2 px-3" style="background: #F4F6F8; border-bottom: 1px solid #E5E7EB;">
+                    <h6 class="modal-title fw-bold text-dark mb-0">
+                        <i class="bi bi-file-earmark-spreadsheet text-success me-1"></i> Import Hàng hóa từ Excel / CSV
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body p-3">
+                    <div class="p-2 rounded mb-3 d-flex justify-content-between align-items-center flex-wrap gap-2" style="background: #F2F8FE; border: 1px solid #BFDBFE;">
+                        <span class="small text-dark">Chưa có tệp mẫu chuẩn 11 cột?</span>
+                        <div class="d-flex gap-2">
+                            <a href="/Admin/SanPhamAdmin/TaiFileMauExcel?dinhDang=xlsx" class="btn btn-sm btn-outline-primary py-1 px-2">
+                                <i class="bi bi-download"></i> Tải file mẫu .xlsx
+                            </a>
+                            <a href="/Admin/SanPhamAdmin/TaiFileMauExcel?dinhDang=csv" class="btn btn-sm btn-outline-secondary py-1 px-2">
+                                <i class="bi bi-filetype-csv"></i> Mẫu .csv
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold mb-1">Chọn tệp Excel (.xlsx) hoặc CSV (.csv) <span class="text-danger">*</span></label>
+                        <input type="file" name="fileExcel" accept=".xlsx,.csv" class="form-control form-control-sm" required />
+                    </div>
+
+                    <div class="small text-muted p-2 rounded" style="background: #F9FAFB; border: 1px solid #E5E7EB;">
+                        <strong>Cấu trúc cột chuẩn:</strong> Mã SP | Tên bánh | Thương hiệu | Danh mục | Giá bán | Giá vốn | Tồn kho | Kcal | Đường (g) | GI | Trạng thái.
+                        <br />Sản phẩm trùng <strong>Mã SP</strong> hoặc <strong>Tên bánh</strong> sẽ được cập nhật thông tin &amp; giá; sản phẩm mới sẽ tự tạo lô FEFO.
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light py-2 px-3">
+                    <button type="button" class="btn-kv-outline" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn-kv-green"><i class="bi bi-upload"></i> Tiến hành Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

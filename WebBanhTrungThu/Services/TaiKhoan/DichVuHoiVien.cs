@@ -16,10 +16,40 @@ namespace WebBanhTrungThu.Services.TaiKhoan
     public class DichVuHoiVien : DichVuCoSo, IDichVuHoiVien
     {
         private readonly IDichVuCongThanhToanMoMo _dichVuCongMoMo;
+        private readonly IDichVuTonKhoFefo _dichVuTonKho;
+        private readonly IDichVuCauHinhHeThong _cauHinhHeThong;
 
-        public DichVuHoiVien(CSDLBanhTrungThuContext db, IDichVuCongThanhToanMoMo dichVuCongMoMo) : base(db)
+        public DichVuHoiVien(
+            CSDLBanhTrungThuContext db,
+            IDichVuCongThanhToanMoMo dichVuCongMoMo,
+            IDichVuTonKhoFefo dichVuTonKho,
+            IDichVuCauHinhHeThong cauHinhHeThong) : base(db)
         {
             _dichVuCongMoMo = dichVuCongMoMo;
+            _dichVuTonKho = dichVuTonKho;
+            _cauHinhHeThong = cauHinhHeThong;
+        }
+
+        public string XacDinhDuongDanSauDangNhap(string? maVt)
+        {
+            string vaiTro = (maVt ?? string.Empty).Trim().ToUpperInvariant();
+            if (string.IsNullOrWhiteSpace(vaiTro) || vaiTro == "KHACH_TV" || vaiTro == "KHACH_HANG")
+            {
+                return string.Empty;
+            }
+
+            if (vaiTro == "QUAN_TRI" || vaiTro == "ADMIN")
+            {
+                return "/Admin/Dashboard/Index";
+            }
+
+            if (vaiTro == "GIAO_HANG")
+            {
+                return "/Admin/DonHangAdmin/Index?tab=GIAO_HANG";
+            }
+
+            // Nhân viên bán hàng / Thu ngân (NHAN_VIEN, THU_NGAN, NV_BAN_HANG, ...) nhảy thẳng sang POS
+            return "/Admin/BanHangPos/Index";
         }
 
         public async Task<(bool HopLe, string ThongBao, NguoiDung? NguoiDung)> XacThucDangNhapAsync(string? tenDangNhap, string? matKhau)
@@ -204,6 +234,93 @@ namespace WebBanhTrungThu.Services.TaiKhoan
             }
 
             return vm;
+        }
+
+        public async Task<(bool ThanhCong, string ThongBao)> KhachHangHuyDonCodAsync(int maNd, int maDh, string? lyDoHuy)
+        {
+            if (maDh <= 0)
+            {
+                return (false, "Mã đơn hàng không hợp lệ.");
+            }
+
+            var don = await _db.DonHangs
+                .Include(d => d.DotGiaoHangDaDiems)
+                .Include(d => d.ChiTietDonHangs)
+                .FirstOrDefaultAsync(d => d.MaDh == maDh);
+
+            if (don == null || !don.MaNd.HasValue || don.MaNd.Value != maNd)
+            {
+                return (false, "Không tìm thấy đơn hàng thuộc tài khoản của bạn.");
+            }
+
+            if (!string.Equals((don.PhuongThucTt ?? string.Empty).Trim(), "COD", StringComparison.OrdinalIgnoreCase))
+            {
+                return (false, "Chỉ hỗ trợ tự hủy đối với đơn hàng thanh toán tiền mặt khi nhận (COD).");
+            }
+
+            string trangThaiHienTai = (don.TrangThaiDh ?? string.Empty).Trim().ToUpperInvariant();
+            if (trangThaiHienTai != "CHO_XAC_NHAN" && trangThaiHienTai != "CHO_DUYET")
+            {
+                return (false, "Đơn hàng đã được xác nhận hoặc xử lý, không thể tự hủy trực tuyến. Vui lòng liên hệ hotline cửa hàng để được hỗ trợ.");
+            }
+
+            string lyDoSach = ChuanHoaChuoi(lyDoHuy, "Thay đổi nhu cầu mua hàng");
+            string lyDoLuu = $"Khách hàng tự hủy: {lyDoSach}";
+            if (lyDoLuu.Length > 500)
+            {
+                lyDoLuu = lyDoLuu[..500];
+            }
+
+            int diemDaHoan = 0;
+
+            await ThucThiTrongGiaoDichAsync(async () =>
+            {
+                don.TrangThaiDh = "DA_HUY";
+                don.LyDoHuy = lyDoLuu;
+
+                var cacDotGiao = don.DotGiaoHangDaDiems != null && don.DotGiaoHangDaDiems.Any()
+                    ? don.DotGiaoHangDaDiems.ToList()
+                    : await _db.DotGiaoHangDaDiems.Where(g => g.MaDh == don.MaDh).ToListAsync();
+
+                foreach (var dot in cacDotGiao)
+                {
+                    dot.TrangThaiGiao = "DA_HUY";
+                }
+
+                await _dichVuTonKho.HoanTraTonKhoTheoDonAsync(don);
+
+                NguoiDung? nd = null;
+                if (don.SoDiemDaDung > 0 && !don.DaHoanDiemKhiHuy)
+                {
+                    nd = await _db.NguoiDungs.FindAsync(maNd);
+                    if (nd != null)
+                    {
+                        nd.DiemTichLuy += don.SoDiemDaDung;
+                        diemDaHoan = don.SoDiemDaDung;
+                    }
+                    don.DaHoanDiemKhiHuy = true;
+                }
+
+                await _db.SaveChangesAsync();
+
+                if (nd != null)
+                {
+                    var (hangVipMoi, _, _, _) = await TinhThongTinHangVipAsync(_db, nd.MaNd, nd.DiemTichLuy);
+                    nd.HangTv = hangVipMoi;
+                    await _db.SaveChangesAsync();
+                }
+            });
+
+            _cauHinhHeThong.CapNhatMetadataDonHang(don.MaDh, meta =>
+            {
+                meta.DaHoanKhoDoHetHan = true;
+                meta.LyDoHuyHoan = don.LyDoHuy;
+                meta.ThoiGianCapNhatCuoi = LayThoiGianHeThong().ToString("dd/MM/yyyy HH:mm");
+                meta.NguoiCapNhatCuoi = "Khách hàng tự hủy";
+            });
+
+            string thongBaoHoanDiem = diemDaHoan > 0 ? $" và hoàn lại {diemDaHoan:N0} điểm VIP" : string.Empty;
+            return (true, $"Đã hủy đơn hàng #{don.MaTraCuuDh} thành công{thongBaoHoanDiem}.");
         }
 
         /// <summary>

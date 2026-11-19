@@ -55,9 +55,17 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             if (!string.IsNullOrWhiteSpace(locTrangThai) && locTrangThai != "ALL")
             {
-                if (locTrangThai == "CHO_LAY_HANG" || locTrangThai == "DANG_DONG_GOI_HOP")
+                if (locTrangThai == "GIAO_HANG")
+                {
+                    query = query.Where(d => d.TrangThaiDh == "CHO_LAY_HANG" || d.TrangThaiDh == "DANG_DONG_GOI_HOP" || d.TrangThaiDh == "DANG_GIAO");
+                }
+                else if (locTrangThai == "CHO_LAY_HANG" || locTrangThai == "DANG_DONG_GOI_HOP")
                 {
                     query = query.Where(d => d.TrangThaiDh == "CHO_LAY_HANG" || d.TrangThaiDh == "DANG_DONG_GOI_HOP");
+                }
+                else if (locTrangThai == "CHO_XAC_NHAN" || locTrangThai == "CHO_DUYET")
+                {
+                    query = query.Where(d => d.TrangThaiDh == "CHO_XAC_NHAN" || d.TrangThaiDh == "CHO_DUYET");
                 }
                 else
                 {

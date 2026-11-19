@@ -35,6 +35,12 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers.CoSo
             return User.FindFirstValue(ClaimTypes.Name) ?? "Quản trị viên Nguyệt Cát";
         }
 
+        protected int? LayMaNhanSuHienTai()
+        {
+            var raw = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return int.TryParse(raw, out int maNd) && maNd > 0 ? maNd : null;
+        }
+
         protected string LayTenQuanTriVienDangNhap() => LayHoTenNhanSuHienTai();
 
         /// <summary>
@@ -42,7 +48,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers.CoSo
         /// </summary>
         protected bool LaQuanTriVienToiCao()
         {
-            return User.IsInRole("QUAN_TRI");
+            return User.IsInRole("QUAN_TRI") || User.IsInRole("ADMIN");
         }
 
         /// <summary>

@@ -1072,3 +1072,183 @@ td, th, .so-tien, .ton-kho, .kpi-value, .kv-table td, .kv-table th {
         display: none;
     }
 }
+
+
+/* =========================================================================
+   HEADER ADMIN DỌN GỌN, THÔNG BÁO SQL, NÚT POS & TRANG CÀI ĐẶT MENU DỌC
+   ========================================================================= */
+.btn-kv-pos-highlight {
+    background: #0D9488;
+    color: #FFFFFF !important;
+    font-weight: 600;
+    font-size: 13.5px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-kv-pos-highlight:hover {
+    background: #0F766E;
+    color: #FFFFFF !important;
+}
+
+.kv-logout-btn {
+    border: 1px solid #FECACA;
+    background: #FEF2F2;
+    color: #DC2626;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12.5px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.kv-logout-btn:hover {
+    background: #DC2626;
+    border-color: #DC2626;
+    color: #FFFFFF;
+}
+
+.kv-notif-badge {
+    position: absolute;
+    top: -3px;
+    right: -4px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #DC2626;
+    color: #FFFFFF;
+    font-size: 10px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.kv-notif-dropdown {
+    width: 340px;
+    max-width: 92vw;
+    border: 1px solid var(--kv-border);
+    border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+    overflow: hidden;
+}
+
+.kv-notif-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #F8FAFC;
+    border-bottom: 1px solid var(--kv-border);
+    font-size: 13px;
+}
+
+.kv-notif-body {
+    max-height: 360px;
+    overflow-y: auto;
+    background: #FFFFFF;
+}
+
+.kv-notif-section-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    background: #F9FAFB;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4B5563;
+}
+
+.kv-notif-section-title a {
+    font-size: 11.5px;
+    color: var(--kv-blue);
+    text-decoration: none;
+}
+
+.kv-notif-item {
+    display: block;
+    padding: 8px 14px;
+    border-top: 1px solid #F3F4F6;
+    text-decoration: none;
+    color: var(--kv-text);
+    font-size: 12.5px;
+}
+
+.kv-notif-item:hover {
+    background: var(--kv-blue-soft);
+}
+
+.kv-settings-layout {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+}
+
+.kv-settings-sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    background: #FFFFFF;
+    border: 1px solid var(--kv-border);
+    border-radius: 8px;
+    padding: 8px;
+}
+
+.kv-settings-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.kv-settings-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    color: #374151;
+    font-size: 13.5px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color 0.16s cubic-bezier(0.16, 1, 0.3, 1), color 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kv-settings-nav-item:hover {
+    background: #F3F4F6;
+    color: #111827;
+}
+
+.kv-settings-nav-item.active {
+    background: #EBF5FF;
+    color: var(--kv-blue-dark);
+    font-weight: 600;
+}
+
+.kv-settings-content {
+    flex: 1;
+    min-width: 0;
+}
+
+@media (max-width: 991.98px) {
+    .kv-settings-layout {
+        flex-direction: column;
+    }
+
+    .kv-settings-sidebar {
+        width: 100%;
+    }
+}

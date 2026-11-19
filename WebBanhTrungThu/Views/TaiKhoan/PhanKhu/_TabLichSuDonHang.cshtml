@@ -25,8 +25,11 @@
             {
                 var trangThaiDon = Model.AnhXaTrangThaiDonHang(dh.TrangThaiDh);
                 int buocTienTrinh = Model.XacDinhBuocTienTrinhDon(dh.TrangThaiDh);
-                bool donDaHuy = string.Equals(dh.TrangThaiDh, "DA_HUY", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(dh.TrangThaiDh, "HOAN_TIEN_TRA_HANG", StringComparison.OrdinalIgnoreCase);
+                string maTrangThaiChuan = (dh.TrangThaiDh ?? string.Empty).Trim().ToUpperInvariant();
+                bool donDaHuy = string.Equals(maTrangThaiChuan, "DA_HUY", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(maTrangThaiChuan, "HOAN_TIEN_TRA_HANG", StringComparison.OrdinalIgnoreCase);
+                bool coTheTuHuyCod = string.Equals((dh.PhuongThucTt ?? string.Empty).Trim(), "COD", StringComparison.OrdinalIgnoreCase)
+                    && (maTrangThaiChuan == "CHO_XAC_NHAN" || maTrangThaiChuan == "CHO_DUYET");
 
                 <article class="the-don-hang-ho-so">
                     <header class="dau-the-don-hang">
@@ -38,6 +41,12 @@
                         <div class="thong-tin-thanh-toan-don">
                             <span class="hinh-thuc-tt-ho-so">@Model.AnhXaHinhThucThanhToan(dh.PhuongThucTt)</span>
                             <strong class="tong-tien-ho-so">@dh.TongThanhToanCuoi.ToString("N0") đ</strong>
+                            @if (coTheTuHuyCod)
+                            {
+                                <button type="button" class="nut-huy-don-ho-so" onclick="moModalKhachHuyDon(@dh.MaDh, '@dh.MaTraCuuDh')">
+                                    Hủy đơn hàng
+                                </button>
+                            }
                             <button type="button" class="nut-vien-ho-so nut-dat-lai-don-ho-so" onclick="datLaiDonHangCu(@dh.MaDh, this)">
                                 ↻ Đặt lại đơn này
                             </button>
@@ -148,6 +157,55 @@
                     </div>
                 </article>
             }
+        </div>
+
+        <!-- Modal xác nhận khách hàng tự hủy đơn COD chưa xác nhận -->
+        <div class="modal fade" id="modalKhachHuyDonCod" tabindex="-1" aria-labelledby="tieuDeModalKhachHuyDon" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content card-hoang-gia p-2">
+                    <form asp-area="" asp-controller="TaiKhoan" asp-action="HuyDonHang" method="post" onsubmit="return chuanBiGuiLyDoHuyDon();">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="maDh" id="inpKhachHuyMaDh" value="0" />
+                        <input type="hidden" name="lyDoHuy" id="inpKhachHuyLyDoCuoi" value="" />
+
+                        <div class="modal-header border-bottom" style="border-color: var(--mau-vien-vang-dong) !important;">
+                            <h5 class="modal-title font-co-phong fs-3 fw-bold chu-do-son-mai" id="tieuDeModalKhachHuyDon">
+                                Xác Nhận Hủy Đơn Hàng <span id="lblKhachHuyMaTraCuu">#---</span>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                        </div>
+
+                        <div class="modal-body">
+                            <p class="small chu-nau-phu mb-3">
+                                Chỉ áp dụng cho đơn thanh toán khi nhận (COD) đang chờ cửa hàng xác nhận. Điểm tích lũy đã dùng (nếu có) sẽ được hoàn trả về tài khoản ngay sau khi hủy.
+                            </p>
+
+                            <div class="mb-3">
+                                <label for="selLyDoHuyKhach" class="form-label small fw-semibold chu-nau-tram">Chọn lý do hủy đơn</label>
+                                <select id="selLyDoHuyKhach" class="form-select" style="border-color: var(--mau-vien-vang-dong);" onchange="dongBoLyDoHuyKhach()">
+                                    <option value="Thay đổi địa chỉ hoặc thời gian nhận quà">Thay đổi địa chỉ hoặc thời gian nhận quà</option>
+                                    <option value="Muốn thay đổi vị bánh / số lượng trong hộp">Muốn thay đổi vị bánh / số lượng trong hộp</option>
+                                    <option value="Đặt nhầm sản phẩm hoặc nhầm phương thức thanh toán">Đặt nhầm sản phẩm hoặc nhầm phương thức thanh toán</option>
+                                    <option value="Không còn nhu cầu đặt mua">Không còn nhu cầu đặt mua</option>
+                                    <option value="KHAC">Lý do khác (tự nhập bên dưới)</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-1" id="khungNhapLyDoKhacKhach" style="display: none;">
+                                <label for="txtLyDoHuyKhacKhach" class="form-label small fw-semibold chu-nau-tram">Nhập lý do cụ thể</label>
+                                <textarea id="txtLyDoHuyKhacKhach" class="form-control" rows="2" maxlength="400"
+                                          style="border-color: var(--mau-vien-vang-dong);"
+                                          placeholder="Nhập lý do hủy đơn hàng..."></textarea>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
+                            <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-3" data-bs-dismiss="modal">Giữ lại đơn</button>
+                            <button type="submit" class="btn btn-sm btn-danger rounded-pill px-4 fw-semibold">Xác nhận hủy đơn</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
     }
 </div>

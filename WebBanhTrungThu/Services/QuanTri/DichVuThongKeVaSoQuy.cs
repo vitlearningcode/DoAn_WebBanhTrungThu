@@ -456,5 +456,62 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             return $"Đã cập nhật cấu hình Tài khoản QR / MoMo nhận tiền: {sdtHienThi} ({tenChuTkChuan})!";
         }
+
+        public async Task<ThongBaoQuanTriViewModel> LayThongBaoQuanTriAsync()
+        {
+            var homNay = LayNgayHienTai();
+            var mocCanDate = homNay.AddDays(10);
+
+            var queryDonCho = _db.DonHangs
+                .AsNoTracking()
+                .Where(d => d.TrangThaiDh == "CHO_XAC_NHAN" || d.TrangThaiDh == "CHO_DUYET");
+
+            int soDonCho = await queryDonCho.CountAsync();
+            var dsDonCho = await queryDonCho
+                .OrderByDescending(d => d.NgayDat)
+                .Take(5)
+                .Select(d => new ThongBaoDonMoiItem
+                {
+                    MaDh = d.MaDh,
+                    MaTraCuuDh = d.MaTraCuuDh,
+                    HoTenNguoiMua = d.HoTenNguoiMua,
+                    TongThanhToanCuoi = d.TongThanhToanCuoi,
+                    PhuongThucTt = d.PhuongThucTt,
+                    NgayDat = d.NgayDat
+                })
+                .ToListAsync();
+
+            var queryLoCanDate = _db.LoSanXuatBanhs
+                .AsNoTracking()
+                .Include(l => l.MaBanhNavigation)
+                .Where(l => l.SlconLai > 0
+                    && l.TrangThaiLo != "HET_HAN"
+                    && (l.HanSuDung <= mocCanDate || l.TrangThaiLo == "XA_CAN_DATE" || l.PhanTramGiamCanDate > 0));
+
+            int soLoCanDate = await queryLoCanDate.CountAsync();
+            var dsLoCanDateRaw = await queryLoCanDate
+                .OrderBy(l => l.HanSuDung)
+                .Take(5)
+                .ToListAsync();
+
+            var dsLoCanDate = dsLoCanDateRaw.Select(l => new ThongBaoLoCanDateItem
+            {
+                MaLo = l.MaLo,
+                MaLoCode = l.MaLoCode,
+                TenBanh = l.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu",
+                SlConLai = l.SlconLai,
+                HanSuDung = l.HanSuDung,
+                SoNgayConLai = Math.Max(0, l.HanSuDung.DayNumber - homNay.DayNumber),
+                PhanTramGiamCanDate = l.PhanTramGiamCanDate
+            }).ToList();
+
+            return new ThongBaoQuanTriViewModel
+            {
+                SoDonChoXacNhan = soDonCho,
+                SoLoSapCanDate = soLoCanDate,
+                DonMoiChoXacNhan = dsDonCho,
+                LoSapCanDate = dsLoCanDate
+            };
+        }
     }
 }

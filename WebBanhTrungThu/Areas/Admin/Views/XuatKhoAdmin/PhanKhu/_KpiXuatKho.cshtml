@@ -1,0 +1,22 @@
+@model WebBanhTrungThu.ViewModels.XuatKhoAdminViewModel
+
+<div class="kv-card p-3 mb-3">
+    <div class="row g-3 text-end align-items-center">
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Tổng phiếu xuất kho</div>
+            <div class="fs-5 fw-bold text-dark so-tien">@Model.TongSoPhieu phiếu</div>
+        </div>
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Xuất hủy / Trả NCC</div>
+            <div class="fs-5 fw-bold text-danger so-tien">@Model.SoPhieuHuyLoi hủy • @Model.SoPhieuTraNcc trả hãng</div>
+        </div>
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Nội bộ / Chênh lệch kiểm kho</div>
+            <div class="fs-5 fw-bold text-primary so-tien">@Model.SoPhieuNoiBo nội bộ • @Model.SoPhieuKiemKho kiểm kho</div>
+        </div>
+        <div class="col-md-3 pe-3">
+            <div class="text-muted small">Tổng giá trị vốn xuất</div>
+            <div class="fs-5 fw-bold text-dark so-tien">@Model.TongGiaTriVonXuat.ToString("N0") đ</div>
+        </div>
+    </div>
+</div>

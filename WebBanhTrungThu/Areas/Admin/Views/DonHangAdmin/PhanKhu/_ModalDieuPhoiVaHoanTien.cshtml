@@ -1,5 +1,5 @@
 @{
-    bool laQuanTriVien = User.IsInRole("QUAN_TRI");
+    bool laQuanTriVien = User.IsInRole("QUAN_TRI") || User.IsInRole("ADMIN");
     string vaiTroHienTai = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "QUAN_TRI";
 }
 

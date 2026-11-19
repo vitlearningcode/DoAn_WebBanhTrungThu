@@ -78,11 +78,18 @@
                                     </div>
                                 </div>
 
-                                <div class="khung-anh-banh-sang khung-anh-banh-bst text-center my-1">
+                                <a asp-controller="SanPham" asp-action="ChiTiet" asp-route-id="@b.MaBanh"
+                                   class="khung-anh-banh-sang khung-anh-banh-bst text-center my-1 d-flex text-decoration-none"
+                                   title="Xem chi tiết @b.TenBanh">
                                     <img src="@anhBanh" class="img-fluid" alt="@b.TenBanh" />
-                                </div>
+                                </a>
 
-                                <h5 class="font-co-phong fs-5 fw-bold chu-nau-tram mb-1 text-truncate" title="@b.TenBanh">@b.TenBanh</h5>
+                                <h5 class="font-co-phong fs-5 fw-bold chu-nau-tram mb-1 text-truncate" title="@b.TenBanh">
+                                    <a asp-controller="SanPham" asp-action="ChiTiet" asp-route-id="@b.MaBanh"
+                                       class="chu-nau-tram text-decoration-none link-ten-banh-bst">
+                                        @b.TenBanh
+                                    </a>
+                                </h5>
                                 <p class="small chu-nau-phu mb-2 mo-ta-banh-2-dong">@b.MoTaNgan</p>
                             </div>
 

@@ -316,4 +316,34 @@ namespace WebBanhTrungThu.ViewModels
         public List<PhieuThuChiSoQuyItem> DanhSachPhieuThuChi { get; set; } = new();
         public CauHinhThanhToanQr CauHinhQr { get; set; } = new();
     }
+
+    public class ThongBaoDonMoiItem
+    {
+        public int MaDh { get; set; }
+        public string MaTraCuuDh { get; set; } = string.Empty;
+        public string HoTenNguoiMua { get; set; } = string.Empty;
+        public decimal TongThanhToanCuoi { get; set; }
+        public string PhuongThucTt { get; set; } = "COD";
+        public DateTime NgayDat { get; set; }
+    }
+
+    public class ThongBaoLoCanDateItem
+    {
+        public int MaLo { get; set; }
+        public string MaLoCode { get; set; } = string.Empty;
+        public string TenBanh { get; set; } = string.Empty;
+        public int SlConLai { get; set; }
+        public DateOnly HanSuDung { get; set; }
+        public int SoNgayConLai { get; set; }
+        public decimal PhanTramGiamCanDate { get; set; }
+    }
+
+    public class ThongBaoQuanTriViewModel
+    {
+        public int SoDonChoXacNhan { get; set; }
+        public int SoLoSapCanDate { get; set; }
+        public int TongSoThongBao => SoDonChoXacNhan + SoLoSapCanDate;
+        public List<ThongBaoDonMoiItem> DonMoiChoXacNhan { get; set; } = new();
+        public List<ThongBaoLoCanDateItem> LoSapCanDate { get; set; } = new();
+    }
 }

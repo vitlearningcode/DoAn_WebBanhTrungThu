@@ -1,0 +1,156 @@
+@model WebBanhTrungThu.ViewModels.XuatKhoAdminViewModel
+
+<div class="kv-card overflow-hidden">
+    <div class="table-responsive">
+        <table class="kv-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Mã phiếu xuất</th>
+                    <th>Thời gian</th>
+                    <th>Nhóm lý do xuất</th>
+                    <th>Đối tượng liên quan / Người nhận</th>
+                    <th class="text-center">Số dòng</th>
+                    <th class="text-end">Tổng giá trị vốn</th>
+                    <th class="text-center">Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyPhieuXuat">
+                @foreach (var p in Model.DanhSachPhieuXuat)
+                {
+                    string searchKey = $"{p.SoPhieuXuat} {p.LoaiXuat} {p.DoiTuongLienQuan} {p.GhiChu} {string.Join(" ", p.ChiTietPhieuXuats.Select(c => (c.MaSpNavigation?.TenBanh ?? "") + " " + (c.MaSpNavigation?.MaSku ?? "")))}".ToLowerInvariant();
+                    string detailId = $"detailPx_{p.MaPx}";
+
+                    <tr class="kv-master-row"
+                        data-search="@searchKey"
+                        data-loaiz="@p.LoaiXuat"
+                        data-trangthai="@p.TrangThai"
+                        onclick="toggleKvDetailRow('@detailId', this)">
+                        <td class="fw-bold text-primary">@p.SoPhieuXuat</td>
+                        <td class="text-nowrap">@p.NgayXuat.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            @switch (p.LoaiXuat)
+                            {
+                                case "XUAT_HUY_LOI":
+                                    <span class="badge" style="background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;">Xuất hủy lỗi / hư bể</span>
+                                    break;
+                                case "TRA_NHA_SAN_XUAT":
+                                    <span class="badge" style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A;">Trả nhà sản xuất</span>
+                                    break;
+                                case "TIEU_DUNG_NOI_BO":
+                                    <span class="badge" style="background: #E0F2FE; color: #0369A1; border: 1px solid #BAE6FD;">Tiêu dùng nội bộ</span>
+                                    break;
+                                default:
+                                    <span class="badge" style="background: #F3E8FF; color: #7E22CE; border: 1px solid #E9D5FF;">Chênh lệch kiểm kho</span>
+                                    break;
+                            }
+                        </td>
+                        <td>
+                            <div class="fw-semibold text-dark">@p.DoiTuongLienQuan</div>
+                            @if (!string.IsNullOrWhiteSpace(p.GhiChu))
+                            {
+                                <small class="text-muted text-truncate d-inline-block" style="max-width: 320px;">@p.GhiChu</small>
+                            }
+                        </td>
+                        <td class="text-center fw-medium">@p.ChiTietPhieuXuats.Count</td>
+                        <td class="text-end fw-bold text-danger so-tien">@p.TongGiaTriVon.ToString("N0") đ</td>
+                        <td class="text-center">
+                            @if (p.TrangThai == "HOAN_THANH")
+                            {
+                                <span class="badge bg-success">Hoàn thành</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Đã hủy</span>
+                            }
+                        </td>
+                    </tr>
+
+                    <tr id="@detailId" class="kv-detail-row" onclick="event.stopPropagation();">
+                        <td colspan="7" class="p-0">
+                            <div class="kv-detail-box">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2 pb-2 border-bottom">
+                                    <div>
+                                        <strong class="text-primary">@p.SoPhieuXuat</strong>
+                                        <span class="text-muted mx-2">•</span>
+                                        <span>Đối tượng: <strong>@p.DoiTuongLienQuan</strong></span>
+                                        <span class="text-muted mx-2">•</span>
+                                        <span>Người lập: <strong>@p.NguoiLap</strong></span>
+                                    </div>
+                                    <div class="small text-muted">Tổng giá trị vốn xuất: <strong class="text-danger">@p.TongGiaTriVon.ToString("N0") đ</strong></div>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(p.GhiChu))
+                                {
+                                    <div class="small text-dark mb-2 p-2 rounded" style="background: #F8FAFC; border: 1px solid #E5E7EB;">
+                                        <strong>Ghi chú / Nguyên nhân:</strong> @p.GhiChu
+                                    </div>
+                                }
+
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-sm table-bordered bg-white align-middle mb-0" style="font-size: 12.5px;">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Mã SKU</th>
+                                                <th>Tên bánh</th>
+                                                <th>Lô đã trừ</th>
+                                                <th class="text-end">SL xuất</th>
+                                                <th class="text-end">Giá vốn lúc xuất</th>
+                                                <th class="text-end">Thành tiền vốn</th>
+                                                <th>Ghi chú dòng</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var ct in p.ChiTietPhieuXuats)
+                                            {
+                                                <tr>
+                                                    <td class="text-primary fw-medium">@(ct.MaSpNavigation?.MaSku ?? "---")</td>
+                                                    <td class="fw-medium">@(ct.MaSpNavigation?.TenBanh ?? $"SP #{ct.MaSp}")</td>
+                                                    <td>
+                                                        @if (ct.MaLoNavigation != null)
+                                                        {
+                                                            <span class="badge bg-light text-dark border">@ct.MaLoNavigation.MaLoCode</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted small">Trừ FEFO</span>
+                                                        }
+                                                    </td>
+                                                    <td class="text-end fw-bold so-tien">@ct.SoLuongXuat.ToString("N0")</td>
+                                                    <td class="text-end so-tien">@ct.GiaVonLucXuat.ToString("N0") đ</td>
+                                                    <td class="text-end fw-semibold text-danger so-tien">@ct.ThanhTienVon.ToString("N0") đ</td>
+                                                    <td class="small text-muted">@(ct.GhiChuDong ?? "---")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                @if (p.TrangThai == "HOAN_THANH" && p.LoaiXuat != "CHINH_LECH_KIEM_KHO")
+                                {
+                                    <div class="d-flex justify-content-end pt-2 border-top">
+                                        <form asp-area="Admin" asp-controller="XuatKhoAdmin" asp-action="HuyPhieuXuat" method="post" class="d-inline"
+                                              onsubmit="return confirm('Xác nhận hủy phiếu xuất @p.SoPhieuXuat và hoàn trả lại số lượng vào các lô bánh tương ứng?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="maPx" value="@p.MaPx" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger px-3">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Hủy phiếu xuất (Hoàn kho)
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+                @if (!Model.DanhSachPhieuXuat.Any())
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            Chưa có phiếu xuất kho nào. Nhấn <strong>+ Tạo phiếu xuất kho</strong> để ghi nhận xuất hủy, trả hãng hoặc tiêu dùng nội bộ.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

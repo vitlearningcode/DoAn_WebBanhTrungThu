@@ -2452,3 +2452,229 @@ body {
         font-size: 1.5rem;
     }
 }
+
+
+/* =========================================================================
+   TRANG CHI TIẾT SẢN PHẨM & NÚT HỦY ĐƠN COD TRONG HỒ SƠ
+   ========================================================================= */
+.link-ten-banh-bst,
+.sp-ct-link-ten {
+    transition: color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.link-ten-banh-bst:hover,
+.sp-ct-link-ten:hover {
+    color: var(--mau-do-son-mai) !important;
+}
+
+.sp-ct-breadcrumb {
+    font-size: 0.84rem;
+}
+
+.sp-ct-breadcrumb a {
+    color: var(--mau-chu-phu);
+    text-decoration: none;
+}
+
+.sp-ct-breadcrumb a:hover {
+    color: var(--mau-do-son-mai);
+}
+
+.sp-ct-gallery-main {
+    min-height: 360px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    position: relative;
+}
+
+.sp-ct-gallery-main img {
+    max-height: 320px;
+    width: auto;
+    object-fit: contain;
+    transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sp-ct-gallery-main:hover img {
+    transform: scale(1.03);
+}
+
+.sp-ct-badge-giam {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    background: #B91C1C;
+    color: #FFFFFF;
+    font-size: 0.76rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 50px;
+}
+
+.sp-ct-thumbs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.sp-ct-thumb-btn {
+    width: 68px;
+    height: 68px;
+    padding: 4px;
+    border-radius: 10px;
+    border: 1.5px solid var(--mau-vien-vang-dong);
+    background: #FFFFFF;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.18s ease;
+}
+
+.sp-ct-thumb-btn:hover {
+    transform: translateY(-2px);
+}
+
+.sp-ct-thumb-btn.active {
+    border-color: var(--mau-do-son-mai);
+    box-shadow: 0 0 0 2px rgba(110, 13, 16, 0.14);
+}
+
+.sp-ct-thumb-btn img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.sp-ct-chip-danh-muc {
+    font-size: 0.74rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 50px;
+    background: var(--mau-nen-ngoc-trai);
+    color: var(--mau-chu-nau-tram);
+    border: 1px solid var(--mau-vien-vang-dong);
+}
+
+.sp-ct-tieu-de {
+    font-size: clamp(1.65rem, 2.5vw, 2.25rem);
+    line-height: 1.2;
+}
+
+.sp-ct-mo-ta-ngan {
+    font-size: 0.94rem;
+    line-height: 1.65;
+}
+
+.sp-ct-khung-gia {
+    background: var(--mau-nen-ngoc-trai);
+    border: 1px solid var(--mau-vien-vang-dong);
+    border-radius: 12px;
+}
+
+.sp-ct-gia-ban {
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.sp-ct-khung-fefo {
+    background: #FFFFFF;
+    border: 1px dashed var(--mau-vang-dong-co);
+    border-radius: 12px;
+}
+
+.sp-ct-qty-group {
+    display: inline-flex;
+    align-items: center;
+    border: 1.5px solid var(--mau-vien-vang-dong);
+    border-radius: 50px;
+    background: #FFFFFF;
+    overflow: hidden;
+}
+
+.sp-ct-qty-btn {
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: transparent;
+    color: var(--mau-do-son-mai);
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.sp-ct-qty-btn:hover:not(:disabled) {
+    background: var(--mau-nen-ngoc-trai);
+}
+
+.sp-ct-qty-input {
+    width: 52px;
+    height: 34px;
+    border: none;
+    text-align: center;
+    font-weight: 700;
+    color: var(--mau-chu-nau-tram);
+    font-variant-numeric: tabular-nums;
+}
+
+.sp-ct-qty-input:focus {
+    outline: none;
+}
+
+.sp-ct-bang-dinh-duong td {
+    padding: 9px 4px;
+    border-bottom: 1px dashed var(--mau-vien-vang-dong);
+    font-variant-numeric: tabular-nums;
+}
+
+.sp-ct-the-dinh-duong {
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    border-radius: 50px;
+    background: var(--mau-nen-ngoc-trai);
+    color: var(--mau-chu-phu);
+    border: 1px solid var(--mau-vien-vang-dong);
+}
+
+.sp-ct-the-dinh-duong.dat-chuan {
+    background: #ECFDF5;
+    color: #166534;
+    border-color: #BBF7D0;
+    font-weight: 600;
+}
+
+.sp-ct-hop-canh-bao {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+}
+
+.sp-ct-o-huong-dan {
+    background: var(--mau-nen-ngoc-trai);
+    border: 1px solid var(--mau-vien-vang-dong);
+    border-radius: 12px;
+}
+
+.nut-huy-don-ho-so {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 14px;
+    border-radius: 50px;
+    border: 1px solid #DC2626;
+    background: #FFFFFF;
+    color: #DC2626;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
+    transition: background-color 0.18s cubic-bezier(0.16, 1, 0.3, 1), color 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nut-huy-don-ho-so:hover {
+    background: #DC2626;
+    color: #FFFFFF;
+}

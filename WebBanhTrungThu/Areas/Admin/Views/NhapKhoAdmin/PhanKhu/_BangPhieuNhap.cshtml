@@ -1,0 +1,207 @@
+@model WebBanhTrungThu.ViewModels.NhapKhoAdminViewModel
+
+<div class="kv-card overflow-hidden">
+    <div class="table-responsive">
+        <table class="kv-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Mã phiếu</th>
+                    <th>Thời gian</th>
+                    <th>Nhà cung cấp / Hãng</th>
+                    <th class="text-end">Tổng phải trả</th>
+                    <th class="text-end">Đã trả</th>
+                    <th class="text-end">Còn nợ</th>
+                    <th class="text-center">Thanh toán</th>
+                    <th class="text-center">Trạng thái</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyPhieuNhap">
+                @foreach (var p in Model.DanhSachPhieuNhap)
+                {
+                    decimal conNo = Math.Max(0m, p.TongPhaiTra - p.DaThanhToan);
+                    string searchKey = $"{p.SoPhieuNhap} {p.NhaCungCap} {p.GhiChu} {string.Join(" ", p.ChiTietPhieuNhaps.Select(c => (c.MaSpNavigation?.TenBanh ?? "") + " " + (c.MaSpNavigation?.MaSku ?? "")))}".ToLowerInvariant();
+                    string detailId = $"detailPn_{p.MaPn}";
+
+                    <tr class="kv-master-row"
+                        data-search="@searchKey"
+                        data-trangthai="@p.TrangThai"
+                        data-tt="@p.TrangThaiThanhToan"
+                        data-ncc="@p.NhaCungCap"
+                        onclick="toggleKvDetailRow('@detailId', this)">
+                        <td class="fw-bold text-primary">@p.SoPhieuNhap</td>
+                        <td class="text-nowrap">@p.NgayNhap.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            <div class="fw-semibold text-dark">@p.NhaCungCap</div>
+                            <small class="text-muted">@p.ChiTietPhieuNhaps.Count dòng hàng • Người lập: @p.NguoiLap</small>
+                        </td>
+                        <td class="text-end fw-bold so-tien">@p.TongPhaiTra.ToString("N0") đ</td>
+                        <td class="text-end text-success fw-medium so-tien">@p.DaThanhToan.ToString("N0") đ</td>
+                        <td class="text-end fw-bold so-tien @(conNo > 0 && p.TrangThai == "DA_NHAP_KHO" ? "text-danger" : "text-muted")">
+                            @conNo.ToString("N0") đ
+                        </td>
+                        <td class="text-center">
+                            @if (p.TrangThaiThanhToan == "DA_THANH_TOAN")
+                            {
+                                <span class="badge bg-success">Đã thanh toán</span>
+                            }
+                            else if (p.TrangThaiThanhToan == "THANH_TOAN_MOT_PHAN")
+                            {
+                                <span class="badge bg-warning text-dark">Trả một phần</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-light text-danger border">Chưa thanh toán</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            @if (p.TrangThai == "DA_NHAP_KHO")
+                            {
+                                <span class="badge" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;">Đã nhập kho</span>
+                            }
+                            else if (p.TrangThai == "DA_HUY")
+                            {
+                                <span class="badge" style="background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA;">Đã hủy</span>
+                            }
+                            else
+                            {
+                                <span class="badge" style="background: #FEF3C7; color: #B45309; border: 1px solid #FDE68A;">Phiếu tạm</span>
+                            }
+                        </td>
+                        <td class="text-end text-nowrap" onclick="event.stopPropagation();">
+                            <div class="d-inline-flex align-items-center gap-1">
+                                @if (p.TrangThai != "DA_HUY")
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size: 12px; flex-shrink: 0; white-space: nowrap;"
+                                            onclick="moModalSuaPhieuNhap(@p.MaPn)">
+                                        <i class="bi bi-pencil-square"></i> Sửa
+                                    </button>
+                                }
+                                @if (p.TrangThai == "DA_NHAP_KHO" && conNo > 0)
+                                {
+                                    <button type="button" class="btn-kv-green py-1 px-2" style="font-size: 12px; flex-shrink: 0; white-space: nowrap;"
+                                            data-mapn="@p.MaPn"
+                                            data-sophieu="@p.SoPhieuNhap"
+                                            data-ncc="@p.NhaCungCap"
+                                            data-conno="@Math.Round(conNo, 0)"
+                                            onclick="moModalThanhToanTuButton(this)">
+                                        <i class="bi bi-cash-coin"></i> Thanh toán
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr id="@detailId" class="kv-detail-row" onclick="event.stopPropagation();">
+                        <td colspan="9" class="p-0">
+                            <div class="kv-detail-box">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2 pb-2 border-bottom">
+                                    <div>
+                                        <strong class="text-primary">@p.SoPhieuNhap</strong>
+                                        <span class="text-muted mx-2">•</span>
+                                        <span>NCC: <strong>@p.NhaCungCap</strong></span>
+                                        @if (!string.IsNullOrWhiteSpace(p.GhiChu))
+                                        {
+                                            <span class="text-muted ms-2">| Ghi chú: @p.GhiChu</span>
+                                        }
+                                    </div>
+                                    <div class="text-muted small">
+                                        Tổng tiền hàng: <strong>@p.TongTienHang.ToString("N0") đ</strong> • Giảm giá: <strong>@p.GiamGia.ToString("N0") đ</strong> • Phải trả: <strong class="text-primary">@p.TongPhaiTra.ToString("N0") đ</strong>
+                                    </div>
+                                </div>
+
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-sm table-bordered bg-white align-middle mb-0" style="font-size: 12.5px;">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Mã SKU</th>
+                                                <th>Sản phẩm bánh</th>
+                                                <th>Mã lô sinh ra</th>
+                                                <th class="text-center">NSX</th>
+                                                <th class="text-center">HSD</th>
+                                                <th class="text-end">Số lượng</th>
+                                                <th class="text-end">Đơn giá nhập</th>
+                                                <th class="text-end">Thành tiền</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var ct in p.ChiTietPhieuNhaps)
+                                            {
+                                                <tr>
+                                                    <td class="text-primary fw-medium">@(ct.MaSpNavigation?.MaSku ?? "---")</td>
+                                                    <td class="fw-medium">@(ct.MaSpNavigation?.TenBanh ?? $"SP #{ct.MaSp}")</td>
+                                                    <td>
+                                                        @if (ct.MaLoNavigation != null)
+                                                        {
+                                                            <span class="badge bg-light text-primary border">@ct.MaLoNavigation.MaLoCode</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted small">Chưa sinh lô (Phiếu tạm)</span>
+                                                        }
+                                                    </td>
+                                                    <td class="text-center">@ct.NgaySanXuat.ToString("dd/MM/yyyy")</td>
+                                                    <td class="text-center">@ct.HanSuDung.ToString("dd/MM/yyyy")</td>
+                                                    <td class="text-end fw-bold so-tien">@ct.SoLuong.ToString("N0")</td>
+                                                    <td class="text-end so-tien">@ct.DonGiaNhap.ToString("N0") đ</td>
+                                                    <td class="text-end fw-semibold text-primary so-tien">@ct.ThanhTien.ToString("N0") đ</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                @if (p.PhieuThuChis.Any())
+                                {
+                                    <div class="mb-3 p-2 rounded" style="background: #F8FAFC; border: 1px solid #E5E7EB;">
+                                        <div class="fw-semibold small text-dark mb-1"><i class="bi bi-receipt me-1 text-success"></i> Lịch sử phiếu chi thanh toán Sổ quỹ:</div>
+                                        @foreach (var pc in p.PhieuThuChis.OrderByDescending(x => x.NgayLap))
+                                        {
+                                            <div class="d-flex justify-content-between small py-1 border-top">
+                                                <span><strong class="text-danger">@pc.MaPhieuHienThi</strong> • @pc.NgayLap.ToString("dd/MM/yyyy HH:mm") • @pc.PhuongThuc • @pc.GhiChu</span>
+                                                <strong class="text-danger so-tien">-@pc.SoTien.ToString("N0") đ</strong>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+
+                                <div class="d-flex justify-content-end align-items-center gap-2 pt-2 border-top">
+                                    @if (p.TrangThai == "PHIEU_TAM")
+                                    {
+                                        <form asp-area="Admin" asp-controller="NhapKhoAdmin" asp-action="HoanThanhPhieuTam" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="maPn" value="@p.MaPn" />
+                                            <button type="submit" class="btn-kv-blue py-1 px-3">
+                                                <i class="bi bi-check2-circle"></i> Hoàn thành nhập kho
+                                            </button>
+                                        </form>
+                                    }
+                                    @if (p.TrangThai != "DA_HUY")
+                                    {
+                                        <form asp-area="Admin" asp-controller="NhapKhoAdmin" asp-action="XoaHoacHuyPhieu" method="post" class="d-inline"
+                                              onsubmit="return confirm('@(p.TrangThai == "PHIEU_TAM" ? $"Xác nhận xóa phiếu tạm {p.SoPhieuNhap}?" : $"Xác nhận hủy phiếu nhập {p.SoPhieuNhap} và trừ ngược tồn kho các lô thuộc phiếu?")');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="maPn" value="@p.MaPn" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger px-3">
+                                                <i class="bi bi-x-circle"></i> @(p.TrangThai == "PHIEU_TAM" ? "Xóa phiếu tạm" : "Hủy phiếu nhập")
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+                @if (!Model.DanhSachPhieuNhap.Any())
+                {
+                    <tr>
+                        <td colspan="9" class="text-center text-muted py-4">
+                            Chưa có phiếu nhập kho nào. Nhấn <strong>+ Tạo phiếu nhập hàng</strong> để bắt đầu nhập kho đa sản phẩm.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,164 @@
+@model WebBanhTrungThu.ViewModels.KiemKhoAdminViewModel
+
+<div class="kv-card overflow-hidden">
+    <div class="table-responsive">
+        <table class="kv-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Mã kiểm kho</th>
+                    <th>Thời gian kiểm</th>
+                    <th>Người kiểm</th>
+                    <th class="text-end">Lệch tăng</th>
+                    <th class="text-end">Lệch giảm</th>
+                    <th class="text-end">Giá trị lệch</th>
+                    <th>Phiếu xuất liên kết</th>
+                    <th class="text-center">Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyPhieuKiemKho">
+                @foreach (var p in Model.DanhSachPhieuKiem)
+                {
+                    string soPx = p.MaPxLienKetNavigation?.SoPhieuXuat ?? string.Empty;
+                    string searchKey = $"{p.SoPhieuKiem} {p.NguoiKiem} {p.GhiChu} {soPx} {string.Join(" ", p.ChiTietKiemKhos.Select(c => (c.MaSpNavigation?.TenBanh ?? "") + " " + (c.MaSpNavigation?.MaSku ?? "")))}".ToLowerInvariant();
+                    string detailId = $"detailPkk_{p.MaPkk}";
+
+                    <tr class="kv-master-row"
+                        data-search="@searchKey"
+                        data-trangthai="@p.TrangThai"
+                        onclick="toggleKvDetailRow('@detailId', this)">
+                        <td class="fw-bold text-primary">@p.SoPhieuKiem</td>
+                        <td class="text-nowrap">@p.NgayKiem.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            <div class="fw-semibold text-dark">@p.NguoiKiem</div>
+                            <small class="text-muted">@p.ChiTietKiemKhos.Count sản phẩm kiểm đếm</small>
+                        </td>
+                        <td class="text-end fw-bold text-success so-tien">+@p.TongLechTang.ToString("N0")</td>
+                        <td class="text-end fw-bold text-danger so-tien">-@p.TongLechGiam.ToString("N0")</td>
+                        <td class="text-end fw-bold so-tien @(p.TongGiaTriLech < 0 ? "text-danger" : p.TongGiaTriLech > 0 ? "text-success" : "text-muted")">
+                            @p.TongGiaTriLech.ToString("N0") đ
+                        </td>
+                        <td onclick="event.stopPropagation();">
+                            @if (!string.IsNullOrWhiteSpace(soPx))
+                            {
+                                <a href="/Admin/XuatKhoAdmin/Index?tuKhoa=@soPx" class="badge text-decoration-none" style="background: #F3E8FF; color: #7E22CE; border: 1px solid #E9D5FF;">
+                                    @soPx
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">---</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            @if (p.TrangThai == "DA_CAN_BANG")
+                            {
+                                <span class="badge bg-success">Đã cân bằng</span>
+                            }
+                            else if (p.TrangThai == "DA_HUY")
+                            {
+                                <span class="badge bg-secondary">Đã hủy</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">Phiếu tạm</span>
+                            }
+                        </td>
+                    </tr>
+
+                    <tr id="@detailId" class="kv-detail-row" onclick="event.stopPropagation();">
+                        <td colspan="8" class="p-0">
+                            <div class="kv-detail-box">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2 pb-2 border-bottom">
+                                    <div>
+                                        <strong class="text-primary">@p.SoPhieuKiem</strong>
+                                        <span class="text-muted mx-2">•</span>
+                                        <span>Người kiểm: <strong>@p.NguoiKiem</strong></span>
+                                        @if (!string.IsNullOrWhiteSpace(p.GhiChu))
+                                        {
+                                            <span class="text-muted ms-2">| Ghi chú: @p.GhiChu</span>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(soPx))
+                                    {
+                                        <div class="small">
+                                            Phiếu xuất thiếu tự sinh:
+                                            <a href="/Admin/XuatKhoAdmin/Index?tuKhoa=@soPx" class="fw-bold text-primary text-decoration-none">@soPx</a>
+                                        </div>
+                                    }
+                                </div>
+
+                                <div class="table-responsive mb-3">
+                                    <table class="table table-sm table-bordered bg-white align-middle mb-0" style="font-size: 12.5px;">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Mã SKU</th>
+                                                <th>Sản phẩm bánh</th>
+                                                <th class="text-end">Tồn hệ thống</th>
+                                                <th class="text-end">Tồn thực tế</th>
+                                                <th class="text-end">SL lệch</th>
+                                                <th class="text-end">Giá trị lệch</th>
+                                                <th>Lý do lệch</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var ct in p.ChiTietKiemKhos)
+                                            {
+                                                string mauLech = ct.SoLuongLech < 0 ? "text-danger fw-bold" : (ct.SoLuongLech > 0 ? "text-success fw-bold" : "text-muted");
+                                                string tienTo = ct.SoLuongLech > 0 ? "+" : "";
+                                                <tr>
+                                                    <td class="text-primary fw-medium">@(ct.MaSpNavigation?.MaSku ?? "---")</td>
+                                                    <td class="fw-medium">@(ct.MaSpNavigation?.TenBanh ?? $"SP #{ct.MaSp}")</td>
+                                                    <td class="text-end so-tien">@ct.TonHeThong.ToString("N0")</td>
+                                                    <td class="text-end fw-bold so-tien">@ct.TonThucTe.ToString("N0")</td>
+                                                    <td class="text-end so-tien @mauLech">@tienTo@ct.SoLuongLech.ToString("N0")</td>
+                                                    <td class="text-end so-tien @mauLech">@tienTo@ct.GiaTriLech.ToString("N0") đ</td>
+                                                    <td class="small text-muted">@(ct.LyDoLech ?? "---")</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                @if (p.TrangThai == "PHIEU_TAM")
+                                {
+                                    <div class="d-flex justify-content-end align-items-center gap-2 pt-2 border-top">
+                                        <button type="button" class="btn btn-sm btn-outline-primary px-3" onclick="moModalSuaPhieuKiemKho(@p.MaPkk)">
+                                            <i class="bi bi-pencil-square"></i> Sửa phiếu tạm
+                                        </button>
+
+                                        <form asp-area="Admin" asp-controller="KiemKhoAdmin" asp-action="CanBangKho" method="post" class="d-inline"
+                                              onsubmit="return confirm('Hoàn thành kiểm kho và tự động cân bằng tồn kho theo thực tế? Các dòng thiếu hụt sẽ tự động lập Phiếu Xuất Kho.');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="maPkk" value="@p.MaPkk" />
+                                            <button type="submit" class="btn-kv-green px-3">
+                                                <i class="bi bi-check2-all"></i> Hoàn thành &amp; Cân bằng kho
+                                            </button>
+                                        </form>
+
+                                        <form asp-area="Admin" asp-controller="KiemKhoAdmin" asp-action="XoaPhieuTam" method="post" class="d-inline"
+                                              onsubmit="return confirm('Xác nhận xóa phiếu kiểm kho tạm @p.SoPhieuKiem?');">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="maPkk" value="@p.MaPkk" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger px-3">
+                                                <i class="bi bi-trash"></i> Xóa phiếu tạm
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+                @if (!Model.DanhSachPhieuKiem.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-muted py-4">
+                            Chưa có phiếu kiểm kho nào. Nhấn <strong>+ Tạo phiếu kiểm kho</strong> hoặc <strong>Nhập file Excel kiểm kho</strong> để bắt đầu đối soát.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

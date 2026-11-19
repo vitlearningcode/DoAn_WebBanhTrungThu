@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using WebBanhTrungThu.Services.CoSo;
 using WebBanhTrungThu.ViewModels;
 
@@ -16,5 +17,8 @@ namespace WebBanhTrungThu.Services.Interfaces
         string? TaoNhaCungCapNhanh(string tenNhaCungCap);
         Task<object> TaoDanhMucNhanhAjaxAsync(string loaiDanhMuc, string tenMoi, string? moTaPhu);
         Task<string?> XoaHangHoaAsync(int idGoc, bool laCombo);
+        Task<(byte[] NoiDung, string ContentType, string TenFile)> XuatExcelHangHoaAsync(string dinhDang = "xlsx");
+        Task<(byte[] NoiDung, string ContentType, string TenFile)> TaoFileMauImportHangHoaAsync(string dinhDang = "xlsx");
+        Task<KetQuaImportExcelSanPham> NhapExcelHangHoaAsync(IFormFile? fileExcel);
     }
 }

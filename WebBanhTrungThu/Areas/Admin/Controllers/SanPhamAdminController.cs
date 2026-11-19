@@ -11,7 +11,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     /// Controller quản trị Hàng hóa, Kiểm kho lô FEFO và Thiết lập bảng giá Đại lý Nguyệt Cát ERP,
     /// kế thừa từ ControllerQuanTriCoSo và ủy quyền nghiệp vụ sang DichVuQuanTriSanPham, DichVuQuanTriKhoFefo & DichVuQuanTriBangGia.
     /// </summary>
-    [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN,GIAO_HANG")]
+    [Authorize(Roles = "QUAN_TRI,ADMIN")]
     public class SanPhamAdminController : ControllerQuanTriCoSo
     {
         private readonly IDichVuQuanTriSanPham _dichVuSanPham;
@@ -151,10 +151,32 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> KiemKho(string? tuKhoa, string locTrangThai = "ALL", string locGiamGia = "ALL")
+        public IActionResult KiemKho()
         {
-            var vm = await _dichVuKhoFefo.XayDungDuLieuKiemKhoAsync(tuKhoa, locTrangThai, locGiamGia);
-            return View(vm);
+            return RedirectToAction("Index", "KiemKhoAdmin", new { area = "Admin" });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> XuatExcel(string dinhDang = "xlsx")
+        {
+            var (noiDung, contentType, tenFile) = await _dichVuSanPham.XuatExcelHangHoaAsync(dinhDang);
+            return File(noiDung, contentType, tenFile);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> TaiFileMauExcel(string dinhDang = "xlsx")
+        {
+            var (noiDung, contentType, tenFile) = await _dichVuSanPham.TaoFileMauImportHangHoaAsync(dinhDang);
+            return File(noiDung, contentType, tenFile);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> NhapExcel(IFormFile? fileExcel)
+        {
+            var kq = await _dichVuSanPham.NhapExcelHangHoaAsync(fileExcel);
+            TempData[kq.ThanhCong ? "ThongBaoAdmin" : "LoiAdmin"] = kq.ThongBao;
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]

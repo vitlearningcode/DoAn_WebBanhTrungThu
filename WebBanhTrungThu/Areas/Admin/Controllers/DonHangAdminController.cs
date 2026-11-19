@@ -10,7 +10,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     /// Controller mỏng nhẹ (< 6KB) điều phối Quản trị Đơn hàng Đại lý Nguyệt Cát ERP.
     /// Kế thừa từ ControllerQuanTriCoSo và ủy quyền toàn bộ nghiệp vụ sang DichVuQuanTriDonHang.
     /// </summary>
-    [Authorize(Roles = "QUAN_TRI,NHAN_VIEN,THU_NGAN,GIAO_HANG")]
+    [Authorize(Roles = "QUAN_TRI,ADMIN,NHAN_VIEN,THU_NGAN,NV_BAN_HANG,GIAO_HANG")]
     public class DonHangAdminController : ControllerQuanTriCoSo
     {
         private readonly IDichVuQuanTriDonHang _dichVuQuanTriDonHang;
@@ -26,8 +26,14 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
             string? locTrangThai,
             string? locLoaiDon,
             string? locPhuongThuc,
-            string? locThoiGian)
+            string? locThoiGian,
+            string? tab = null)
         {
+            if (string.IsNullOrWhiteSpace(locTrangThai) && string.Equals(tab, "GIAO_HANG", StringComparison.OrdinalIgnoreCase))
+            {
+                locTrangThai = "GIAO_HANG";
+            }
+
             ViewBag.TuKhoa = tuKhoa;
             ViewBag.LocTrangThai = locTrangThai ?? "ALL";
             ViewBag.LocLoaiDon = locLoaiDon ?? "ALL";
@@ -81,9 +87,9 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
             string? ghiChuDieuChinh = null,
             string? returnUrl = null)
         {
-            if (laAdminOverride && !User.IsInRole("QUAN_TRI"))
+            if (laAdminOverride && !(User.IsInRole("QUAN_TRI") || User.IsInRole("ADMIN")))
             {
-                TempData["ThongBaoAdmin"] = "⚠️ Chỉ Quản trị viên (QUAN_TRI) mới có quyền điều chỉnh trạng thái thủ công (Admin Override)!";
+                TempData["ThongBaoAdmin"] = "⚠️ Chỉ Quản trị viên (Chủ cửa hàng) mới có quyền điều chỉnh trạng thái thủ công!";
                 return RedirectToAction(nameof(Index));
             }
 

@@ -7,6 +7,7 @@ namespace WebBanhTrungThu.Services.Interfaces
     public interface IDichVuHoiVien : IDichVuCoSo
     {
         Task<(bool HopLe, string ThongBao, NguoiDung? NguoiDung)> XacThucDangNhapAsync(string? tenDangNhap, string? matKhau);
+        string XacDinhDuongDanSauDangNhap(string? maVt);
         Task<NguoiDung?> LayTaiKhoanChuyenVaiTroDemoAsync(string maVt);
         Task<(bool HopLe, string ThongBao, NguoiDung? NguoiDung)> DangKyHoiVienMoiAsync(
             string? hoTen,
@@ -14,6 +15,7 @@ namespace WebBanhTrungThu.Services.Interfaces
             string? email,
             string? matKhau);
         Task<HoSoThanhVienViewModel?> XayDungHoSoThanhVienAsync(int maNd, string? tab);
+        Task<(bool ThanhCong, string ThongBao)> KhachHangHuyDonCodAsync(int maNd, int maDh, string? lyDoHuy);
         Task<string> ThemDiaChiMoiAsync(
             int maNd,
             string? tenNguoiNhan,

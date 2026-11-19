@@ -25,5 +25,6 @@ namespace WebBanhTrungThu.Services.Interfaces
             string maNganHang,
             string maBinVietQr,
             string mauNoiDungCk);
+        Task<ThongBaoQuanTriViewModel> LayThongBaoQuanTriAsync();
     }
 }
