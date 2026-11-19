@@ -266,3 +266,34 @@ namespace WebBanhTrungThu.Services.ThanhToan
         }
     }
 }
+
+namespace WebBanhTrungThu.Services
+{
+    public class KetQuaTinhChiPhiDonHang
+    {
+        public List<Models.Entities.ChiTietGioHang> DanhSachMon { get; set; } = new();
+        public int TongSoHop { get; set; }
+        public decimal TongTienHang { get; set; }
+        public decimal PhanTramCkB2B { get; set; }
+        public decimal TienChietKhauB2B { get; set; }
+        public bool MienPhiInLogo { get; set; }
+        public decimal PhiInLogoMacDinh { get; set; }
+        public decimal PhiInLogo { get; set; }
+        public decimal TienGiamVoucher { get; set; }
+        public string? CodeKmDangDung { get; set; }
+        public string ThongTinVoucherGoiY { get; set; } = string.Empty;
+        public string HangTv { get; set; } = "Đồng";
+        public decimal PhanTramGiamVip { get; set; }
+        public decimal TienGiamVip { get; set; }
+        public decimal TongChiTieuTichLuy { get; set; }
+        public int DiemTichLuyHienCo { get; set; }
+        public int DiemTichLuySeDung { get; set; }
+        public decimal TienGiamDiem { get; set; }
+        public decimal TienHangSauGiam { get; set; }
+        public bool LaNhanTaiCuaHang { get; set; }
+        public bool HopLeVungHoaToc { get; set; }
+        public decimal PhiMoiDotGiao { get; set; }
+        public decimal PhiVanChuyen { get; set; }
+        public decimal TongThanhToanCuoi { get; set; }
+    }
+}

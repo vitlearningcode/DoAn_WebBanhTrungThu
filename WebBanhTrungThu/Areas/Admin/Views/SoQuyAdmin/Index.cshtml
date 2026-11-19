@@ -116,7 +116,7 @@
                             <input type="radio" name="fltSqLoaiCt" value="PHIEU_HOAN_TIEN" onchange="locSoQuyClient()" />
                             <span>Phiếu chi hoàn tiền khách</span>
                         </span>
-                        <span class="badge bg-danger-subtle text-danger">@Model.DanhSachPhieuHoanTien.Count</span>
+                        <span class="badge" style="background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;">@Model.DanhSachPhieuHoanTien.Count</span>
                     </label>
                     <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
                         <input type="radio" name="fltSqLoaiCt" value="GIA_VON" onchange="locSoQuyClient()" />
@@ -235,7 +235,7 @@
                                     <small class="text-danger fw-medium">STK: @(dhHoan.SoTaiKhoanHoan ?? "---") • @(dhHoan.TenChuTkHoan ?? dhHoan.HoTenNguoiMua)</small>
                                 </td>
                                 <td>
-                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Đã hoàn tiền</span>
+                                    <span class="badge" style="background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;">Đã hoàn tiền</span>
                                 </td>
                                 <td class="text-end fw-bold text-danger so-tien">-@dhHoan.TongThanhToanCuoi.ToString("N0")</td>
                             </tr>
@@ -275,7 +275,7 @@
                                  </td>
                                  <td>@tenPhuongThucSq</td>
                                  <td>
-                                     <span class="badge @(daThuTien ? "bg-success-subtle text-success border border-success-subtle" : "bg-warning-subtle text-warning-emphasis border border-warning-subtle")">
+                                     <span class="badge" style="@(daThuTien ? "background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;" : "background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;")">
                                          @(daThuTien ? "Đã thanh toán" : dh.TenTrangThaiThanhToanHienThi)
                                      </span>
                                  </td>

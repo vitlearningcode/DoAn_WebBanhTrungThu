@@ -29,9 +29,10 @@ function hienThiThongBaoGioHang(noiDung, thanhCong = true) {
     if (!container) {
         container = document.createElement("div");
         container.id = "khungThongBaoToast";
-        container.className = "toast-container position-fixed top-0 end-0 p-3";
+        container.className = "toast-container position-fixed bottom-0 start-0 p-0";
         container.style.zIndex = "1090";
-        container.style.marginTop = "76px";
+        container.style.bottom = "20px";
+        container.style.left = "20px";
         document.body.appendChild(container);
     }
 

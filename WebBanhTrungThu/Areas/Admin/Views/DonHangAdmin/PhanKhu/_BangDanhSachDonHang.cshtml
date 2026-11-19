@@ -130,7 +130,7 @@
                             <td>
                                 @if (laDonB2BVat)
                                 {
-                                    <span class="badge bg-warning text-dark border border-warning-subtle fw-bold">[ĐƠN SỈ • XUẤT VAT]</span>
+                                    <span class="badge bg-warning text-dark border border-warning fw-bold">[ĐƠN SỈ • XUẤT VAT]</span>
                                     @if (!string.IsNullOrWhiteSpace(dh.MaSoThue))
                                     {
                                         <div class="small text-dark mt-1">MST: <strong>@dh.MaSoThue</strong></div>
@@ -149,7 +149,7 @@
                             <td class="text-end text-muted so-tien">@(tongGiam > 0 ? tongGiam.ToString("N0") : "0")</td>
                             <td class="text-end fw-semibold so-tien" style="color: #0070F4;">@dh.TongThanhToanCuoi.ToString("N0")</td>
                             <td>
-                                <span class="badge @(trangThaiChuan == "HOAN_TAT" || trangThaiChuan == "DA_GIAO" ? "bg-success-subtle text-success border border-success-subtle" : laTrangThaiKhoa ? "bg-danger-subtle text-danger border border-danger-subtle" : trangThaiChuan == "CHO_LAY_HANG" ? "bg-warning-subtle text-warning-emphasis border border-warning-subtle" : "bg-primary-subtle text-primary border border-primary-subtle")">
+                                <span class="badge" style="@(trangThaiChuan == "HOAN_TAT" || trangThaiChuan == "DA_GIAO" ? "background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;" : laTrangThaiKhoa ? "background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;" : trangThaiChuan == "CHO_LAY_HANG" ? "background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;" : "background: #DBEAFE; color: #1D4ED8; border: 1px solid #BFDBFE;")">
                                     @tenTrangThaiDhDep
                                 </span>
                                 <div class="mt-1">
@@ -343,7 +343,7 @@
                                             }
                                             else
                                             {
-                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2" style="font-size: 12.5px;">
+                                                <span class="badge px-3 py-2" style="font-size: 12.5px; background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;">
                                                     <i class="bi bi-lock-fill me-1"></i> @tenTrangThaiDhDep (@dh.TenTrangThaiTtHienThi - Khóa cứng)
                                                 </span>
                                             }

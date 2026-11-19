@@ -31,6 +31,8 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 10px;
 }
 
 .kv-brand {
@@ -38,6 +40,8 @@ html, body {
     align-items: center;
     gap: 8px;
     text-decoration: none;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .kv-brand-circle {
@@ -63,9 +67,11 @@ html, body {
 .kv-top-links {
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 12px;
     font-size: 13px;
     color: #374151;
+    flex-wrap: nowrap;
+    min-width: 0;
 }
 
 .kv-top-link {
@@ -75,6 +81,27 @@ html, body {
     align-items: center;
     gap: 5px;
     font-weight: 400;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.kv-admin-username {
+    max-width: 145px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.kv-role-select {
+    max-width: 225px;
+}
+
+.form-select.form-select-sm {
+    padding-right: 2rem !important;
+    min-height: 30px;
+    line-height: 1.3;
+    background-position: right 0.55rem center;
 }
 
 .kv-top-link:hover {
@@ -979,6 +1006,41 @@ td, th, .so-tien, .ton-kho, .kpi-value, .kv-table td, .kv-table th {
     color: #9CA3AF;
     font-size: 14px;
     padding: 0 4px;
+}
+
+@media (max-width: 1440px) {
+    .kv-top-header {
+        padding: 0 14px;
+    }
+    .kv-brand-text {
+        font-size: 16px;
+    }
+    .kv-top-links {
+        gap: 10px;
+        font-size: 12.5px;
+    }
+    .kv-admin-username {
+        max-width: 125px;
+    }
+    .kv-role-select {
+        max-width: 205px;
+    }
+}
+
+@media (max-width: 1280px) {
+    .kv-top-links {
+        gap: 7px;
+        font-size: 12px;
+    }
+    .kv-top-link i {
+        display: none;
+    }
+    .kv-admin-username {
+        max-width: 105px;
+    }
+    .kv-role-select {
+        max-width: 185px;
+    }
 }
 
 @media (max-width: 992px) {

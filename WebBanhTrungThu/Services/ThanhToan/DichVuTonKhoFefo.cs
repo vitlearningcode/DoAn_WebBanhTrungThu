@@ -432,3 +432,15 @@ namespace WebBanhTrungThu.Services.ThanhToan
         }
     }
 }
+
+namespace WebBanhTrungThu.Services
+{
+    public class KetQuaKiemTraTonKhoGioHang
+    {
+        public bool HopLe => DanhSachTenBanhThieu.Count == 0 && DanhSachCanhBao.Count == 0;
+        public string? TenSanPhamThieu => DanhSachTenBanhThieu.FirstOrDefault();
+        public string? ThongBaoChiTiet { get; set; }
+        public List<string> DanhSachTenBanhThieu { get; set; } = new();
+        public List<string> DanhSachCanhBao { get; set; } = new();
+    }
+}

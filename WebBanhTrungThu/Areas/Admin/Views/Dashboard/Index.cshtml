@@ -18,17 +18,17 @@
             .ToList();
     }
 
-    (string TenTrangThaiLo, string LopBadgeLo) AnhXaTrangThaiLo(WebBanhTrungThu.Models.Entities.LoSanXuatBanh lo)
+    (string TenTrangThaiLo, string StyleBadgeLo) AnhXaTrangThaiLo(WebBanhTrungThu.Models.Entities.LoSanXuatBanh lo)
     {
         if (lo.HanSuDung < homNay || string.Equals(lo.TrangThaiLo, "HET_HAN", StringComparison.OrdinalIgnoreCase))
         {
-            return ("Đã hết hạn", "bg-danger-subtle text-danger border border-danger-subtle");
+            return ("Đã hết hạn", "background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;");
         }
         if (lo.PhanTramGiamCanDate > 0 || string.Equals(lo.TrangThaiLo, "XA_CAN_DATE", StringComparison.OrdinalIgnoreCase) || lo.HanSuDung <= mocCanhBaoFefo)
         {
-            return ("Xả kho cận Date", "bg-warning-subtle text-warning-emphasis border border-warning-subtle");
+            return ("Xả kho cận Date", "background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;");
         }
-        return ("Đang bán", "bg-success-subtle text-success border border-success-subtle");
+        return ("Đang bán", "background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;");
     }
 }
 
@@ -230,7 +230,7 @@
                                 <td class="text-end ton-kho">@lo.SlconLai.ToString("N0") / @lo.SlnhapBanDau.ToString("N0")</td>
                                 <td class="text-end so-tien" id="oGiamLoDashboard_@lo.MaLo">@lo.PhanTramGiamCanDate.ToString("N0")%</td>
                                 <td id="oTrangThaiLoDashboard_@lo.MaLo">
-                                    <span class="badge @ttLo.LopBadgeLo">@ttLo.TenTrangThaiLo</span>
+                                    <span class="badge" style="@ttLo.StyleBadgeLo">@ttLo.TenTrangThaiLo</span>
                                 </td>
                             </tr>
                         }
@@ -292,7 +292,7 @@
 
                     const oTrangThai = document.getElementById("oTrangThaiLoDashboard_" + maLo);
                     if (oTrangThai) {
-                        oTrangThai.innerHTML = `<span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Xả kho cận Date</span>`;
+                        oTrangThai.innerHTML = '<span class="badge" style="background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;">Xả kho cận Date</span>';
                     }
                 } else {
                     nutBam.disabled = false;

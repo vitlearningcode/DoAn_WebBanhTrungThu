@@ -15,11 +15,11 @@ namespace WebBanhTrungThu.Services.TaiKhoan
     /// </summary>
     public class DichVuHoiVien : DichVuCoSo, IDichVuHoiVien
     {
-        private readonly IDichVuThanhToan _dichVuThanhToan;
+        private readonly IDichVuCongThanhToanMoMo _dichVuCongMoMo;
 
-        public DichVuHoiVien(CSDLBanhTrungThuContext db, IDichVuThanhToan dichVuThanhToan) : base(db)
+        public DichVuHoiVien(CSDLBanhTrungThuContext db, IDichVuCongThanhToanMoMo dichVuCongMoMo) : base(db)
         {
-            _dichVuThanhToan = dichVuThanhToan;
+            _dichVuCongMoMo = dichVuCongMoMo;
         }
 
         public async Task<(bool HopLe, string ThongBao, NguoiDung? NguoiDung)> XacThucDangNhapAsync(string? tenDangNhap, string? matKhau)
@@ -127,7 +127,7 @@ namespace WebBanhTrungThu.Services.TaiKhoan
 
         public async Task<HoSoThanhVienViewModel?> XayDungHoSoThanhVienAsync(int maNd, string? tab)
         {
-            await _dichVuThanhToan.KiemTraVaHuyDonQrQuaHanAsync();
+            await _dichVuCongMoMo.KiemTraVaHuyDonQrQuaHanAsync();
 
             var nd = await _db.NguoiDungs
                 .AsNoTracking()

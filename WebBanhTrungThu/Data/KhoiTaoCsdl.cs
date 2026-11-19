@@ -29,6 +29,7 @@ namespace WebBanhTrungThu.Data
                 await CapNhatAnhKhayHop6OSonMaiAsync(db);
                 await CapNhatDuongDanAnhBanhHatSenHueAsync(db);
                 await ChuanHoaTenMocChietKhauAsync(db);
+                await ChuanHoaEmailAdminVaDongBoDonHuyAsync(db);
             }
             catch
             {
@@ -452,6 +453,49 @@ namespace WebBanhTrungThu.Data
             {
                 await db.SaveChangesAsync();
             }
+        }
+
+        private static async Task ChuanHoaEmailAdminVaDongBoDonHuyAsync(CSDLBanhTrungThuContext db)
+        {
+            await db.Database.ExecuteSqlRawAsync(@"
+                IF OBJECT_ID('dbo.NguoiDung', 'U') IS NOT NULL
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM dbo.NguoiDung WHERE Email LIKE 'admin@nguy%c%' AND Email <> 'admin@nguyetcat.vn')
+                    BEGIN
+                        IF NOT EXISTS (SELECT 1 FROM dbo.NguoiDung WHERE Email = 'admin@nguyetcat.vn')
+                        BEGIN
+                            UPDATE dbo.NguoiDung
+                            SET Email = 'admin@nguyetcat.vn'
+                            WHERE Email LIKE 'admin@nguy%c%' AND Email <> 'admin@nguyetcat.vn';
+                        END
+                        ELSE
+                        BEGIN
+                            UPDATE dbo.NguoiDung
+                            SET Email = CONCAT('admin', MaND, '@nguyetcat.vn')
+                            WHERE Email LIKE 'admin@nguy%c%' AND Email <> 'admin@nguyetcat.vn';
+                        END
+                    END;
+
+                    UPDATE dbo.NguoiDung
+                    SET Email = REPLACE(REPLACE(REPLACE(Email, N'nguy?tcát.vn', 'nguyetcat.vn'), N'nguy?tcat.vn', 'nguyetcat.vn'), N'nguyệtcát.vn', 'nguyetcat.vn')
+                    WHERE (Email LIKE '%nguy?t%' OR Email LIKE N'%nguyệt%' OR Email LIKE N'%cát.vn%')
+                      AND NOT EXISTS (
+                          SELECT 1 FROM dbo.NguoiDung nd2
+                          WHERE nd2.MaND <> dbo.NguoiDung.MaND
+                            AND nd2.Email = REPLACE(REPLACE(REPLACE(dbo.NguoiDung.Email, N'nguy?tcát.vn', 'nguyetcat.vn'), N'nguy?tcat.vn', 'nguyetcat.vn'), N'nguyệtcát.vn', 'nguyetcat.vn')
+                      );
+                END;
+
+                IF OBJECT_ID('dbo.DotGiaoHang_DaDiem', 'U') IS NOT NULL AND OBJECT_ID('dbo.DonHang', 'U') IS NOT NULL
+                BEGIN
+                    UPDATE d
+                    SET d.TrangThaiGiao = 'DA_HUY'
+                    FROM dbo.DotGiaoHang_DaDiem d
+                    INNER JOIN dbo.DonHang h ON d.MaDH = h.MaDH
+                    WHERE h.TrangThaiDH = 'DA_HUY'
+                      AND ISNULL(d.TrangThaiGiao, '') <> 'DA_HUY';
+                END;
+            ");
         }
     }
 }

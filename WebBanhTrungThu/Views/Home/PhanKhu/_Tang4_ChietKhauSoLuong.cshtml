@@ -21,15 +21,15 @@
      ========================================================================= -->
 <section id="tang-b2b" class="tang-phan-khu nen-ngoc-trai-am border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
     <div class="container py-3 section-reveal">
-        <div class="row align-items-center g-5">
+        <div class="row align-items-center g-4">
             <div class="col-lg-6">
                 <span class="text-uppercase small chu-do-son-mai fw-bold" style="letter-spacing: 1.5px;">Giải Pháp Quà Biếu Doanh Nghiệp Đẳng Cấp</span>
-                <h2 class="font-co-phong display-5 fw-bold chu-nau-tram mb-3">Chiết Khấu Số Lượng Lớn &amp; Ép Kim Logo Thương Hiệu</h2>
-                <p class="chu-nau-phu mb-4">
+                <h2 class="font-co-phong tieu-de-tang-b2b fw-bold chu-nau-tram mb-2">Chiết Khấu Số Lượng Lớn &amp; Ép Kim Logo Thương Hiệu</h2>
+                <p class="chu-nau-phu mb-3">
                     Nhập hoặc kéo thanh trượt số lượng lễ hộp dự kiến để ước tính chiết khấu số lượng lớn, chính sách miễn phí khuôn ép kim Logo từ 20 hộp và đặt đơn doanh nghiệp ngay.
                 </p>
 
-                <div class="card-hoang-gia p-4">
+                <div class="card-hoang-gia p-3 p-xl-4">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
                         <label for="txtSoHopB2BDuKien" class="fw-semibold chu-nau-tram mb-0">Số lượng lễ hộp dự kiến đặt:</label>
                         <div class="d-flex align-items-center gap-2">
@@ -49,7 +49,7 @@
 
                     <div class="mt-2 mb-3">
                         <label for="selComboDatHangB2B" class="form-label small fw-semibold chu-nau-tram mb-1">Chọn mẫu lễ hộp sỉ dự kiến:</label>
-                        <select id="selComboDatHangB2B" class="form-select form-select-sm" style="border-color: var(--mau-vang-dong-co);" onchange="tinhGiaSiB2B(document.getElementById('txtSoHopB2BDuKien').value, true)">
+                        <select id="selComboDatHangB2B" class="form-select form-select-sm" style="width: 100%; padding-right: 2.25rem; border-color: var(--mau-vang-dong-co);" onchange="tinhGiaSiB2B(document.getElementById('txtSoHopB2BDuKien').value, true)">
                             @if (Model.DanhSachCombo.Any())
                             {
                                 foreach (var cb in Model.DanhSachCombo)
@@ -97,7 +97,7 @@
             </div>
 
             <div class="col-lg-6">
-                <div class="card-hoang-gia p-4">
+                <div class="card-hoang-gia p-3 p-xl-4">
                     <h5 class="font-co-phong fs-3 fw-bold chu-do-son-mai mb-3">Bảng Định Mức Chiết Khấu Số Lượng Lớn</h5>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0 table-trung-thu">

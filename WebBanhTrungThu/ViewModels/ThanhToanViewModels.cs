@@ -147,4 +147,27 @@ namespace WebBanhTrungThu.ViewModels
         public decimal? Amount { get; set; }
         public decimal? TransferAmount { get; set; }
     }
+
+    public class XacThucCaptchaMoRongRequest : XacThucCaptchaRequest
+    {
+        public string? MaCaptchaNhap { get; set; }
+    }
+
+    public class CongThanhToanMoMoViewModel
+    {
+        public Models.Entities.DonHang DonHang { get; set; } = null!;
+        public string MaTraCuuDh { get; set; } = string.Empty;
+        public decimal TongThanhToan { get; set; }
+        public decimal TongThanhToanCuoi { get; set; }
+        public string NoiDungChuyenKhoan { get; set; } = string.Empty;
+        public string SoDienThoaiMoMo { get; set; } = "0814 585 526";
+        public string SoTaiKhoanMoMo { get; set; } = "0814585526";
+        public string TenChuTaiKhoan { get; set; } = "LE MINH DUC";
+        public string AnhQrThanhToanBase64 { get; set; } = string.Empty;
+        public string UrlVietQr { get; set; } = string.Empty;
+        public bool CoCauHinhVietQrNganHang => !string.IsNullOrWhiteSpace(UrlVietQr);
+        public Services.CauHinhThanhToanQr CauHinhQr { get; set; } = new();
+        public DateTime HanThanhToan { get; set; }
+        public int SoGiayConLai { get; set; }
+    }
 }

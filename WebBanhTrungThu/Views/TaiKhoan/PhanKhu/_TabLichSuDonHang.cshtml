@@ -25,6 +25,8 @@
             {
                 var trangThaiDon = Model.AnhXaTrangThaiDonHang(dh.TrangThaiDh);
                 int buocTienTrinh = Model.XacDinhBuocTienTrinhDon(dh.TrangThaiDh);
+                bool donDaHuy = string.Equals(dh.TrangThaiDh, "DA_HUY", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(dh.TrangThaiDh, "HOAN_TIEN_TRA_HANG", StringComparison.OrdinalIgnoreCase);
 
                 <article class="the-don-hang-ho-so">
                     <header class="dau-the-don-hang">
@@ -113,7 +115,12 @@
                                 <div class="d-flex flex-column gap-2">
                                     @foreach (var dot in dh.DotGiaoHangDaDiems)
                                     {
-                                        var trangThaiDot = Model.AnhXaTrangThaiDonHang(dot.TrangThaiGiao);
+                                        bool dotDaHuy = donDaHuy
+                                            || string.Equals(dot.TrangThaiGiao, "DA_HUY", StringComparison.OrdinalIgnoreCase)
+                                            || string.Equals(dot.TrangThaiGiao, "HOAN_TIEN_TRA_HANG", StringComparison.OrdinalIgnoreCase);
+                                        var trangThaiDot = dotDaHuy
+                                            ? (TenHienThi: "Đã hủy", LopHuyHieu: "huy-hieu-da-huy")
+                                            : Model.AnhXaTrangThaiDonHang(dot.TrangThaiGiao);
 
                                         <div class="diem-nhan-qua-ho-so">
                                             <div class="dong-nguoi-nhan-qua">

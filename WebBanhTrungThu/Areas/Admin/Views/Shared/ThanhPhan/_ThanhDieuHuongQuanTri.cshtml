@@ -54,15 +54,15 @@
             <form asp-area="" asp-controller="TaiKhoan" asp-action="ChuyenNhanhVaiTroDemo" method="post" class="d-inline-flex align-items-center gap-1 m-0">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                <select name="maVt" onchange="this.form.submit()" class="form-select form-select-sm py-0 px-2"
-                        style="height: 26px; font-size: 12px; width: auto; border-color: #BFDBFE; background-color: #EBF5FF; color: #005AC3; font-weight: 600;"
+                <select name="maVt" onchange="this.form.submit()" class="form-select form-select-sm ps-2 pe-4 py-1 kv-role-select"
+                        style="font-size: 12px; width: auto; min-height: 30px; line-height: 1.3; border-color: #BFDBFE; background-color: #EBF5FF; color: #005AC3; font-weight: 600;"
                         title="Chuyển nhanh quyền để kiểm thử phân quyền Thu ngân / Giao hàng / Quản trị">
                     <option value="QUAN_TRI" selected="@(curRole == "QUAN_TRI")">👑 Quyền: Quản trị viên</option>
                     <option value="THU_NGAN" selected="@(curRole == "THU_NGAN" || curRole == "NHAN_VIEN")">💼 Quyền: Thu ngân & Order</option>
                     <option value="GIAO_HANG" selected="@(curRole == "GIAO_HANG")">🚚 Quyền: Nhân viên giao hàng</option>
                 </select>
             </form>
-            <span class="fw-medium text-dark hide-mobile">@(User.Identity?.Name ?? "Admin")</span>
+            <span class="fw-medium text-dark hide-mobile kv-admin-username" title="@(User.Identity?.Name ?? "Admin")">@(User.Identity?.Name ?? "Admin")</span>
             <form asp-area="" asp-controller="TaiKhoan" asp-action="DangXuat" method="post" class="d-inline">
                 @Html.AntiForgeryToken()
                 <button type="submit" class="kv-icon-btn text-danger" title="Đăng xuất">

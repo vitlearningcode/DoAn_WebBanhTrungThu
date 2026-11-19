@@ -17,15 +17,15 @@ namespace WebBanhTrungThu.Services.QuanTri
     public class DichVuQuanTriDonHang : DichVuCoSo, IDichVuQuanTriDonHang
     {
         private readonly IDichVuCauHinhHeThong _cauHinhHeThong;
-        private readonly IDichVuThanhToan _dichVuThanhToan;
+        private readonly IDichVuCongThanhToanMoMo _dichVuCongMoMo;
 
         public DichVuQuanTriDonHang(
             CSDLBanhTrungThuContext db,
             IDichVuCauHinhHeThong cauHinhHeThong,
-            IDichVuThanhToan dichVuThanhToan) : base(db)
+            IDichVuCongThanhToanMoMo dichVuCongMoMo) : base(db)
         {
             _cauHinhHeThong = cauHinhHeThong;
-            _dichVuThanhToan = dichVuThanhToan;
+            _dichVuCongMoMo = dichVuCongMoMo;
         }
 
         public async Task<List<DonHang>> LayDanhSachDonHangLocAsync(
@@ -35,7 +35,7 @@ namespace WebBanhTrungThu.Services.QuanTri
             string? locPhuongThuc,
             string? locThoiGian)
         {
-            await _dichVuThanhToan.KiemTraVaHuyDonQrQuaHanAsync();
+            await _dichVuCongMoMo.KiemTraVaHuyDonQrQuaHanAsync();
 
             var query = _db.DonHangs
                 .AsNoTracking()
@@ -130,7 +130,7 @@ namespace WebBanhTrungThu.Services.QuanTri
 
         public async Task<DonHangThanhCongViewModel?> XayDungChiTietDonHangQrAsync(int id, string scheme, string host, bool asNoTracking = false)
         {
-            await _dichVuThanhToan.KiemTraVaHuyDonQrQuaHanAsync(id);
+            await _dichVuCongMoMo.KiemTraVaHuyDonQrQuaHanAsync(id);
 
             IQueryable<DonHang> query = _db.DonHangs
                 .Include(d => d.DotGiaoHangDaDiems)
@@ -306,9 +306,12 @@ namespace WebBanhTrungThu.Services.QuanTri
                 }
 
                 donHang.TrangThaiDh = trangThaiMoiChuan;
-                foreach (var dot in donHang.DotGiaoHangDaDiems)
+                var cacDotGiaoCapNhat = donHang.DotGiaoHangDaDiems.Any()
+                    ? donHang.DotGiaoHangDaDiems.ToList()
+                    : await _db.DotGiaoHangDaDiems.Where(g => g.MaDh == donHang.MaDh).ToListAsync();
+                foreach (var dot in cacDotGiaoCapNhat)
                 {
-                    dot.TrangThaiGiao = trangThaiMoiChuan;
+                    dot.TrangThaiGiao = trangThaiMoiChuan == "DA_HUY" ? "DA_HUY" : trangThaiMoiChuan;
                 }
 
                 bool daGiaoHoacHoanTat = trangThaiMoiChuan == "DA_GIAO" || trangThaiMoiChuan == "HOAN_TAT";
@@ -473,9 +476,12 @@ namespace WebBanhTrungThu.Services.QuanTri
             string trangThaiDich = laTraHangSauGiao ? "HOAN_TIEN_TRA_HANG" : "DA_HUY";
             donHang.TrangThaiDh = trangThaiDich;
             donHang.LyDoHuy = lyDoLuu;
-            foreach (var dot in donHang.DotGiaoHangDaDiems)
+            var cacDotGiaoHuy = donHang.DotGiaoHangDaDiems.Any()
+                ? donHang.DotGiaoHangDaDiems.ToList()
+                : await _db.DotGiaoHangDaDiems.Where(g => g.MaDh == donHang.MaDh).ToListAsync();
+            foreach (var dot in cacDotGiaoHuy)
             {
-                dot.TrangThaiGiao = trangThaiDich;
+                dot.TrangThaiGiao = trangThaiDich == "DA_HUY" ? "DA_HUY" : trangThaiDich;
             }
 
             int soBanhHoanKho = 0;

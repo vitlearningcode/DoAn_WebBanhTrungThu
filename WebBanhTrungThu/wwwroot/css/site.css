@@ -115,6 +115,10 @@ body {
     min-height: 68px;
 }
 
+.navbar-chinh-nguyet-cat .navbar-collapse {
+    min-width: 0;
+}
+
 .logo-nguyet-cat-svg {
     display: block;
     width: 40px;
@@ -270,6 +274,96 @@ body {
 .hover-dropdown-item small {
     color: var(--mau-chu-phu);
     font-size: 0.73rem;
+}
+
+@media (min-width: 992px) and (max-width: 1440px) {
+    .navbar-chinh-nguyet-cat {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+
+    .navbar-chinh-nguyet-cat .navbar-brand {
+        margin-right: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .nav-menu-hoang-gia {
+        gap: 4px;
+    }
+
+    .nav-menu-hoang-gia .nav-link-chinh {
+        font-size: 0.76rem;
+        letter-spacing: 0.2px;
+        padding: 0.45rem 0.42rem !important;
+        gap: 3px;
+    }
+
+    .header-right-actions {
+        gap: 6px !important;
+        flex-shrink: 0;
+    }
+
+    .header-right-actions .btn {
+        padding-left: 0.65rem !important;
+        padding-right: 0.65rem !important;
+        font-size: 0.78rem;
+    }
+
+    .btn-tai-khoan-menu {
+        max-width: 135px;
+    }
+
+    .ten-tai-khoan-rut-gon {
+        max-width: 100px;
+    }
+
+    .btn-gio-qua-menu {
+        flex-shrink: 0 !important;
+    }
+}
+
+@media (min-width: 992px) and (max-width: 1220px) {
+    .logo-nguyet-cat-svg {
+        width: 34px;
+        height: 34px;
+    }
+
+    .navbar-chinh-nguyet-cat .navbar-brand .font-co-phong {
+        font-size: 1.15rem !important;
+    }
+
+    .navbar-chinh-nguyet-cat .navbar-brand small {
+        font-size: 0.55rem !important;
+        letter-spacing: 0.8px !important;
+    }
+
+    .nav-menu-hoang-gia {
+        gap: 2px;
+    }
+
+    .nav-menu-hoang-gia .nav-link-chinh {
+        font-size: 0.7rem;
+        letter-spacing: 0;
+        padding: 0.4rem 0.28rem !important;
+        gap: 2px;
+    }
+
+    .header-right-actions {
+        gap: 4px !important;
+    }
+
+    .header-right-actions .btn {
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.73rem;
+    }
+
+    .btn-tai-khoan-menu {
+        max-width: 112px;
+    }
+
+    .ten-tai-khoan-rut-gon {
+        max-width: 82px;
+    }
 }
 
 @media (max-width: 991.98px) {
@@ -741,6 +835,28 @@ body {
     border: 1px solid var(--mau-vien-vang-dong);
     border-radius: 12px;
     transition: all 0.2s ease;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.item-chon-vo-hop .form-check-input {
+    float: none;
+    flex-shrink: 0;
+    margin: 0.22rem 0 0 0 !important;
+}
+
+.item-chon-vo-hop .form-check-label {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.item-chon-vo-hop .badge-yeu-cau-vip {
+    white-space: normal !important;
+    line-height: 1.3;
+    text-align: left;
+    max-width: 100%;
+    word-break: break-word;
 }
 
 .item-chon-vo-hop:hover {
@@ -874,6 +990,13 @@ body {
         padding: 14px 0 32px 0 !important;
     }
 
+    #tang-b2b {
+        justify-content: center;
+        justify-content: safe center;
+        padding: 28px 0 20px 0 !important;
+        overflow-y: auto !important;
+    }
+
     #tang-thiep-qr {
         justify-content: space-between !important;
         padding: 18px 0 0 0 !important;
@@ -978,10 +1101,11 @@ body {
     visibility: hidden;
     transform: translateX(8px);
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    pointer-events: none;
+    pointer-events: none !important;
 }
 
-.side-dot-item:hover .side-dot-label {
+.side-dot-btn:hover + .side-dot-label,
+.side-dot-btn:focus-visible + .side-dot-label {
     opacity: 1;
     visibility: visible;
     transform: translateX(0);
@@ -996,8 +1120,8 @@ body {
 /* Nút nổi góc phải Tư Vấn Chọn Hộp Quà (Tự động thu gọn thành nút tròn 52x52px sau 10 giây) */
 .floating-quiz-btn {
     position: fixed;
-    bottom: 96px;
-    right: 24px;
+    bottom: 16px;
+    right: 16px;
     z-index: 1030;
     height: 52px;
     min-width: 52px;
@@ -1141,6 +1265,92 @@ body {
     opacity: 1;
 }
 
+#khungThongBaoToast {
+    top: auto !important;
+    right: auto !important;
+    bottom: 20px !important;
+    left: 20px !important;
+    margin-top: 0 !important;
+    padding: 0 !important;
+    z-index: 1090 !important;
+    max-width: min(360px, calc(100vw - 88px));
+}
+
+@media (max-width: 576px) {
+    .floating-quiz-btn,
+    .floating-quiz-btn:hover,
+    .floating-quiz-btn.thu-gon-nut-tu-van,
+    .floating-quiz-btn.thu-gon-nut-tu-van:hover {
+        width: 46px;
+        min-width: 46px;
+        max-width: 46px;
+        height: 46px;
+        padding: 0;
+        border-radius: 50%;
+        gap: 0;
+        bottom: 16px;
+        right: 16px;
+    }
+
+    .floating-quiz-btn .chu-nut-tu-van {
+        display: none !important;
+    }
+}
+
+/* Tầng 3 & Tầng 4 responsive (~1080px - 1400px) */
+.btn-bst-action {
+    padding: 0.22rem 0.5rem;
+    font-size: 0.72rem;
+    line-height: 1.25;
+}
+
+@media (max-width: 1399.98px) {
+    .bst-card-footer {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 6px !important;
+    }
+
+    .bst-card-price {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+    }
+
+    .bst-card-actions {
+        width: 100%;
+        gap: 4px !important;
+    }
+
+    .btn-bst-action {
+        flex: 1 1 0;
+        padding: 0.22rem 0.32rem !important;
+        font-size: 0.68rem !important;
+        text-align: center;
+    }
+}
+
+.tieu-de-tang-b2b {
+    font-size: clamp(1.65rem, 2.5vw, 2.45rem);
+    line-height: 1.18;
+}
+
+#tang-b2b {
+    padding-top: 112px;
+    scroll-margin-top: 104px;
+}
+
+#selComboDatHangB2B {
+    width: 100%;
+    padding-right: 2.25rem !important;
+    min-height: 34px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    background-position: right 0.75rem center;
+}
+
 /* Bảng B2B truyền thống trên nền sáng */
 .table-trung-thu {
     color: var(--mau-chu-nau-tram);
@@ -1246,6 +1456,7 @@ body {
     --ho-so-duong-cong: cubic-bezier(0.16, 1, 0.3, 1);
     background: linear-gradient(180deg, #FAF6F0 0%, #FDF8EE 240px);
     min-height: 85vh;
+    padding-bottom: 84px;
     color: var(--ho-so-nau-dam);
 }
 

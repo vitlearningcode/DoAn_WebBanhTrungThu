@@ -8,24 +8,24 @@
      ========================================================================= -->
 <ul class="side-section-dots" id="thanhDieuHuongDiemDoc" aria-label="Điều hướng phân khu trang chủ">
     <li class="side-dot-item">
-        <span class="side-dot-label">01. Đêm Trăng Đoàn Viên</span>
         <button type="button" class="side-dot-btn active" data-target="#tang-hero" onclick="cuonDenPhanKhu('#tang-hero', event)" aria-label="01. Đêm Trăng Đoàn Viên"></button>
+        <span class="side-dot-label">01. Đêm Trăng Đoàn Viên</span>
     </li>
     <li class="side-dot-item">
-        <span class="side-dot-label">02. Tự Tay Phối Hộp</span>
         <button type="button" class="side-dot-btn" data-target="#tang-tu-chon-hop" onclick="cuonDenPhanKhu('#tang-tu-chon-hop', event)" aria-label="02. Tự Tay Phối Hộp"></button>
+        <span class="side-dot-label">02. Tự Tay Phối Hộp</span>
     </li>
     <li class="side-dot-item">
-        <span class="side-dot-label">03. Tuyệt Phẩm Bánh &amp; Trà</span>
         <button type="button" class="side-dot-btn" data-target="#tang-bo-suu-tap" onclick="cuonDenPhanKhu('#tang-bo-suu-tap', event)" aria-label="03. Tuyệt Phẩm Bánh & Trà"></button>
+        <span class="side-dot-label">03. Tuyệt Phẩm Bánh &amp; Trà</span>
     </li>
     <li class="side-dot-item">
-        <span class="side-dot-label">04. Quà Tặng Doanh Nghiệp</span>
-        <button type="button" class="side-dot-btn" data-target="#tang-b2b" onclick="cuonDenPhanKhu('#tang-b2b', event)" aria-label="04. Quà Tặng Doanh Nghiệp"></button>
+        <button type="button" class="side-dot-btn" data-target="#tang-b2b" onclick="cuonDenPhanKhu('#tang-b2b', event)" aria-label="04. Chiết Khấu Số Lượng"></button>
+        <span class="side-dot-label">04. Chiết Khấu Số Lượng</span>
     </li>
     <li class="side-dot-item">
-        <span class="side-dot-label">05. Thiệp Chúc Tết Đoàn Viên</span>
         <button type="button" class="side-dot-btn" data-target="#tang-thiep-qr" onclick="cuonDenPhanKhu('#tang-thiep-qr', event)" aria-label="05. Thiệp Chúc Tết Đoàn Viên"></button>
+        <span class="side-dot-label">05. Thiệp Chúc Tết Đoàn Viên</span>
     </li>
 </ul>
 
@@ -37,7 +37,7 @@
         @await Html.PartialAsync("~/Views/Home/PhanKhu/_Tang1_HeroBanner.cshtml", Model)
         @await Html.PartialAsync("~/Views/Home/PhanKhu/_Tang2_StudioPhoiHop.cshtml", Model)
         @await Html.PartialAsync("~/Views/Home/PhanKhu/_Tang3_BoSuuTapBanh.cshtml", Model)
-        @await Html.PartialAsync("~/Views/Home/PhanKhu/_Tang4_ChietKhauB2B.cshtml", Model)
+        @await Html.PartialAsync("~/Views/Home/PhanKhu/_Tang4_ChietKhauSoLuong.cshtml", Model)
         @await Html.PartialAsync("~/Views/Home/PhanKhu/_Tang5_ThiepQrVaFooter.cshtml", Model)
     </div>
 </div>

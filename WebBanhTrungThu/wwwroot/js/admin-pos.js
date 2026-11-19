@@ -272,9 +272,11 @@
 
                 card.innerHTML = `
                     <div>
-                        <div class="pos-prod-img-wrap">
+                        <div class="pos-prod-meta-bar">
                             ${badgeCanDate}
                             <span class="pos-badge-stock">Tồn: ${b.tonKho}</span>
+                        </div>
+                        <div class="pos-prod-img-wrap">
                             <img src="${b.anh}" alt="${b.ten}" onerror="window.kvImgFallback(this)" />
                         </div>
                         <div class="pos-prod-name">${b.ten}</div>
@@ -303,9 +305,11 @@
                 card.onclick = () => themComboVaoPos(c.maCb);
                 card.innerHTML = `
                     <div>
-                        <div class="pos-prod-img-wrap">
-                            <span class="pos-badge-candate" style="background:#005AC3;">Combo</span>
+                        <div class="pos-prod-meta-bar">
+                            <span class="pos-badge-candate pos-badge-combo">Combo</span>
                             <span class="pos-badge-stock">Tồn: ${c.tonKho}</span>
+                        </div>
+                        <div class="pos-prod-img-wrap">
                             <img src="${c.anh}" alt="${c.ten}" onerror="window.kvImgFallback(this)" />
                         </div>
                         <div class="pos-prod-name">${c.ten}</div>
@@ -641,6 +645,7 @@
         if (!sdt) {
             if (!tuDongImLang && lbl) {
                 lbl.className = 'small text-danger mt-1';
+                lbl.style.color = '';
                 lbl.textContent = 'Vui lòng nhập số điện thoại hội viên!';
                 lbl.style.display = 'block';
             }
@@ -654,13 +659,15 @@
                 if (lbl) lbl.style.display = 'none';
                 chonKhachHangVaoTabPos(data);
             } else if (!tuDongImLang && lbl) {
-                lbl.className = 'small text-warning-emphasis mt-1';
+                lbl.className = 'small fw-semibold mt-1';
+                lbl.style.color = '#92400E';
                 lbl.textContent = (data && data.thongBao) || 'Không tìm thấy hội viên theo SĐT này.';
                 lbl.style.display = 'block';
             }
         } catch (e) {
             if (!tuDongImLang && lbl) {
                 lbl.className = 'small text-danger mt-1';
+                lbl.style.color = '';
                 lbl.textContent = 'Lỗi kết nối khi tra cứu hội viên!';
                 lbl.style.display = 'block';
             }

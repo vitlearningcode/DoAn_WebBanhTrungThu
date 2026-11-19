@@ -937,3 +937,75 @@
 .nut-sao-chep-ck:hover {
     background: #FDE68A;
 }
+
+.cong-momo-container {
+    max-width: 1040px;
+}
+
+.icon-bao-mat-momo {
+    color: #D82D8B;
+}
+
+.ten-nha-cung-cap-momo {
+    color: #111827;
+    font-size: 0.96rem;
+    letter-spacing: 0.3px;
+}
+
+.sdt-momo-gia-tri {
+    color: #111827;
+    font-size: 0.94rem;
+}
+
+.noi-dung-ck-momo {
+    color: #1F2937;
+    font-size: 0.88rem;
+    word-break: break-word;
+}
+
+.gia-tri-so-tien-momo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #111827;
+    font-variant-numeric: tabular-nums;
+}
+
+.khung-dem-nguoc-momo {
+    background-color: #FDF2F8;
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+}
+
+.tieu-de-dem-nguoc-momo {
+    color: #D82D8B;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.khung-hong-qr-momo {
+    background-color: #D82D8B;
+    border-radius: 12px;
+    padding: 32px;
+}
+
+.huong-dan-quet-qr-momo {
+    font-size: 0.94rem;
+}
+
+.thong-tin-tk-qr-momo {
+    color: rgba(255, 255, 255, 0.94);
+    font-weight: 500;
+}
+
+.nhan-ngan-hang-ho-tro {
+    color: #374151;
+}
+
+.dem-ngan-hang-ho-tro {
+    font-size: 0.76rem;
+}
+
+.vach-test-webhook-momo {
+    border-color: #E5E7EB !important;
+}
