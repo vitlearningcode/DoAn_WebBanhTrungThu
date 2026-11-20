@@ -172,7 +172,7 @@
                             <h5 class="modal-title font-co-phong fs-3 fw-bold chu-do-son-mai" id="tieuDeModalKhachHuyDon">
                                 Xác Nhận Hủy Đơn Hàng <span id="lblKhachHuyMaTraCuu">#---</span>
                             </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng" style="position: relative; z-index: 5;"></button>
                         </div>
 
                         <div class="modal-body">
@@ -207,5 +207,35 @@
                 </div>
             </div>
         </div>
+
+        <script>
+            (function () {
+                function ganXuLyModalKhachHuyDon() {
+                    var modalEl = document.getElementById("modalKhachHuyDonCod");
+                    if (!modalEl || modalEl.dataset.daGanXuLy === "1") return;
+                    modalEl.dataset.daGanXuLy = "1";
+
+                    // Đưa modal ra thẳng <body> để thoát mọi container có transform / z-index thấp
+                    if (modalEl.parentElement !== document.body) {
+                        document.body.appendChild(modalEl);
+                    }
+
+                    // Dự phòng: mọi nút đóng trong modal luôn ẩn modal ngay lập tức
+                    modalEl.querySelectorAll("[data-bs-dismiss='modal']").forEach(function (nut) {
+                        nut.addEventListener("click", function () {
+                            if (typeof bootstrap !== "undefined") {
+                                bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                            }
+                        });
+                    });
+                }
+
+                if (document.readyState === "loading") {
+                    document.addEventListener("DOMContentLoaded", ganXuLyModalKhachHuyDon);
+                } else {
+                    ganXuLyModalKhachHuyDon();
+                }
+            })();
+        </script>
     }
 </div>

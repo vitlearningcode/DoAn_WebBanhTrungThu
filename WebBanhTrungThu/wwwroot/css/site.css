@@ -507,6 +507,43 @@ body {
     box-shadow: 0 16px 36px rgba(110, 13, 16, 0.13);
 }
 
+/* Modal phía khách: nền trắng đặc, không nhảy khi hover */
+.modal-content.card-hoang-gia {
+    background-color: #ffffff !important;
+    opacity: 1 !important;
+}
+
+.modal-content.card-hoang-gia:hover {
+    transform: none !important;
+}
+
+.modal-content.card-hoang-gia .btn-close {
+    position: relative;
+    z-index: 5;
+}
+
+/* Select trong modal phía khách: khóa về đúng 1 dòng */
+.modal .form-select,
+#selLyDoHuyKhach {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    line-height: 1.3 !important;
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
+    padding-right: 2.25rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.modal .form-select::picker-icon,
+#selLyDoHuyKhach::picker-icon {
+    display: none !important;
+}
+
 /* Thẻ nằm trên nền Đỏ Sơn Mài */
 .card-son-mai-noi {
     background: rgba(74, 7, 9, 0.72);

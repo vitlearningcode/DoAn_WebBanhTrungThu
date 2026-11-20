@@ -20,6 +20,12 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="~/css/admin-pos.css" asp-append-version="true" />
+<style>
+#barMultiTabsHoaDon .pos-tab-item {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+</style>
 <script>
 window.KV_FALLBACK_SVG = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><rect width='120' height='120' rx='10' fill='%23F3F4F6'/><circle cx='60' cy='54' r='26' fill='%23E5E7EB'/><text x='50%' y='98' dominant-baseline='middle' text-anchor='middle' fill='%236B7280' font-family='Inter,sans-serif' font-size='11' font-weight='600'>Nguyệt Cát</text></svg>");
 window.kvImgFallback = function (img) {
@@ -72,7 +78,7 @@ window.kvImgFallback = function (img) {
 <tr>
 <th style="width: 42px;" class="text-center">STT</th>
 <th style="width: 105px;">Mã hàng</th>
-<th>Tên hàng hóa (kèm chi tiết nhân bánh nếu là hộp)</th>
+<th class="pos-th-ten-hang">Tên hàng hóa</th>
 <th style="width: 65px;" class="text-center">ĐVT</th>
 <th style="width: 118px;" class="text-center">Số lượng</th>
 <th style="width: 105px;" class="text-end">Đơn giá</th>

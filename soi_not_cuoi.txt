@@ -1,0 +1,467 @@
+===== WebBanhTrungThu\Models\Entities\DonHang.Partial.cs =====
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+
+namespace WebBanhTrungThu.Models.Entities
+{
+    public partial class DonHang
+    {
+        [NotMapped]
+        public string? MaNganHangHoan { get; set; }
+
+        [NotMapped]
+        public string? SoTaiKhoanHoan { get; set; }
+
+        [NotMapped]
+        public string? TenChuTkHoan { get; set; }
+
+        [NotMapped]
+        public string? LyDoHuyHoan { get; set; }
+
+        [NotMapped]
+        public string? GhiChuDieuChinhAdmin { get; set; }
+
+        [NotMapped]
+        public string? ThoiGianCapNhatCuoi { get; set; }
+
+        [NotMapped]
+        public string? NguoiCapNhatCuoi { get; set; }
+
+        [NotMapped]
+        public DateTime? HanThanhToan => HanThanhToanQr;
+
+        [NotMapped]
+        public decimal TongThanhToan => TongThanhToanCuoi;
+
+        [NotMapped]
+        public IEnumerable<DotGiaoHangDaDiem> ThiepChucMung3Ds =>
+            DotGiaoHangDaDiems?.Where(d => d.CoKemThiepQr && !string.IsNullOrWhiteSpace(d.MaTokenThiepQr))
+            ?? Enumerable.Empty<DotGiaoHangDaDiem>();
+
+        [NotMapped]
+        public string TenTrangThaiDhHienThi => TrangThaiDh switch
+        {
+            "CHO_XAC_NHAN" => "Chờ xác nhận",
+            "DA_XAC_NHAN" => "Đã xác nhận",
+            "CHO_LAY_HANG" => "Chờ lấy hàng (Đã đóng gói)",
+            "DANG_DONG_GOI_HOP" => "Chờ lấy hàng (Đã đóng gói)",
+            "DANG_GIAO" => "Đang giao hàng",
+            "HOAN_TAT" => "Hoàn tất",
+            "DA_HUY" => "Đã hủy",
+            _ => TrangThaiDh
+        };
+
+        [NotMapped]
+        public string TenTrangThaiTtHienThi => TrangThaiTt switch
+        {
+            "CHUA_TT" => "Chưa thanh toán",
+            "CHO_THANH_TOAN" => "Chờ thanh toán QR (15 phút)",
+            "CHO_XAC_MINH_CK" => "Chờ thanh toán QR",
+            "DA_TT" => "Đã thanh toán",
+            "DA_THANH_TOAN" => "Đã thanh toán",
+            "HET_HAN_HUY" => "Hết hạn thanh toán 15p (Đã hủy)",
+            "HET_HAN_15P" => "Hết hạn thanh toán 15p (Đã hoàn kho)",
+            "DA_HOAN_TIEN" => "Đã hoàn tiền ngân hàng",
+            _ => TrangThaiTt
+        };
+
+        [NotMapped]
+        public string TenTrangThaiThanhToanHienThi => TenTrangThaiTtHienThi;
+    }
+}
+
+
+===== WebBanhTrungThu\Services\ThongTinPhienHelper.cs =====
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using WebBanhTrungThu.Middlewares;
+
+namespace WebBanhTrungThu.Services
+{
+    public static class ThongTinPhienHelper
+    {
+        // Lấy MaND nếu khách đã đăng nhập (trả về null nếu là Guest)
+        public static int? LayMaNguoiDung(HttpContext context)
+        {
+            var claim = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return int.TryParse(claim, out int maND) ? maND : null;
+        }
+
+        // Lấy MaPhienKVL của khách vãng lai từ HttpContext.Items hoặc Cookie
+        public static string? LayMaPhienKVL(HttpContext context)
+        {
+            if (context.Items.TryGetValue("MaPhienKVL", out var maItems) && maItems != null)
+            {
+                return maItems.ToString();
+            }
+            return context.Request.Cookies[PhienKhachVangLaiMiddleware.TenCookieKVL];
+        }
+
+        // Băm mật khẩu SHA256 gọn nhẹ, đồng bộ với SQL Server Seed Data
+        public static string BamMatKhauSHA256(string matKhauThuan)
+        {
+            using var sha256 = SHA256.Create();
+            byte[] bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(matKhauThuan + "_NguyetCatSalt2026"));
+            return Convert.ToHexString(bytes);
+        }
+    }
+}
+===== WebBanhTrungThu\Services\DichVuHinhAnh.cs =====
+using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
+using WebBanhTrungThu.Data;
+using WebBanhTrungThu.Models.Entities;
+using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
+using WebBanhTrungThu.ViewModels;
+
+namespace WebBanhTrungThu.Services
+{
+    /// <summary>
+    /// Dịch vụ quản lý và ánh xạ từ điển hình ảnh đa nguồn (WebRoot, Ổ cứng, Google Drive), kế thừa từ DichVuCoSo.
+    /// </summary>
+    public class DichVuHinhAnh : DichVuCoSo, IDichVuHinhAnh
+    {
+        public DichVuHinhAnh(CSDLBanhTrungThuContext db) : base(db)
+        {
+        }
+
+        /// <summary>
+        /// Tải toàn bộ danh sách Kho ảnh, Liên kết, Bánh và Vỏ hộp phục vụ trang Quản trị Kho ảnh.
+        /// </summary>
+        public async Task<KhoAnhAdminViewModel> LayDuLieuKhoAnhAdminAsync()
+        {
+            return new KhoAnhAdminViewModel
+            {
+                DanhSachHinhAnh = await _db.KhoHinhAnhs
+                    .AsNoTracking()
+                    .Include(h => h.LienKetHinhAnhs)
+                    .OrderByDescending(h => h.MaHa)
+                    .ToListAsync(),
+                DanhSachLienKet = await _db.LienKetHinhAnhs
+                    .AsNoTracking()
+                    .Include(l => l.MaHaNavigation)
+                    .OrderBy(l => l.LoaiDoiTuong)
+                    .ThenBy(l => l.MaDoiTuong)
+                    .ToListAsync(),
+                DanhSachBanh = await _db.SanPhamBanhs.AsNoTracking().OrderBy(b => b.MaBanh).ToListAsync(),
+                DanhSachVoHop = await _db.MauVoHops.AsNoTracking().OrderBy(v => v.MaVh).ToListAsync()
+            };
+        }
+
+        /// <summary>
+        /// Lưu hình ảnh mới từ 3 nguồn (WebRoot Upload, Ổ đĩa máy, Google Drive) và gắn liên kết sản phẩm trong 1 giao dịch ACID.
+        /// </summary>
+        public async Task<string> ThemAnhDaNguonAsync(ThemAnhDaNguonRequest req, string webRootPath)
+        {
+            string tenTep = ChuanHoaChuoi(req.TenTepGoc, "anh-banh-moi.png");
+            string? duongDanCucBo = req.DuongDanCucBo?.Trim();
+            string? duongDanDamMay = req.DuongDanDamMay?.Trim();
+            string? maFileDrive = req.MaFileDrive?.Trim();
+
+            // Nguồn 1: Upload trực tiếp vào wwwroot/images/banh
+            if (req.LoaiLuuTru == 1 && req.TepAnhTaiLen != null && req.TepAnhTaiLen.Length > 0)
+            {
+                string thuMucLuu = Path.Combine(webRootPath, "images", "banh");
+                if (!Directory.Exists(thuMucLuu))
+                {
+                    Directory.CreateDirectory(thuMucLuu);
+                }
+
+                string duoiFile = Path.GetExtension(req.TepAnhTaiLen.FileName);
+                if (string.IsNullOrWhiteSpace(duoiFile)) duoiFile = ".png";
+                string tenFileAnToan = "banh_" + LayThoiGianHeThong().ToString("yyyyMMdd_HHmmss") + duoiFile;
+                string duongDanVatLy = Path.Combine(thuMucLuu, tenFileAnToan);
+
+                using (var stream = new FileStream(duongDanVatLy, FileMode.Create))
+                {
+                    await req.TepAnhTaiLen.CopyToAsync(stream);
+                }
+
+                tenTep = req.TepAnhTaiLen.FileName;
+                duongDanCucBo = $"/images/banh/{tenFileAnToan}";
+            }
+            else if (req.LoaiLuuTru == 2)
+            {
+                // Nguồn 2: Ổ đĩa máy C:\Users\MinhDuc\KhoAnhBanhTrungThu ánh xạ qua /kho-anh-may/...
+                if (string.IsNullOrWhiteSpace(duongDanCucBo))
+                {
+                    duongDanCucBo = "/kho-anh-may/banh-mac-dinh.png";
+                }
+                else if (!duongDanCucBo.StartsWith("/"))
+                {
+                    duongDanCucBo = "/kho-anh-may/" + duongDanCucBo;
+                }
+                tenTep = Path.GetFileName(duongDanCucBo);
+            }
+            else if (req.LoaiLuuTru == 3)
+            {
+                // Nguồn 3: Google Drive -> Tự động tách MaFileDrive từ link chia sẻ
+                if (string.IsNullOrWhiteSpace(maFileDrive) && !string.IsNullOrWhiteSpace(duongDanDamMay))
+                {
+                    var match = Regex.Match(duongDanDamMay, @"(?:\/d\/|id=)([a-zA-Z0-9_-]{20,})");
+                    if (match.Success)
+                    {
+                        maFileDrive = match.Groups[1].Value;
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(duongDanCucBo))
+                {
+                    duongDanCucBo = "/images/banh/fallback-lava.png";
+                }
+            }
+
+            var hinhMoi = new KhoHinhAnh
+            {
+                TenTepGoc = tenTep,
+                TieuDeAlt = ChuanHoaChuoi(req.TieuDeAlt, "Hình ảnh sản phẩm Nguyệt Cát"),
+                LoaiLuuTru = req.LoaiLuuTru,
+                DuongDanCucBo = duongDanCucBo,
+                DuongDanDamMay = duongDanDamMay,
+                MaFileDrive = maFileDrive,
+                KichThuocPixel = "800x800",
+                NgayTaiLen = LayThoiGianHeThong()
+            };
+
+            await ThucThiTrongGiaoDichAsync(async () =>
+            {
+                _db.KhoHinhAnhs.Add(hinhMoi);
+                await _db.SaveChangesAsync();
+
+                // Nếu có chọn đối tượng gắn ảnh (BANH hoặc VOHOP), tạo LienKetHinhAnh
+                if (!string.IsNullOrWhiteSpace(req.LoaiDoiTuong) && req.MaDoiTuong > 0)
+                {
+                    string vaiTro = string.IsNullOrWhiteSpace(req.VaiTroAnh)
+                        ? (req.LoaiDoiTuong == "VOHOP" ? "KHAY_HOP_RONG" : "TACH_NEN_SLOT")
+                        : req.VaiTroAnh;
+
+                    var lkMoi = new LienKetHinhAnh
+                    {
+                        MaHa = hinhMoi.MaHa,
+                        LoaiDoiTuong = req.LoaiDoiTuong,
+                        MaDoiTuong = req.MaDoiTuong,
+                        VaiTroAnh = vaiTro,
+                        ThuTuHienThi = 1
+                    };
+                    _db.LienKetHinhAnhs.Add(lkMoi);
+                    await _db.SaveChangesAsync();
+                }
+            });
+
+            return $"Đã thêm hình ảnh mới #{hinhMoi.MaHa} (Nguồn {hinhMoi.LoaiLuuTru}) và gắn cho {req.LoaiDoiTuong} #{req.MaDoiTuong}!";
+        }
+
+        /// <summary>
+        /// Lấy toàn bộ từ điển ảnh của danh sách Bánh/Vỏ hộp trong 1 lần truy vấn duy nhất (tránh lỗi N+1 Query).
+        /// </summary>
+        public async Task<Dictionary<string, string>> LayTuDienUrlAnhAsync()
+        {
+            var danhSachLK = await _db.LienKetHinhAnhs
+                .Include(lk => lk.MaHaNavigation)
+                .OrderBy(lk => lk.ThuTuHienThi)
+                .ToListAsync();
+
+            var ketQua = new Dictionary<string, string>();
+
+            foreach (var lk in danhSachLK)
+            {
+                string key = $"{lk.LoaiDoiTuong}_{lk.MaDoiTuong}_{lk.VaiTroAnh}";
+                if (!ketQua.ContainsKey(key) && lk.MaHaNavigation != null)
+                {
+                    ketQua[key] = lk.MaHaNavigation.UrlHienThi;
+                }
+            }
+
+            return ketQua;
+        }
+
+        /// <summary>
+        /// Hàm lấy nhanh URL ảnh từ Từ điển đã nạp (có sẵn ảnh Fallback nếu thiếu).
+        /// </summary>
+        public static string LayUrl(Dictionary<string, string>? tuDien, string loaiDoiTuong, int maDoiTuong, string vaiTroAnh)
+        {
+            if (tuDien != null)
+            {
+                string key = $"{loaiDoiTuong}_{maDoiTuong}_{vaiTroAnh}";
+                if (tuDien.TryGetValue(key, out string? url) && !string.IsNullOrEmpty(url))
+                {
+                    return url;
+                }
+
+                string fallbackKey = $"{loaiDoiTuong}_{maDoiTuong}_TACH_NEN_SLOT";
+                if (tuDien.TryGetValue(fallbackKey, out string? fallbackUrl))
+                {
+                    return fallbackUrl;
+                }
+            }
+
+            return loaiDoiTuong == "VOHOP"
+                ? "/images/default/vohop-mac-dinh.png"
+                : "/images/default/banh-mac-dinh.png";
+        }
+    }
+}
+
+===== DichVuCauHinhHeThong.cs (160 dong dau) =====
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using WebBanhTrungThu.Data;
+using WebBanhTrungThu.Models.Entities;
+using WebBanhTrungThu.Services.CoSo;
+using WebBanhTrungThu.Services.Interfaces;
+
+namespace WebBanhTrungThu.Services
+{
+    public class CauHinhHangHoaMoRong
+    {
+        public string Key { get; set; } = string.Empty; // "BANH_1", "COMBO_1"
+        public string MaVach { get; set; } = string.Empty;
+        public string ThuongHieu { get; set; } = "Đồng Khánh";
+        public string NhaCungCap { get; set; } = "Lò Bánh Đồng Khánh Chính Gốc";
+        public string ViTriKho { get; set; } = "Kệ A1";
+        public string DonViTinh { get; set; } = "Cái";
+        public bool BanTrucTiep { get; set; } = true;
+        public int? MaDmCombo { get; set; }
+        public string? TenDmCombo { get; set; }
+        public int? TonKhoCombo { get; set; }
+        public int? TrongLuongComboGram { get; set; }
+        public List<string> DanhSachAnh { get; set; } = new();
+    }
+
+    public class CauHinhThanhToanQr
+    {
+        public string SoTaiKhoanMoMo { get; set; } = "0814585526";
+        public string SoDienThoaiHienThi { get; set; } = "0814 585 526";
+        public string TenChuTaiKhoan { get; set; } = "LE MINH DUC";
+        public string TenNganHangVi { get; set; } = "MOMO";
+        public string MaBinNganHang { get; set; } = "970422";
+        public string CuPhapChuyenKhoan { get; set; } = "NGUYETCAT {MaTraCuuDh}";
+        public int ThoiGianChoPhut { get; set; } = 15;
+        public string? SoTaiKhoanNganHang { get; set; }
+        public string? TenNganHangVietQr { get; set; }
+
+        [JsonIgnore]
+        public string MaNganHang
+        {
+            get => TenNganHangVi;
+            set => TenNganHangVi = value;
+        }
+
+        [JsonIgnore]
+        public string MaBinVietQr
+        {
+            get => MaBinNganHang;
+            set => MaBinNganHang = value;
+        }
+
+        [JsonIgnore]
+        public string MauNoiDungCk
+        {
+            get => CuPhapChuyenKhoan;
+            set => CuPhapChuyenKhoan = value;
+        }
+    }
+
+    public class PhieuThuChiMoRong
+    {
+        public string MaPhieu { get; set; } = string.Empty;
+        public int? MaDh { get; set; }
+        public string MaTraCuuDh { get; set; } = string.Empty;
+        public string LoaiPhieu { get; set; } = "THU";
+        public string PhuongThuc { get; set; } = "MOMO_QR";
+        public decimal SoTien { get; set; }
+        public string NoiDung { get; set; } = string.Empty;
+        public string NguoiNopNhan { get; set; } = string.Empty;
+        public string SdtNguoiNopNhan { get; set; } = string.Empty;
+        public DateTime ThoiGianTao { get; set; } = DateTime.Now;
+
+        [JsonIgnore]
+        public int? MaDonHang
+        {
+            get => MaDh;
+            set => MaDh = value;
+        }
+
+        [JsonIgnore]
+        public DateTime ThoiGian
+        {
+            get => ThoiGianTao;
+            set => ThoiGianTao = value;
+        }
+    }
+
+    public class NhatKyTruLoFefo
+    {
+        public int MaLo { get; set; }
+        public int MaBanh { get; set; }
+        public int SoLuongDaTru { get; set; }
+    }
+
+    public class NhatKyTruVoHop
+    {
+        public int MaVh { get; set; }
+        public int SoLuongDaTru { get; set; }
+    }
+
+    public class ThongTinThiep3DMeta
+    {
+        public string MaTokenThiepQr { get; set; } = string.Empty;
+        public string TenNguoiNhanThiep { get; set; } = string.Empty;
+        public string TenNguoiGuiThiep { get; set; } = string.Empty;
+        public string? LoiChucThiep { get; set; }
+        public string? MauGiaoDienThiep { get; set; }
+    }
+
+    public class ThongTinDonHangMoRong
+    {
+        public int MaDh { get; set; }
+        public string KenhBan { get; set; } = "WEB_ONLINE";
+        public decimal? SoTienKhachDaTra { get; set; }
+        public string? MaNganHangHoan { get; set; }
+        public string? SoTaiKhoanHoan { get; set; }
+        public string? TenChuTkHoan { get; set; }
+        public string? LyDoHuyHoan { get; set; }
+        public string? GhiChuDieuChinhAdmin { get; set; }
+        public string? ThoiGianCapNhatCuoi { get; set; }
+        public string? NguoiCapNhatCuoi { get; set; }
+        public DateTime? HanThanhToan { get; set; }
+        public bool DaRollbackKho { get; set; }
+        public int DiemDaDung { get; set; }
+        public decimal TienGiamDiem { get; set; }
+        public string? HangTvLucDat { get; set; }
+        public decimal PhanTramGiamVip { get; set; }
+        public decimal TienGiamVip { get; set; }
+        public bool DaCongDiemThuong { get; set; }
+        public int DiemThuongDaCong { get; set; }
+        public bool DaHoanDiemKhiHuy { get; set; }
+        public List<NhatKyTruLoFefo> DanhSachLoDaTru { get; set; } = new();
+        public List<NhatKyTruVoHop> DanhSachVoHopDaTru { get; set; } = new();
+        public Dictionary<string, ThongTinThiep3DMeta> Thiep3DTheoToken { get; set; } = new();
+
+        [JsonIgnore]
+        public bool DaHoanKhoDoHetHan
+        {
+            get => DaRollbackKho;
+            set => DaRollbackKho = value;
+        }
+    }
+
+    /// <summary>
+    /// Dịch vụ quản lý dữ liệu Sổ quỹ (PhieuThuChi), Thiệp Chúc Mừng 3D (ThiepChucMung3D),
+    /// Cấu hình QR MoMo (CauHinhHeThong) và Dữ liệu mở rộng Đại lý Nguyệt Cát ERP lưu trữ 100% trong SQL Server.
+    /// </summary>
+    public class DichVuCauHinhHeThong : DichVuCoSo, IDichVuCauHinhHeThong
+    {
+        public const string KHOA_CAU_HINH_QR_MOMO = "CAU_HINH_QR_MOMO";
+        public const string KHOA_CAU_HINH_MORONG = "CAUHINH_MORONG_NGUYETCAT";
+        public const string KHOA_CU_1 = "KIOT" + "VIET_METADATA";
+        public const string KHOA_CU_2 = "KIOT_METADATA_STORE";
+
+        private readonly IServiceScopeFactory _scopeFactory;
+        private static readonly object _lock = new();

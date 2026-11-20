@@ -231,6 +231,14 @@ html, body {
 .pos-cart-table-wrap {
     flex-grow: 1;
     overflow-y: auto;
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+/* Cột "Tên hàng hóa": luôn 1 dòng, bảng cuộn ngang trong khung khi hẹp */
+.pos-cart-table thead th.pos-th-ten-hang {
+    white-space: nowrap;
+    min-width: 120px;
 }
 
 .pos-cart-table {
@@ -744,6 +752,39 @@ td, th, .so-tien, .ton-kho, .kpi-value, .pos-price-final, .pos-stock-pill {
     }
 }
 
+/* Tablet / laptop hẹp (<= 1199px): topbar xuống dòng, tab hóa đơn không bị bóp */
+@media (max-width: 1199.98px) {
+    .pos-topbar {
+        flex-wrap: wrap;
+        height: auto;
+        min-height: 48px;
+        row-gap: 6px;
+        padding-bottom: 6px;
+    }
+
+    .pos-tabs-bar {
+        flex: 0 0 auto;
+        min-width: 195px;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1199.98px) {
+    body {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .pos-topbar {
+        flex: 0 0 auto;
+    }
+
+    .pos-workspace {
+        flex: 1 1 auto;
+        height: auto;
+        min-height: 0;
+    }
+}
+
 @media (max-width: 767.98px) {
     html, body {
         height: auto;
@@ -850,5 +891,126 @@ td, th, .so-tien, .ton-kho, .kpi-value, .pos-price-final, .pos-stock-pill {
 @media (max-width: 575.98px) {
     .pos-user-role {
         display: none;
+    }
+}
+
+
+/* === FINAL POS TOPBAR FIX === */
+body {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+}
+
+.pos-topbar {
+    flex: 0 0 auto;
+    position: relative;
+    z-index: 30;
+    min-height: 48px;
+}
+
+.pos-workspace {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto !important;
+}
+
+@media (max-width: 1399.98px) and (min-width: 1200px) {
+    .pos-search-wrap {
+        width: 230px;
+    }
+    .pos-topbar {
+        gap: 6px;
+        padding: 0 8px;
+    }
+    .pos-btn-top-action,
+    .pos-btn-manage,
+    .pos-btn-logout {
+        padding: 0 9px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 1199.98px) {
+    .pos-topbar {
+        height: auto !important;
+        min-height: 48px !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 6px 8px !important;
+        padding: 8px 10px !important;
+        overflow: visible !important;
+    }
+
+    .pos-search-wrap {
+        order: 1;
+        flex: 1 1 220px;
+        width: auto !important;
+        max-width: none !important;
+        min-width: 180px;
+    }
+
+    .pos-tabs-bar {
+        order: 2;
+        flex: 0 1 auto !important;
+        height: auto !important;
+        min-width: 185px;
+        padding-top: 0 !important;
+        align-items: center !important;
+        overflow-x: auto;
+    }
+
+    .pos-tab-item {
+        height: 34px !important;
+        border-radius: 6px !important;
+        padding: 0 10px !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+    }
+
+    .pos-btn-add-tab {
+        margin-bottom: 0 !important;
+        height: 34px !important;
+        width: 34px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .pos-btn-top-action {
+        order: 3;
+        height: 32px !important;
+        padding: 0 10px !important;
+        font-size: 12px !important;
+    }
+
+    .pos-topbar-actions {
+        order: 4;
+        margin-left: auto;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+
+    .pos-btn-manage,
+    .pos-btn-logout {
+        height: 32px !important;
+        padding: 0 10px !important;
+        font-size: 12px !important;
+    }
+}
+
+@media (max-width: 767.98px) {
+    html, body {
+        height: auto !important;
+        min-height: 100vh;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+
+    .pos-topbar-actions {
+        width: 100%;
+        margin-left: 0;
+        justify-content: space-between;
     }
 }
