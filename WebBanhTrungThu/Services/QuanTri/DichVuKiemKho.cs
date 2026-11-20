@@ -313,6 +313,12 @@ namespace WebBanhTrungThu.Services.QuanTri
             return await ThucThiTrongGiaoDichAsync<(bool, string)>(async () =>
             {
                 DateTime bayGio = LayThoiGianHeThong();
+                int? maNdHopLe = null;
+                if (maNdLap.HasValue && await _db.NguoiDungs.AsNoTracking().AnyAsync(u => u.MaNd == maNdLap.Value))
+                {
+                    maNdHopLe = maNdLap.Value;
+                }
+
                 PhieuKiemKho phieu;
 
                 if (req.MaPkk > 0)
@@ -328,6 +334,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                     }
 
                     phieu = cu;
+                    if (maNdHopLe.HasValue) phieu.MaNdKiem = maNdHopLe.Value;
                     if (phieu.ChiTietKiemKhos.Count > 0)
                     {
                         _db.ChiTietKiemKhos.RemoveRange(phieu.ChiTietKiemKhos);
@@ -341,6 +348,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                         SoPhieuKiem = await SinhSoPhieuKiemAsync(bayGio),
                         NgayKiem = bayGio,
                         NguoiKiem = ChuanHoaChuoi(nguoiKiem, "Quản trị viên Nguyệt Cát"),
+                        MaNdKiem = maNdHopLe,
                         TrangThai = "PHIEU_TAM"
                     };
                     _db.PhieuKiemKhos.Add(phieu);
@@ -589,6 +597,7 @@ namespace WebBanhTrungThu.Services.QuanTri
             phieu.TongGiaTriLech = tongGiaTriLech;
             phieu.TrangThai = "DA_CAN_BANG";
             phieu.NgayKiem = bayGio;
+            if (maNdHopLe.HasValue) phieu.MaNdKiem = maNdHopLe.Value;
 
             await _db.SaveChangesAsync();
 

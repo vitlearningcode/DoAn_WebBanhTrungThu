@@ -3,7 +3,7 @@
 [![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
 [![ASP.NET Core MVC](https://img.shields.io/badge/ASP.NET%20Core-MVC-512BD4?style=flat-square&logo=dotnet)](https://learn.microsoft.com/aspnet/core/)
 [![Entity Framework Core](https://img.shields.io/badge/EF%20Core-8.0.26-512BD4?style=flat-square)](https://learn.microsoft.com/ef/core/)
-[![SQL Server](https://img.shields.io/badge/SQL%20Server-36%20Tables-CC2927?style=flat-square&logo=microsoftsqlserver)](https://www.microsoft.com/sql-server)
+[![SQL Server](https://img.shields.io/badge/SQL%20Server-37%20Tables-CC2927?style=flat-square&logo=microsoftsqlserver)](https://www.microsoft.com/sql-server)
 [![ClosedXML](https://img.shields.io/badge/ClosedXML-0.105.1-217346?style=flat-square&logo=microsoftexcel)](https://github.com/ClosedXML/ClosedXML)
 [![QRCoder](https://img.shields.io/badge/QRCoder-1.8.1-111827?style=flat-square)](https://github.com/codebude/QRCoder)
 [![Bootstrap](https://img.shields.io/badge/Bootstrap-5-7952B3?style=flat-square&logo=bootstrap)](https://getbootstrap.com/)
@@ -20,7 +20,7 @@
 2. [Điểm Nổi Bật Về Kiến Trúc & Kỹ Thuật (Architecture Highlights)](#2-diem-noi-bat-ve-kien-truc--ky-thuat-architecture-highlights)
 3. [Công Nghệ & Thư Viện Sử Dụng (Tech Stack)](#3-cong-nghe--thu-vien-su-dung-tech-stack)
 4. [Hệ Sinh Thái Tính Năng Chi Tiết (Feature Matrix)](#4-he-sinh-thai-tinh-nang-chi-tiet-feature-matrix)
-5. [Cơ Sở Dữ Liệu Quan Hệ (36 Bảng SQL-First)](#5-co-so-du-lieu-quan-he-36-bang-sql-first)
+5. [Cơ Sở Dữ Liệu Quan Hệ (37 Bảng SQL-First)](#5-co-so-du-lieu-quan-he-37-bang-sql-first)
 6. [Cấu Trúc Thư Mục Dự Án (Project Structure)](#6-cau-truc-thu-muc-du-an-project-structure)
 7. [Cơ Chế Bảo Mật & Toàn Vẹn Dữ Liệu (Security & Data Integrity)](#7-co-che-bao-mat--toan-ven-du-lieu-security--data-integrity)
 8. [Hướng Dẫn Cài Đặt & Khởi Chạy Nhanh (Getting Started)](#8-huong-dan-cai-dat--khoi-chay-nhanh-getting-started)
@@ -39,7 +39,7 @@ Hoạt động phân phối bánh trung thu theo mùa vụ tại các đại lý
 - **Đứt gãy giữa bán hàng và kế toán kho:** Đơn Online, đơn bán trực tiếp tại quầy POS, phiếu nhập hàng từ nhà cung cấp, phiếu xuất hủy/nội bộ, kiểm kho thực tế và sổ quỹ tiền mặt/chuyển khoản thường tách rời trên các file Excel rời rạc.
 - **Trải nghiệm quà biếu doanh nghiệp:** Khách đặt hộp quà cần xem trực quan thành phần bánh, thông số dinh dưỡng (Calo/Đường/Chỉ số GI cho người ăn kiêng) và gửi kèm thiệp chúc mừng điện tử qua mã QR.
 
-**Nguyệt Cát ERP** giải quyết bài toán trên bằng một hệ thống đồng nhất trên **ASP.NET Core 8 MVC** và **SQL Server 36 bảng**, đảm bảo mọi biến động hàng hóa và dòng tiền đều liên thông trực tiếp trong giao dịch ACID.
+**Nguyệt Cát ERP** giải quyết bài toán trên bằng một hệ thống đồng nhất trên **ASP.NET Core 8 MVC** và **SQL Server 37 bảng**, đảm bảo mọi biến động hàng hóa và dòng tiền đều liên thông trực tiếp trong giao dịch ACID.
 
 ---
 
@@ -47,13 +47,13 @@ Hoạt động phân phối bánh trung thu theo mùa vụ tại các đại lý
 
 - **Clean Modular MVC + SOLID:**
   - Tầng **Controllers** mỏng (trung bình `62,25` dòng/Controller), kế thừa 2 lớp cơ sở trừu tượng `ControllerKhachHangCoSo` (Storefront) và `ControllerQuanTriCoSo` (`[Area("Admin")]`) để tái sử dụng trích xuất phiên, kiểm tra quyền và chuẩn hóa JSON.
-  - Tầng **ViewModels** tách riêng `11` file chuyên biệt theo từng nghiệp vụ, không truyền trực tiếp Entity thô sang View phức tạp.
-  - Tầng **Services** kế thừa lớp trừu tượng `DichVuCoSo` (hỗ trợ giao dịch ACID qua `ThucThiTrongGiaoDichAsync`), áp dụng Dependency Inversion với **25 Service Interfaces (`IDichVu...`)** đăng ký Scoped DI trong `Program.cs`.
+  - Tầng **ViewModels** tách riêng `12` file chuyên biệt theo từng nghiệp vụ, không truyền trực tiếp Entity thô sang View phức tạp.
+  - Tầng **Services** kế thừa lớp trừu tượng `DichVuCoSo` (hỗ trợ giao dịch ACID qua `ThucThiTrongGiaoDichAsync`), áp dụng Dependency Inversion với **26 Service Interfaces (`IDichVu...`)** đăng ký Scoped DI trong `Program.cs`.
 - **View Decomposition & Modular Assets:**
-  - Các View gốc được giữ gọn nhẹ (`Views/Home/Index.cshtml` `43` dòng, `Views/SanPham/ChiTiet.cshtml` `25` dòng, `Areas/Admin/Views/NhanVienAdmin/Index.cshtml` `38` dòng) bằng cách phân rã thành Partial Views trong `PhanKhu/` và `ThanhPhan/`.
-  - Tách riêng **10 module JavaScript khách hàng** (`wwwroot/js/modules/`), **2 script điều phối chính** (`site.js`, `thanh-toan.js`), **8 module JavaScript quản trị** (`wwwroot/js/admin-*.js`) và **5 file CSS chuyên biệt** (`site.css`, `thanh-toan.css`, `hieu-ung-ux.css`, `admin-layout.css`, `admin-pos.css`).
+  - Các View gốc được giữ gọn nhẹ (`Views/Home/Index.cshtml` `43` dòng, `Views/SanPham/ChiTiet.cshtml` `25` dòng, `Areas/Admin/Views/NhanVienAdmin/Index.cshtml` `38` dòng, `Areas/Admin/Views/VoHopAdmin/Index.cshtml` `13` dòng) bằng cách phân rã thành Partial Views trong `PhanKhu/` và `ThanhPhan/`.
+  - Tách riêng **10 module JavaScript khách hàng** (`wwwroot/js/modules/`), **2 script điều phối chính** (`site.js`, `thanh-toan.js`), **9 module JavaScript quản trị** (`wwwroot/js/admin-*.js`) và **5 file CSS chuyên biệt** (`site.css`, `thanh-toan.css`, `hieu-ung-ux.css`, `admin-layout.css`, `admin-pos.css`).
 - **SQL-First 100% (Zero Business JSON — Zero Virtual Data):**
-  - Toàn bộ thực thể nghiệp vụ (`ThuongHieu`, `NhaCungCap`, `HoSoNhanVien`, `NhatKyTruKhoDonHang`, hệ thống chứng từ `PhieuNhapKho` / `PhieuXuatKho` / `PhieuKiemKho` và Sổ quỹ `PhieuThuChi`) được mô hình hóa thành **36 bảng quan hệ vật lý** trong `CSDLBanhTrungThuContext`.
+  - Toàn bộ thực thể nghiệp vụ (`ThuongHieu`, `NhaCungCap`, `HoSoNhanVien`, `NhatKyTruKhoDonHang`, hệ thống chứng từ `PhieuNhapKho` / `PhieuXuatKho` / `PhieuKiemKho` / `PhieuKhoVoHop` và Sổ quỹ `PhieuThuChi`) được mô hình hóa thành **37 bảng quan hệ vật lý** kết nối đầy đủ khóa ngoại (0 bảng mồ côi) trong `CSDLBanhTrungThuContext`.
   - Bật toàn cục `QuerySplittingBehavior.SplitQuery` tại `Program.cs` giúp chia nhỏ các truy vấn `.Include()` nhiều nhánh và triệt tiêu hoàn toàn cảnh báo EF Core `EventId 20504`.
 - **Tự động hóa nền & Tiện ích chuyên sâu:**
   - `DichVuNenHuyDonQuaHan` (`BackgroundService`) chạy nền tự động rà quét, hủy các đơn thanh toán QR quá hạn `15` phút và hoàn trả tồn kho đúng lô FEFO theo `NhatKyTruKhoDonHang`.
@@ -66,20 +66,20 @@ Hoạt động phân phối bánh trung thu theo mùa vụ tại các đại lý
 ```mermaid
 flowchart TD
     C1["Khách hàng Storefront (Trình duyệt Desktop / Mobile)"]
-    C2["Quản trị viên ADMIN (Mini-ERP 13 Phân hệ)"]
+    C2["Quản trị viên ADMIN (Mini-ERP 14 Phân hệ)"]
     C3["Nhân viên quầy POS (NHAN_VIEN - Máy in K80)"]
 
     MW["Pipeline & Middleware: UseSession, Cookie Auth (NguyetCat_ThanhVienAuth), PhienKhachVangLaiMiddleware"]
 
     CT1["Thin Storefront Controllers (6 Controllers kế thừa ControllerKhachHangCoSo)"]
-    CT2["Thin Admin & POS Controllers (13 Controllers kế thừa ControllerQuanTriCoSo + RBAC)"]
+    CT2["Thin Admin & POS Controllers (14 Controllers kế thừa ControllerQuanTriCoSo + RBAC)"]
 
-    DI["Tầng Nghiệp Vụ DI: 25 Interfaces (IDichVu...) kế thừa DichVuCoSo (ACID)"]
+    DI["Tầng Nghiệp Vụ DI: 26 Interfaces (IDichVu...) kế thừa DichVuCoSo (ACID)"]
     BG["BackgroundService: DichVuNenHuyDonQuaHan (Quét hủy QR quá 15 phút & hoàn FEFO)"]
     UTIL["Tiện ích Hệ thống: ClosedXML (.xlsx), QRCoder (VietQR & Thiệp 3D), Custom SVG Captcha"]
 
     EF["Data Access: CSDLBanhTrungThuContext (EF Core 8.0.26 - QuerySplittingBehavior.SplitQuery)"]
-    DB[("SQL Server: CSDL_BanhTrungThu (36 Bảng Quan Hệ Vật Lý)")]
+    DB[("SQL Server: CSDL_BanhTrungThu (37 Bảng Quan Hệ Vật Lý)")]
 
     C1 --> MW
     C2 --> MW
@@ -103,9 +103,9 @@ Bảng thông số kỹ thuật được đối chiếu trực tiếp từ `WebB
 | Thành phần | Công nghệ / Gói thư viện | Phiên bản | Vai trò trong hệ thống |
 | :--- | :--- | :---: | :--- |
 | **Nền tảng Backend** | `.NET` (`net8.0`) & ASP.NET Core MVC | `8.0` | Kiến trúc MVC 3 tầng, Areas (`Admin`), Middleware, Hosted BackgroundService |
-| **ORM & Truy cập CSDL** | `Microsoft.EntityFrameworkCore.SqlServer` | `8.0.26` | Ánh xạ 36 bảng SQL-First, quản lý giao dịch ACID & `SplitQuery` |
+| **ORM & Truy cập CSDL** | `Microsoft.EntityFrameworkCore.SqlServer` | `8.0.26` | Ánh xạ 37 bảng SQL-First, quản lý giao dịch ACID & `SplitQuery` |
 | **Công cụ EF Core** | `Microsoft.EntityFrameworkCore.Design` / `.Tools` | `8.0.26` | Hỗ trợ Scaffold và quản trị mô hình dữ liệu EF Core |
-| **Hệ quản trị CSDL** | Microsoft SQL Server (`CSDL_BanhTrungThu`) | `2019+` | Lưu trữ quan hệ chuẩn hóa 36 bảng, ràng buộc khóa ngoại & chỉ mục duy nhất |
+| **Hệ quản trị CSDL** | Microsoft SQL Server (`CSDL_BanhTrungThu`) | `2019+` | Lưu trữ quan hệ chuẩn hóa 37 bảng, ràng buộc khóa ngoại & chỉ mục duy nhất |
 | **Xử lý Excel** | `ClosedXML` | `0.105.1` | Xuất bảng giá, nhập sản phẩm hàng loạt, tải mẫu & import phiếu kiểm kho `.xlsx` |
 | **Sinh mã QR** | `QRCoder` | `1.8.1` | Tạo mã QR thanh toán VietQR/MoMo và mã QR dẫn tới trang Thiệp chúc mừng 3D |
 | **Tuần tự hóa JSON** | `System.Text.Json` & `Newtonsoft.Json` | `8.0` / `13.0.4` | API phản hồi AJAX (`ReferenceHandler.IgnoreCycles`) và xử lý dữ liệu tích hợp |
@@ -134,13 +134,14 @@ Phục vụ tại `HomeController`, `SanPhamController`, `GioHangController`, `T
   - Lịch sử đơn hàng hỗ trợ **Khách tự hủy đơn COD chưa xác nhận** (`CHO_XAC_NHAN`), tự động hoàn tồn kho theo đúng lô trong `NhatKyTruKhoDonHang` và hoàn lại điểm VIP đã dùng.
   - Xem **Thiệp chúc mừng 3D** qua đường dẫn/mã QR (`Thiep3D/Xem.cshtml`).
 
-### B. Phân hệ Quản Trị Mini-ERP Chủ Cửa Hàng (`ADMIN` — 13 Controllers)
+### B. Phân hệ Quản Trị Mini-ERP Chủ Cửa Hàng (`ADMIN` — 14 Controllers)
 Phục vụ tại khu vực `[Area("Admin")]`:
 
 | Controller | Service Interface chính | Chức năng cốt lõi |
 | :--- | :--- | :--- |
 | `DashboardController` | `IDichVuThongKeVaSoQuy` | Thống kê KPI doanh thu, đơn hàng đa kênh, tồn kho và cảnh báo lô cận hạn |
 | `SanPhamAdminController` | `IDichVuQuanTriSanPham`, `IDichVuQuanTriBangGia`, `IDichVuQuanTriKhoFefo` | Quản lý 60 sản phẩm, danh mục, thương hiệu (`ThuongHieu`), bảng giá sỉ/lẻ, vị trí kho, mã vạch EAN-13, cảnh báo lô FEFO, Import/Export `.xlsx` (`ClosedXML`) |
+| `VoHopAdminController` | `IDichVuQuanTriVoHop` | Quản lý danh mục mẫu vỏ hộp quà tặng (`MauVoHop`), nhập/xuất hủy tồn kho vỏ hộp (`PhieuKhoVoHop`) và liên kết phiếu chi sổ quỹ |
 | `NhaCungCapAdminController` | `IDichVuNhaCungCap` | Quản lý Nhà cung cấp chính hãng (chiết khấu mặc định `22%–28%`), theo dõi tổng mua và công nợ |
 | `NhapKhoAdminController` | `IDichVuNhapKho` | Lập/duyệt Phiếu Nhập Kho đa sản phẩm, tự tính giá nhập theo `%CK`, sinh lô FEFO mới, cập nhật giá vốn bình quân gia quyền, tự động sinh Phiếu Chi Sổ quỹ & quản lý trả nợ NCC |
 | `XuatKhoAdminController` | `IDichVuXuatKho` | Lập Phiếu Xuất Kho (xuất tiêu dùng nội bộ, xuất hủy hàng hỏng/quá hạn, xuất cân bằng kiểm kho) |
@@ -160,13 +161,13 @@ Phục vụ tại khu vực `[Area("Admin")]`:
 - **Kiểm soát truy cập RBAC (`ControllerQuanTriCoSo`):**
   - Tài khoản vai trò `NHAN_VIEN` sau khi đăng nhập được điều hướng thẳng tới `/Admin/BanHangPos/Index`.
   - Chỉ được phép truy cập **2 phân hệ tác nghiệp**: `BanHangPos` và `DonHangAdmin`.
-  - Mọi truy cập trái phép vào **11 phân hệ quản trị nhạy cảm còn lại** (`Dashboard`, `SanPhamAdmin`, `NhapKhoAdmin`, `XuatKhoAdmin`, `KiemKhoAdmin`, `NhaCungCapAdmin`, `KhachHangAdmin`, `NhanVienAdmin`, `SoQuyAdmin`, `KhoAnhAdmin`, `CaiDatAdmin`) đều bị chặn `HTTP 302 -> /TaiKhoan/TuChoiTruyCap`.
+  - Mọi truy cập trái phép vào **12 phân hệ quản trị nhạy cảm còn lại** (`Dashboard`, `SanPhamAdmin`, `VoHopAdmin`, `NhapKhoAdmin`, `XuatKhoAdmin`, `KiemKhoAdmin`, `NhaCungCapAdmin`, `KhachHangAdmin`, `NhanVienAdmin`, `SoQuyAdmin`, `KhoAnhAdmin`, `CaiDatAdmin`) đều bị chặn `HTTP 302 -> /TaiKhoan/TuChoiTruyCap`.
 
 ---
 
-## 5. Cơ Sở Dữ Liệu Quan Hệ (36 Bảng SQL-First)
+## 5. Cơ Sở Dữ Liệu Quan Hệ (37 Bảng SQL-First)
 
-Cơ sở dữ liệu `CSDL_BanhTrungThu` được thiết kế chuẩn SQL-First gồm **36 bảng quan hệ vật lý**, chia thành 6 cụm nghiệp vụ rõ ràng (tham chiếu `WebBanhTrungThu/Data/CSDLBanhTrungThuContext.cs`):
+Cơ sở dữ liệu `CSDL_BanhTrungThu` được thiết kế chuẩn SQL-First gồm **37 bảng quan hệ vật lý** (100% kết nối ERD, 0 bảng mồ côi), chia thành 6 cụm nghiệp vụ rõ ràng (tham chiếu `WebBanhTrungThu/Data/CSDLBanhTrungThuContext.cs`):
 
 | STT | Cụm Nghiệp Vụ | Số bảng | Danh sách Bảng SQL (`DbSet` trong `CSDLBanhTrungThuContext`) |
 | :---: | :--- | :---: | :--- |
@@ -174,7 +175,7 @@ Cơ sở dữ liệu `CSDL_BanhTrungThu` được thiết kế chuẩn SQL-First
 | **2** | **Danh mục, Thương hiệu, Sản phẩm & Lô FEFO** | `8` | `ThuongHieu`, `DanhMucBanh`, `SanPhamBanh`, `ThongSoDinhDuong`, `LoSanXuatBanh`, `MauVoHop`, `ComboMauCoSan`, `ChiTietComboMau` |
 | **3** | **Khách vãng lai, Hộp tự chọn & Giỏ hàng** | `5` | `PhienKhachVangLai`, `HopQuaTuChon`, `ChiTietHopTuChon`, `GioHang`, `ChiTietGioHang` |
 | **4** | **Đơn hàng, Giao hàng, Thiệp 3D & Nhật ký kho** | `5` | `DonHang`, `ChiTietDonHang`, `DotGiaoHang_DaDiem` (`DotGiaoHangDaDiem`), `ThiepChucMung3D`, `NhatKyTruKhoDonHang` |
-| **5** | **Mini-ERP Kho Đại lý, NCC & Sổ Quỹ** | `8` | `NhaCungCap`, `PhieuNhapKho`, `ChiTietPhieuNhap`, `PhieuXuatKho`, `ChiTietPhieuXuat`, `PhieuKiemKho`, `ChiTietKiemKho`, `PhieuThuChi` |
+| **5** | **Mini-ERP Kho Đại lý, NCC & Sổ Quỹ** | `9` | `NhaCungCap`, `PhieuNhapKho`, `ChiTietPhieuNhap`, `PhieuXuatKho`, `ChiTietPhieuXuat`, `PhieuKiemKho`, `ChiTietKiemKho`, `PhieuKhoVoHop`, `PhieuThuChi` |
 | **6** | **Khuyến mãi, Hình ảnh & Cấu hình hệ thống** | `6` | `MaKhuyenMai`, `BangChietKhauSiB2B`, `KhoHinhAnh`, `LienKetHinhAnh`, `CauHinhLandingPage`, `CauHinhHeThong` *(chỉ lưu đúng 4 khóa cài đặt hệ thống)* |
 
 > **Ghi chú thiết kế:** Bảng `CauHinhHeThong` chỉ lưu đúng **4 khóa cài đặt hệ thống** tương ứng 4 tab trong trang Cài đặt; toàn bộ dữ liệu nghiệp vụ (Thương hiệu, Nhà cung cấp, Nhân viên, Chứng từ Nhập/Xuất/Kiểm kho, Nhật ký trừ kho và Sổ quỹ) được lưu hoàn toàn trên các bảng quan hệ chuẩn hóa (**Zero Business JSON**).
@@ -208,7 +209,7 @@ DoAn_WebBanhTrungThu/
 ├── don-dep-dong-goi.ps1                    # Script dọn rác biên dịch & đóng gói bản nộp sạch
 ├── README.md                               # Tài liệu hệ thống
 └── WebBanhTrungThu/
-    ├── Program.cs                          # Cấu hình DI (25 Interfaces), EF Core SplitQuery, Auth, Middleware
+    ├── Program.cs                          # Cấu hình DI (26 Interfaces), EF Core SplitQuery, Auth, Middleware
     ├── WebBanhTrungThu.csproj              # Khai báo .NET 8.0 & các gói NuGet
     ├── appsettings.json                    # Chuỗi kết nối CSDL & cấu hình ánh xạ kho ảnh
     ├── Areas/
@@ -228,6 +229,7 @@ DoAn_WebBanhTrungThu/
     │       │   ├── NhapKhoAdminController.cs        # Nhập kho đại lý & công nợ NCC
     │       │   ├── SanPhamAdminController.cs        # Hàng hóa, bảng giá & lô FEFO
     │       │   ├── SoQuyAdminController.cs          # Sổ quỹ Thu/Chi SQL-First
+    │       │   ├── VoHopAdminController.cs          # Quản lý mẫu vỏ hộp & kho vỏ hộp
     │       │   └── XuatKhoAdminController.cs        # Xuất hủy / xuất nội bộ / cân bằng kho
     │       └── Views/                               # Razor Views Admin & các thư mục PhanKhu/, ThanhPhan/
     ├── Controllers/
@@ -240,20 +242,20 @@ DoAn_WebBanhTrungThu/
     │   ├── ThanhToanController.cs                   # Thanh toán phẳng, Captcha, MoMo/VietQR
     │   └── Thiep3DController.cs                     # Hiển thị Thiệp chúc mừng 3D qua QR
     ├── Data/
-    │   ├── CSDLBanhTrungThuContext.cs               # DbContext 36 bảng SQL-First
+    │   ├── CSDLBanhTrungThuContext.cs               # DbContext 37 bảng SQL-First
     │   └── KhoiTaoCsdl.cs                           # Khởi tạo & chuẩn hóa schema khi chạy
     ├── Middlewares/
     │   └── PhienKhachVangLaiMiddleware.cs           # Quản lý phiên giỏ hàng khách vãng lai
     ├── Models/
     │   ├── ErrorViewModel.cs
-    │   └── Entities/                                # 36 Entity classes + các file Partial mở rộng
+    │   └── Entities/                                # 37 Entity classes + các file Partial mở rộng
     ├── Services/
     │   ├── CoSo/DichVuCoSo.cs                       # Base Service & Transaction ACID (ThucThiTrongGiaoDichAsync)
-    │   ├── Interfaces/                              # 25 Service Interfaces (IDichVu...)
+    │   ├── Interfaces/                              # 26 Service Interfaces (IDichVu...)
     │   ├── GiaoDien/                                # DichVuTrangChu, DichVuChiTietSanPham
     │   ├── GioHang/                                 # DichVuHopQuaTuChon, DichVuKhuyenMaiGioHang
     │   ├── Nen/DichVuNenHuyDonQuaHan.cs             # BackgroundService quét hủy đơn QR quá 15 phút
-    │   ├── QuanTri/                                 # 13 Service quản trị Mini-ERP, POS & TienIchExcelCsv
+    │   ├── QuanTri/                                 # 14 Service quản trị Mini-ERP, POS & TienIchExcelCsv
     │   ├── TaiKhoan/DichVuHoiVien.cs                # Nghiệp vụ hội viên VIP & lịch sử đơn
     │   ├── ThanhToan/                               # Captcha, cổng MoMo/VietQR, tính giá & trừ kho FEFO
     │   ├── DichVuCauHinhHeThong.cs
@@ -261,13 +263,13 @@ DoAn_WebBanhTrungThu/
     │   ├── DichVuHinhAnh.cs
     │   ├── DichVuThanhToan.cs
     │   └── ThongTinPhienHelper.cs
-    ├── ViewModels/                                  # 11 file ViewModels chuyên biệt
+    ├── ViewModels/                                  # 12 file ViewModels chuyên biệt
     ├── Views/                                       # Storefront Views & PhanKhu/, ThanhPhan/
     └── wwwroot/
         ├── css/                                     # 5 file CSS (site, thanh-toan, hieu-ung-ux, admin-layout, admin-pos)
         ├── images/                                  # Tài nguyên ảnh tĩnh giao diện
         └── js/
-            ├── admin-*.js                           # 8 module JS khu vực Admin & POS
+            ├── admin-*.js                           # 9 module JS khu vực Admin & POS
             ├── modules/                             # 10 module JS chuyên biệt Storefront & in K80
             ├── site.js                              # Điều phối giao diện chung Storefront
             └── thanh-toan.js                        # Điều phối quy trình thanh toán
@@ -359,7 +361,7 @@ DoAn_WebBanhTrungThu/
 
 | Email đăng nhập | Mã NV | Vai trò | Phạm vi & Dữ liệu Demo nổi bật |
 | :--- | :---: | :--- | :--- |
-| `admin@nguyetcat.vn` | `NV001` | Chủ cửa hàng (`ADMIN`) | Toàn quyền truy cập 13 phân hệ Mini-ERP, Kho FEFO, NCC, Sổ quỹ, Cài đặt & POS |
+| `admin@nguyetcat.vn` | `NV001` | Chủ cửa hàng (`ADMIN`) | Toàn quyền truy cập 14 phân hệ Mini-ERP, Kho FEFO, Vỏ hộp, NCC, Sổ quỹ, Cài đặt & POS |
 | `thungan@nguyetcat.vn` | `NV002` | Nhân viên Bán hàng (`NHAN_VIEN`) | Đăng nhập vào thẳng POS; ghi nhận doanh số POS `8.095.760 đ`; chỉ mở `BanHangPos` & `DonHangAdmin` |
 | `giaohang@nguyetcat.vn` | `NV003` | Nhân viên Bán hàng (`NHAN_VIEN`) | Đăng nhập vào thẳng POS; ghi nhận doanh số POS `1.066.000 đ`; chỉ mở `BanHangPos` & `DonHangAdmin` |
 | `minhchau@gmail.com` | — | Khách hàng VIP **Kim Cương** (`KHACH_TV`) | Tổng chi tiêu hoàn tất `5.720.700 đ`, `802` điểm tích lũy, sẵn đơn COD `#TT2026-1010` chờ xác nhận để thử nút tự hủy đơn & 3 Thiệp 3D QR (`THIEP-NC-2026-001`..`003`) |
@@ -383,9 +385,9 @@ Hệ thống đã hoàn tất quy trình kiểm định nghiệm thu **Final Rel
 
 | Pha kiểm định | Hạng mục kiểm tra | Kết quả thực tế |
 | :--- | :--- | :--- |
-| **Pha 1: Kiến trúc & Biên dịch** | Build Solution, DI Container, EF Core Log | `0 Error / 0 Warning`, `25/25` DI Interfaces hợp lệ, Controllers mỏng trung bình `62,25` dòng, `0` Exception, `0` cảnh báo `EventId 20504` |
-| **Pha 2: Toàn vẹn CSDL SQL-First** | Lược đồ quan hệ & Đối soát dữ liệu | `36` bảng quan hệ vật lý, `0` JSON nghiệp vụ trá hình, `0` sai số giữa tồn kho sản phẩm, tổng tồn các lô FEFO và Sổ quỹ |
-| **Pha 3: Nghiệp vụ & Bảo mật HTTP + SQL** | Luồng Mini-ERP, Excel, RBAC, F12, CSRF/IDOR | Pass toàn bộ luồng NCC–Nhập–Xuất–Kiểm kho–Sổ quỹ; Excel `.xlsx` (`ClosedXML`); RBAC chặn `11/11` route nhạy cảm của `NHAN_VIEN`; chống F12 tampering; tự hủy đơn COD hoàn đúng lô & hoàn điểm |
+| **Pha 1: Kiến trúc & Biên dịch** | Build Solution, DI Container, EF Core Log | `0 Error / 0 Warning`, `26/26` DI Interfaces hợp lệ, Controllers mỏng trung bình `62,25` dòng, `0` Exception, `0` cảnh báo `EventId 20504` |
+| **Pha 2: Toàn vẹn CSDL SQL-First** | Lược đồ quan hệ & Đối soát dữ liệu | `37` bảng quan hệ vật lý kết nối 100% ERD (0 bảng mồ côi), `0` JSON nghiệp vụ trá hình, `0` sai số giữa tồn kho sản phẩm, tổng tồn các lô FEFO và Sổ quỹ |
+| **Pha 3: Nghiệp vụ & Bảo mật HTTP + SQL** | Luồng Mini-ERP, Excel, RBAC, F12, CSRF/IDOR | Pass toàn bộ luồng NCC–Nhập–Xuất–Kiểm kho–Vỏ hộp–Sổ quỹ; Excel `.xlsx` (`ClosedXML`); RBAC chặn `12/12` route nhạy cảm của `NHAN_VIEN`; chống F12 tampering; tự hủy đơn COD hoàn đúng lô & hoàn điểm |
 | **Pha 4: Giao diện Đa thiết bị (UI/UX)** | Browser Test trên `1440x900`, `1080x800`, `450x838` | Kiểm thử đủ 3 vai trò (`Khách hàng`, `NHAN_VIEN`, `ADMIN`): `0` Console Error, `0` Network `>= 400`, `0` ảnh vỡ, `0` lỗi tràn ngang |
 | **Pha 5: Khôi phục & Đóng gói** | Snapshot SQL & Gói mã nguồn nộp đồ án | Khôi phục CSDL đối soát `Total diffs = 0`; tạo gói sạch `NopDoAn_WebBanhTrungThu_Sach.zip` với `0` thư mục rác |
 

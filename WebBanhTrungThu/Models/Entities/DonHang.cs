@@ -147,6 +147,12 @@ public partial class DonHang
 
     public bool DaRollbackKho { get; set; }
 
+    [Column("MaKM")]
+    public int? MaKm { get; set; }
+
+    [Column("MaMocCK")]
+    public int? MaMocCk { get; set; }
+
     [InverseProperty("MaDhNavigation")]
     public virtual ICollection<ChiTietDonHang> ChiTietDonHangs { get; set; } = new List<ChiTietDonHang>();
 
@@ -155,6 +161,24 @@ public partial class DonHang
 
     [InverseProperty("MaDhNavigation")]
     public virtual ICollection<NhatKyTruKhoDonHang> NhatKyTruKhoDonHangs { get; set; } = new List<NhatKyTruKhoDonHang>();
+
+    [InverseProperty("MaDonHangNavigation")]
+    public virtual ICollection<ThiepChucMung3d> ThiepChucMung3ds { get; set; } = new List<ThiepChucMung3d>();
+
+    [InverseProperty("MaDonHangLienKetNavigation")]
+    public virtual ICollection<PhieuThuChi> PhieuThuChis { get; set; } = new List<PhieuThuChi>();
+
+    [ForeignKey("MaAnhLogoCongTy")]
+    [InverseProperty("DonHangs")]
+    public virtual KhoHinhAnh? MaAnhLogoCongTyNavigation { get; set; }
+
+    [ForeignKey("MaKm")]
+    [InverseProperty("DonHangs")]
+    public virtual MaKhuyenMai? MaKmNavigation { get; set; }
+
+    [ForeignKey("MaMocCk")]
+    [InverseProperty("DonHangs")]
+    public virtual BangChietKhauSiB2b? MaMocCkNavigation { get; set; }
 
     [ForeignKey("MaNd")]
     [InverseProperty("DonHangs")]

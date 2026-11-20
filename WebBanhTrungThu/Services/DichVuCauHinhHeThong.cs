@@ -683,7 +683,7 @@ namespace WebBanhTrungThu.Services
 
         public CauHinhThanhToanQr LayCauHinhThanhToan() => LayCauHinhQr();
 
-        public void CapNhatCauHinhQr(Action<CauHinhThanhToanQr> capNhat)
+        public void CapNhatCauHinhQr(Action<CauHinhThanhToanQr> capNhat, int? maNdCapNhat = null)
         {
             lock (_lock)
             {
@@ -691,7 +691,7 @@ namespace WebBanhTrungThu.Services
                 var db = scope.ServiceProvider.GetRequiredService<CSDLBanhTrungThuContext>();
                 var cfg = DocHoacKhoiTaoCauHinhQrInternal(db);
                 capNhat(cfg);
-                LuuCauHinhQrInternal(db, cfg);
+                LuuCauHinhQrInternal(db, cfg, maNdCapNhat);
                 db.SaveChanges();
             }
         }
@@ -873,8 +873,14 @@ namespace WebBanhTrungThu.Services
             return macDinh;
         }
 
-        private void LuuCauHinhQrInternal(CSDLBanhTrungThuContext db, CauHinhThanhToanQr cfg)
+        private void LuuCauHinhQrInternal(CSDLBanhTrungThuContext db, CauHinhThanhToanQr cfg, int? maNdCapNhat = null)
         {
+            int? maNdHopLe = null;
+            if (maNdCapNhat.HasValue && db.NguoiDungs.AsNoTracking().Any(u => u.MaNd == maNdCapNhat.Value))
+            {
+                maNdHopLe = maNdCapNhat.Value;
+            }
+
             string jsonQr = JsonSerializer.Serialize(cfg, _jsonOptions);
             var rowQr = db.CauHinhHeThongs.FirstOrDefault(c => c.KhoaCauHinh == KHOA_CAU_HINH_QR_MOMO);
             if (rowQr == null)
@@ -884,13 +890,15 @@ namespace WebBanhTrungThu.Services
                     KhoaCauHinh = KHOA_CAU_HINH_QR_MOMO,
                     GiaTriJson = jsonQr,
                     MoTa = "Cấu hình Tài khoản nhận tiền Ví MoMo / VietQR (0814585526 - LE MINH DUC)",
-                    NgayCapNhat = DateTime.Now
+                    NgayCapNhat = DateTime.Now,
+                    MaNdCapNhat = maNdHopLe
                 });
             }
             else
             {
                 rowQr.GiaTriJson = jsonQr;
                 rowQr.NgayCapNhat = DateTime.Now;
+                if (maNdHopLe.HasValue) rowQr.MaNdCapNhat = maNdHopLe.Value;
             }
         }
 

@@ -75,8 +75,17 @@ public partial class SanPhamBanh
 
     public bool BanTrucTiep { get; set; } = true;
 
+    public int? MaAnhChinh { get; set; }
+
+    [ForeignKey("MaAnhChinh")]
+    [InverseProperty("SanPhamBanhs")]
+    public virtual KhoHinhAnh? MaAnhChinhNavigation { get; set; }
+
     [InverseProperty("MaBanhNavigation")]
     public virtual ICollection<ChiTietComboMau> ChiTietComboMaus { get; set; } = new List<ChiTietComboMau>();
+
+    [InverseProperty("MaBanhNavigation")]
+    public virtual ICollection<ChiTietDonHang> ChiTietDonHangs { get; set; } = new List<ChiTietDonHang>();
 
     [InverseProperty("MaBanhNavigation")]
     public virtual ICollection<ChiTietGioHang> ChiTietGioHangs { get; set; } = new List<ChiTietGioHang>();

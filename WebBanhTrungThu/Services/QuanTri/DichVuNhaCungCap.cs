@@ -270,11 +270,13 @@ namespace WebBanhTrungThu.Services.QuanTri
                 return (false, "Không tìm thấy nhà cung cấp.");
             }
 
-            bool daCoPhieuNhap = await _db.PhieuNhapKhos
+            bool dangLienKet = await _db.PhieuNhapKhos
                 .AsNoTracking()
-                .AnyAsync(p => p.MaNcc == maNcc || p.NhaCungCap == ncc.TenNcc);
+                .AnyAsync(p => p.MaNcc == maNcc || p.NhaCungCap == ncc.TenNcc)
+                || await _db.SanPhamBanhs.AsNoTracking().AnyAsync(b => b.MaNccMacDinh == maNcc)
+                || await _db.PhieuKhoVoHops.AsNoTracking().AnyAsync(p => p.MaNcc == maNcc);
 
-            if (daCoPhieuNhap)
+            if (dangLienKet)
             {
                 if (!ncc.DangHoatDong)
                 {
@@ -282,7 +284,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                 }
                 ncc.DangHoatDong = false;
                 await _db.SaveChangesAsync();
-                return (true, $"[{ncc.MaCodeNcc}] {ncc.TenNcc} đã phát sinh phiếu nhập kho nên được chuyển sang trạng thái Ngừng hợp tác để bảo toàn lịch sử.");
+                return (true, $"[{ncc.MaCodeNcc}] {ncc.TenNcc} đã phát sinh chứng từ/sản phẩm liên kết nên được chuyển sang trạng thái Ngừng hợp tác để bảo toàn lịch sử.");
             }
 
             string maTen = $"[{ncc.MaCodeNcc}] {ncc.TenNcc}";

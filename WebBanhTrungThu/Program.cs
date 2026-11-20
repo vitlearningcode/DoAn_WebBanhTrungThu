@@ -23,7 +23,7 @@ builder.Services.AddControllersWithViews()
         options.JsonSerializerOptions.WriteIndented = true;
     });
 
-// 2. Đăng ký DbContext kết nối tới SQL Server (25 bảng)
+// 2. Đăng ký DbContext kết nối tới SQL Server (37 bảng SQL-First)
 builder.Services.AddDbContext<CSDLBanhTrungThuContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("ChuoiKetNoiCSDL"),
@@ -56,6 +56,7 @@ builder.Services.AddScoped<IDichVuNhaCungCap, DichVuNhaCungCap>();
 builder.Services.AddScoped<IDichVuXuatKho, DichVuXuatKho>();
 builder.Services.AddScoped<IDichVuKiemKho, DichVuKiemKho>();
 builder.Services.AddScoped<IDichVuQuanTriNhanVien, DichVuQuanTriNhanVien>();
+builder.Services.AddScoped<IDichVuQuanTriVoHop, DichVuQuanTriVoHop>();
 
 // 4. Cấu hình Cookie Authentication thuần
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

@@ -9,9 +9,9 @@ using WebBanhTrungThu.Services;
 namespace WebBanhTrungThu.Data
 {
     /// <summary>
-    /// Lớp chuyên trách khởi tạo cấu trúc bảng mở rộng (PhieuThuChi, ThiepChucMung3D, CauHinhHeThong),
-    /// dọn dẹp 2 bảng thừa (NguyenLieu, CongThucBanhNl), di trú dữ liệu cấu hình mở rộng Đại lý Nguyệt Cát ERP,
-    /// chuẩn hóa hạn mã khuyến mãi 2027, hạn sử dụng lô bánh FEFO và ảnh khay hộp 6 ô.
+    /// Lớp chuyên trách khởi tạo cấu trúc bảng mở rộng (PhieuThuChi, ThiepChucMung3D, CauHinhHeThong, PhieuKhoVoHop),
+    /// dọn dẹp 2 bảng thừa (NguyenLieu, CongThucBanhNl), gắn đầy đủ khóa ngoại chuẩn 37/37 bảng SQL-First,
+    /// di trú dữ liệu cấu hình mở rộng Đại lý Nguyệt Cát ERP, chuẩn hóa hạn mã khuyến mãi 2027, hạn sử dụng lô bánh FEFO và ảnh khay hộp 6 ô.
     /// </summary>
     public static class KhoiTaoCsdl
     {
@@ -382,7 +382,246 @@ namespace WebBanhTrungThu.Data
                         ALTER TABLE dbo.DonHang ADD NguoiCapNhatCuoi NVARCHAR(150) NULL;
                     IF COL_LENGTH('dbo.DonHang', 'DaRollbackKho') IS NULL
                         ALTER TABLE dbo.DonHang ADD DaRollbackKho BIT NOT NULL DEFAULT(0);
+                    IF COL_LENGTH('dbo.DonHang', 'MaKM') IS NULL
+                        ALTER TABLE dbo.DonHang ADD MaKM INT NULL;
+                    IF COL_LENGTH('dbo.DonHang', 'MaMocCK') IS NULL
+                        ALTER TABLE dbo.DonHang ADD MaMocCK INT NULL;
                 END;
+
+                IF OBJECT_ID('dbo.SanPhamBanh', 'U') IS NOT NULL AND COL_LENGTH('dbo.SanPhamBanh', 'MaAnhChinh') IS NULL
+                    ALTER TABLE dbo.SanPhamBanh ADD MaAnhChinh INT NULL;
+
+                IF OBJECT_ID('dbo.MauVoHop', 'U') IS NOT NULL AND COL_LENGTH('dbo.MauVoHop', 'MaAnhChinh') IS NULL
+                    ALTER TABLE dbo.MauVoHop ADD MaAnhChinh INT NULL;
+
+                IF OBJECT_ID('dbo.ComboMauCoSan', 'U') IS NOT NULL AND COL_LENGTH('dbo.ComboMauCoSan', 'MaAnhChinh') IS NULL
+                    ALTER TABLE dbo.ComboMauCoSan ADD MaAnhChinh INT NULL;
+
+                IF OBJECT_ID('dbo.PhieuKiemKho', 'U') IS NOT NULL AND COL_LENGTH('dbo.PhieuKiemKho', 'MaNdKiem') IS NULL
+                    ALTER TABLE dbo.PhieuKiemKho ADD MaNdKiem INT NULL;
+
+                IF OBJECT_ID('dbo.CauHinhHeThong', 'U') IS NOT NULL AND COL_LENGTH('dbo.CauHinhHeThong', 'MaNdCapNhat') IS NULL
+                    ALTER TABLE dbo.CauHinhHeThong ADD MaNdCapNhat INT NULL;
+
+                IF OBJECT_ID('dbo.PhieuKhoVoHop', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.PhieuKhoVoHop (
+                        MaPvh INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                        SoPhieu NVARCHAR(50) NOT NULL UNIQUE,
+                        MaVH INT NOT NULL,
+                        LoaiGiaoDich VARCHAR(30) NOT NULL,
+                        SoLuong INT NOT NULL,
+                        DonGiaNhap DECIMAL(18,2) NOT NULL DEFAULT(0),
+                        ThanhTien DECIMAL(18,2) NOT NULL DEFAULT(0),
+                        MaNcc INT NULL,
+                        MaPhieuChi INT NULL,
+                        MaNdLap INT NULL,
+                        NguoiLap NVARCHAR(150) NOT NULL,
+                        GhiChu NVARCHAR(500) NULL,
+                        NgayGiaoDich DATETIME NOT NULL DEFAULT(GETDATE()),
+                        CONSTRAINT FK_PKVH_MauVoHop FOREIGN KEY (MaVH) REFERENCES dbo.MauVoHop(MaVH) ON DELETE NO ACTION,
+                        CONSTRAINT FK_PKVH_NhaCungCap FOREIGN KEY (MaNcc) REFERENCES dbo.NhaCungCap(MaNcc) ON DELETE NO ACTION,
+                        CONSTRAINT FK_PKVH_PhieuThuChi FOREIGN KEY (MaPhieuChi) REFERENCES dbo.PhieuThuChi(MaPhieu) ON DELETE NO ACTION,
+                        CONSTRAINT FK_PKVH_NguoiDung FOREIGN KEY (MaNdLap) REFERENCES dbo.NguoiDung(MaND) ON DELETE NO ACTION
+                    );
+                END;
+            ");
+
+            // Đợt 2: Làm sạch dữ liệu tham chiếu mồ côi/chuỗi rỗng và đồng bộ ảnh chính trước khi gắn toàn bộ FK
+            await db.Database.ExecuteSqlRawAsync(@"
+                IF OBJECT_ID('dbo.GioHang', 'U') IS NOT NULL AND OBJECT_ID('dbo.MaKhuyenMai', 'U') IS NOT NULL
+                BEGIN
+                    UPDATE dbo.GioHang
+                    SET CodeKMDangApDung = NULL
+                    WHERE LTRIM(RTRIM(ISNULL(CodeKMDangApDung, ''))) = ''
+                       OR CodeKMDangApDung NOT IN (SELECT CodeKM FROM dbo.MaKhuyenMai);
+                END;
+
+                IF OBJECT_ID('dbo.ThiepChucMung3D', 'U') IS NOT NULL
+                BEGIN
+                    IF OBJECT_ID('dbo.DonHang', 'U') IS NOT NULL
+                        DELETE FROM dbo.ThiepChucMung3D WHERE MaDonHang NOT IN (SELECT MaDH FROM dbo.DonHang);
+                    IF OBJECT_ID('dbo.DotGiaoHang_DaDiem', 'U') IS NOT NULL
+                        UPDATE dbo.ThiepChucMung3D SET MaDotGiao = NULL
+                        WHERE MaDotGiao IS NOT NULL AND MaDotGiao NOT IN (SELECT MaDotGH FROM dbo.DotGiaoHang_DaDiem);
+                END;
+
+                IF OBJECT_ID('dbo.PhieuThuChi', 'U') IS NOT NULL AND OBJECT_ID('dbo.DonHang', 'U') IS NOT NULL
+                BEGIN
+                    UPDATE dbo.PhieuThuChi SET MaDonHangLienKet = NULL
+                    WHERE MaDonHangLienKet IS NOT NULL AND MaDonHangLienKet NOT IN (SELECT MaDH FROM dbo.DonHang);
+                END;
+
+                IF OBJECT_ID('dbo.DonHang', 'U') IS NOT NULL
+                BEGIN
+                    IF OBJECT_ID('dbo.KhoHinhAnh', 'U') IS NOT NULL
+                        UPDATE dbo.DonHang SET MaAnhLogoCongTy = NULL
+                        WHERE MaAnhLogoCongTy IS NOT NULL AND MaAnhLogoCongTy NOT IN (SELECT MaHA FROM dbo.KhoHinhAnh);
+                    IF OBJECT_ID('dbo.MaKhuyenMai', 'U') IS NOT NULL
+                        UPDATE dbo.DonHang SET MaKM = NULL
+                        WHERE MaKM IS NOT NULL AND MaKM NOT IN (SELECT MaKM FROM dbo.MaKhuyenMai);
+                    IF OBJECT_ID('dbo.BangChietKhauSiB2B', 'U') IS NOT NULL
+                        UPDATE dbo.DonHang SET MaMocCK = NULL
+                        WHERE MaMocCK IS NOT NULL AND MaMocCK NOT IN (SELECT MaMocCK FROM dbo.BangChietKhauSiB2B);
+                END;
+
+                IF OBJECT_ID('dbo.ChiTietDonHang', 'U') IS NOT NULL
+                BEGIN
+                    IF OBJECT_ID('dbo.SanPhamBanh', 'U') IS NOT NULL
+                        UPDATE dbo.ChiTietDonHang SET MaBanh = NULL
+                        WHERE MaBanh IS NOT NULL AND MaBanh NOT IN (SELECT MaBanh FROM dbo.SanPhamBanh);
+                    IF OBJECT_ID('dbo.ComboMauCoSan', 'U') IS NOT NULL
+                        UPDATE dbo.ChiTietDonHang SET MaCB = NULL
+                        WHERE MaCB IS NOT NULL AND MaCB NOT IN (SELECT MaCB FROM dbo.ComboMauCoSan);
+                    IF OBJECT_ID('dbo.HopQuaTuChon', 'U') IS NOT NULL
+                        UPDATE dbo.ChiTietDonHang SET MaHopTC = NULL
+                        WHERE MaHopTC IS NOT NULL AND MaHopTC NOT IN (SELECT MaHopTC FROM dbo.HopQuaTuChon);
+                END;
+
+                IF OBJECT_ID('dbo.CauHinhLandingPage', 'U') IS NOT NULL AND OBJECT_ID('dbo.KhoHinhAnh', 'U') IS NOT NULL
+                BEGIN
+                    UPDATE dbo.CauHinhLandingPage SET MaAnhPhu_Parallax = NULL
+                    WHERE MaAnhPhu_Parallax IS NOT NULL AND MaAnhPhu_Parallax NOT IN (SELECT MaHA FROM dbo.KhoHinhAnh);
+                END;
+
+                IF OBJECT_ID('dbo.KhoHinhAnh', 'U') IS NOT NULL
+                BEGIN
+                    IF OBJECT_ID('dbo.SanPhamBanh', 'U') IS NOT NULL
+                    BEGIN
+                        UPDATE dbo.SanPhamBanh SET MaAnhChinh = NULL
+                        WHERE MaAnhChinh IS NOT NULL AND MaAnhChinh NOT IN (SELECT MaHA FROM dbo.KhoHinhAnh);
+
+                        IF OBJECT_ID('dbo.LienKetHinhAnh', 'U') IS NOT NULL
+                        BEGIN
+                            UPDATE sp
+                            SET sp.MaAnhChinh = lk.MaHA
+                            FROM dbo.SanPhamBanh sp
+                            CROSS APPLY (
+                                SELECT TOP 1 l.MaHA
+                                FROM dbo.LienKetHinhAnh l
+                                INNER JOIN dbo.KhoHinhAnh ha ON l.MaHA = ha.MaHA
+                                WHERE l.LoaiDoiTuong = 'BANH' AND l.MaDoiTuong = sp.MaBanh
+                                ORDER BY l.ThuTuHienThi ASC, l.MaLK ASC
+                            ) lk
+                            WHERE sp.MaAnhChinh IS NULL;
+                        END;
+                    END;
+
+                    IF OBJECT_ID('dbo.MauVoHop', 'U') IS NOT NULL
+                    BEGIN
+                        UPDATE dbo.MauVoHop SET MaAnhChinh = NULL
+                        WHERE MaAnhChinh IS NOT NULL AND MaAnhChinh NOT IN (SELECT MaHA FROM dbo.KhoHinhAnh);
+
+                        IF OBJECT_ID('dbo.LienKetHinhAnh', 'U') IS NOT NULL
+                        BEGIN
+                            UPDATE vh
+                            SET vh.MaAnhChinh = lk.MaHA
+                            FROM dbo.MauVoHop vh
+                            CROSS APPLY (
+                                SELECT TOP 1 l.MaHA
+                                FROM dbo.LienKetHinhAnh l
+                                INNER JOIN dbo.KhoHinhAnh ha ON l.MaHA = ha.MaHA
+                                WHERE l.LoaiDoiTuong = 'VOHOP' AND l.MaDoiTuong = vh.MaVH
+                                ORDER BY l.ThuTuHienThi ASC, l.MaLK ASC
+                            ) lk
+                            WHERE vh.MaAnhChinh IS NULL;
+                        END;
+                    END;
+
+                    IF OBJECT_ID('dbo.ComboMauCoSan', 'U') IS NOT NULL
+                    BEGIN
+                        UPDATE dbo.ComboMauCoSan SET MaAnhChinh = NULL
+                        WHERE MaAnhChinh IS NOT NULL AND MaAnhChinh NOT IN (SELECT MaHA FROM dbo.KhoHinhAnh);
+
+                        IF OBJECT_ID('dbo.LienKetHinhAnh', 'U') IS NOT NULL
+                        BEGIN
+                            UPDATE cb
+                            SET cb.MaAnhChinh = lk.MaHA
+                            FROM dbo.ComboMauCoSan cb
+                            CROSS APPLY (
+                                SELECT TOP 1 l.MaHA
+                                FROM dbo.LienKetHinhAnh l
+                                INNER JOIN dbo.KhoHinhAnh ha ON l.MaHA = ha.MaHA
+                                WHERE l.LoaiDoiTuong = 'COMBO' AND l.MaDoiTuong = cb.MaCB
+                                ORDER BY l.ThuTuHienThi ASC, l.MaLK ASC
+                            ) lk
+                            WHERE cb.MaAnhChinh IS NULL;
+                        END;
+                    END;
+                END;
+
+                IF OBJECT_ID('dbo.NguoiDung', 'U') IS NOT NULL
+                BEGIN
+                    IF OBJECT_ID('dbo.PhieuKiemKho', 'U') IS NOT NULL
+                        UPDATE dbo.PhieuKiemKho SET MaNdKiem = NULL
+                        WHERE MaNdKiem IS NOT NULL AND MaNdKiem NOT IN (SELECT MaND FROM dbo.NguoiDung);
+                    IF OBJECT_ID('dbo.CauHinhHeThong', 'U') IS NOT NULL
+                        UPDATE dbo.CauHinhHeThong SET MaNdCapNhat = NULL
+                        WHERE MaNdCapNhat IS NOT NULL AND MaNdCapNhat NOT IN (SELECT MaND FROM dbo.NguoiDung);
+                END;
+            ");
+
+            // Đợt 3: Gắn toàn bộ khóa ngoại (7 FK cột mới + 9 FK còn thiếu + 4 FK PhieuKhoVoHop) với ON DELETE NO ACTION
+            await db.Database.ExecuteSqlRawAsync(@"
+                IF OBJECT_ID('dbo.PhieuKhoVoHop', 'U') IS NOT NULL
+                BEGIN
+                    IF OBJECT_ID('dbo.FK_PKVH_MauVoHop', 'F') IS NULL
+                        ALTER TABLE dbo.PhieuKhoVoHop WITH CHECK ADD CONSTRAINT FK_PKVH_MauVoHop FOREIGN KEY (MaVH) REFERENCES dbo.MauVoHop(MaVH) ON DELETE NO ACTION;
+                    IF OBJECT_ID('dbo.FK_PKVH_NhaCungCap', 'F') IS NULL
+                        ALTER TABLE dbo.PhieuKhoVoHop WITH CHECK ADD CONSTRAINT FK_PKVH_NhaCungCap FOREIGN KEY (MaNcc) REFERENCES dbo.NhaCungCap(MaNcc) ON DELETE NO ACTION;
+                    IF OBJECT_ID('dbo.FK_PKVH_PhieuThuChi', 'F') IS NULL
+                        ALTER TABLE dbo.PhieuKhoVoHop WITH CHECK ADD CONSTRAINT FK_PKVH_PhieuThuChi FOREIGN KEY (MaPhieuChi) REFERENCES dbo.PhieuThuChi(MaPhieu) ON DELETE NO ACTION;
+                    IF OBJECT_ID('dbo.FK_PKVH_NguoiDung', 'F') IS NULL
+                        ALTER TABLE dbo.PhieuKhoVoHop WITH CHECK ADD CONSTRAINT FK_PKVH_NguoiDung FOREIGN KEY (MaNdLap) REFERENCES dbo.NguoiDung(MaND) ON DELETE NO ACTION;
+                END;
+
+                IF OBJECT_ID('dbo.FK_SPBanh_AnhChinh', 'F') IS NULL AND OBJECT_ID('dbo.SanPhamBanh', 'U') IS NOT NULL AND OBJECT_ID('dbo.KhoHinhAnh', 'U') IS NOT NULL
+                    ALTER TABLE dbo.SanPhamBanh WITH CHECK ADD CONSTRAINT FK_SPBanh_AnhChinh FOREIGN KEY (MaAnhChinh) REFERENCES dbo.KhoHinhAnh(MaHA) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_MauVoHop_AnhChinh', 'F') IS NULL AND OBJECT_ID('dbo.MauVoHop', 'U') IS NOT NULL AND OBJECT_ID('dbo.KhoHinhAnh', 'U') IS NOT NULL
+                    ALTER TABLE dbo.MauVoHop WITH CHECK ADD CONSTRAINT FK_MauVoHop_AnhChinh FOREIGN KEY (MaAnhChinh) REFERENCES dbo.KhoHinhAnh(MaHA) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_Combo_AnhChinh', 'F') IS NULL AND OBJECT_ID('dbo.ComboMauCoSan', 'U') IS NOT NULL AND OBJECT_ID('dbo.KhoHinhAnh', 'U') IS NOT NULL
+                    ALTER TABLE dbo.ComboMauCoSan WITH CHECK ADD CONSTRAINT FK_Combo_AnhChinh FOREIGN KEY (MaAnhChinh) REFERENCES dbo.KhoHinhAnh(MaHA) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_DonHang_MaKhuyenMai', 'F') IS NULL AND OBJECT_ID('dbo.DonHang', 'U') IS NOT NULL AND OBJECT_ID('dbo.MaKhuyenMai', 'U') IS NOT NULL
+                    ALTER TABLE dbo.DonHang WITH CHECK ADD CONSTRAINT FK_DonHang_MaKhuyenMai FOREIGN KEY (MaKM) REFERENCES dbo.MaKhuyenMai(MaKM) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_DonHang_BangChietKhau', 'F') IS NULL AND OBJECT_ID('dbo.DonHang', 'U') IS NOT NULL AND OBJECT_ID('dbo.BangChietKhauSiB2B', 'U') IS NOT NULL
+                    ALTER TABLE dbo.DonHang WITH CHECK ADD CONSTRAINT FK_DonHang_BangChietKhau FOREIGN KEY (MaMocCK) REFERENCES dbo.BangChietKhauSiB2B(MaMocCK) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_PhieuKiemKho_NguoiDung', 'F') IS NULL AND OBJECT_ID('dbo.PhieuKiemKho', 'U') IS NOT NULL AND OBJECT_ID('dbo.NguoiDung', 'U') IS NOT NULL
+                    ALTER TABLE dbo.PhieuKiemKho WITH CHECK ADD CONSTRAINT FK_PhieuKiemKho_NguoiDung FOREIGN KEY (MaNdKiem) REFERENCES dbo.NguoiDung(MaND) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_CauHinhHeThong_NguoiDung', 'F') IS NULL AND OBJECT_ID('dbo.CauHinhHeThong', 'U') IS NOT NULL AND OBJECT_ID('dbo.NguoiDung', 'U') IS NOT NULL
+                    ALTER TABLE dbo.CauHinhHeThong WITH CHECK ADD CONSTRAINT FK_CauHinhHeThong_NguoiDung FOREIGN KEY (MaNdCapNhat) REFERENCES dbo.NguoiDung(MaND) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_Thiep3D_DonHang', 'F') IS NULL AND OBJECT_ID('dbo.ThiepChucMung3D', 'U') IS NOT NULL AND OBJECT_ID('dbo.DonHang', 'U') IS NOT NULL
+                    ALTER TABLE dbo.ThiepChucMung3D WITH CHECK ADD CONSTRAINT FK_Thiep3D_DonHang FOREIGN KEY (MaDonHang) REFERENCES dbo.DonHang(MaDH) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_Thiep3D_DotGiaoHang', 'F') IS NULL AND OBJECT_ID('dbo.ThiepChucMung3D', 'U') IS NOT NULL AND OBJECT_ID('dbo.DotGiaoHang_DaDiem', 'U') IS NOT NULL
+                    ALTER TABLE dbo.ThiepChucMung3D WITH CHECK ADD CONSTRAINT FK_Thiep3D_DotGiaoHang FOREIGN KEY (MaDotGiao) REFERENCES dbo.DotGiaoHang_DaDiem(MaDotGH) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_PhieuThuChi_DonHang', 'F') IS NULL AND OBJECT_ID('dbo.PhieuThuChi', 'U') IS NOT NULL AND OBJECT_ID('dbo.DonHang', 'U') IS NOT NULL
+                    ALTER TABLE dbo.PhieuThuChi WITH CHECK ADD CONSTRAINT FK_PhieuThuChi_DonHang FOREIGN KEY (MaDonHangLienKet) REFERENCES dbo.DonHang(MaDH) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_DonHang_AnhLogoCongTy', 'F') IS NULL AND OBJECT_ID('dbo.DonHang', 'U') IS NOT NULL AND OBJECT_ID('dbo.KhoHinhAnh', 'U') IS NOT NULL
+                    ALTER TABLE dbo.DonHang WITH CHECK ADD CONSTRAINT FK_DonHang_AnhLogoCongTy FOREIGN KEY (MaAnhLogoCongTy) REFERENCES dbo.KhoHinhAnh(MaHA) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_GioHang_MaKhuyenMai', 'F') IS NULL AND OBJECT_ID('dbo.GioHang', 'U') IS NOT NULL AND OBJECT_ID('dbo.MaKhuyenMai', 'U') IS NOT NULL
+                    ALTER TABLE dbo.GioHang WITH CHECK ADD CONSTRAINT FK_GioHang_MaKhuyenMai FOREIGN KEY (CodeKMDangApDung) REFERENCES dbo.MaKhuyenMai(CodeKM) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_CTDH_SanPhamBanh', 'F') IS NULL AND OBJECT_ID('dbo.ChiTietDonHang', 'U') IS NOT NULL AND OBJECT_ID('dbo.SanPhamBanh', 'U') IS NOT NULL
+                    ALTER TABLE dbo.ChiTietDonHang WITH CHECK ADD CONSTRAINT FK_CTDH_SanPhamBanh FOREIGN KEY (MaBanh) REFERENCES dbo.SanPhamBanh(MaBanh) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_CTDH_ComboMau', 'F') IS NULL AND OBJECT_ID('dbo.ChiTietDonHang', 'U') IS NOT NULL AND OBJECT_ID('dbo.ComboMauCoSan', 'U') IS NOT NULL
+                    ALTER TABLE dbo.ChiTietDonHang WITH CHECK ADD CONSTRAINT FK_CTDH_ComboMau FOREIGN KEY (MaCB) REFERENCES dbo.ComboMauCoSan(MaCB) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_CTDH_HopTuChon', 'F') IS NULL AND OBJECT_ID('dbo.ChiTietDonHang', 'U') IS NOT NULL AND OBJECT_ID('dbo.HopQuaTuChon', 'U') IS NOT NULL
+                    ALTER TABLE dbo.ChiTietDonHang WITH CHECK ADD CONSTRAINT FK_CTDH_HopTuChon FOREIGN KEY (MaHopTC) REFERENCES dbo.HopQuaTuChon(MaHopTC) ON DELETE NO ACTION;
+
+                IF OBJECT_ID('dbo.FK_Landing_AnhPhu', 'F') IS NULL AND OBJECT_ID('dbo.CauHinhLandingPage', 'U') IS NOT NULL AND OBJECT_ID('dbo.KhoHinhAnh', 'U') IS NOT NULL
+                    ALTER TABLE dbo.CauHinhLandingPage WITH CHECK ADD CONSTRAINT FK_Landing_AnhPhu FOREIGN KEY (MaAnhPhu_Parallax) REFERENCES dbo.KhoHinhAnh(MaHA) ON DELETE NO ACTION;
             ");
         }
 

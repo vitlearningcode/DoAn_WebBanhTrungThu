@@ -32,6 +32,10 @@ public partial class PhieuThuChi
 
     public int? MaDonHangLienKet { get; set; }
 
+    [ForeignKey("MaDonHangLienKet")]
+    [InverseProperty("PhieuThuChis")]
+    public virtual DonHang? MaDonHangLienKetNavigation { get; set; }
+
     public int? MaPhieuNhapLienKet { get; set; }
 
     [ForeignKey("MaPhieuNhapLienKet")]
@@ -46,4 +50,7 @@ public partial class PhieuThuChi
 
     [Column(TypeName = "datetime")]
     public DateTime NgayLap { get; set; } = DateTime.Now;
+
+    [InverseProperty("MaPhieuChiNavigation")]
+    public virtual ICollection<PhieuKhoVoHop> PhieuKhoVoHops { get; set; } = new List<PhieuKhoVoHop>();
 }

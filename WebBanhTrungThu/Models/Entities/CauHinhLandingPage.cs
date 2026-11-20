@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -49,4 +49,8 @@ public partial class CauHinhLandingPage
     [ForeignKey("MaAnhNen")]
     [InverseProperty("CauHinhLandingPages")]
     public virtual KhoHinhAnh? MaAnhNenNavigation { get; set; }
+
+    [ForeignKey("MaAnhPhuParallax")]
+    [InverseProperty("CauHinhLandingPageAnhPhus")]
+    public virtual KhoHinhAnh? MaAnhPhuParallaxNavigation { get; set; }
 }

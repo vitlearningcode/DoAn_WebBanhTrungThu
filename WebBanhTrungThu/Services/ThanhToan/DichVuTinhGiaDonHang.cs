@@ -113,6 +113,7 @@ namespace WebBanhTrungThu.Services.ThanhToan
                          ?? (tongSoHop > 0 && bangB2B.Any() && tongSoHop > bangB2B.Last().SlhopToiDa ? bangB2B.Last() : null);
 
             decimal phanTramCkB2B = mocB2B?.PhanTramChietKhau ?? 0m;
+            int? maMocCkApDung = mocB2B?.MaMocCk;
             decimal tienChietKhauB2B = phanTramCkB2B > 0 ? Math.Round(tongTienHang * (phanTramCkB2B / 100m), 0) : 0m;
             bool mienPhiInLogo = mocB2B?.MienPhiInLogo ?? false;
             decimal phiInLogoMacDinh = mocB2B?.PhiKhuonInLogo ?? (bangB2B.FirstOrDefault()?.PhiKhuonInLogo ?? 500000m);
@@ -128,6 +129,7 @@ namespace WebBanhTrungThu.Services.ThanhToan
                 : "HSD: 31/12/2027 • Đơn từ 200k";
 
             decimal tienGiamVoucher = 0m;
+            int? maKmApDung = null;
             string? codeKmDangDung = gioHang.CodeKmdangApDung;
             if (!string.IsNullOrWhiteSpace(codeKmDangDung))
             {
@@ -141,6 +143,7 @@ namespace WebBanhTrungThu.Services.ThanhToan
                     && (maNd.HasValue || km.ChoPhepKhachVangLai)
                     && tongTienHang >= km.GiaTriDonToiThieu)
                 {
+                    maKmApDung = km.MaKm;
                     if (km.LoaiGiam == "PHAN_TRAM")
                     {
                         tienGiamVoucher = Math.Round(tongTienHang * (km.GiaTriGiam / 100m), 0);
@@ -261,7 +264,9 @@ namespace WebBanhTrungThu.Services.ThanhToan
                 HopLeVungHoaToc = hopLeVungHoaToc,
                 PhiMoiDotGiao = phiMoiDotGiao,
                 PhiVanChuyen = phiVanChuyen,
-                TongThanhToanCuoi = tongThanhToanCuoi
+                TongThanhToanCuoi = tongThanhToanCuoi,
+                MaKm = maKmApDung,
+                MaMocCk = maMocCkApDung
             };
         }
     }
@@ -295,5 +300,7 @@ namespace WebBanhTrungThu.Services
         public decimal PhiMoiDotGiao { get; set; }
         public decimal PhiVanChuyen { get; set; }
         public decimal TongThanhToanCuoi { get; set; }
+        public int? MaKm { get; set; }
+        public int? MaMocCk { get; set; }
     }
 }

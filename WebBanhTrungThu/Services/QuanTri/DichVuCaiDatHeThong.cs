@@ -60,7 +60,7 @@ namespace WebBanhTrungThu.Services.QuanTri
             };
         }
 
-        public Task<(bool ThanhCong, string ThongBao)> LuuCauHinhMoMoAsync(CauHinhThanhToanQr model)
+        public Task<(bool ThanhCong, string ThongBao)> LuuCauHinhMoMoAsync(CauHinhThanhToanQr model, int? maNdCapNhat = null)
         {
             string stk = Regex.Replace(model.SoTaiKhoanMoMo ?? string.Empty, @"\D", "");
             if (string.IsNullOrWhiteSpace(stk) || stk.Length < 8)
@@ -94,12 +94,12 @@ namespace WebBanhTrungThu.Services.QuanTri
                 cfg.ThoiGianChoPhut = thoiGianCho;
                 cfg.SoTaiKhoanNganHang = string.IsNullOrWhiteSpace(model.SoTaiKhoanNganHang) ? null : model.SoTaiKhoanNganHang.Trim();
                 cfg.TenNganHangVietQr = string.IsNullOrWhiteSpace(model.TenNganHangVietQr) ? null : model.TenNganHangVietQr.Trim();
-            });
+            }, maNdCapNhat);
 
             return Task.FromResult((true, $"Đã lưu cấu hình Thanh toán QR / MoMo ({sdtHienThi} - {tenChuTk}) vào SQL Server."));
         }
 
-        public async Task<(bool ThanhCong, string ThongBao)> LuuCauHinhCuaHangAsync(CauHinhCuaHang model)
+        public async Task<(bool ThanhCong, string ThongBao)> LuuCauHinhCuaHangAsync(CauHinhCuaHang model, int? maNdCapNhat = null)
         {
             if (string.IsNullOrWhiteSpace(model.TenDaiLy) || string.IsNullOrWhiteSpace(model.Hotline))
             {
@@ -120,11 +120,11 @@ namespace WebBanhTrungThu.Services.QuanTri
                 SdtChiNhanh2 = ChuanHoaChuoi(model.SdtChiNhanh2, "028 3829 6886")
             };
 
-            await LuuJsonVaoSqlAsync(KHOA_CUA_HANG, "Cấu hình thông tin Đại lý và 2 chi nhánh Nguyệt Cát", chuan);
+            await LuuJsonVaoSqlAsync(KHOA_CUA_HANG, "Cấu hình thông tin Đại lý và 2 chi nhánh Nguyệt Cát", chuan, maNdCapNhat);
             return (true, "Đã lưu thông tin Đại lý & 2 Chi nhánh vào SQL Server.");
         }
 
-        public async Task<(bool ThanhCong, string ThongBao)> LuuCauHinhVanChuyenAsync(CauHinhVanChuyen model)
+        public async Task<(bool ThanhCong, string ThongBao)> LuuCauHinhVanChuyenAsync(CauHinhVanChuyen model, int? maNdCapNhat = null)
         {
             if (model.MocFreeship < 0 || model.PhiGiaoTieuChuan < 0 || model.PhiGiaoHoaToc6h < 0 || model.PhiHoaTocSauFreeship < 0)
             {
@@ -141,11 +141,11 @@ namespace WebBanhTrungThu.Services.QuanTri
                 GhiChuGiaoHang = ChuanHoaChuoi(model.GhiChuGiaoHang, "Miễn phí giao hàng tiêu chuẩn toàn quốc cho đơn hàng đạt mốc quy định.")
             };
 
-            await LuuJsonVaoSqlAsync(KHOA_VAN_CHUYEN, "Cấu hình mốc Freeship và biểu phí giao hàng", chuan);
+            await LuuJsonVaoSqlAsync(KHOA_VAN_CHUYEN, "Cấu hình mốc Freeship và biểu phí giao hàng", chuan, maNdCapNhat);
             return (true, "Đã lưu cấu hình Vận chuyển & Phí giao hàng vào SQL Server.");
         }
 
-        public async Task<(bool ThanhCong, string ThongBao)> LuuCauHinhHoiVienVipAsync(CauHinhHoiVienVip model)
+        public async Task<(bool ThanhCong, string ThongBao)> LuuCauHinhHoiVienVipAsync(CauHinhHoiVienVip model, int? maNdCapNhat = null)
         {
             if (model.SoTienMotDiem < 1000m || model.GiaTriQuyDoiMotDiem < 100m)
             {
@@ -174,7 +174,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                 PhanTramGiamKimCuong = Math.Clamp(model.PhanTramGiamKimCuong, 0m, 50m)
             };
 
-            await LuuJsonVaoSqlAsync(KHOA_HOI_VIEN_VIP, "Cấu hình quy đổi điểm tích lũy và hạng hội viên VIP", chuan);
+            await LuuJsonVaoSqlAsync(KHOA_HOI_VIEN_VIP, "Cấu hình quy đổi điểm tích lũy và hạng hội viên VIP", chuan, maNdCapNhat);
             return (true, "Đã lưu cấu hình Hội viên VIP & Điểm tích lũy vào SQL Server.");
         }
 
@@ -202,8 +202,14 @@ namespace WebBanhTrungThu.Services.QuanTri
             return macDinh;
         }
 
-        private async Task LuuJsonVaoSqlAsync<T>(string khoa, string moTa, T duLieu)
+        private async Task LuuJsonVaoSqlAsync<T>(string khoa, string moTa, T duLieu, int? maNdCapNhat = null)
         {
+            int? maNdHopLe = null;
+            if (maNdCapNhat.HasValue && await _db.NguoiDungs.AsNoTracking().AnyAsync(u => u.MaNd == maNdCapNhat.Value))
+            {
+                maNdHopLe = maNdCapNhat.Value;
+            }
+
             string json = JsonSerializer.Serialize(duLieu, _jsonOptions);
             var banGhi = await _db.CauHinhHeThongs.FirstOrDefaultAsync(c => c.KhoaCauHinh == khoa);
             if (banGhi == null)
@@ -213,7 +219,8 @@ namespace WebBanhTrungThu.Services.QuanTri
                     KhoaCauHinh = khoa,
                     GiaTriJson = json,
                     MoTa = moTa,
-                    NgayCapNhat = LayThoiGianHeThong()
+                    NgayCapNhat = LayThoiGianHeThong(),
+                    MaNdCapNhat = maNdHopLe
                 });
             }
             else
@@ -221,6 +228,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                 banGhi.GiaTriJson = json;
                 banGhi.MoTa = moTa;
                 banGhi.NgayCapNhat = LayThoiGianHeThong();
+                if (maNdHopLe.HasValue) banGhi.MaNdCapNhat = maNdHopLe.Value;
             }
 
             await _db.SaveChangesAsync();

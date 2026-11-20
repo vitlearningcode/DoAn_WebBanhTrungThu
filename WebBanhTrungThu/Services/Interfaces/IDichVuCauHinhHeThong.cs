@@ -14,7 +14,7 @@ namespace WebBanhTrungThu.Services.Interfaces
         void CapNhatMetadataDonHang(int maDh, Action<ThongTinDonHangMoRong> capNhat);
         CauHinhThanhToanQr LayCauHinhQr();
         CauHinhThanhToanQr LayCauHinhThanhToan();
-        void CapNhatCauHinhQr(Action<CauHinhThanhToanQr> capNhat);
+        void CapNhatCauHinhQr(Action<CauHinhThanhToanQr> capNhat, int? maNdCapNhat = null);
         CauHinhThanhToanQr CapNhatCauHinhQr(string? soTaiKhoanMoMo, string? tenChuTaiKhoan, string? tenNganHangVi, string? maBinNganHang = null, string? cuPhap = null);
         void GhiNhanPhieuThuChi(PhieuThuChiMoRong phieu);
         void GhiPhieuThuChi(PhieuThuChiMoRong phieu);

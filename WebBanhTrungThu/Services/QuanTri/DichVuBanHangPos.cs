@@ -371,12 +371,14 @@ namespace WebBanhTrungThu.Services.QuanTri
                              ?? (tongSoHop > 0 && bangB2B.Any() && tongSoHop > bangB2B.Last().SlhopToiDa ? bangB2B.Last() : null);
 
                 decimal phanTramCkB2B = mocB2B?.PhanTramChietKhau ?? 0m;
+                int? maMocCkApDung = mocB2B?.MaMocCk;
                 decimal tienChietKhauB2B = phanTramCkB2B > 0 ? Math.Round(tongTienHang * (phanTramCkB2B / 100m), 0) : 0m;
                 bool mienPhiInLogo = mocB2B?.MienPhiInLogo ?? false;
                 decimal phiKhuonMacDinh = mocB2B?.PhiKhuonInLogo ?? (bangB2B.FirstOrDefault()?.PhiKhuonInLogo ?? 500000m);
                 decimal phiInLogo = (req.YeuCauInLogo && !mienPhiInLogo) ? phiKhuonMacDinh : 0m;
 
                 decimal tienGiamVoucher = 0m;
+                int? maKmApDung = null;
                 if (!string.IsNullOrWhiteSpace(req.CodeKm))
                 {
                     string code = req.CodeKm.Trim().ToUpperInvariant();
@@ -385,6 +387,7 @@ namespace WebBanhTrungThu.Services.QuanTri
 
                     if (km != null && tongTienHang >= km.DonToiThieu)
                     {
+                        maKmApDung = km.MaKm;
                         tienGiamVoucher = km.LoaiGiam == "PHAN_TRAM"
                             ? Math.Round(tongTienHang * (km.GiaTriGiam / 100m), 0)
                             : km.GiaTriGiam;
@@ -483,7 +486,9 @@ namespace WebBanhTrungThu.Services.QuanTri
                     NgayDat = LayThoiGianHeThong(),
                     KenhBan = "POS_TAI_QUAY",
                     SoTienKhachDaTra = tongThanhToanCuoi,
-                    DaRollbackKho = false
+                    DaRollbackKho = false,
+                    MaKm = maKmApDung,
+                    MaMocCk = maMocCkApDung
                 };
 
                 _db.DonHangs.Add(donHang);

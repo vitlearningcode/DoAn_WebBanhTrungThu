@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -45,4 +45,7 @@ public partial class GioHang
     [ForeignKey("MaPhienKvl")]
     [InverseProperty("GioHangs")]
     public virtual PhienKhachVangLai? MaPhienKvlNavigation { get; set; }
+
+    [InverseProperty("GioHangs")]
+    public virtual MaKhuyenMai? CodeKmdangApDungNavigation { get; set; }
 }

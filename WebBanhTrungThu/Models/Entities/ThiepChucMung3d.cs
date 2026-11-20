@@ -39,4 +39,12 @@ public partial class ThiepChucMung3d
 
     [Column(TypeName = "datetime")]
     public DateTime NgayTao { get; set; } = DateTime.Now;
+
+    [ForeignKey("MaDonHang")]
+    [InverseProperty("ThiepChucMung3ds")]
+    public virtual DonHang MaDonHangNavigation { get; set; } = null!;
+
+    [ForeignKey("MaDotGiao")]
+    [InverseProperty("ThiepChucMung3ds")]
+    public virtual DotGiaoHangDaDiem? MaDotGiaoNavigation { get; set; }
 }

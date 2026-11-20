@@ -21,4 +21,10 @@ public partial class CauHinhHeThong
 
     [Column(TypeName = "datetime")]
     public DateTime NgayCapNhat { get; set; } = DateTime.Now;
+
+    public int? MaNdCapNhat { get; set; }
+
+    [ForeignKey("MaNdCapNhat")]
+    [InverseProperty("CauHinhHeThongs")]
+    public virtual NguoiDung? MaNdCapNhatNavigation { get; set; }
 }

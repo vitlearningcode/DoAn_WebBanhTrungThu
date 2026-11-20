@@ -194,7 +194,8 @@ namespace WebBanhTrungThu.Services
                     PhuongThucTt = laQrMoMo ? "MOMO_QR" : "COD",
                     TrangThaiTt = laQrMoMo ? "CHO_THANH_TOAN" : "CHUA_TT",
                     TrangThaiDh = "CHO_XAC_NHAN", NgayDat = thoiDiemDat,
-                    KenhBan = "WEB_ONLINE", DaRollbackKho = false
+                    KenhBan = "WEB_ONLINE", DaRollbackKho = false,
+                    MaKm = chiPhi.MaKm, MaMocCk = chiPhi.MaMocCk
                 };
 
                 _context.DonHangs.Add(donHang);

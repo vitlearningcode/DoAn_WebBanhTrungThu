@@ -1,0 +1,12 @@
+@model WebBanhTrungThu.ViewModels.VoHopAdminIndexViewModel
+@{
+    ViewData["Title"] = "Quản lý Vỏ hộp & Tồn kho - Nguyệt Cát ERP";
+}
+
+@await Html.PartialAsync("~/Areas/Admin/Views/VoHopAdmin/PhanKhu/_BoLocVaKpiVoHop.cshtml", Model)
+@await Html.PartialAsync("~/Areas/Admin/Views/VoHopAdmin/PhanKhu/_ModalLuuVoHop.cshtml", Model)
+@await Html.PartialAsync("~/Areas/Admin/Views/VoHopAdmin/PhanKhu/_ModalNhapXuatVoHop.cshtml", Model)
+
+@section Scripts {
+    <script src="~/js/admin-vo-hop.js" asp-append-version="true"></script>
+}

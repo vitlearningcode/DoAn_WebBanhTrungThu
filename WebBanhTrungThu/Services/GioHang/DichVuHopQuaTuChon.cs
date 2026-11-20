@@ -295,9 +295,9 @@ namespace WebBanhTrungThu.Services.GioHang
                         }
                     }
 
-                    if (!string.IsNullOrEmpty(gioHangGuest.CodeKmdangApDung))
+                    if (!string.IsNullOrWhiteSpace(gioHangGuest.CodeKmdangApDung))
                     {
-                        gioHangMember.CodeKmdangApDung = gioHangGuest.CodeKmdangApDung;
+                        gioHangMember.CodeKmdangApDung = gioHangGuest.CodeKmdangApDung.Trim();
                     }
                     gioHangMember.NgayCapNhat = LayThoiGianHeThong();
 

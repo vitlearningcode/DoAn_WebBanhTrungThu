@@ -39,8 +39,14 @@ public partial class PhieuKiemKho
 
     public int? MaPxLienKet { get; set; }
 
+    public int? MaNdKiem { get; set; }
+
     [ForeignKey("MaPxLienKet")]
     public virtual PhieuXuatKho? MaPxLienKetNavigation { get; set; }
+
+    [ForeignKey("MaNdKiem")]
+    [InverseProperty("PhieuKiemKhos")]
+    public virtual NguoiDung? MaNdKiemNavigation { get; set; }
 
     [InverseProperty("MaPkkNavigation")]
     public virtual ICollection<ChiTietKiemKho> ChiTietKiemKhos { get; set; } = new List<ChiTietKiemKho>();

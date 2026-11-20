@@ -50,4 +50,10 @@ public partial class MaKhuyenMai
     public DateTime NgayKetThuc { get; set; }
 
     public bool TrangThaiKichHoat { get; set; } = true;
+
+    [InverseProperty("MaKmNavigation")]
+    public virtual ICollection<DonHang> DonHangs { get; set; } = new List<DonHang>();
+
+    [InverseProperty("CodeKmdangApDungNavigation")]
+    public virtual ICollection<GioHang> GioHangs { get; set; } = new List<GioHang>();
 }

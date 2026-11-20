@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -46,6 +46,9 @@ public partial class HopQuaTuChon
 
     [InverseProperty("MaHopTcNavigation")]
     public virtual ICollection<ChiTietHopTuChon> ChiTietHopTuChons { get; set; } = new List<ChiTietHopTuChon>();
+
+    [InverseProperty("MaHopTcNavigation")]
+    public virtual ICollection<ChiTietDonHang> ChiTietDonHangs { get; set; } = new List<ChiTietDonHang>();
 
     [ForeignKey("MaNd")]
     [InverseProperty("HopQuaTuChons")]

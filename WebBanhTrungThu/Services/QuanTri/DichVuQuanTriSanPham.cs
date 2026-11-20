@@ -961,6 +961,23 @@ namespace WebBanhTrungThu.Services.QuanTri
                 VaiTroAnh = "ANH_CHINH",
                 ThuTuHienThi = 0
             });
+
+            if (string.Equals(loaiDoiTuong, "BANH", StringComparison.OrdinalIgnoreCase))
+            {
+                var banh = await _db.SanPhamBanhs.FindAsync(maDoiTuong);
+                if (banh != null) banh.MaAnhChinh = khoAnh.MaHa;
+            }
+            else if (string.Equals(loaiDoiTuong, "COMBO", StringComparison.OrdinalIgnoreCase))
+            {
+                var combo = await _db.ComboMauCoSans.FindAsync(maDoiTuong);
+                if (combo != null) combo.MaAnhChinh = khoAnh.MaHa;
+            }
+            else if (string.Equals(loaiDoiTuong, "VOHOP", StringComparison.OrdinalIgnoreCase))
+            {
+                var voHop = await _db.MauVoHops.FindAsync(maDoiTuong);
+                if (voHop != null) voHop.MaAnhChinh = khoAnh.MaHa;
+            }
+
             await _db.SaveChangesAsync();
         }
     }
