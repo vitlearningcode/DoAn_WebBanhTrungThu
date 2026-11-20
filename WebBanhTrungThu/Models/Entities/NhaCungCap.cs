@@ -48,4 +48,7 @@ public partial class NhaCungCap
 
     [InverseProperty("MaNccNavigation")]
     public virtual ICollection<PhieuNhapKho> PhieuNhapKhos { get; set; } = new List<PhieuNhapKho>();
+
+    [InverseProperty("MaNccMacDinhNavigation")]
+    public virtual ICollection<SanPhamBanh> SanPhamBanhs { get; set; } = new List<SanPhamBanh>();
 }

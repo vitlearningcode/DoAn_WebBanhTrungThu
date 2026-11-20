@@ -59,6 +59,22 @@ public partial class SanPhamBanh
 
     public bool TrangThaiBan { get; set; }
 
+    public int? MaThuongHieu { get; set; }
+
+    public int? MaNccMacDinh { get; set; }
+
+    [StringLength(50)]
+    [Unicode(false)]
+    public string? MaVach { get; set; }
+
+    [StringLength(100)]
+    public string ViTriKho { get; set; } = "Kệ A1";
+
+    [StringLength(50)]
+    public string DonViTinh { get; set; } = "Cái";
+
+    public bool BanTrucTiep { get; set; } = true;
+
     [InverseProperty("MaBanhNavigation")]
     public virtual ICollection<ChiTietComboMau> ChiTietComboMaus { get; set; } = new List<ChiTietComboMau>();
 
@@ -74,6 +90,17 @@ public partial class SanPhamBanh
     [ForeignKey("MaDm")]
     [InverseProperty("SanPhamBanhs")]
     public virtual DanhMucBanh MaDmNavigation { get; set; } = null!;
+
+    [ForeignKey("MaThuongHieu")]
+    [InverseProperty("SanPhamBanhs")]
+    public virtual ThuongHieu? MaThuongHieuNavigation { get; set; }
+
+    [ForeignKey("MaNccMacDinh")]
+    [InverseProperty("SanPhamBanhs")]
+    public virtual NhaCungCap? MaNccMacDinhNavigation { get; set; }
+
+    [InverseProperty("MaBanhNavigation")]
+    public virtual ICollection<NhatKyTruKhoDonHang> NhatKyTruKhoDonHangs { get; set; } = new List<NhatKyTruKhoDonHang>();
 
     [InverseProperty("MaBanhNavigation")]
     public virtual ThongSoDinhDuong? ThongSoDinhDuong { get; set; }

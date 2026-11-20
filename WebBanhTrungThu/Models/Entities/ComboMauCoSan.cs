@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -41,6 +41,27 @@ public partial class ComboMauCoSan
 
     public bool TrangThai { get; set; }
 
+    public int? MaThuongHieu { get; set; }
+
+    [Column("MaDM")]
+    public int? MaDm { get; set; }
+
+    [StringLength(50)]
+    [Unicode(false)]
+    public string? MaVach { get; set; }
+
+    [StringLength(100)]
+    public string ViTriKho { get; set; } = "Kệ B1";
+
+    [StringLength(50)]
+    public string DonViTinh { get; set; } = "Hộp";
+
+    public bool BanTrucTiep { get; set; } = true;
+
+    public int TongTonKho { get; set; } = 40;
+
+    public int TrongLuongGram { get; set; } = 600;
+
     [InverseProperty("MaCbNavigation")]
     public virtual ICollection<ChiTietComboMau> ChiTietComboMaus { get; set; } = new List<ChiTietComboMau>();
 
@@ -50,4 +71,12 @@ public partial class ComboMauCoSan
     [ForeignKey("MaVh")]
     [InverseProperty("ComboMauCoSans")]
     public virtual MauVoHop MaVhNavigation { get; set; } = null!;
+
+    [ForeignKey("MaThuongHieu")]
+    [InverseProperty("ComboMauCoSans")]
+    public virtual ThuongHieu? MaThuongHieuNavigation { get; set; }
+
+    [ForeignKey("MaDm")]
+    [InverseProperty("ComboMauCoSans")]
+    public virtual DanhMucBanh? MaDmNavigation { get; set; }
 }

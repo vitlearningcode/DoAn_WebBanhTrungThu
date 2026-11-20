@@ -274,28 +274,40 @@ namespace WebBanhTrungThu.Services.ThanhToan
         /// </summary>
         public async Task HoanTraTonKhoTheoDonAsync(DonHang donHang)
         {
-            var meta = _kiotMeta.LayMetadataDonHang(donHang.MaDh);
-            if (meta.DaHoanKhoDoHetHan)
+            if (donHang.DaRollbackKho)
             {
                 return;
             }
 
-            if (meta.DanhSachLoDaTru != null && meta.DanhSachLoDaTru.Any())
+            var nhatKyDb = await _context.NhatKyTruKhoDonHangs
+                .Where(n => n.MaDh == donHang.MaDh && !n.DaHoanKho)
+                .ToListAsync();
+
+            var nhatKyLoDb = nhatKyDb
+                .Where(n => n.LoaiDoiTuong == "LO_BANH" && n.MaBanh.HasValue)
+                .ToList();
+            var nhatKyVoDb = nhatKyDb
+                .Where(n => n.LoaiDoiTuong == "VO_HOP" && n.MaVh.HasValue)
+                .ToList();
+
+            if (nhatKyLoDb.Count > 0 || nhatKyVoDb.Count > 0)
             {
-                foreach (var nhatKyLo in meta.DanhSachLoDaTru)
+                foreach (var nkLo in nhatKyLoDb)
                 {
-                    await HoanNhapLoFefoAsync(nhatKyLo.MaBanh, nhatKyLo.SoLuongDaTru, nhatKyLo.MaLo);
+                    await HoanNhapLoFefoAsync(nkLo.MaBanh!.Value, nkLo.SoLuongDaTru, nkLo.MaLo);
+                    nkLo.DaHoanKho = true;
                 }
 
-                if (meta.DanhSachVoHopDaTru != null && meta.DanhSachVoHopDaTru.Any())
+                if (nhatKyVoDb.Count > 0)
                 {
-                    foreach (var nhatKyVo in meta.DanhSachVoHopDaTru)
+                    foreach (var nkVo in nhatKyVoDb)
                     {
-                        var vo = await _context.MauVoHops.FirstOrDefaultAsync(v => v.MaVh == nhatKyVo.MaVh);
+                        var vo = await _context.MauVoHops.FirstOrDefaultAsync(v => v.MaVh == nkVo.MaVh!.Value);
                         if (vo != null)
                         {
-                            vo.SltonKhoVo += nhatKyVo.SoLuongDaTru;
+                            vo.SltonKhoVo += nkVo.SoLuongDaTru;
                         }
+                        nkVo.DaHoanKho = true;
                     }
                 }
                 else
@@ -332,6 +344,8 @@ namespace WebBanhTrungThu.Services.ThanhToan
                         }
                     }
                 }
+
+                donHang.DaRollbackKho = true;
                 return;
             }
 
@@ -384,6 +398,8 @@ namespace WebBanhTrungThu.Services.ThanhToan
                     }
                 }
             }
+
+            donHang.DaRollbackKho = true;
         }
 
         /// <summary>
@@ -404,6 +420,7 @@ namespace WebBanhTrungThu.Services.ThanhToan
                 donHang.TrangThaiDh = "DA_HUY";
                 donHang.TrangThaiTt = "HET_HAN_HUY";
                 donHang.LyDoHuy = "Tự động hủy do quá thời hạn 15 phút chuyển khoản QR";
+                donHang.DaRollbackKho = true;
 
                 var cacDotGiao = donHang.DotGiaoHangDaDiems != null && donHang.DotGiaoHangDaDiems.Any()
                     ? donHang.DotGiaoHangDaDiems.ToList()
@@ -433,11 +450,6 @@ namespace WebBanhTrungThu.Services.ThanhToan
                     ndHoan.HangTv = hangVipMoi;
                     await _context.SaveChangesAsync();
                 }
-            });
-
-            _kiotMeta.CapNhatMetadataDonHang(donHang.MaDh, m =>
-            {
-                m.DaHoanKhoDoHetHan = true;
             });
         }
     }

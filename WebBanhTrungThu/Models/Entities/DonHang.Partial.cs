@@ -6,25 +6,11 @@ namespace WebBanhTrungThu.Models.Entities
     public partial class DonHang
     {
         [NotMapped]
-        public string? MaNganHangHoan { get; set; }
-
-        [NotMapped]
-        public string? SoTaiKhoanHoan { get; set; }
-
-        [NotMapped]
-        public string? TenChuTkHoan { get; set; }
-
-        [NotMapped]
-        public string? LyDoHuyHoan { get; set; }
-
-        [NotMapped]
-        public string? GhiChuDieuChinhAdmin { get; set; }
-
-        [NotMapped]
-        public string? ThoiGianCapNhatCuoi { get; set; }
-
-        [NotMapped]
-        public string? NguoiCapNhatCuoi { get; set; }
+        public string? LyDoHuyHoan
+        {
+            get => LyDoHuy;
+            set => LyDoHuy = value;
+        }
 
         [NotMapped]
         public DateTime? HanThanhToan => HanThanhToanQr;

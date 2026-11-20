@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -146,15 +148,13 @@ namespace WebBanhTrungThu.Services
     }
 
     /// <summary>
-    /// Dịch vụ quản lý dữ liệu Sổ quỹ (PhieuThuChi), Thiệp Chúc Mừng 3D (ThiepChucMung3D),
-    /// Cấu hình QR MoMo (CauHinhHeThong) và Dữ liệu mở rộng Đại lý Nguyệt Cát ERP lưu trữ 100% trong SQL Server.
+    /// Dịch vụ SQL-First truy xuất và đồng bộ dữ liệu trực tiếp qua EF Core trên các bảng SQL Server thật:
+    /// ThuongHieu, NhaCungCap, SanPhamBanh, ComboMauCoSan, DonHang, NhatKyTruKhoDonHang,
+    /// ThiepChucMung3D, PhieuThuChi và khóa cài đặt hệ thống CAU_HINH_QR_MOMO trong CauHinhHeThong.
     /// </summary>
     public class DichVuCauHinhHeThong : DichVuCoSo, IDichVuCauHinhHeThong
     {
         public const string KHOA_CAU_HINH_QR_MOMO = "CAU_HINH_QR_MOMO";
-        public const string KHOA_CAU_HINH_MORONG = "CAUHINH_MORONG_NGUYETCAT";
-        public const string KHOA_CU_1 = "KIOT" + "VIET_METADATA";
-        public const string KHOA_CU_2 = "KIOT_METADATA_STORE";
 
         private readonly IServiceScopeFactory _scopeFactory;
         private static readonly object _lock = new();
@@ -191,129 +191,134 @@ namespace WebBanhTrungThu.Services
 
         private DuLieuMoRongHeThongRoot DocDuLieuTuSqlInternal(CSDLBanhTrungThuContext db)
         {
-            DuLieuMoRongHeThongRoot store;
+            var store = new DuLieuMoRongHeThongRoot();
 
-            // 1. Đọc dữ liệu mở rộng từ khóa mới CAUHINH_MORONG_NGUYETCAT hoặc tự động di trú từ khóa cũ
-            var rowStore = db.CauHinhHeThongs
-                .FirstOrDefault(c => c.KhoaCauHinh == KHOA_CAU_HINH_MORONG);
-
-            if (rowStore == null)
-            {
-                var rowCu = db.CauHinhHeThongs
-                    .FirstOrDefault(c => c.KhoaCauHinh == KHOA_CU_1 || c.KhoaCauHinh == KHOA_CU_2);
-
-                if (rowCu != null && !string.IsNullOrWhiteSpace(rowCu.GiaTriJson))
-                {
-                    rowStore = new CauHinhHeThong
-                    {
-                        KhoaCauHinh = KHOA_CAU_HINH_MORONG,
-                        GiaTriJson = rowCu.GiaTriJson,
-                        MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO Đại lý Nguyệt Cát ERP",
-                        NgayCapNhat = DateTime.Now
-                    };
-                    db.CauHinhHeThongs.Add(rowStore);
-                    db.CauHinhHeThongs.Remove(rowCu);
-                    db.SaveChanges();
-                }
-            }
-
-            // Xóa sạch khóa cũ nếu vẫn còn tồn tại song song
-            var cacKhoaCuThua = db.CauHinhHeThongs
-                .Where(c => c.KhoaCauHinh == KHOA_CU_1 || c.KhoaCauHinh == KHOA_CU_2)
-                .ToList();
-            if (cacKhoaCuThua.Count > 0)
-            {
-                db.CauHinhHeThongs.RemoveRange(cacKhoaCuThua);
-                db.SaveChanges();
-            }
-
-            if (rowStore != null && !string.IsNullOrWhiteSpace(rowStore.GiaTriJson))
-            {
-                try
-                {
-                    store = JsonSerializer.Deserialize<DuLieuMoRongHeThongRoot>(rowStore.GiaTriJson, _jsonOptions)
-                            ?? TaoDuLieuMacDinh();
-                }
-                catch
-                {
-                    store = TaoDuLieuMacDinh();
-                }
-            }
-            else
-            {
-                store = TaoDuLieuMacDinh();
-                db.CauHinhHeThongs.Add(new CauHinhHeThong
-                {
-                    KhoaCauHinh = KHOA_CAU_HINH_MORONG,
-                    GiaTriJson = JsonSerializer.Serialize(store, _jsonOptions),
-                    MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO Đại lý Nguyệt Cát ERP",
-                    NgayCapNhat = DateTime.Now
-                });
-                db.SaveChanges();
-            }
-
-            // 2. Đọc cấu hình Tài khoản MoMo (0814585526 - LE MINH DUC) từ bảng dbo.CauHinhHeThong
-            var rowQr = db.CauHinhHeThongs
+            // 1. Đọc danh sách Thương hiệu từ dbo.ThuongHieu
+            var dsThuongHieuDb = db.ThuongHieus
                 .AsNoTracking()
-                .FirstOrDefault(c => c.KhoaCauHinh == KHOA_CAU_HINH_QR_MOMO);
-
-            if (rowQr != null && !string.IsNullOrWhiteSpace(rowQr.GiaTriJson))
+                .Where(t => t.DangHoatDong)
+                .OrderBy(t => t.MaThuongHieu)
+                .Select(t => t.TenThuongHieu)
+                .ToList();
+            if (dsThuongHieuDb.Count > 0)
             {
-                try
-                {
-                    store.CauHinhQr = JsonSerializer.Deserialize<CauHinhThanhToanQr>(rowQr.GiaTriJson, _jsonOptions)
-                                      ?? new CauHinhThanhToanQr();
-                }
-                catch
-                {
-                    store.CauHinhQr = new CauHinhThanhToanQr();
-                }
-            }
-            else
-            {
-                store.CauHinhQr ??= new CauHinhThanhToanQr();
-                db.CauHinhHeThongs.Add(new CauHinhHeThong
-                {
-                    KhoaCauHinh = KHOA_CAU_HINH_QR_MOMO,
-                    GiaTriJson = JsonSerializer.Serialize(store.CauHinhQr, _jsonOptions),
-                    MoTa = "Cấu hình Tài khoản nhận tiền Ví MoMo / VietQR (0814585526 - LE MINH DUC)",
-                    NgayCapNhat = DateTime.Now
-                });
-                db.SaveChanges();
+                store.DanhSachThuongHieu = dsThuongHieuDb;
             }
 
-            // 3. Đồng bộ danh sách Thiệp 3D từ bảng vật lý dbo.ThiepChucMung3D
-            store.DonHangs ??= new Dictionary<int, ThongTinDonHangMoRong>();
-            var dsThiepDb = db.ThiepChucMung3ds.AsNoTracking().ToList();
-            foreach (var thiep in dsThiepDb)
+            // 2. Đọc danh sách Nhà cung cấp từ dbo.NhaCungCap
+            var dsNccDb = db.NhaCungCaps
+                .AsNoTracking()
+                .Where(n => n.DangHoatDong)
+                .OrderBy(n => n.MaCodeNcc)
+                .ThenBy(n => n.MaNcc)
+                .Select(n => n.TenNcc)
+                .ToList();
+            if (dsNccDb.Count > 0)
             {
-                if (!store.DonHangs.TryGetValue(thiep.MaDonHang, out var dhMeta))
+                store.DanhSachNhaCungCap = dsNccDb;
+            }
+
+            // 3. Đọc Vị trí kho & Đơn vị tính thực tế từ dbo.SanPhamBanh & dbo.ComboMauCoSan
+            var dsBanh = db.SanPhamBanhs
+                .AsNoTracking()
+                .Include(b => b.MaThuongHieuNavigation)
+                .Include(b => b.MaNccMacDinhNavigation)
+                .OrderBy(b => b.MaBanh)
+                .ToList();
+
+            var dsCombo = db.ComboMauCoSans
+                .AsNoTracking()
+                .Include(c => c.MaThuongHieuNavigation)
+                .Include(c => c.MaDmNavigation)
+                .OrderBy(c => c.MaCb)
+                .ToList();
+
+            var setViTri = new HashSet<string>(new[] { "Kệ A1", "Kệ A2", "Kệ B1", "Kệ B2", "Tủ Mát C1" }, StringComparer.OrdinalIgnoreCase);
+            var setDvt = new HashSet<string>(new[] { "Cái", "Hộp", "Lốc 4 cái", "Thùng 20 hộp" }, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var vt in dsBanh.Select(b => b.ViTriKho).Concat(dsCombo.Select(c => c.ViTriKho)))
+            {
+                if (!string.IsNullOrWhiteSpace(vt)) setViTri.Add(vt.Trim());
+            }
+            foreach (var dvt in dsBanh.Select(b => b.DonViTinh).Concat(dsCombo.Select(c => c.DonViTinh)))
+            {
+                if (!string.IsNullOrWhiteSpace(dvt)) setDvt.Add(dvt.Trim());
+            }
+            store.DanhSachViTriKho = setViTri.ToList();
+            store.DanhSachDonViTinh = setDvt.ToList();
+
+            // 4. Đọc liên kết hình ảnh từ dbo.LienKetHinhAnh & dbo.KhoHinhAnh
+            var lienKetAnhs = db.LienKetHinhAnhs
+                .AsNoTracking()
+                .Include(l => l.MaHaNavigation)
+                .Where(l => l.LoaiDoiTuong == "BANH" || l.LoaiDoiTuong == "COMBO")
+                .OrderBy(l => l.ThuTuHienThi)
+                .ToList();
+
+            var anhTheoKhoa = lienKetAnhs
+                .Where(l => l.MaHaNavigation != null && !string.IsNullOrWhiteSpace(l.MaHaNavigation.UrlHienThi))
+                .GroupBy(l => $"{l.LoaiDoiTuong}_{l.MaDoiTuong}")
+                .ToDictionary(g => g.Key, g => g.Select(x => x.MaHaNavigation.UrlHienThi).Distinct(StringComparer.OrdinalIgnoreCase).ToList());
+
+            store.Items = new Dictionary<string, CauHinhHangHoaMoRong>();
+            foreach (var b in dsBanh)
+            {
+                string key = $"BANH_{b.MaBanh}";
+                store.Items[key] = new CauHinhHangHoaMoRong
                 {
-                    dhMeta = new ThongTinDonHangMoRong { MaDh = thiep.MaDonHang };
-                    store.DonHangs[thiep.MaDonHang] = dhMeta;
-                }
-                dhMeta.Thiep3DTheoToken ??= new Dictionary<string, ThongTinThiep3DMeta>();
-                dhMeta.Thiep3DTheoToken[thiep.MaTokenQr] = new ThongTinThiep3DMeta
-                {
-                    MaTokenThiepQr = thiep.MaTokenQr,
-                    TenNguoiNhanThiep = thiep.TenNguoiNhan,
-                    TenNguoiGuiThiep = thiep.TenNguoiGui,
-                    LoiChucThiep = thiep.LoiChuc,
-                    MauGiaoDienThiep = thiep.MauGiaoDien
+                    Key = key,
+                    MaVach = string.IsNullOrWhiteSpace(b.MaVach) ? $"8934680010{b.MaBanh:D3}" : b.MaVach,
+                    ThuongHieu = b.ThuongHieu,
+                    NhaCungCap = b.NhaCungCap,
+                    ViTriKho = string.IsNullOrWhiteSpace(b.ViTriKho) ? "Kệ A1" : b.ViTriKho,
+                    DonViTinh = string.IsNullOrWhiteSpace(b.DonViTinh) ? "Cái" : b.DonViTinh,
+                    BanTrucTiep = b.BanTrucTiep,
+                    DanhSachAnh = anhTheoKhoa.TryGetValue(key, out var dsAnhBanh) ? dsAnhBanh : new List<string>()
                 };
             }
 
-            // 4. Đọc danh sách Phiếu Thu Chi từ bảng vật lý dbo.PhieuThuChi
+            foreach (var cb in dsCombo)
+            {
+                string key = $"COMBO_{cb.MaCb}";
+                store.Items[key] = new CauHinhHangHoaMoRong
+                {
+                    Key = key,
+                    MaVach = string.IsNullOrWhiteSpace(cb.MaVach) ? $"8934680990{cb.MaCb:D3}" : cb.MaVach,
+                    ThuongHieu = cb.ThuongHieu,
+                    NhaCungCap = cb.NhaCungCap,
+                    ViTriKho = string.IsNullOrWhiteSpace(cb.ViTriKho) ? "Kệ B1" : cb.ViTriKho,
+                    DonViTinh = string.IsNullOrWhiteSpace(cb.DonViTinh) ? "Hộp" : cb.DonViTinh,
+                    BanTrucTiep = cb.BanTrucTiep,
+                    MaDmCombo = cb.MaDm,
+                    TenDmCombo = cb.TenDm,
+                    TonKhoCombo = cb.TongTonKho,
+                    TrongLuongComboGram = cb.TrongLuongGram,
+                    DanhSachAnh = anhTheoKhoa.TryGetValue(key, out var dsAnhCombo) ? dsAnhCombo : new List<string>()
+                };
+            }
+
+            // 5. Đọc cấu hình QR MoMo từ khóa duy nhất CAU_HINH_QR_MOMO trong dbo.CauHinhHeThong
+            store.CauHinhQr = DocHoacKhoiTaoCauHinhQrInternal(db);
+
+            // 6. Đọc thông tin Đơn hàng + Nhật ký trừ kho FEFO + Thiệp 3D từ các bảng vật lý
+            var dsDonHang = db.DonHangs.AsNoTracking().ToList();
+            var dsNhatKy = db.NhatKyTruKhoDonHangs.AsNoTracking().ToList().ToLookup(n => n.MaDh);
+            var dsThiepDb = db.ThiepChucMung3ds.AsNoTracking().ToList().ToLookup(t => t.MaDonHang);
+
+            store.DonHangs = new Dictionary<int, ThongTinDonHangMoRong>();
+            foreach (var dh in dsDonHang)
+            {
+                store.DonHangs[dh.MaDh] = TaoThongTinDonHangMoRongTuSql(dh, dsNhatKy[dh.MaDh], dsThiepDb[dh.MaDh]);
+            }
+
+            // 7. Đọc danh sách Phiếu Thu Chi từ bảng vật lý dbo.PhieuThuChi
             var dsPhieuDb = db.PhieuThuChis
                 .AsNoTracking()
                 .OrderByDescending(p => p.NgayLap)
                 .ThenByDescending(p => p.MaPhieu)
                 .ToList();
 
-            var mapMaTraCuu = db.DonHangs
-                .AsNoTracking()
-                .Select(d => new { d.MaDh, d.MaTraCuuDh, d.SdtnguoiMua })
-                .ToDictionary(d => d.MaDh);
+            var mapMaTraCuu = dsDonHang.ToDictionary(d => d.MaDh, d => (d.MaTraCuuDh, d.SdtnguoiMua));
 
             store.DanhSachPhieuThuChi = dsPhieuDb.Select(p =>
             {
@@ -352,80 +357,105 @@ namespace WebBanhTrungThu.Services
         {
             store.CauHinhQr ??= new CauHinhThanhToanQr();
 
-            // 1. Lưu cấu hình QR MoMo vào bảng dbo.CauHinhHeThong
-            string jsonQr = JsonSerializer.Serialize(store.CauHinhQr, _jsonOptions);
-            var rowQr = db.CauHinhHeThongs.FirstOrDefault(c => c.KhoaCauHinh == KHOA_CAU_HINH_QR_MOMO);
-            if (rowQr == null)
+            // 1. Lưu cấu hình QR MoMo vào khóa CAU_HINH_QR_MOMO trong dbo.CauHinhHeThong
+            LuuCauHinhQrInternal(db, store.CauHinhQr);
+
+            // 2. Đồng bộ Thương hiệu mới vào dbo.ThuongHieu
+            var dsThuongHieu = db.ThuongHieus.ToList();
+            if (store.DanhSachThuongHieu != null)
             {
-                db.CauHinhHeThongs.Add(new CauHinhHeThong
+                foreach (var tenTh in store.DanhSachThuongHieu)
                 {
-                    KhoaCauHinh = KHOA_CAU_HINH_QR_MOMO,
-                    GiaTriJson = jsonQr,
-                    MoTa = "Cấu hình Tài khoản nhận tiền Ví MoMo / VietQR (0814585526 - LE MINH DUC)",
-                    NgayCapNhat = DateTime.Now
-                });
-            }
-            else
-            {
-                rowQr.GiaTriJson = jsonQr;
-                rowQr.NgayCapNhat = DateTime.Now;
+                    if (string.IsNullOrWhiteSpace(tenTh)) continue;
+                    string tenSach = tenTh.Trim();
+                    if (!dsThuongHieu.Any(t => string.Equals(t.TenThuongHieu, tenSach, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        var thMoi = new ThuongHieu
+                        {
+                            MaCodeThuongHieu = SinhMaCodeThuongHieu(tenSach, dsThuongHieu),
+                            TenThuongHieu = tenSach,
+                            DangHoatDong = true
+                        };
+                        db.ThuongHieus.Add(thMoi);
+                        dsThuongHieu.Add(thMoi);
+                    }
+                }
+                db.SaveChanges();
             }
 
-            // 2. Đồng bộ Thiep3DTheoToken vào bảng vật lý dbo.ThiepChucMung3D
-            if (store.DonHangs != null)
+            // 3. Đồng bộ thuộc tính hàng hóa mở rộng lên cột thật dbo.SanPhamBanh & dbo.ComboMauCoSan
+            if (store.Items != null && store.Items.Count > 0)
             {
-                var tokenDaCo = db.ThiepChucMung3ds
-                    .ToDictionary(t => t.MaTokenQr, StringComparer.OrdinalIgnoreCase);
+                var dsNcc = db.NhaCungCaps.AsNoTracking().ToList();
+                var dsBanh = db.SanPhamBanhs.ToList();
+                foreach (var b in dsBanh)
+                {
+                    if (!store.Items.TryGetValue($"BANH_{b.MaBanh}", out var meta)) continue;
+                    b.MaVach = string.IsNullOrWhiteSpace(meta.MaVach) ? $"8934680010{b.MaBanh:D3}" : meta.MaVach.Trim();
+                    b.ViTriKho = string.IsNullOrWhiteSpace(meta.ViTriKho) ? "Kệ A1" : meta.ViTriKho.Trim();
+                    b.DonViTinh = string.IsNullOrWhiteSpace(meta.DonViTinh) ? "Cái" : meta.DonViTinh.Trim();
+                    b.BanTrucTiep = meta.BanTrucTiep;
+
+                    if (!string.IsNullOrWhiteSpace(meta.ThuongHieu))
+                    {
+                        var th = TimHoacTaoThuongHieu(db, dsThuongHieu, meta.ThuongHieu.Trim());
+                        b.MaThuongHieu = th.MaThuongHieu;
+                    }
+                    if (!string.IsNullOrWhiteSpace(meta.NhaCungCap))
+                    {
+                        var ncc = dsNcc.FirstOrDefault(n => string.Equals(n.TenNcc, meta.NhaCungCap.Trim(), StringComparison.OrdinalIgnoreCase));
+                        if (ncc != null) b.MaNccMacDinh = ncc.MaNcc;
+                    }
+                }
+
+                var dsCombo = db.ComboMauCoSans.ToList();
+                foreach (var cb in dsCombo)
+                {
+                    if (!store.Items.TryGetValue($"COMBO_{cb.MaCb}", out var meta)) continue;
+                    cb.MaVach = string.IsNullOrWhiteSpace(meta.MaVach) ? $"8934680990{cb.MaCb:D3}" : meta.MaVach.Trim();
+                    cb.ViTriKho = string.IsNullOrWhiteSpace(meta.ViTriKho) ? "Kệ B1" : meta.ViTriKho.Trim();
+                    cb.DonViTinh = string.IsNullOrWhiteSpace(meta.DonViTinh) ? "Hộp" : meta.DonViTinh.Trim();
+                    cb.BanTrucTiep = meta.BanTrucTiep;
+                    if (meta.MaDmCombo.HasValue && meta.MaDmCombo.Value > 0) cb.MaDm = meta.MaDmCombo.Value;
+                    if (meta.TonKhoCombo.HasValue && meta.TonKhoCombo.Value >= 0) cb.TongTonKho = meta.TonKhoCombo.Value;
+                    if (meta.TrongLuongComboGram.HasValue && meta.TrongLuongComboGram.Value > 0) cb.TrongLuongGram = meta.TrongLuongComboGram.Value;
+
+                    if (!string.IsNullOrWhiteSpace(meta.ThuongHieu))
+                    {
+                        var th = TimHoacTaoThuongHieu(db, dsThuongHieu, meta.ThuongHieu.Trim());
+                        cb.MaThuongHieu = th.MaThuongHieu;
+                    }
+                }
+            }
+
+            // 4. Đồng bộ thông tin mở rộng Đơn hàng, Nhật ký FEFO & Thiệp 3D lên bảng SQL thật
+            if (store.DonHangs != null && store.DonHangs.Count > 0)
+            {
+                var dsMaDh = store.DonHangs.Keys.ToList();
+                var mapDh = db.DonHangs.Where(d => dsMaDh.Contains(d.MaDh)).ToDictionary(d => d.MaDh);
+                var mapNhatKy = db.NhatKyTruKhoDonHangs.Where(n => dsMaDh.Contains(n.MaDh)).ToLookup(n => n.MaDh);
+                var tokenDaCo = db.ThiepChucMung3ds.ToDictionary(t => t.MaTokenQr, StringComparer.OrdinalIgnoreCase);
 
                 foreach (var kvDh in store.DonHangs)
                 {
                     int maDh = kvDh.Key;
                     var dhMeta = kvDh.Value;
-                    if (dhMeta?.Thiep3DTheoToken == null) continue;
+                    if (dhMeta == null) continue;
 
-                    foreach (var kvThiep in dhMeta.Thiep3DTheoToken)
+                    if (mapDh.TryGetValue(maDh, out var dhEntity))
                     {
-                        string token = (kvThiep.Key ?? string.Empty).Trim();
-                        var info = kvThiep.Value;
-                        if (string.IsNullOrWhiteSpace(token) || info == null) continue;
+                        GhiThongTinMoRongLenDonHang(dhEntity, dhMeta);
+                        DongBoNhatKyTruKhoDonHang(db, dhEntity, dhMeta, mapNhatKy[maDh].ToList());
+                    }
 
-                        if (tokenDaCo.TryGetValue(token, out var thiepEntity))
-                        {
-                            thiepEntity.TenNguoiGui = string.IsNullOrWhiteSpace(info.TenNguoiGuiThiep) ? thiepEntity.TenNguoiGui : info.TenNguoiGuiThiep;
-                            thiepEntity.TenNguoiNhan = string.IsNullOrWhiteSpace(info.TenNguoiNhanThiep) ? thiepEntity.TenNguoiNhan : info.TenNguoiNhanThiep;
-                            if (!string.IsNullOrWhiteSpace(info.LoiChucThiep)) thiepEntity.LoiChuc = info.LoiChucThiep;
-                            if (!string.IsNullOrWhiteSpace(info.MauGiaoDienThiep)) thiepEntity.MauGiaoDien = info.MauGiaoDienThiep;
-                        }
-                        else
-                        {
-                            int? maDotGiao = db.DotGiaoHangDaDiems
-                                .AsNoTracking()
-                                .Where(d => d.MaTokenThiepQr == token)
-                                .Select(d => (int?)d.MaDotGh)
-                                .FirstOrDefault();
-
-                            var thiepMoi = new ThiepChucMung3d
-                            {
-                                MaTokenQr = token,
-                                MaDonHang = maDh,
-                                MaDotGiao = maDotGiao,
-                                TenNguoiGui = string.IsNullOrWhiteSpace(info.TenNguoiGuiThiep) ? "Khách Hàng Nguyệt Cát" : info.TenNguoiGuiThiep,
-                                TenNguoiNhan = string.IsNullOrWhiteSpace(info.TenNguoiNhanThiep) ? "Quý Khách & Gia Đình" : info.TenNguoiNhanThiep,
-                                LoiChuc = string.IsNullOrWhiteSpace(info.LoiChucThiep)
-                                    ? "Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên, Viên Mãn & An Khang!"
-                                    : info.LoiChucThiep,
-                                MauGiaoDien = string.IsNullOrWhiteSpace(info.MauGiaoDienThiep) ? "CO_PHONG_HOANG_GIA" : info.MauGiaoDienThiep,
-                                SoLanMoThiep = 0,
-                                NgayTao = DateTime.Now
-                            };
-                            db.ThiepChucMung3ds.Add(thiepMoi);
-                            tokenDaCo[token] = thiepMoi;
-                        }
+                    if (dhMeta.Thiep3DTheoToken != null)
+                    {
+                        DongBoThiep3D(db, maDh, dhMeta.Thiep3DTheoToken, tokenDaCo);
                     }
                 }
             }
 
-            // 3. Đồng bộ DanhSachPhieuThuChi vào bảng vật lý dbo.PhieuThuChi
+            // 5. Đồng bộ DanhSachPhieuThuChi vào bảng vật lý dbo.PhieuThuChi
             if (store.DanhSachPhieuThuChi != null && store.DanhSachPhieuThuChi.Count > 0)
             {
                 var dsHienCo = db.PhieuThuChis.AsNoTracking().ToList();
@@ -457,179 +487,159 @@ namespace WebBanhTrungThu.Services
                 }
             }
 
-            // 4. Lưu dữ liệu mở rộng vào bảng vật lý dbo.CauHinhHeThong với khóa chuẩn CAUHINH_MORONG_NGUYETCAT
-            string jsonStore = JsonSerializer.Serialize(store, _jsonOptions);
-            var rowStore = db.CauHinhHeThongs.FirstOrDefault(c => c.KhoaCauHinh == KHOA_CAU_HINH_MORONG);
-            if (rowStore == null)
-            {
-                db.CauHinhHeThongs.Add(new CauHinhHeThong
-                {
-                    KhoaCauHinh = KHOA_CAU_HINH_MORONG,
-                    GiaTriJson = jsonStore,
-                    MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO Đại lý Nguyệt Cát ERP",
-                    NgayCapNhat = DateTime.Now
-                });
-            }
-            else
-            {
-                rowStore.GiaTriJson = jsonStore;
-                rowStore.NgayCapNhat = DateTime.Now;
-            }
-
             db.SaveChanges();
-        }
-
-        public static DuLieuMoRongHeThongRoot TaoDuLieuMacDinh()
-        {
-            var store = new DuLieuMoRongHeThongRoot();
-            string[] thuongHieuMau = { "Đồng Khánh", "Kinh Đô", "Như Lan", "Brodard", "Givral", "Đồng Khánh", "Kinh Đô", "Như Lan" };
-            string[] nccMau =
-            {
-                "Lò Bánh Đồng Khánh Chính Gốc",
-                "NPP Bánh Kinh Đô Miền Nam",
-                "NPP Như Lan Sài Gòn",
-                "NPP Brodard Sài Gòn",
-                "Bánh Trung Thu Givral Chính Hãng",
-                "Lò Bánh Đồng Khánh Chính Gốc",
-                "NPP Bánh Kinh Đô Miền Nam",
-                "NPP Như Lan Sài Gòn"
-            };
-            string[] viTriMau = { "Kệ A1", "Kệ A2", "Kệ B1", "Kệ B2", "Tủ Mát C1", "Kệ A1", "Kệ B1", "Kệ A2" };
-
-            for (int i = 1; i <= 15; i++)
-            {
-                int idx = (i - 1) % thuongHieuMau.Length;
-                store.Items[$"BANH_{i}"] = new CauHinhHangHoaMoRong
-                {
-                    Key = $"BANH_{i}",
-                    MaVach = $"8934680010{i:D3}",
-                    ThuongHieu = thuongHieuMau[idx],
-                    NhaCungCap = nccMau[idx],
-                    ViTriKho = viTriMau[idx],
-                    DonViTinh = "Cái",
-                    BanTrucTiep = true
-                };
-            }
-
-            string[] thuongHieuCombo = { "Đồng Khánh", "Kinh Đô", "Như Lan", "Nguyệt Cát" };
-            string[] nccCombo =
-            {
-                "Lò Bánh Đồng Khánh Chính Gốc",
-                "NPP Bánh Kinh Đô Miền Nam",
-                "NPP Như Lan Sài Gòn",
-                "Đại Lý Phân Phối Nguyệt Cát"
-            };
-
-            for (int c = 1; c <= 10; c++)
-            {
-                int idx = (c - 1) % thuongHieuCombo.Length;
-                store.Items[$"COMBO_{c}"] = new CauHinhHangHoaMoRong
-                {
-                    Key = $"COMBO_{c}",
-                    MaVach = $"8934680990{c:D3}",
-                    ThuongHieu = thuongHieuCombo[idx],
-                    NhaCungCap = nccCombo[idx],
-                    ViTriKho = "Kệ B1",
-                    DonViTinh = "Hộp",
-                    BanTrucTiep = true,
-                    TenDmCombo = c == 1 ? "ĐỒNG GIÁ 20K" : "Combo Hộp Quà",
-                    TonKhoCombo = 35 + (c * 5),
-                    TrongLuongComboGram = 750
-                };
-            }
-
-            return store;
         }
 
         public void GanMetadataChoBanh(SanPhamBanh banh, DuLieuMoRongHeThongRoot store)
         {
             string key = $"BANH_{banh.MaBanh}";
-            if (store.Items.TryGetValue(key, out var meta))
+            store.Items.TryGetValue(key, out var meta);
+
+            banh.MaVach = !string.IsNullOrWhiteSpace(banh.MaVach)
+                ? banh.MaVach
+                : (!string.IsNullOrWhiteSpace(meta?.MaVach) ? meta.MaVach : $"8934680010{banh.MaBanh:D3}");
+
+            if (banh.MaThuongHieuNavigation != null && !string.IsNullOrWhiteSpace(banh.MaThuongHieuNavigation.TenThuongHieu))
             {
-                banh.MaVach = string.IsNullOrWhiteSpace(meta.MaVach) ? $"8934680010{banh.MaBanh:D3}" : meta.MaVach;
-                banh.ThuongHieu = string.IsNullOrWhiteSpace(meta.ThuongHieu) ? "Đồng Khánh" : meta.ThuongHieu;
-                banh.NhaCungCap = string.IsNullOrWhiteSpace(meta.NhaCungCap) ? "Lò Bánh Đồng Khánh Chính Gốc" : meta.NhaCungCap;
-                banh.ViTriKho = string.IsNullOrWhiteSpace(meta.ViTriKho) ? "Kệ A1" : meta.ViTriKho;
-                banh.DonViTinh = string.IsNullOrWhiteSpace(meta.DonViTinh) ? "Cái" : meta.DonViTinh;
-                banh.BanTrucTiep = meta.BanTrucTiep;
+                banh.ThuongHieu = banh.MaThuongHieuNavigation.TenThuongHieu;
             }
-            else
+            else if (meta != null && !string.IsNullOrWhiteSpace(meta.ThuongHieu))
             {
-                banh.MaVach = $"8934680010{banh.MaBanh:D3}";
-                banh.ThuongHieu = "Đồng Khánh";
-                banh.NhaCungCap = "Lò Bánh Đồng Khánh Chính Gốc";
-                banh.ViTriKho = "Kệ A1";
-                banh.DonViTinh = "Cái";
-                banh.BanTrucTiep = banh.TrangThaiBan;
+                banh.ThuongHieu = meta.ThuongHieu;
+            }
+
+            if (banh.MaNccMacDinhNavigation != null && !string.IsNullOrWhiteSpace(banh.MaNccMacDinhNavigation.TenNcc))
+            {
+                banh.NhaCungCap = banh.MaNccMacDinhNavigation.TenNcc;
+            }
+            else if (meta != null && !string.IsNullOrWhiteSpace(meta.NhaCungCap))
+            {
+                banh.NhaCungCap = meta.NhaCungCap;
+            }
+
+            if (string.IsNullOrWhiteSpace(banh.ViTriKho))
+            {
+                banh.ViTriKho = !string.IsNullOrWhiteSpace(meta?.ViTriKho) ? meta.ViTriKho : "Kệ A1";
+            }
+            if (string.IsNullOrWhiteSpace(banh.DonViTinh))
+            {
+                banh.DonViTinh = !string.IsNullOrWhiteSpace(meta?.DonViTinh) ? meta.DonViTinh : "Cái";
             }
         }
 
         public void GanMetadataChoCombo(ComboMauCoSan combo, DuLieuMoRongHeThongRoot store)
         {
             string key = $"COMBO_{combo.MaCb}";
-            if (store.Items.TryGetValue(key, out var meta))
+            store.Items.TryGetValue(key, out var meta);
+
+            combo.MaVach = !string.IsNullOrWhiteSpace(combo.MaVach)
+                ? combo.MaVach
+                : (!string.IsNullOrWhiteSpace(meta?.MaVach) ? meta.MaVach : $"8934680990{combo.MaCb:D3}");
+
+            if (combo.MaThuongHieuNavigation != null && !string.IsNullOrWhiteSpace(combo.MaThuongHieuNavigation.TenThuongHieu))
             {
-                combo.MaVach = string.IsNullOrWhiteSpace(meta.MaVach) ? $"8934680990{combo.MaCb:D3}" : meta.MaVach;
-                combo.ThuongHieu = string.IsNullOrWhiteSpace(meta.ThuongHieu) ? "Đồng Khánh" : meta.ThuongHieu;
-                combo.NhaCungCap = string.IsNullOrWhiteSpace(meta.NhaCungCap) ? "Lò Bánh Đồng Khánh Chính Gốc" : meta.NhaCungCap;
-                combo.ViTriKho = string.IsNullOrWhiteSpace(meta.ViTriKho) ? "Kệ B1" : meta.ViTriKho;
-                combo.DonViTinh = string.IsNullOrWhiteSpace(meta.DonViTinh) ? "Hộp" : meta.DonViTinh;
-                combo.BanTrucTiep = meta.BanTrucTiep;
-                combo.MaDm = meta.MaDmCombo ?? 0;
-                combo.TenDm = string.IsNullOrWhiteSpace(meta.TenDmCombo) ? "ĐỒNG GIÁ 20K" : meta.TenDmCombo!;
-                combo.TongTonKho = meta.TonKhoCombo ?? 40;
-                combo.TrongLuongGram = meta.TrongLuongComboGram ?? 750;
+                combo.ThuongHieu = combo.MaThuongHieuNavigation.TenThuongHieu;
             }
-            else
+            else if (meta != null && !string.IsNullOrWhiteSpace(meta.ThuongHieu))
             {
-                combo.MaVach = $"8934680990{combo.MaCb:D3}";
-                combo.ThuongHieu = "Đồng Khánh";
-                combo.NhaCungCap = "Lò Bánh Đồng Khánh Chính Gốc";
-                combo.ViTriKho = "Kệ B1";
-                combo.DonViTinh = "Hộp";
-                combo.BanTrucTiep = combo.TrangThai;
-                combo.TenDm = "ĐỒNG GIÁ 20K";
-                combo.TongTonKho = 40;
-                combo.TrongLuongGram = 750;
+                combo.ThuongHieu = meta.ThuongHieu;
+            }
+
+            if (meta != null && !string.IsNullOrWhiteSpace(meta.NhaCungCap))
+            {
+                combo.NhaCungCap = meta.NhaCungCap;
+            }
+
+            if (combo.MaDmNavigation != null && !string.IsNullOrWhiteSpace(combo.MaDmNavigation.TenDm))
+            {
+                combo.TenDm = combo.MaDmNavigation.TenDm;
+            }
+            else if (meta != null && !string.IsNullOrWhiteSpace(meta.TenDmCombo))
+            {
+                combo.TenDm = meta.TenDmCombo;
+            }
+
+            if (string.IsNullOrWhiteSpace(combo.ViTriKho))
+            {
+                combo.ViTriKho = !string.IsNullOrWhiteSpace(meta?.ViTriKho) ? meta.ViTriKho : "Kệ B1";
+            }
+            if (string.IsNullOrWhiteSpace(combo.DonViTinh))
+            {
+                combo.DonViTinh = !string.IsNullOrWhiteSpace(meta?.DonViTinh) ? meta.DonViTinh : "Hộp";
+            }
+            if (combo.TongTonKho <= 0 && meta?.TonKhoCombo > 0)
+            {
+                combo.TongTonKho = meta.TonKhoCombo.Value;
+            }
+            if (combo.TrongLuongGram <= 0)
+            {
+                combo.TrongLuongGram = meta?.TrongLuongComboGram > 0 ? meta.TrongLuongComboGram.Value : 600;
             }
         }
 
         public void GanMetadataChoDonHang(DonHang dh, DuLieuMoRongHeThongRoot? store = null)
         {
-            store ??= DocDuLieu();
-            if (store.DonHangs != null && store.DonHangs.TryGetValue(dh.MaDh, out var meta))
+            if (dh.DotGiaoHangDaDiems == null || dh.DotGiaoHangDaDiems.Count == 0)
             {
-                dh.MaNganHangHoan = meta.MaNganHangHoan;
-                dh.SoTaiKhoanHoan = meta.SoTaiKhoanHoan;
-                dh.TenChuTkHoan = meta.TenChuTkHoan;
-                dh.LyDoHuyHoan = !string.IsNullOrWhiteSpace(dh.LyDoHuy) ? dh.LyDoHuy : meta.LyDoHuyHoan;
-                dh.GhiChuDieuChinhAdmin = meta.GhiChuDieuChinhAdmin;
-                dh.ThoiGianCapNhatCuoi = meta.ThoiGianCapNhatCuoi;
-                dh.NguoiCapNhatCuoi = meta.NguoiCapNhatCuoi;
+                return;
+            }
 
-                if (dh.DotGiaoHangDaDiems != null && meta.Thiep3DTheoToken != null)
+            Dictionary<string, ThongTinThiep3DMeta>? thiepTheoToken = null;
+            if (store?.DonHangs != null && store.DonHangs.TryGetValue(dh.MaDh, out var meta))
+            {
+                thiepTheoToken = meta.Thiep3DTheoToken;
+            }
+            else
+            {
+                lock (_lock)
                 {
-                    foreach (var dot in dh.DotGiaoHangDaDiems)
-                    {
-                        if (!string.IsNullOrWhiteSpace(dot.MaTokenThiepQr) &&
-                            meta.Thiep3DTheoToken.TryGetValue(dot.MaTokenThiepQr, out var thiepMeta))
-                        {
-                            dot.TenNguoiNhanThiep = thiepMeta.TenNguoiNhanThiep;
-                            dot.TenNguoiGuiThiep = thiepMeta.TenNguoiGuiThiep;
-                        }
-                    }
+                    using var scope = _scopeFactory.CreateScope();
+                    var db = scope.ServiceProvider.GetRequiredService<CSDLBanhTrungThuContext>();
+                    thiepTheoToken = db.ThiepChucMung3ds
+                        .AsNoTracking()
+                        .Where(t => t.MaDonHang == dh.MaDh)
+                        .ToDictionary(
+                            t => t.MaTokenQr,
+                            t => new ThongTinThiep3DMeta
+                            {
+                                MaTokenThiepQr = t.MaTokenQr,
+                                TenNguoiNhanThiep = t.TenNguoiNhan,
+                                TenNguoiGuiThiep = t.TenNguoiGui,
+                                LoiChucThiep = t.LoiChuc,
+                                MauGiaoDienThiep = t.MauGiaoDien
+                            },
+                            StringComparer.OrdinalIgnoreCase);
+                }
+            }
+
+            if (thiepTheoToken == null || thiepTheoToken.Count == 0) return;
+
+            foreach (var dot in dh.DotGiaoHangDaDiems)
+            {
+                if (!string.IsNullOrWhiteSpace(dot.MaTokenThiepQr) &&
+                    thiepTheoToken.TryGetValue(dot.MaTokenThiepQr, out var thiepMeta))
+                {
+                    dot.TenNguoiNhanThiep ??= thiepMeta.TenNguoiNhanThiep;
+                    dot.TenNguoiGuiThiep ??= thiepMeta.TenNguoiGuiThiep;
                 }
             }
         }
 
         public ThongTinDonHangMoRong LayMetadataDonHang(int maDh)
         {
-            var store = DocDuLieu();
-            if (store.DonHangs != null && store.DonHangs.TryGetValue(maDh, out var meta))
+            lock (_lock)
             {
-                return meta;
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<CSDLBanhTrungThuContext>();
+
+                var dh = db.DonHangs.AsNoTracking().FirstOrDefault(d => d.MaDh == maDh);
+                if (dh == null) return new ThongTinDonHangMoRong { MaDh = maDh };
+
+                var nhatKy = db.NhatKyTruKhoDonHangs.AsNoTracking().Where(n => n.MaDh == maDh).ToList();
+                var thiep = db.ThiepChucMung3ds.AsNoTracking().Where(t => t.MaDonHang == maDh).ToList();
+
+                return TaoThongTinDonHangMoRongTuSql(dh, nhatKy, thiep);
             }
-            return new ThongTinDonHangMoRong { MaDh = maDh };
         }
 
         public void CapNhatMetadataDonHang(int maDh, Action<ThongTinDonHangMoRong> capNhat)
@@ -638,15 +648,26 @@ namespace WebBanhTrungThu.Services
             {
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<CSDLBanhTrungThuContext>();
-                var store = DocDuLieuTuSqlInternal(db);
-                store.DonHangs ??= new Dictionary<int, ThongTinDonHangMoRong>();
-                if (!store.DonHangs.TryGetValue(maDh, out var meta))
-                {
-                    meta = new ThongTinDonHangMoRong { MaDh = maDh };
-                    store.DonHangs[maDh] = meta;
-                }
+
+                var dh = db.DonHangs.FirstOrDefault(d => d.MaDh == maDh);
+                if (dh == null) return;
+
+                var nhatKyHienTai = db.NhatKyTruKhoDonHangs.Where(n => n.MaDh == maDh).ToList();
+                var thiepHienTai = db.ThiepChucMung3ds.Where(t => t.MaDonHang == maDh).ToList();
+
+                var meta = TaoThongTinDonHangMoRongTuSql(dh, nhatKyHienTai, thiepHienTai);
                 capNhat(meta);
-                LuuDuLieuVaoSqlInternal(db, store);
+
+                GhiThongTinMoRongLenDonHang(dh, meta);
+                DongBoNhatKyTruKhoDonHang(db, dh, meta, nhatKyHienTai);
+
+                if (meta.Thiep3DTheoToken != null && meta.Thiep3DTheoToken.Count > 0)
+                {
+                    var tokenDaCo = thiepHienTai.ToDictionary(t => t.MaTokenQr, StringComparer.OrdinalIgnoreCase);
+                    DongBoThiep3D(db, maDh, meta.Thiep3DTheoToken, tokenDaCo);
+                }
+
+                db.SaveChanges();
             }
         }
 
@@ -656,46 +677,7 @@ namespace WebBanhTrungThu.Services
             {
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<CSDLBanhTrungThuContext>();
-
-                var rowQr = db.CauHinhHeThongs
-                    .AsNoTracking()
-                    .FirstOrDefault(c => c.KhoaCauHinh == KHOA_CAU_HINH_QR_MOMO);
-
-                if (rowQr != null && !string.IsNullOrWhiteSpace(rowQr.GiaTriJson))
-                {
-                    try
-                    {
-                        var cfg = JsonSerializer.Deserialize<CauHinhThanhToanQr>(rowQr.GiaTriJson, _jsonOptions);
-                        if (cfg != null && !string.IsNullOrWhiteSpace(cfg.SoTaiKhoanMoMo))
-                        {
-                            return cfg;
-                        }
-                    }
-                    catch
-                    {
-                        // Khởi tạo lại mặc định bên dưới
-                    }
-                }
-
-                var macDinh = new CauHinhThanhToanQr();
-                var tracked = db.CauHinhHeThongs.FirstOrDefault(c => c.KhoaCauHinh == KHOA_CAU_HINH_QR_MOMO);
-                if (tracked == null)
-                {
-                    db.CauHinhHeThongs.Add(new CauHinhHeThong
-                    {
-                        KhoaCauHinh = KHOA_CAU_HINH_QR_MOMO,
-                        GiaTriJson = JsonSerializer.Serialize(macDinh, _jsonOptions),
-                        MoTa = "Cấu hình Tài khoản nhận tiền Ví MoMo / VietQR (0814585526 - LE MINH DUC)",
-                        NgayCapNhat = DateTime.Now
-                    });
-                }
-                else
-                {
-                    tracked.GiaTriJson = JsonSerializer.Serialize(macDinh, _jsonOptions);
-                    tracked.NgayCapNhat = DateTime.Now;
-                }
-                db.SaveChanges();
-                return macDinh;
+                return DocHoacKhoiTaoCauHinhQrInternal(db);
             }
         }
 
@@ -707,10 +689,10 @@ namespace WebBanhTrungThu.Services
             {
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<CSDLBanhTrungThuContext>();
-                var store = DocDuLieuTuSqlInternal(db);
-                store.CauHinhQr ??= new CauHinhThanhToanQr();
-                capNhat(store.CauHinhQr);
-                LuuDuLieuVaoSqlInternal(db, store);
+                var cfg = DocHoacKhoiTaoCauHinhQrInternal(db);
+                capNhat(cfg);
+                LuuCauHinhQrInternal(db, cfg);
+                db.SaveChanges();
             }
         }
 
@@ -720,8 +702,7 @@ namespace WebBanhTrungThu.Services
             {
                 using var scope = _scopeFactory.CreateScope();
                 var db = scope.ServiceProvider.GetRequiredService<CSDLBanhTrungThuContext>();
-                var store = DocDuLieuTuSqlInternal(db);
-                store.CauHinhQr ??= new CauHinhThanhToanQr();
+                var cfg = DocHoacKhoiTaoCauHinhQrInternal(db);
 
                 string stkSach = (soTaiKhoanMoMo ?? "0814585526").Replace(" ", "").Trim();
                 if (string.IsNullOrWhiteSpace(stkSach)) stkSach = "0814585526";
@@ -730,21 +711,22 @@ namespace WebBanhTrungThu.Services
                     ? $"{stkSach[..4]} {stkSach.Substring(4, 3)} {stkSach.Substring(7, 3)}"
                     : stkSach;
 
-                store.CauHinhQr.SoTaiKhoanMoMo = stkSach;
-                store.CauHinhQr.SoDienThoaiHienThi = sdtHienThi;
-                store.CauHinhQr.TenChuTaiKhoan = string.IsNullOrWhiteSpace(tenChuTaiKhoan) ? "LE MINH DUC" : tenChuTaiKhoan.Trim().ToUpperInvariant();
-                store.CauHinhQr.TenNganHangVi = string.IsNullOrWhiteSpace(tenNganHangVi) ? "MOMO" : tenNganHangVi.Trim().ToUpperInvariant();
+                cfg.SoTaiKhoanMoMo = stkSach;
+                cfg.SoDienThoaiHienThi = sdtHienThi;
+                cfg.TenChuTaiKhoan = string.IsNullOrWhiteSpace(tenChuTaiKhoan) ? "LE MINH DUC" : tenChuTaiKhoan.Trim().ToUpperInvariant();
+                cfg.TenNganHangVi = string.IsNullOrWhiteSpace(tenNganHangVi) ? "MOMO" : tenNganHangVi.Trim().ToUpperInvariant();
                 if (!string.IsNullOrWhiteSpace(maBinNganHang))
                 {
-                    store.CauHinhQr.MaBinNganHang = maBinNganHang.Trim();
+                    cfg.MaBinNganHang = maBinNganHang.Trim();
                 }
                 if (!string.IsNullOrWhiteSpace(cuPhap))
                 {
-                    store.CauHinhQr.CuPhapChuyenKhoan = cuPhap.Trim();
+                    cfg.CuPhapChuyenKhoan = cuPhap.Trim();
                 }
 
-                LuuDuLieuVaoSqlInternal(db, store);
-                return store.CauHinhQr;
+                LuuCauHinhQrInternal(db, cfg);
+                db.SaveChanges();
+                return cfg;
             }
         }
 
@@ -812,17 +794,23 @@ namespace WebBanhTrungThu.Services
                     };
                 }
 
-                var store = DocDuLieuTuSqlInternal(db);
-                if (store.DonHangs != null)
+                var dotDb = db.DotGiaoHangDaDiems
+                    .AsNoTracking()
+                    .Include(d => d.MaDhNavigation)
+                    .FirstOrDefault(d => d.MaTokenThiepQr == tokenChuan && d.CoKemThiepQr);
+
+                if (dotDb != null)
                 {
-                    foreach (var meta in store.DonHangs.Values)
+                    return new ThongTinThiep3DMeta
                     {
-                        if (meta.Thiep3DTheoToken != null && meta.Thiep3DTheoToken.TryGetValue(tokenChuan, out var thiep))
-                        {
-                            return thiep;
-                        }
-                    }
+                        MaTokenThiepQr = tokenChuan,
+                        TenNguoiNhanThiep = dotDb.TenNguoiNhan,
+                        TenNguoiGuiThiep = dotDb.MaDhNavigation?.HoTenNguoiMua ?? "Khách Hàng Nguyệt Cát",
+                        LoiChucThiep = dotDb.LoiChucThiep,
+                        MauGiaoDienThiep = dotDb.MauGiaoDienThiep
+                    };
                 }
+
                 return null;
             }
         }
@@ -855,6 +843,285 @@ namespace WebBanhTrungThu.Services
             }
 
             return LayThongTinThiepTheoToken(maToken);
+        }
+
+        private CauHinhThanhToanQr DocHoacKhoiTaoCauHinhQrInternal(CSDLBanhTrungThuContext db)
+        {
+            var rowQr = db.CauHinhHeThongs
+                .AsNoTracking()
+                .FirstOrDefault(c => c.KhoaCauHinh == KHOA_CAU_HINH_QR_MOMO);
+
+            if (rowQr != null && !string.IsNullOrWhiteSpace(rowQr.GiaTriJson))
+            {
+                try
+                {
+                    var cfg = JsonSerializer.Deserialize<CauHinhThanhToanQr>(rowQr.GiaTriJson, _jsonOptions);
+                    if (cfg != null && !string.IsNullOrWhiteSpace(cfg.SoTaiKhoanMoMo))
+                    {
+                        return cfg;
+                    }
+                }
+                catch
+                {
+                    // Khởi tạo lại mặc định bên dưới
+                }
+            }
+
+            var macDinh = new CauHinhThanhToanQr();
+            LuuCauHinhQrInternal(db, macDinh);
+            db.SaveChanges();
+            return macDinh;
+        }
+
+        private void LuuCauHinhQrInternal(CSDLBanhTrungThuContext db, CauHinhThanhToanQr cfg)
+        {
+            string jsonQr = JsonSerializer.Serialize(cfg, _jsonOptions);
+            var rowQr = db.CauHinhHeThongs.FirstOrDefault(c => c.KhoaCauHinh == KHOA_CAU_HINH_QR_MOMO);
+            if (rowQr == null)
+            {
+                db.CauHinhHeThongs.Add(new CauHinhHeThong
+                {
+                    KhoaCauHinh = KHOA_CAU_HINH_QR_MOMO,
+                    GiaTriJson = jsonQr,
+                    MoTa = "Cấu hình Tài khoản nhận tiền Ví MoMo / VietQR (0814585526 - LE MINH DUC)",
+                    NgayCapNhat = DateTime.Now
+                });
+            }
+            else
+            {
+                rowQr.GiaTriJson = jsonQr;
+                rowQr.NgayCapNhat = DateTime.Now;
+            }
+        }
+
+        private static ThongTinDonHangMoRong TaoThongTinDonHangMoRongTuSql(
+            DonHang dh,
+            IEnumerable<NhatKyTruKhoDonHang> nhatKys,
+            IEnumerable<ThiepChucMung3d> thieps)
+        {
+            var meta = new ThongTinDonHangMoRong
+            {
+                MaDh = dh.MaDh,
+                KenhBan = string.IsNullOrWhiteSpace(dh.KenhBan) ? "WEB_ONLINE" : dh.KenhBan,
+                SoTienKhachDaTra = dh.SoTienKhachDaTra,
+                MaNganHangHoan = dh.MaNganHangHoan,
+                SoTaiKhoanHoan = dh.SoTaiKhoanHoan,
+                TenChuTkHoan = dh.TenChuTkHoan,
+                LyDoHuyHoan = dh.LyDoHuy,
+                GhiChuDieuChinhAdmin = dh.GhiChuDieuChinhAdmin,
+                ThoiGianCapNhatCuoi = dh.ThoiGianCapNhatCuoi?.ToString("dd/MM/yyyy HH:mm"),
+                NguoiCapNhatCuoi = dh.NguoiCapNhatCuoi,
+                HanThanhToan = dh.HanThanhToanQr,
+                DaRollbackKho = dh.DaRollbackKho,
+                DiemDaDung = dh.SoDiemDaDung,
+                TienGiamDiem = dh.TienGiamDiemVip,
+                PhanTramGiamVip = dh.PhanTramGiamVip,
+                TienGiamVip = dh.TienGiamHangVip,
+                DaCongDiemThuong = dh.DaCongDiemThuong,
+                DaHoanDiemKhiHuy = dh.DaHoanDiemKhiHuy
+            };
+
+            foreach (var nk in nhatKys)
+            {
+                if (string.Equals(nk.LoaiDoiTuong, "LO_BANH", StringComparison.OrdinalIgnoreCase))
+                {
+                    meta.DanhSachLoDaTru.Add(new NhatKyTruLoFefo
+                    {
+                        MaLo = nk.MaLo ?? 0,
+                        MaBanh = nk.MaBanh ?? 0,
+                        SoLuongDaTru = nk.SoLuongDaTru
+                    });
+                }
+                else if (string.Equals(nk.LoaiDoiTuong, "VO_HOP", StringComparison.OrdinalIgnoreCase))
+                {
+                    meta.DanhSachVoHopDaTru.Add(new NhatKyTruVoHop
+                    {
+                        MaVh = nk.MaVh ?? 0,
+                        SoLuongDaTru = nk.SoLuongDaTru
+                    });
+                }
+            }
+
+            foreach (var t in thieps)
+            {
+                meta.Thiep3DTheoToken[t.MaTokenQr] = new ThongTinThiep3DMeta
+                {
+                    MaTokenThiepQr = t.MaTokenQr,
+                    TenNguoiNhanThiep = t.TenNguoiNhan,
+                    TenNguoiGuiThiep = t.TenNguoiGui,
+                    LoiChucThiep = t.LoiChuc,
+                    MauGiaoDienThiep = t.MauGiaoDien
+                };
+            }
+
+            return meta;
+        }
+
+        private static void GhiThongTinMoRongLenDonHang(DonHang dh, ThongTinDonHangMoRong meta)
+        {
+            if (!string.IsNullOrWhiteSpace(meta.KenhBan)) dh.KenhBan = meta.KenhBan.Trim();
+            if (meta.SoTienKhachDaTra.HasValue) dh.SoTienKhachDaTra = meta.SoTienKhachDaTra;
+            if (!string.IsNullOrWhiteSpace(meta.MaNganHangHoan)) dh.MaNganHangHoan = meta.MaNganHangHoan.Trim();
+            if (!string.IsNullOrWhiteSpace(meta.SoTaiKhoanHoan)) dh.SoTaiKhoanHoan = meta.SoTaiKhoanHoan.Trim();
+            if (!string.IsNullOrWhiteSpace(meta.TenChuTkHoan)) dh.TenChuTkHoan = meta.TenChuTkHoan.Trim();
+            if (!string.IsNullOrWhiteSpace(meta.LyDoHuyHoan)) dh.LyDoHuy = meta.LyDoHuyHoan.Trim();
+            if (!string.IsNullOrWhiteSpace(meta.GhiChuDieuChinhAdmin)) dh.GhiChuDieuChinhAdmin = meta.GhiChuDieuChinhAdmin.Trim();
+            if (!string.IsNullOrWhiteSpace(meta.NguoiCapNhatCuoi)) dh.NguoiCapNhatCuoi = meta.NguoiCapNhatCuoi.Trim();
+            if (!string.IsNullOrWhiteSpace(meta.ThoiGianCapNhatCuoi))
+            {
+                dh.ThoiGianCapNhatCuoi = DateTime.TryParseExact(
+                    meta.ThoiGianCapNhatCuoi.Trim(),
+                    "dd/MM/yyyy HH:mm",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var dtExact)
+                    ? dtExact
+                    : (DateTime.TryParse(meta.ThoiGianCapNhatCuoi.Trim(), out var dtAny) ? dtAny : DateTime.Now);
+            }
+            if (meta.DaRollbackKho) dh.DaRollbackKho = true;
+        }
+
+        private static void DongBoNhatKyTruKhoDonHang(
+            CSDLBanhTrungThuContext db,
+            DonHang dh,
+            ThongTinDonHangMoRong meta,
+            List<NhatKyTruKhoDonHang> nhatKyHienTai)
+        {
+            if (nhatKyHienTai.Count == 0)
+            {
+                if (meta.DanhSachLoDaTru != null)
+                {
+                    foreach (var lo in meta.DanhSachLoDaTru)
+                    {
+                        db.NhatKyTruKhoDonHangs.Add(new NhatKyTruKhoDonHang
+                        {
+                            MaDh = dh.MaDh,
+                            LoaiDoiTuong = "LO_BANH",
+                            MaLo = lo.MaLo > 0 ? lo.MaLo : null,
+                            MaBanh = lo.MaBanh > 0 ? lo.MaBanh : null,
+                            SoLuongDaTru = lo.SoLuongDaTru,
+                            DaHoanKho = meta.DaRollbackKho,
+                            NgayGhi = DateTime.Now
+                        });
+                    }
+                }
+                if (meta.DanhSachVoHopDaTru != null)
+                {
+                    foreach (var vo in meta.DanhSachVoHopDaTru)
+                    {
+                        db.NhatKyTruKhoDonHangs.Add(new NhatKyTruKhoDonHang
+                        {
+                            MaDh = dh.MaDh,
+                            LoaiDoiTuong = "VO_HOP",
+                            MaVh = vo.MaVh > 0 ? vo.MaVh : null,
+                            SoLuongDaTru = vo.SoLuongDaTru,
+                            DaHoanKho = meta.DaRollbackKho,
+                            NgayGhi = DateTime.Now
+                        });
+                    }
+                }
+            }
+            else if (meta.DaRollbackKho)
+            {
+                foreach (var nk in nhatKyHienTai)
+                {
+                    nk.DaHoanKho = true;
+                }
+            }
+        }
+
+        private static void DongBoThiep3D(
+            CSDLBanhTrungThuContext db,
+            int maDh,
+            Dictionary<string, ThongTinThiep3DMeta> thiepTheoToken,
+            Dictionary<string, ThiepChucMung3d> tokenDaCo)
+        {
+            foreach (var kvThiep in thiepTheoToken)
+            {
+                string token = (kvThiep.Key ?? string.Empty).Trim();
+                var info = kvThiep.Value;
+                if (string.IsNullOrWhiteSpace(token) || info == null) continue;
+
+                if (tokenDaCo.TryGetValue(token, out var thiepEntity))
+                {
+                    thiepEntity.TenNguoiGui = string.IsNullOrWhiteSpace(info.TenNguoiGuiThiep) ? thiepEntity.TenNguoiGui : info.TenNguoiGuiThiep;
+                    thiepEntity.TenNguoiNhan = string.IsNullOrWhiteSpace(info.TenNguoiNhanThiep) ? thiepEntity.TenNguoiNhan : info.TenNguoiNhanThiep;
+                    if (!string.IsNullOrWhiteSpace(info.LoiChucThiep)) thiepEntity.LoiChuc = info.LoiChucThiep;
+                    if (!string.IsNullOrWhiteSpace(info.MauGiaoDienThiep)) thiepEntity.MauGiaoDien = info.MauGiaoDienThiep;
+                }
+                else
+                {
+                    int? maDotGiao = db.DotGiaoHangDaDiems
+                        .AsNoTracking()
+                        .Where(d => d.MaTokenThiepQr == token)
+                        .Select(d => (int?)d.MaDotGh)
+                        .FirstOrDefault();
+
+                    var thiepMoi = new ThiepChucMung3d
+                    {
+                        MaTokenQr = token,
+                        MaDonHang = maDh,
+                        MaDotGiao = maDotGiao,
+                        TenNguoiGui = string.IsNullOrWhiteSpace(info.TenNguoiGuiThiep) ? "Khách Hàng Nguyệt Cát" : info.TenNguoiGuiThiep,
+                        TenNguoiNhan = string.IsNullOrWhiteSpace(info.TenNguoiNhanThiep) ? "Quý Khách & Gia Đình" : info.TenNguoiNhanThiep,
+                        LoiChuc = string.IsNullOrWhiteSpace(info.LoiChucThiep)
+                            ? "Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên, Viên Mãn & An Khang!"
+                            : info.LoiChucThiep,
+                        MauGiaoDien = string.IsNullOrWhiteSpace(info.MauGiaoDienThiep) ? "CO_PHONG_HOANG_GIA" : info.MauGiaoDienThiep,
+                        SoLanMoThiep = 0,
+                        NgayTao = DateTime.Now
+                    };
+                    db.ThiepChucMung3ds.Add(thiepMoi);
+                    tokenDaCo[token] = thiepMoi;
+                }
+            }
+        }
+
+        private static ThuongHieu TimHoacTaoThuongHieu(CSDLBanhTrungThuContext db, List<ThuongHieu> dsThuongHieu, string tenThuongHieu)
+        {
+            var tonTai = dsThuongHieu.FirstOrDefault(t => string.Equals(t.TenThuongHieu, tenThuongHieu, StringComparison.OrdinalIgnoreCase));
+            if (tonTai != null) return tonTai;
+
+            var moi = new ThuongHieu
+            {
+                MaCodeThuongHieu = SinhMaCodeThuongHieu(tenThuongHieu, dsThuongHieu),
+                TenThuongHieu = tenThuongHieu,
+                DangHoatDong = true
+            };
+            db.ThuongHieus.Add(moi);
+            db.SaveChanges();
+            dsThuongHieu.Add(moi);
+            return moi;
+        }
+
+        private static string SinhMaCodeThuongHieu(string tenThuongHieu, IEnumerable<ThuongHieu> hienCo)
+        {
+            string normalized = tenThuongHieu.Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder(normalized.Length);
+            foreach (char ch in normalized)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark)
+                {
+                    sb.Append(ch);
+                }
+            }
+            string ascii = sb.ToString()
+                .Normalize(NormalizationForm.FormC)
+                .Replace('đ', 'd')
+                .Replace('Đ', 'D')
+                .ToUpperInvariant();
+            string codeBase = Regex.Replace(ascii, @"[^A-Z0-9]+", "_").Trim('_');
+            if (string.IsNullOrWhiteSpace(codeBase)) codeBase = "THUONG_HIEU";
+            if (codeBase.Length > 24) codeBase = codeBase[..24];
+
+            string candidate = codeBase;
+            int stt = 2;
+            while (hienCo.Any(t => string.Equals(t.MaCodeThuongHieu, candidate, StringComparison.OrdinalIgnoreCase)))
+            {
+                candidate = $"{codeBase}_{stt++}";
+                if (candidate.Length > 30) candidate = candidate[..30];
+            }
+            return candidate;
         }
     }
 }

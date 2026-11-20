@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -39,4 +39,7 @@ public partial class LoSanXuatBanh
     [ForeignKey("MaBanh")]
     [InverseProperty("LoSanXuatBanhs")]
     public virtual SanPhamBanh MaBanhNavigation { get; set; } = null!;
+
+    [InverseProperty("MaLoNavigation")]
+    public virtual ICollection<NhatKyTruKhoDonHang> NhatKyTruKhoDonHangs { get; set; } = new List<NhatKyTruKhoDonHang>();
 }

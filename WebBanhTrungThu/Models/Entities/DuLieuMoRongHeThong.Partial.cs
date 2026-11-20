@@ -54,23 +54,26 @@ namespace WebBanhTrungThu.Models.Entities
 
     public partial class SanPhamBanh
     {
-        [NotMapped]
-        public string MaVach { get; set; } = string.Empty;
+        private string? _thuongHieu;
+        private string? _nhaCungCap;
 
         [NotMapped]
-        public string ThuongHieu { get; set; } = "Đồng Khánh";
+        public string ThuongHieu
+        {
+            get => !string.IsNullOrWhiteSpace(_thuongHieu)
+                ? _thuongHieu
+                : (MaThuongHieuNavigation?.TenThuongHieu ?? "Đồng Khánh");
+            set => _thuongHieu = value;
+        }
 
         [NotMapped]
-        public string NhaCungCap { get; set; } = "Lò Bánh Đồng Khánh Chính Gốc";
-
-        [NotMapped]
-        public string ViTriKho { get; set; } = "Kệ A1";
-
-        [NotMapped]
-        public string DonViTinh { get; set; } = "Cái";
-
-        [NotMapped]
-        public bool BanTrucTiep { get; set; } = true;
+        public string NhaCungCap
+        {
+            get => !string.IsNullOrWhiteSpace(_nhaCungCap)
+                ? _nhaCungCap
+                : (MaNccMacDinhNavigation?.TenNcc ?? "Lò Bánh Đồng Khánh Chính Gốc");
+            set => _nhaCungCap = value;
+        }
 
         [NotMapped]
         public decimal PhanTramGiamCanDateHieuLuc
@@ -97,42 +100,40 @@ namespace WebBanhTrungThu.Models.Entities
 
     public partial class ComboMauCoSan
     {
-        [NotMapped]
-        public string MaVach { get; set; } = string.Empty;
+        private string? _thuongHieu;
+        private string? _nhaCungCap;
+        private string? _tenDm;
 
         [NotMapped]
-        public string ThuongHieu { get; set; } = "Kinh Đô";
+        public string ThuongHieu
+        {
+            get => !string.IsNullOrWhiteSpace(_thuongHieu)
+                ? _thuongHieu
+                : (MaThuongHieuNavigation?.TenThuongHieu ?? "Đồng Khánh");
+            set => _thuongHieu = value;
+        }
 
         [NotMapped]
-        public string NhaCungCap { get; set; } = "NPP Bánh Kinh Đô Miền Nam";
+        public string NhaCungCap
+        {
+            get => !string.IsNullOrWhiteSpace(_nhaCungCap)
+                ? _nhaCungCap
+                : "Lò Bánh Đồng Khánh Chính Gốc";
+            set => _nhaCungCap = value;
+        }
 
         [NotMapped]
-        public string ViTriKho { get; set; } = "Kệ B1";
-
-        [NotMapped]
-        public string DonViTinh { get; set; } = "Hộp";
-
-        [NotMapped]
-        public bool BanTrucTiep { get; set; } = true;
-
-        [NotMapped]
-        public int MaDm { get; set; } = 1;
-
-        [NotMapped]
-        public string TenDm { get; set; } = "ĐỒNG GIÁ 20K";
-
-        [NotMapped]
-        public int TongTonKho { get; set; } = 45;
-
-        [NotMapped]
-        public int TrongLuongGram { get; set; } = 600;
+        public string TenDm
+        {
+            get => !string.IsNullOrWhiteSpace(_tenDm)
+                ? _tenDm
+                : (MaDmNavigation?.TenDm ?? "Combo Lễ Hộp");
+            set => _tenDm = value;
+        }
     }
 
     public partial class MaKhuyenMai
     {
-        [NotMapped]
-        public bool TrangThaiKichHoat { get; set; } = true;
-
         [NotMapped]
         public int SoLuotDaDung => SldaDung;
 

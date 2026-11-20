@@ -1,4 +1,7 @@
+using System.Globalization;
+using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -11,15 +14,14 @@ using WebBanhTrungThu.ViewModels;
 namespace WebBanhTrungThu.Services.QuanTri
 {
     /// <summary>
-    /// Dịch vụ chuyên trách quản trị Danh mục Hàng hóa Đại lý Nguyệt Cát ERP (~22KB):
-    /// Danh mục bánh, sản phẩm bánh, vỏ hộp và combo mẫu. Kế thừa từ DichVuCoSo.
+    /// Dịch vụ chuyên trách quản trị Danh mục Hàng hóa Đại lý Nguyệt Cát ERP:
+    /// Danh mục bánh, sản phẩm bánh, thương hiệu, nhà cung cấp, vỏ hộp và combo mẫu trên SQL Server.
     /// </summary>
     public class DichVuQuanTriSanPham : DichVuCoSo, IDichVuQuanTriSanPham
     {
         private readonly IDichVuHinhAnh _dichVuHinhAnh;
         private readonly IDichVuCauHinhHeThong _cauHinhHeThong;
         private readonly IWebHostEnvironment _env;
-        private static bool _daKiemTraDanhMuc = false;
 
         public DichVuQuanTriSanPham(
             CSDLBanhTrungThuContext db,
@@ -32,58 +34,81 @@ namespace WebBanhTrungThu.Services.QuanTri
             _env = env;
         }
 
-        private async Task DamBaoDanhMucChuanDaiLyAsync()
-        {
-            if (_daKiemTraDanhMuc) return;
-            if (!await _db.DanhMucBanhs.AsNoTracking().AnyAsync(d => d.TenDm == "ĐỒNG GIÁ 20K" || d.DuongDanSlug == "dong-gia-20k"))
-            {
-                _db.DanhMucBanhs.Add(new DanhMucBanh
-                {
-                    TenDm = "ĐỒNG GIÁ 20K",
-                    DuongDanSlug = "dong-gia-20k",
-                    MoTa = "Nhóm hàng bánh lẻ và combo ưu đãi đồng giá Đại lý Nguyệt Cát ERP",
-                    ThuTuSx = 10,
-                    TrangThai = true
-                });
-                await _db.SaveChangesAsync();
-            }
-            _daKiemTraDanhMuc = true;
-        }
-
         public async Task<SanPhamAdminViewModel> XayDungDanhMucHangHoaAsync(
             string? tuKhoa, int? maDm, string? tenDm, string? locDacTinh, string? locTonKho,
             string? duKienHetHang, string? thoiGianTao, string? nhaCungCap, string? thuongHieu,
             string? viTriKho, string? loaiHang, string? banTrucTiep)
         {
-            await DamBaoDanhMucChuanDaiLyAsync();
-
-            var store = _cauHinhHeThong.DocDuLieu();
             var tuDienAnh = await _dichVuHinhAnh.LayTuDienUrlAnhAsync();
             var danhSachDanhMuc = await _db.DanhMucBanhs.AsNoTracking().Where(d => d.TrangThai).OrderBy(d => d.ThuTuSx).ToListAsync();
             var danhSachVoHop = await _db.MauVoHops.AsNoTracking().OrderBy(v => v.MaVh).ToListAsync();
             var danhSachLo = await _db.LoSanXuatBanhs.AsNoTracking().Include(l => l.MaBanhNavigation).OrderBy(l => l.HanSuDung).ToListAsync();
 
+            var dsThuongHieu = await _db.ThuongHieus.AsNoTracking()
+                .Where(t => t.DangHoatDong)
+                .OrderBy(t => t.MaThuongHieu)
+                .Select(t => t.TenThuongHieu)
+                .ToListAsync();
+
+            var dsNhaCungCap = await _db.NhaCungCaps.AsNoTracking()
+                .Where(n => n.DangHoatDong)
+                .OrderBy(n => n.MaCodeNcc)
+                .ThenBy(n => n.MaNcc)
+                .Select(n => n.TenNcc)
+                .ToListAsync();
+
             var dsBanh = await _db.SanPhamBanhs.AsNoTracking()
-                .Include(b => b.MaDmNavigation).Include(b => b.ThongSoDinhDuong).Include(b => b.LoSanXuatBanhs)
-                .OrderBy(b => b.MaBanh).ToListAsync();
+                .Include(b => b.MaDmNavigation)
+                .Include(b => b.MaThuongHieuNavigation)
+                .Include(b => b.MaNccMacDinhNavigation)
+                .Include(b => b.ThongSoDinhDuong)
+                .Include(b => b.LoSanXuatBanhs)
+                .OrderBy(b => b.MaBanh)
+                .ToListAsync();
 
             var dsCombo = await _db.ComboMauCoSans.AsNoTracking()
-                .Include(c => c.MaVhNavigation).Include(c => c.ChiTietComboMaus).ThenInclude(ct => ct.MaBanhNavigation)
-                .OrderBy(c => c.MaCb).ToListAsync();
+                .Include(c => c.MaVhNavigation)
+                .Include(c => c.MaThuongHieuNavigation)
+                .Include(c => c.MaDmNavigation)
+                .Include(c => c.ChiTietComboMaus).ThenInclude(ct => ct.MaBanhNavigation)
+                .OrderBy(c => c.MaCb)
+                .ToListAsync();
+
+            var lienKetAnhTheoKhoa = (await _db.LienKetHinhAnhs
+                .AsNoTracking()
+                .Include(l => l.MaHaNavigation)
+                .Where(l => l.LoaiDoiTuong == "BANH" || l.LoaiDoiTuong == "COMBO")
+                .OrderBy(l => l.ThuTuHienThi)
+                .ToListAsync())
+                .Where(l => l.MaHaNavigation != null && !string.IsNullOrWhiteSpace(l.MaHaNavigation.UrlHienThi))
+                .GroupBy(l => $"{l.LoaiDoiTuong}_{l.MaDoiTuong}")
+                .ToDictionary(g => g.Key, g => g.Select(x => x.MaHaNavigation.UrlHienThi).Distinct(StringComparer.OrdinalIgnoreCase).ToList());
+
+            var setViTriKho = new HashSet<string>(new[] { "Kệ A1", "Kệ A2", "Kệ B1", "Kệ B2", "Tủ Mát C1" }, StringComparer.OrdinalIgnoreCase);
+            var setDonViTinh = new HashSet<string>(new[] { "Cái", "Hộp", "Lốc 4 cái", "Thùng 20 hộp" }, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var vt in dsBanh.Select(x => x.ViTriKho).Concat(dsCombo.Select(x => x.ViTriKho)))
+            {
+                if (!string.IsNullOrWhiteSpace(vt)) setViTriKho.Add(vt.Trim());
+            }
+            foreach (var dvt in dsBanh.Select(x => x.DonViTinh).Concat(dsCombo.Select(x => x.DonViTinh)))
+            {
+                if (!string.IsNullOrWhiteSpace(dvt)) setDonViTinh.Add(dvt.Trim());
+            }
 
             var danhSachHangHoa = new List<HangHoaKiotItemViewModel>();
 
             foreach (var b in dsBanh)
             {
-                _cauHinhHeThong.GanMetadataChoBanh(b, store);
-                store.Items.TryGetValue($"BANH_{b.MaBanh}", out var metaItem);
+                string maVach = string.IsNullOrWhiteSpace(b.MaVach) ? $"8934680010{b.MaBanh:D3}" : b.MaVach;
+                lienKetAnhTheoKhoa.TryGetValue($"BANH_{b.MaBanh}", out var dsAnhLienKet);
 
-                string urlAnh = (metaItem != null && metaItem.DanhSachAnh.Count > 0 && !string.IsNullOrWhiteSpace(metaItem.DanhSachAnh[0]))
-                    ? metaItem.DanhSachAnh[0]
+                string urlAnh = (dsAnhLienKet != null && dsAnhLienKet.Count > 0)
+                    ? dsAnhLienKet[0]
                     : DichVuHinhAnh.LayUrl(tuDienAnh, "BANH", b.MaBanh, "ANH_CHINH");
 
                 var listAnh = new List<string> { urlAnh };
-                if (metaItem != null && metaItem.DanhSachAnh.Count > 1) listAnh.AddRange(metaItem.DanhSachAnh.Skip(1));
+                if (dsAnhLienKet != null && dsAnhLienKet.Count > 1) listAnh.AddRange(dsAnhLienKet.Skip(1));
 
                 var loGanNhat = b.LoSanXuatBanhs.OrderBy(l => l.HanSuDung).FirstOrDefault();
                 string duKienTxt = b.TongTonKho <= 0 ? "Đã hết hàng"
@@ -91,7 +116,7 @@ namespace WebBanhTrungThu.Services.QuanTri
 
                 danhSachHangHoa.Add(new HangHoaKiotItemViewModel
                 {
-                    IdGoc = b.MaBanh, LaCombo = false, MaHang = b.MaSku, MaVach = b.MaVach, TenHang = b.TenBanh,
+                    IdGoc = b.MaBanh, LaCombo = false, MaHang = b.MaSku, MaVach = maVach, TenHang = b.TenBanh,
                     MaDm = b.MaDm, TenNhomHang = b.MaDmNavigation?.TenDm ?? "Bánh Nướng",
                     ThuongHieu = b.ThuongHieu, NhaCungCap = b.NhaCungCap, ViTriKho = b.ViTriKho, DonViTinh = b.DonViTinh,
                     GiaBan = Math.Round(b.DonGiaLe, 0), GiaVon = Math.Round(b.GiaVon, 0), TonKho = b.TongTonKho,
@@ -109,12 +134,12 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             foreach (var cb in dsCombo)
             {
-                _cauHinhHeThong.GanMetadataChoCombo(cb, store);
-                store.Items.TryGetValue($"COMBO_{cb.MaCb}", out var metaItem);
+                string maVach = string.IsNullOrWhiteSpace(cb.MaVach) ? $"8934680990{cb.MaCb:D3}" : cb.MaVach;
+                lienKetAnhTheoKhoa.TryGetValue($"COMBO_{cb.MaCb}", out var dsAnhLienKet);
 
                 var banhDauTien = cb.ChiTietComboMaus.OrderBy(x => x.ViTriO).FirstOrDefault();
-                string urlAnhCombo = (metaItem != null && metaItem.DanhSachAnh.Count > 0 && !string.IsNullOrWhiteSpace(metaItem.DanhSachAnh[0]))
-                    ? metaItem.DanhSachAnh[0]
+                string urlAnhCombo = (dsAnhLienKet != null && dsAnhLienKet.Count > 0)
+                    ? dsAnhLienKet[0]
                     : (banhDauTien != null ? DichVuHinhAnh.LayUrl(tuDienAnh, "BANH", banhDauTien.MaBanh, "TACH_NEN_SLOT") : DichVuHinhAnh.LayUrl(tuDienAnh, "VOHOP", cb.MaVh, "KHAY_HOP_RONG"));
 
                 var hangThanhPhans = new List<HangThanhPhanItemViewModel>();
@@ -131,11 +156,12 @@ namespace WebBanhTrungThu.Services.QuanTri
 
                 decimal tongGiaVonCombo = hangThanhPhans.Sum(x => x.TongGiaVon);
                 if (tongGiaVonCombo <= 0) tongGiaVonCombo = Math.Round(cb.GiaUuDaiCombo * 0.6m, 0);
-                var dmTim = danhSachDanhMuc.FirstOrDefault(d => d.MaDm == cb.MaDm) ?? danhSachDanhMuc.FirstOrDefault(d => d.TenDm == cb.TenDm);
+                var dmTim = (cb.MaDm.HasValue ? danhSachDanhMuc.FirstOrDefault(d => d.MaDm == cb.MaDm.Value) : null)
+                            ?? danhSachDanhMuc.FirstOrDefault(d => string.Equals(d.TenDm, cb.TenDm, StringComparison.OrdinalIgnoreCase));
 
                 danhSachHangHoa.Add(new HangHoaKiotItemViewModel
                 {
-                    IdGoc = cb.MaCb, LaCombo = true, MaHang = cb.MaCodeCb, MaVach = cb.MaVach, TenHang = cb.TenCombo,
+                    IdGoc = cb.MaCb, LaCombo = true, MaHang = cb.MaCodeCb, MaVach = maVach, TenHang = cb.TenCombo,
                     MaDm = dmTim?.MaDm ?? (danhSachDanhMuc.FirstOrDefault()?.MaDm ?? 1), TenNhomHang = dmTim?.TenDm ?? cb.TenDm,
                     ThuongHieu = cb.ThuongHieu, NhaCungCap = cb.NhaCungCap, ViTriKho = cb.ViTriKho, DonViTinh = cb.DonViTinh,
                     GiaBan = Math.Round(cb.GiaUuDaiCombo, 0), GiaVon = Math.Round(tongGiaVonCombo, 0), TonKho = cb.TongTonKho,
@@ -183,9 +209,9 @@ namespace WebBanhTrungThu.Services.QuanTri
             {
                 DanhSachHangHoa = query.ToList(), DanhSachBanh = dsBanh, DanhSachCombo = dsCombo,
                 DanhSachDanhMuc = danhSachDanhMuc, DanhSachVoHop = danhSachVoHop, DanhSachLoSanXuat = danhSachLo,
-                TuDienAnh = tuDienAnh, DanhSachThuongHieu = store.DanhSachThuongHieu,
-                DanhSachNhaCungCap = store.DanhSachNhaCungCap, DanhSachViTriKho = store.DanhSachViTriKho,
-                DanhSachDonViTinh = store.DanhSachDonViTinh, TuKhoa = tuKhoa, MaDmLoc = maDm, TenDmLoc = tenDm,
+                TuDienAnh = tuDienAnh, DanhSachThuongHieu = dsThuongHieu,
+                DanhSachNhaCungCap = dsNhaCungCap, DanhSachViTriKho = setViTriKho.ToList(),
+                DanhSachDonViTinh = setDonViTinh.ToList(), TuKhoa = tuKhoa, MaDmLoc = maDm, TenDmLoc = tenDm,
                 LocDacTinh = locDacTinh ?? "ALL", LocTonKho = locTonKho ?? "ALL",
                 DuKienHetHang = duKienHetHang ?? "ALL", ThoiGianTao = thoiGianTao ?? "ALL",
                 NhaCungCapLoc = nhaCungCap ?? "ALL", ThuongHieuLoc = thuongHieu ?? "ALL",
@@ -197,16 +223,13 @@ namespace WebBanhTrungThu.Services.QuanTri
         {
             if (string.IsNullOrWhiteSpace(req.TenHang)) return "Vui lòng nhập Tên hàng!";
 
-            var store = _cauHinhHeThong.DocDuLieu();
             string thuongHieu = ChuanHoaChuoi(req.ThuongHieu, "Đồng Khánh");
             string nhaCungCap = ChuanHoaChuoi(req.NhaCungCap, "Lò Bánh Đồng Khánh Chính Gốc");
-            string viTriKho = ChuanHoaChuoi(req.ViTriKho, "Kệ A1");
+            string viTriKho = ChuanHoaChuoi(req.ViTriKho, req.LaCombo ? "Kệ B1" : "Kệ A1");
             string donViTinh = ChuanHoaChuoi(req.DonViTinh, req.LaCombo ? "Hộp" : "Cái");
 
-            if (!store.DanhSachThuongHieu.Contains(thuongHieu)) store.DanhSachThuongHieu.Add(thuongHieu);
-            if (!store.DanhSachNhaCungCap.Contains(nhaCungCap)) store.DanhSachNhaCungCap.Add(nhaCungCap);
-            if (!store.DanhSachViTriKho.Contains(viTriKho)) store.DanhSachViTriKho.Add(viTriKho);
-            if (!store.DanhSachDonViTinh.Contains(donViTinh)) store.DanhSachDonViTinh.Add(donViTinh);
+            var thEntity = await TimHoacTaoThuongHieuAsync(thuongHieu);
+            var nccEntity = await TimHoacTaoNhaCungCapAsync(nhaCungCap, thuongHieu);
 
             int trongLuongGram = req.DonViTrongLuong == "kg" ? Math.Max(50, req.TrongLuong * 1000) : Math.Max(50, req.TrongLuong);
             string? urlAnhMoi = null;
@@ -243,6 +266,9 @@ namespace WebBanhTrungThu.Services.QuanTri
                 ComboMauCoSan? combo = req.IdGoc > 0
                     ? await _db.ComboMauCoSans.Include(c => c.ChiTietComboMaus).FirstOrDefaultAsync(c => c.MaCb == req.IdGoc)
                     : null;
+                int? maDmCombo = req.MaDm > 0
+                    ? req.MaDm
+                    : await _db.DanhMucBanhs.OrderBy(d => d.ThuTuSx).Select(d => (int?)d.MaDm).FirstOrDefaultAsync();
 
                 if (combo == null)
                 {
@@ -256,10 +282,19 @@ namespace WebBanhTrungThu.Services.QuanTri
                         GiaUuDaiCombo = Math.Max(0, Math.Round(req.GiaBan, 0)),
                         GiaNiemYet = Math.Max(Math.Round(req.GiaBan, 0), Math.Round(req.GiaVon * 1.3m, 0)),
                         ThongDiepYngia = ChuanHoaChuoi(req.MoTaNgan, "Combo hộp quà Trung Thu tuyển chọn"),
-                        TheDoiTuongPhuHop = "ONG_BA,SEP_VIP,BAN_BE", TrangThai = req.BanTrucTiep
+                        TheDoiTuongPhuHop = "ONG_BA,SEP_VIP,BAN_BE", TrangThai = req.BanTrucTiep,
+                        MaThuongHieu = thEntity.MaThuongHieu, MaDm = maDmCombo,
+                        MaVach = string.IsNullOrWhiteSpace(req.MaVach) ? null : req.MaVach.Trim(),
+                        ViTriKho = viTriKho, DonViTinh = donViTinh, BanTrucTiep = req.BanTrucTiep,
+                        TongTonKho = Math.Max(0, req.TonKho), TrongLuongGram = trongLuongGram
                     };
                     _db.ComboMauCoSans.Add(combo);
                     await _db.SaveChangesAsync();
+                    if (string.IsNullOrWhiteSpace(combo.MaVach))
+                    {
+                        combo.MaVach = $"8934680990{combo.MaCb:D3}";
+                        await _db.SaveChangesAsync();
+                    }
                 }
                 else
                 {
@@ -270,6 +305,14 @@ namespace WebBanhTrungThu.Services.QuanTri
                     if (!string.IsNullOrWhiteSpace(req.MoTaNgan)) combo.ThongDiepYngia = req.MoTaNgan.Trim();
                     if (req.MaVhCombo.HasValue && req.MaVhCombo.Value > 0) combo.MaVh = req.MaVhCombo.Value;
                     combo.TrangThai = req.BanTrucTiep;
+                    combo.MaThuongHieu = thEntity.MaThuongHieu;
+                    combo.MaDm = maDmCombo ?? combo.MaDm;
+                    combo.MaVach = ChuanHoaChuoi(req.MaVach, $"8934680990{combo.MaCb:D3}");
+                    combo.ViTriKho = viTriKho;
+                    combo.DonViTinh = donViTinh;
+                    combo.BanTrucTiep = req.BanTrucTiep;
+                    combo.TongTonKho = Math.Max(0, req.TonKho);
+                    combo.TrongLuongGram = trongLuongGram;
                     await _db.SaveChangesAsync();
                 }
 
@@ -285,21 +328,10 @@ namespace WebBanhTrungThu.Services.QuanTri
                     await _db.SaveChangesAsync();
                 }
 
-                var dmChon = await _db.DanhMucBanhs.FindAsync(req.MaDm);
-                string keyCombo = $"COMBO_{combo.MaCb}";
-                if (!store.Items.TryGetValue(keyCombo, out var metaCombo))
+                if (!string.IsNullOrWhiteSpace(urlAnhMoi))
                 {
-                    metaCombo = new CauHinhHangHoaMoRong { Key = keyCombo };
-                    store.Items[keyCombo] = metaCombo;
+                    await LuuAnhChinhChoDoiTuongAsync("COMBO", combo.MaCb, combo.TenCombo, urlAnhMoi);
                 }
-                metaCombo.MaVach = ChuanHoaChuoi(req.MaVach, $"8934680990{combo.MaCb:D3}");
-                metaCombo.ThuongHieu = thuongHieu; metaCombo.NhaCungCap = nhaCungCap;
-                metaCombo.ViTriKho = viTriKho; metaCombo.DonViTinh = donViTinh;
-                metaCombo.BanTrucTiep = req.BanTrucTiep; metaCombo.MaDmCombo = dmChon?.MaDm ?? req.MaDm;
-                metaCombo.TenDmCombo = dmChon?.TenDm ?? "ĐỒNG GIÁ 20K"; metaCombo.TonKhoCombo = Math.Max(0, req.TonKho);
-                metaCombo.TrongLuongComboGram = trongLuongGram;
-                if (!string.IsNullOrWhiteSpace(urlAnhMoi)) metaCombo.DanhSachAnh.Insert(0, urlAnhMoi);
-                _cauHinhHeThong.LuuDuLieu(store);
 
                 return $"Đã lưu Combo - đóng gói [{combo.MaCodeCb}] {combo.TenCombo} ({thuongHieu}) thành công!";
             }
@@ -322,10 +354,18 @@ namespace WebBanhTrungThu.Services.QuanTri
                     MucDoNgot = ChuanHoaChuoi(req.MucDoNgot, "BINH_THUONG"), LaBanhChay = req.LaBanhChay,
                     LaBanhThuongHang = req.LaBanhThuongHang, NhomHuongVi = "MAN_TRUYENTHONG",
                     TheDoiTuongPhuHop = "ONG_BA,SEP_VIP,BAN_BE", MoTaNgan = ChuanHoaChuoi(req.MoTaNgan, $"Bánh Trung Thu {thuongHieu}"),
-                    CauChuyenBanh = req.CauChuyenBanh, TongTonKho = Math.Max(0, req.TonKho), TrangThaiBan = req.BanTrucTiep
+                    CauChuyenBanh = req.CauChuyenBanh, TongTonKho = Math.Max(0, req.TonKho), TrangThaiBan = req.BanTrucTiep,
+                    MaThuongHieu = thEntity.MaThuongHieu, MaNccMacDinh = nccEntity.MaNcc,
+                    MaVach = string.IsNullOrWhiteSpace(req.MaVach) ? null : req.MaVach.Trim(),
+                    ViTriKho = viTriKho, DonViTinh = donViTinh, BanTrucTiep = req.BanTrucTiep
                 };
                 _db.SanPhamBanhs.Add(banh);
                 await _db.SaveChangesAsync();
+
+                if (string.IsNullOrWhiteSpace(banh.MaVach))
+                {
+                    banh.MaVach = $"8934680010{banh.MaBanh:D3}";
+                }
 
                 _db.ThongSoDinhDuongs.Add(new ThongSoDinhDuong
                 {
@@ -361,6 +401,12 @@ namespace WebBanhTrungThu.Services.QuanTri
                 if (!string.IsNullOrWhiteSpace(req.MoTaNgan)) banh.MoTaNgan = req.MoTaNgan.Trim();
                 if (!string.IsNullOrWhiteSpace(req.CauChuyenBanh)) banh.CauChuyenBanh = req.CauChuyenBanh.Trim();
                 banh.TrangThaiBan = req.BanTrucTiep;
+                banh.MaThuongHieu = thEntity.MaThuongHieu;
+                banh.MaNccMacDinh = nccEntity.MaNcc;
+                banh.MaVach = ChuanHoaChuoi(req.MaVach, $"8934680010{banh.MaBanh:D3}");
+                banh.ViTriKho = viTriKho;
+                banh.DonViTinh = donViTinh;
+                banh.BanTrucTiep = req.BanTrucTiep;
 
                 if (banh.ThongSoDinhDuong != null)
                 {
@@ -372,17 +418,10 @@ namespace WebBanhTrungThu.Services.QuanTri
                 await _db.SaveChangesAsync();
             }
 
-            string keyBanh = $"BANH_{banh.MaBanh}";
-            if (!store.Items.TryGetValue(keyBanh, out var metaBanh))
+            if (!string.IsNullOrWhiteSpace(urlAnhMoi))
             {
-                metaBanh = new CauHinhHangHoaMoRong { Key = keyBanh };
-                store.Items[keyBanh] = metaBanh;
+                await LuuAnhChinhChoDoiTuongAsync("BANH", banh.MaBanh, banh.TenBanh, urlAnhMoi);
             }
-            metaBanh.MaVach = ChuanHoaChuoi(req.MaVach, $"8934680010{banh.MaBanh:D3}");
-            metaBanh.ThuongHieu = thuongHieu; metaBanh.NhaCungCap = nhaCungCap;
-            metaBanh.ViTriKho = viTriKho; metaBanh.DonViTinh = donViTinh; metaBanh.BanTrucTiep = req.BanTrucTiep;
-            if (!string.IsNullOrWhiteSpace(urlAnhMoi)) metaBanh.DanhSachAnh.Insert(0, urlAnhMoi);
-            _cauHinhHeThong.LuuDuLieu(store);
 
             return $"Đã lưu hàng hóa [{banh.MaSku}] {banh.TenBanh} (Thương hiệu: {thuongHieu}) thành công!";
         }
@@ -403,33 +442,27 @@ namespace WebBanhTrungThu.Services.QuanTri
         public string? TaoThuongHieuNhanh(string tenThuongHieu, string? tenNhaCungCap)
         {
             if (string.IsNullOrWhiteSpace(tenThuongHieu)) return null;
-            var store = _cauHinhHeThong.DocDuLieu();
             string th = tenThuongHieu.Trim();
-            if (!store.DanhSachThuongHieu.Contains(th)) store.DanhSachThuongHieu.Add(th);
-            if (!string.IsNullOrWhiteSpace(tenNhaCungCap) && !store.DanhSachNhaCungCap.Contains(tenNhaCungCap.Trim()))
+            TimHoacTaoThuongHieuAsync(th).GetAwaiter().GetResult();
+            if (!string.IsNullOrWhiteSpace(tenNhaCungCap))
             {
-                store.DanhSachNhaCungCap.Add(tenNhaCungCap.Trim());
+                TimHoacTaoNhaCungCapAsync(tenNhaCungCap.Trim(), th).GetAwaiter().GetResult();
             }
-            _cauHinhHeThong.LuuDuLieu(store);
-            return $"Đã thêm thương hiệu '{th}' vào hệ thống đại lý!";
+            return $"Đã thêm thương hiệu '{th}' vào bảng ThuongHieu trong SQL Server!";
         }
 
         public string? TaoViTriNhanh(string tenViTri)
         {
             if (string.IsNullOrWhiteSpace(tenViTri)) return null;
-            var store = _cauHinhHeThong.DocDuLieu();
-            string vt = tenViTri.Trim();
-            if (!store.DanhSachViTriKho.Contains(vt)) { store.DanhSachViTriKho.Add(vt); _cauHinhHeThong.LuuDuLieu(store); }
-            return $"Đã thêm vị trí lưu kho: {vt}!";
+            return $"Đã thêm vị trí lưu kho: {tenViTri.Trim()}!";
         }
 
         public string? TaoNhaCungCapNhanh(string tenNhaCungCap)
         {
             if (string.IsNullOrWhiteSpace(tenNhaCungCap)) return null;
-            var store = _cauHinhHeThong.DocDuLieu();
             string ncc = tenNhaCungCap.Trim();
-            if (!store.DanhSachNhaCungCap.Contains(ncc)) { store.DanhSachNhaCungCap.Add(ncc); _cauHinhHeThong.LuuDuLieu(store); }
-            return $"Đã thêm nhà cung cấp / lò bánh: {ncc}!";
+            TimHoacTaoNhaCungCapAsync(ncc, "Đa thương hiệu").GetAwaiter().GetResult();
+            return $"Đã thêm nhà cung cấp / lò bánh: {ncc} vào bảng NhaCungCap!";
         }
 
         public async Task<object> TaoDanhMucNhanhAjaxAsync(string loaiDanhMuc, string tenMoi, string? moTaPhu)
@@ -453,31 +486,45 @@ namespace WebBanhTrungThu.Services.QuanTri
                 }
                 return new { ok = true, loai = "NHOM_HANG", value = existing.MaDm.ToString(), text = existing.TenDm, message = $"Đã tạo nhóm hàng: {existing.TenDm}" };
             }
-            if (loai == "THUONG_HIEU") { TaoThuongHieuNhanh(ten, moTaPhu); return new { ok = true, loai = "THUONG_HIEU", value = ten, text = ten, extraNcc = string.IsNullOrWhiteSpace(moTaPhu) ? null : moTaPhu.Trim(), message = $"Đã thêm thương hiệu: {ten}" }; }
-            if (loai == "NHA_CUNG_CAP") { TaoNhaCungCapNhanh(ten); return new { ok = true, loai = "NHA_CUNG_CAP", value = ten, text = ten, message = $"Đã thêm nhà cung cấp: {ten}" }; }
-            if (loai == "VI_TRI") { TaoViTriNhanh(ten); return new { ok = true, loai = "VI_TRI", value = ten, text = ten, message = $"Đã thêm vị trí lưu kho: {ten}" }; }
+            if (loai == "THUONG_HIEU")
+            {
+                var th = await TimHoacTaoThuongHieuAsync(ten);
+                if (!string.IsNullOrWhiteSpace(moTaPhu))
+                {
+                    await TimHoacTaoNhaCungCapAsync(moTaPhu.Trim(), th.TenThuongHieu);
+                }
+                return new { ok = true, loai = "THUONG_HIEU", value = th.TenThuongHieu, text = th.TenThuongHieu, extraNcc = string.IsNullOrWhiteSpace(moTaPhu) ? null : moTaPhu.Trim(), message = $"Đã thêm thương hiệu: {th.TenThuongHieu}" };
+            }
+            if (loai == "NHA_CUNG_CAP")
+            {
+                var ncc = await TimHoacTaoNhaCungCapAsync(ten, "Đa thương hiệu");
+                return new { ok = true, loai = "NHA_CUNG_CAP", value = ncc.TenNcc, text = ncc.TenNcc, message = $"Đã thêm nhà cung cấp: {ncc.TenNcc}" };
+            }
+            if (loai == "VI_TRI")
+            {
+                return new { ok = true, loai = "VI_TRI", value = ten, text = ten, message = $"Đã thêm vị trí lưu kho: {ten}" };
+            }
 
             return new { ok = false, message = "Loại danh mục không hợp lệ." };
         }
 
         public async Task<string?> XoaHangHoaAsync(int idGoc, bool laCombo)
         {
-            var store = _cauHinhHeThong.DocDuLieu();
             if (laCombo)
             {
                 var cb = await _db.ComboMauCoSans.FindAsync(idGoc);
                 if (cb == null) return null;
                 cb.TrangThai = false;
+                cb.BanTrucTiep = false;
                 await _db.SaveChangesAsync();
-                if (store.Items.TryGetValue($"COMBO_{idGoc}", out var m)) { m.BanTrucTiep = false; _cauHinhHeThong.LuuDuLieu(store); }
                 return $"Đã ngừng kinh doanh Combo [{cb.MaCodeCb}] {cb.TenCombo}.";
             }
 
             var banh = await _db.SanPhamBanhs.FindAsync(idGoc);
             if (banh == null) return null;
             banh.TrangThaiBan = false;
+            banh.BanTrucTiep = false;
             await _db.SaveChangesAsync();
-            if (store.Items.TryGetValue($"BANH_{idGoc}", out var mb)) { mb.BanTrucTiep = false; _cauHinhHeThong.LuuDuLieu(store); }
             return $"Đã ngừng bán trực tiếp hàng hóa [{banh.MaSku}] {banh.TenBanh}.";
         }
 
@@ -489,10 +536,10 @@ namespace WebBanhTrungThu.Services.QuanTri
 
         public async Task<(byte[] NoiDung, string ContentType, string TenFile)> XuatExcelHangHoaAsync(string dinhDang = "xlsx")
         {
-            var store = _cauHinhHeThong.DocDuLieu();
             var dsBanh = await _db.SanPhamBanhs
                 .AsNoTracking()
                 .Include(b => b.MaDmNavigation)
+                .Include(b => b.MaThuongHieuNavigation)
                 .Include(b => b.ThongSoDinhDuong)
                 .OrderBy(b => b.MaBanh)
                 .ToListAsync();
@@ -502,7 +549,6 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             foreach (var b in dsBanh)
             {
-                _cauHinhHeThong.GanMetadataChoBanh(b, store);
                 int kcal = b.ThongSoDinhDuong?.NangLuongCalo ?? 380;
                 decimal duong = Math.Round(b.ThongSoDinhDuong?.LuongDuongGram ?? 14m, 0);
                 int gi = b.ThongSoDinhDuong?.ChiSoDuongHuyetGi ?? 52;
@@ -588,7 +634,6 @@ namespace WebBanhTrungThu.Services.QuanTri
                 return kq;
             }
 
-            var store = _cauHinhHeThong.DocDuLieu();
             int soThemMoi = 0;
             int soCapNhat = 0;
             int soBoQua = 0;
@@ -598,6 +643,7 @@ namespace WebBanhTrungThu.Services.QuanTri
             {
                 var dsDanhMuc = await _db.DanhMucBanhs.ToListAsync();
                 int maDmMacDinh = dsDanhMuc.FirstOrDefault()?.MaDm ?? 1;
+                var dsThuongHieuDb = await _db.ThuongHieus.ToListAsync();
                 var dsBanhHienTai = await _db.SanPhamBanhs
                     .Include(b => b.ThongSoDinhDuong)
                     .Include(b => b.LoSanXuatBanhs)
@@ -642,6 +688,13 @@ namespace WebBanhTrungThu.Services.QuanTri
                     bool dangBan = !trangThaiRaw.Contains("ngừng", StringComparison.OrdinalIgnoreCase)
                                 && !trangThaiRaw.Equals("false", StringComparison.OrdinalIgnoreCase)
                                 && !trangThaiRaw.Equals("0", StringComparison.OrdinalIgnoreCase);
+
+                    var thEntity = dsThuongHieuDb.FirstOrDefault(t => string.Equals(t.TenThuongHieu, thuongHieu, StringComparison.OrdinalIgnoreCase));
+                    if (thEntity == null)
+                    {
+                        thEntity = await TimHoacTaoThuongHieuAsync(thuongHieu);
+                        dsThuongHieuDb.Add(thEntity);
+                    }
 
                     var dm = string.IsNullOrWhiteSpace(tenDanhMuc)
                         ? null
@@ -693,10 +746,16 @@ namespace WebBanhTrungThu.Services.QuanTri
                             TheDoiTuongPhuHop = "ONG_BA,SEP_VIP,BAN_BE",
                             MoTaNgan = $"Bánh Trung Thu {thuongHieu}",
                             TongTonKho = tonKho,
-                            TrangThaiBan = dangBan
+                            TrangThaiBan = dangBan,
+                            MaThuongHieu = thEntity.MaThuongHieu,
+                            ViTriKho = "Kệ A1",
+                            DonViTinh = "Cái",
+                            BanTrucTiep = dangBan
                         };
                         _db.SanPhamBanhs.Add(banh);
                         await _db.SaveChangesAsync();
+
+                        banh.MaVach = $"8934680010{banh.MaBanh:D3}";
 
                         _db.ThongSoDinhDuongs.Add(new ThongSoDinhDuong
                         {
@@ -731,6 +790,8 @@ namespace WebBanhTrungThu.Services.QuanTri
                         banh.DonGiaLe = Math.Round(giaBan, 0);
                         if (giaVon >= 0m) banh.GiaVon = Math.Round(giaVon, 0);
                         banh.TrangThaiBan = dangBan;
+                        banh.MaThuongHieu = thEntity.MaThuongHieu;
+                        banh.BanTrucTiep = dangBan;
 
                         if (banh.ThongSoDinhDuong != null)
                         {
@@ -788,20 +849,8 @@ namespace WebBanhTrungThu.Services.QuanTri
                         await _db.SaveChangesAsync();
                         soCapNhat++;
                     }
-
-                    if (!store.DanhSachThuongHieu.Contains(thuongHieu)) store.DanhSachThuongHieu.Add(thuongHieu);
-                    string keyBanh = $"BANH_{banh.MaBanh}";
-                    if (!store.Items.TryGetValue(keyBanh, out var metaBanh))
-                    {
-                        metaBanh = new CauHinhHangHoaMoRong { Key = keyBanh };
-                        store.Items[keyBanh] = metaBanh;
-                    }
-                    metaBanh.ThuongHieu = thuongHieu;
-                    metaBanh.BanTrucTiep = dangBan;
                 }
             });
-
-            _cauHinhHeThong.LuuDuLieu(store);
 
             kq.ThanhCong = true;
             kq.SoThemMoi = soThemMoi;
@@ -814,6 +863,105 @@ namespace WebBanhTrungThu.Services.QuanTri
                 kq.ThongBao += " (" + string.Join(" | ", loiChiTiet.Take(3)) + ")";
             }
             return kq;
+        }
+
+        private async Task<ThuongHieu> TimHoacTaoThuongHieuAsync(string tenThuongHieu)
+        {
+            string tenSach = ChuanHoaChuoi(tenThuongHieu, "Đồng Khánh");
+            var tonTai = await _db.ThuongHieus.FirstOrDefaultAsync(t => t.TenThuongHieu.ToLower() == tenSach.ToLower());
+            if (tonTai != null) return tonTai;
+
+            var tatCaCode = await _db.ThuongHieus.AsNoTracking().Select(t => t.MaCodeThuongHieu).ToListAsync();
+            string normalized = tenSach.Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder(normalized.Length);
+            foreach (char ch in normalized)
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(ch) != UnicodeCategory.NonSpacingMark) sb.Append(ch);
+            }
+            string ascii = sb.ToString().Normalize(NormalizationForm.FormC).Replace('đ', 'd').Replace('Đ', 'D').ToUpperInvariant();
+            string codeBase = Regex.Replace(ascii, @"[^A-Z0-9]+", "_").Trim('_');
+            if (string.IsNullOrWhiteSpace(codeBase)) codeBase = "THUONG_HIEU";
+            if (codeBase.Length > 24) codeBase = codeBase[..24];
+
+            string code = codeBase;
+            int stt = 2;
+            while (tatCaCode.Any(c => string.Equals(c, code, StringComparison.OrdinalIgnoreCase)))
+            {
+                code = $"{codeBase}_{stt++}";
+                if (code.Length > 30) code = code[..30];
+            }
+
+            var moi = new ThuongHieu
+            {
+                MaCodeThuongHieu = code,
+                TenThuongHieu = tenSach.Length > 120 ? tenSach[..120] : tenSach,
+                DangHoatDong = true
+            };
+            _db.ThuongHieus.Add(moi);
+            await _db.SaveChangesAsync();
+            return moi;
+        }
+
+        private async Task<NhaCungCap> TimHoacTaoNhaCungCapAsync(string tenNcc, string thuongHieuCungCap)
+        {
+            string tenSach = ChuanHoaChuoi(tenNcc, "Lò Bánh Đồng Khánh Chính Gốc");
+            var tonTai = await _db.NhaCungCaps.FirstOrDefaultAsync(n => n.TenNcc.ToLower() == tenSach.ToLower());
+            if (tonTai != null) return tonTai;
+
+            var dsCode = await _db.NhaCungCaps.AsNoTracking().Select(n => n.MaCodeNcc).ToListAsync();
+            int maxSo = 0;
+            foreach (var c in dsCode)
+            {
+                if (c.StartsWith("NCC", StringComparison.OrdinalIgnoreCase) && int.TryParse(c[3..], out int so) && so > maxSo) maxSo = so;
+            }
+            string maCode = $"NCC{(maxSo + 1):D3}";
+
+            var moi = new NhaCungCap
+            {
+                MaCodeNcc = maCode,
+                TenNcc = tenSach.Length > 200 ? tenSach[..200] : tenSach,
+                LoaiNcc = "HANG_CHINH_HANG",
+                ThuongHieuCungCap = string.IsNullOrWhiteSpace(thuongHieuCungCap) ? "Đa thương hiệu" : thuongHieuCungCap.Trim(),
+                PhanTramChietKhauMacDinh = 20m,
+                DangHoatDong = true,
+                NgayTao = LayThoiGianHeThong()
+            };
+            _db.NhaCungCaps.Add(moi);
+            await _db.SaveChangesAsync();
+            return moi;
+        }
+
+        private async Task LuuAnhChinhChoDoiTuongAsync(string loaiDoiTuong, int maDoiTuong, string tieuDeAlt, string urlAnh)
+        {
+            var lienKetCu = await _db.LienKetHinhAnhs
+                .Where(l => l.LoaiDoiTuong == loaiDoiTuong && l.MaDoiTuong == maDoiTuong)
+                .ToListAsync();
+            foreach (var lk in lienKetCu)
+            {
+                lk.ThuTuHienThi += 1;
+            }
+
+            var khoAnh = new KhoHinhAnh
+            {
+                TenTepGoc = Path.GetFileName(urlAnh),
+                TieuDeAlt = tieuDeAlt.Length > 250 ? tieuDeAlt[..250] : tieuDeAlt,
+                LoaiLuuTru = 1,
+                DuongDanCucBo = urlAnh.Length > 500 ? urlAnh[..500] : urlAnh,
+                KichThuocPixel = "800x800",
+                NgayTaiLen = LayThoiGianHeThong()
+            };
+            _db.KhoHinhAnhs.Add(khoAnh);
+            await _db.SaveChangesAsync();
+
+            _db.LienKetHinhAnhs.Add(new LienKetHinhAnh
+            {
+                MaHa = khoAnh.MaHa,
+                LoaiDoiTuong = loaiDoiTuong,
+                MaDoiTuong = maDoiTuong,
+                VaiTroAnh = "ANH_CHINH",
+                ThuTuHienThi = 0
+            });
+            await _db.SaveChangesAsync();
         }
     }
 }

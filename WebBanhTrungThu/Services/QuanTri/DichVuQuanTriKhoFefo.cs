@@ -201,6 +201,9 @@ namespace WebBanhTrungThu.Services.QuanTri
             var ctXuats = await _db.ChiTietPhieuXuats.Where(c => c.MaLo == maLo).ToListAsync();
             foreach (var ct in ctXuats) ct.MaLo = null;
 
+            var nkTruKhos = await _db.NhatKyTruKhoDonHangs.Where(n => n.MaLo == maLo).ToListAsync();
+            foreach (var nk in nkTruKhos) nk.MaLo = null;
+
             _db.LoSanXuatBanhs.Remove(lo);
             await _db.SaveChangesAsync();
             return $"Đã xóa lô [{code}] của sản phẩm '{tenBanh}' và đồng bộ lại tồn kho!";

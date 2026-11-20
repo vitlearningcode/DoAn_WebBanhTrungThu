@@ -42,17 +42,16 @@ namespace WebBanhTrungThu.Services.QuanTri
                 .ThenByDescending(p => p.MaPn)
                 .ToListAsync();
 
-            var store = _cauHinhHeThong.DocDuLieu();
             var dsSanPhamDb = await _db.SanPhamBanhs
                 .AsNoTracking()
                 .Include(b => b.MaDmNavigation)
+                .Include(b => b.MaThuongHieuNavigation)
                 .Include(b => b.LoSanXuatBanhs)
                 .OrderBy(b => b.TenBanh)
                 .ToListAsync();
 
             var dsSanPhamOption = dsSanPhamDb.Select(b =>
             {
-                _cauHinhHeThong.GanMetadataChoBanh(b, store);
                 int tonLo = b.LoSanXuatBanhs.Where(l => l.TrangThaiLo != "DA_HUY").Sum(l => l.SlconLai);
                 return new SanPhamKhoOptionViewModel
                 {
@@ -83,8 +82,15 @@ namespace WebBanhTrungThu.Services.QuanTri
                 })
                 .ToListAsync();
 
+            var dsThuongHieuDb = await _db.ThuongHieus
+                .AsNoTracking()
+                .Where(t => t.DangHoatDong)
+                .OrderBy(t => t.MaThuongHieu)
+                .Select(t => t.TenThuongHieu)
+                .ToListAsync();
+
             var dsThuongHieu = new List<string>();
-            foreach (var th in dsSanPhamOption.Select(sp => sp.ThuongHieu).Concat(store.DanhSachThuongHieu))
+            foreach (var th in dsSanPhamOption.Select(sp => sp.ThuongHieu).Concat(dsThuongHieuDb))
             {
                 string sach = ChuanHoaChuoi(th);
                 if (!string.IsNullOrWhiteSpace(sach) && !dsThuongHieu.Contains(sach, StringComparer.OrdinalIgnoreCase))

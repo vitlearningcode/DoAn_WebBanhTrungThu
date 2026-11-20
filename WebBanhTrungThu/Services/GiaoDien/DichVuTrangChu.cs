@@ -67,6 +67,8 @@ namespace WebBanhTrungThu.Services.GiaoDien
                 .Include(b => b.ThongSoDinhDuong)
                 .Include(b => b.LoSanXuatBanhs)
                 .Include(b => b.MaDmNavigation)
+                .Include(b => b.MaThuongHieuNavigation)
+                .Include(b => b.MaNccMacDinhNavigation)
                 .Where(b => b.TrangThaiBan)
                 .ToListAsync();
 
@@ -74,32 +76,34 @@ namespace WebBanhTrungThu.Services.GiaoDien
 
             vm.DanhSachCombo = await _db.ComboMauCoSans
                 .Include(cb => cb.MaVhNavigation)
+                .Include(cb => cb.MaThuongHieuNavigation)
+                .Include(cb => cb.MaDmNavigation)
                 .Include(cb => cb.ChiTietComboMaus)
                     .ThenInclude(ct => ct.MaBanhNavigation)
                 .Where(cb => cb.TrangThai)
                 .ToListAsync();
 
-            // Đồng bộ Thương hiệu (Kinh Đô, Đồng Khánh, Như Lan, Brodard...) từ Nguyệt Cát ERP Metadata
-            var store = _kiotMeta.DocDuLieu();
-            foreach (var b in vm.DanhSachBanh)
+            // Lấy danh sách Thương hiệu trực tiếp từ dbo.ThuongHieu (SQL Server)
+            vm.DanhSachThuongHieu = await _db.ThuongHieus
+                .AsNoTracking()
+                .Where(t => t.DangHoatDong)
+                .OrderBy(t => t.MaThuongHieu)
+                .Select(t => t.TenThuongHieu)
+                .ToListAsync();
+            if (vm.DanhSachThuongHieu.Count == 0)
             {
-                _kiotMeta.GanMetadataChoBanh(b, store);
+                vm.DanhSachThuongHieu = vm.DanhSachBanh
+                    .Select(b => b.ThuongHieu)
+                    .Where(th => !string.IsNullOrWhiteSpace(th))
+                    .Distinct()
+                    .ToList();
             }
-            foreach (var cb in vm.DanhSachCombo)
-            {
-                _kiotMeta.GanMetadataChoCombo(cb, store);
-            }
-            vm.DanhSachThuongHieu = vm.DanhSachBanh
-                .Select(b => b.ThuongHieu)
-                .Where(th => !string.IsNullOrWhiteSpace(th))
-                .Distinct()
-                .ToList();
 
             // 4. Lấy bảng chiết khấu B2B và Mã khuyến mãi
             var thoiDiemHienTai = LayThoiGianHeThong();
             vm.BangGiaSiB2B = await _db.BangChietKhauSiB2bs.OrderBy(b => b.SlhopToiThieu).ToListAsync();
             vm.DanhSachKhuyenMai = await _db.MaKhuyenMais
-                .Where(k => k.NgayKetThuc >= thoiDiemHienTai)
+                .Where(k => k.TrangThaiKichHoat && k.NgayKetThuc >= thoiDiemHienTai)
                 .ToListAsync();
 
             // 5. Xác định Phiên (Guest vs Member) và nạp Giỏ hàng hiện tại

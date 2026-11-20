@@ -24,6 +24,7 @@ namespace WebBanhTrungThu.Data
 
                 await TaoCacBangMoRongVaDonBangThuaAsync(db);
                 await SeedNhaCungCapMacDinhAsync(db);
+                await SeedThuongHieuVaChuanHoaHangHoaAsync(db);
                 await DiTruDuLieuCauHinhMoRongAsync(app, db);
                 await ChuanHoaChiMucTokenThiepQrAsync(db);
                 await ChuanHoaMaKhuyenMaiVaLoBanhFefoAsync(db);
@@ -276,6 +277,112 @@ namespace WebBanhTrungThu.Data
                     ALTER TABLE dbo.DonHang ADD MaNdLap INT NULL
                         CONSTRAINT FK_DonHang_NguoiLap FOREIGN KEY REFERENCES dbo.NguoiDung(MaND);
                 END;
+
+                IF OBJECT_ID('dbo.ThuongHieu', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.ThuongHieu (
+                        MaThuongHieu INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                        MaCodeThuongHieu VARCHAR(30) NOT NULL UNIQUE,
+                        TenThuongHieu NVARCHAR(120) NOT NULL UNIQUE,
+                        XuatXu NVARCHAR(150) NULL,
+                        MoTa NVARCHAR(500) NULL,
+                        DangHoatDong BIT NOT NULL DEFAULT(1)
+                    );
+                END;
+
+                IF OBJECT_ID('dbo.NhatKyTruKhoDonHang', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.NhatKyTruKhoDonHang (
+                        MaNk INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                        MaDH INT NOT NULL,
+                        LoaiDoiTuong VARCHAR(20) NOT NULL,
+                        MaLo INT NULL,
+                        MaBanh INT NULL,
+                        MaVH INT NULL,
+                        SoLuongDaTru INT NOT NULL,
+                        DaHoanKho BIT NOT NULL DEFAULT(0),
+                        NgayGhi DATETIME NOT NULL DEFAULT(GETDATE()),
+                        CONSTRAINT FK_NKTK_DonHang FOREIGN KEY (MaDH) REFERENCES dbo.DonHang(MaDH) ON DELETE CASCADE,
+                        CONSTRAINT FK_NKTK_LoSanXuat FOREIGN KEY (MaLo) REFERENCES dbo.LoSanXuatBanh(MaLo),
+                        CONSTRAINT FK_NKTK_SanPhamBanh FOREIGN KEY (MaBanh) REFERENCES dbo.SanPhamBanh(MaBanh),
+                        CONSTRAINT FK_NKTK_MauVoHop FOREIGN KEY (MaVH) REFERENCES dbo.MauVoHop(MaVH)
+                    );
+                END;
+
+                IF OBJECT_ID('dbo.SanPhamBanh', 'U') IS NOT NULL
+                BEGIN
+                    IF COL_LENGTH('dbo.SanPhamBanh', 'MaThuongHieu') IS NULL
+                    BEGIN
+                        ALTER TABLE dbo.SanPhamBanh ADD MaThuongHieu INT NULL;
+                        ALTER TABLE dbo.SanPhamBanh ADD CONSTRAINT FK_SPBanh_ThuongHieu FOREIGN KEY (MaThuongHieu) REFERENCES dbo.ThuongHieu(MaThuongHieu);
+                    END;
+                    IF COL_LENGTH('dbo.SanPhamBanh', 'MaNccMacDinh') IS NULL
+                    BEGIN
+                        ALTER TABLE dbo.SanPhamBanh ADD MaNccMacDinh INT NULL;
+                        ALTER TABLE dbo.SanPhamBanh ADD CONSTRAINT FK_SPBanh_NhaCungCap FOREIGN KEY (MaNccMacDinh) REFERENCES dbo.NhaCungCap(MaNcc);
+                    END;
+                    IF COL_LENGTH('dbo.SanPhamBanh', 'MaVach') IS NULL
+                        ALTER TABLE dbo.SanPhamBanh ADD MaVach VARCHAR(50) NULL;
+                    IF COL_LENGTH('dbo.SanPhamBanh', 'ViTriKho') IS NULL
+                        ALTER TABLE dbo.SanPhamBanh ADD ViTriKho NVARCHAR(100) NOT NULL DEFAULT(N'Kệ A1');
+                    IF COL_LENGTH('dbo.SanPhamBanh', 'DonViTinh') IS NULL
+                        ALTER TABLE dbo.SanPhamBanh ADD DonViTinh NVARCHAR(50) NOT NULL DEFAULT(N'Cái');
+                    IF COL_LENGTH('dbo.SanPhamBanh', 'BanTrucTiep') IS NULL
+                        ALTER TABLE dbo.SanPhamBanh ADD BanTrucTiep BIT NOT NULL DEFAULT(1);
+                END;
+
+                IF OBJECT_ID('dbo.ComboMauCoSan', 'U') IS NOT NULL
+                BEGIN
+                    IF COL_LENGTH('dbo.ComboMauCoSan', 'MaThuongHieu') IS NULL
+                    BEGIN
+                        ALTER TABLE dbo.ComboMauCoSan ADD MaThuongHieu INT NULL;
+                        ALTER TABLE dbo.ComboMauCoSan ADD CONSTRAINT FK_Combo_ThuongHieu FOREIGN KEY (MaThuongHieu) REFERENCES dbo.ThuongHieu(MaThuongHieu);
+                    END;
+                    IF COL_LENGTH('dbo.ComboMauCoSan', 'MaDM') IS NULL
+                    BEGIN
+                        ALTER TABLE dbo.ComboMauCoSan ADD MaDM INT NULL;
+                        ALTER TABLE dbo.ComboMauCoSan ADD CONSTRAINT FK_Combo_DanhMuc FOREIGN KEY (MaDM) REFERENCES dbo.DanhMucBanh(MaDM);
+                    END;
+                    IF COL_LENGTH('dbo.ComboMauCoSan', 'MaVach') IS NULL
+                        ALTER TABLE dbo.ComboMauCoSan ADD MaVach VARCHAR(50) NULL;
+                    IF COL_LENGTH('dbo.ComboMauCoSan', 'ViTriKho') IS NULL
+                        ALTER TABLE dbo.ComboMauCoSan ADD ViTriKho NVARCHAR(100) NOT NULL DEFAULT(N'Kệ B1');
+                    IF COL_LENGTH('dbo.ComboMauCoSan', 'DonViTinh') IS NULL
+                        ALTER TABLE dbo.ComboMauCoSan ADD DonViTinh NVARCHAR(50) NOT NULL DEFAULT(N'Hộp');
+                    IF COL_LENGTH('dbo.ComboMauCoSan', 'BanTrucTiep') IS NULL
+                        ALTER TABLE dbo.ComboMauCoSan ADD BanTrucTiep BIT NOT NULL DEFAULT(1);
+                    IF COL_LENGTH('dbo.ComboMauCoSan', 'TongTonKho') IS NULL
+                        ALTER TABLE dbo.ComboMauCoSan ADD TongTonKho INT NOT NULL DEFAULT(40);
+                    IF COL_LENGTH('dbo.ComboMauCoSan', 'TrongLuongGram') IS NULL
+                        ALTER TABLE dbo.ComboMauCoSan ADD TrongLuongGram INT NOT NULL DEFAULT(600);
+                END;
+
+                IF OBJECT_ID('dbo.MaKhuyenMai', 'U') IS NOT NULL AND COL_LENGTH('dbo.MaKhuyenMai', 'TrangThaiKichHoat') IS NULL
+                BEGIN
+                    ALTER TABLE dbo.MaKhuyenMai ADD TrangThaiKichHoat BIT NOT NULL DEFAULT(1);
+                END;
+
+                IF OBJECT_ID('dbo.DonHang', 'U') IS NOT NULL
+                BEGIN
+                    IF COL_LENGTH('dbo.DonHang', 'KenhBan') IS NULL
+                        ALTER TABLE dbo.DonHang ADD KenhBan VARCHAR(30) NOT NULL DEFAULT('WEB_ONLINE');
+                    IF COL_LENGTH('dbo.DonHang', 'SoTienKhachDaTra') IS NULL
+                        ALTER TABLE dbo.DonHang ADD SoTienKhachDaTra DECIMAL(18,2) NULL;
+                    IF COL_LENGTH('dbo.DonHang', 'MaNganHangHoan') IS NULL
+                        ALTER TABLE dbo.DonHang ADD MaNganHangHoan VARCHAR(50) NULL;
+                    IF COL_LENGTH('dbo.DonHang', 'SoTaiKhoanHoan') IS NULL
+                        ALTER TABLE dbo.DonHang ADD SoTaiKhoanHoan VARCHAR(50) NULL;
+                    IF COL_LENGTH('dbo.DonHang', 'TenChuTkHoan') IS NULL
+                        ALTER TABLE dbo.DonHang ADD TenChuTkHoan NVARCHAR(150) NULL;
+                    IF COL_LENGTH('dbo.DonHang', 'GhiChuDieuChinhAdmin') IS NULL
+                        ALTER TABLE dbo.DonHang ADD GhiChuDieuChinhAdmin NVARCHAR(500) NULL;
+                    IF COL_LENGTH('dbo.DonHang', 'ThoiGianCapNhatCuoi') IS NULL
+                        ALTER TABLE dbo.DonHang ADD ThoiGianCapNhatCuoi DATETIME NULL;
+                    IF COL_LENGTH('dbo.DonHang', 'NguoiCapNhatCuoi') IS NULL
+                        ALTER TABLE dbo.DonHang ADD NguoiCapNhatCuoi NVARCHAR(150) NULL;
+                    IF COL_LENGTH('dbo.DonHang', 'DaRollbackKho') IS NULL
+                        ALTER TABLE dbo.DonHang ADD DaRollbackKho BIT NOT NULL DEFAULT(0);
+                END;
             ");
         }
 
@@ -409,6 +516,155 @@ namespace WebBanhTrungThu.Data
             }
         }
 
+        private static async Task SeedThuongHieuVaChuanHoaHangHoaAsync(CSDLBanhTrungThuContext db)
+        {
+            var danhSachMacDinh = new (string MaCode, string Ten, string XuatXu, string MoTa)[]
+            {
+                ("KINH_DO", "Kinh Đô", "TP. Hồ Chí Minh", "Thương hiệu bánh Trung Thu Kinh Đô Trăng Vàng & Truyền Thống"),
+                ("DONG_KHANH", "Đồng Khánh", "TP. Hồ Chí Minh", "Lò bánh Trung Thu gia truyền Đồng Khánh Bông Lúa Vàng"),
+                ("NHU_LAN", "Như Lan", "TP. Hồ Chí Minh", "Thương hiệu bánh Trung Thu Như Lan Sài Gòn"),
+                ("BRODARD", "Brodard", "TP. Hồ Chí Minh", "Bánh Trung Thu Pháp thượng hạng Brodard Bakery"),
+                ("GIVRAL", "Givral", "TP. Hồ Chí Minh", "Bánh tươi Givral Bakery ít ngọt & đường ăn kiêng Isomalt"),
+                ("NGUYET_CAT", "Nguyệt Cát", "TP. Long Xuyên, An Giang", "Thương hiệu lễ hộp tuyển chọn Nguyệt Cát")
+            };
+
+            var dsThuongHieuDb = await db.ThuongHieus.ToListAsync();
+            bool coThemTh = false;
+            foreach (var item in danhSachMacDinh)
+            {
+                if (!dsThuongHieuDb.Any(t =>
+                    string.Equals(t.MaCodeThuongHieu, item.MaCode, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(t.TenThuongHieu, item.Ten, StringComparison.OrdinalIgnoreCase)))
+                {
+                    var thMoi = new ThuongHieu
+                    {
+                        MaCodeThuongHieu = item.MaCode,
+                        TenThuongHieu = item.Ten,
+                        XuatXu = item.XuatXu,
+                        MoTa = item.MoTa,
+                        DangHoatDong = true
+                    };
+                    db.ThuongHieus.Add(thMoi);
+                    dsThuongHieuDb.Add(thMoi);
+                    coThemTh = true;
+                }
+            }
+            if (coThemTh)
+            {
+                await db.SaveChangesAsync();
+            }
+
+            var dsNcc = await db.NhaCungCaps.AsNoTracking().ToListAsync();
+            var dsDanhMuc = await db.DanhMucBanhs.AsNoTracking().OrderBy(d => d.ThuTuSx).ThenBy(d => d.MaDm).ToListAsync();
+            int? maDmComboMacDinh = dsDanhMuc
+                .FirstOrDefault(d => !string.Equals(d.DuongDanSlug, "dong-gia-20k", StringComparison.OrdinalIgnoreCase))?.MaDm
+                ?? dsDanhMuc.FirstOrDefault()?.MaDm;
+
+            string[] thuongHieuBanhMau = { "Đồng Khánh", "Kinh Đô", "Như Lan", "Brodard", "Givral", "Đồng Khánh", "Kinh Đô", "Như Lan" };
+            string[] viTriBanhMau = { "Kệ A1", "Kệ A2", "Kệ B1", "Kệ B2", "Tủ Mát C1", "Kệ A1", "Kệ B1", "Kệ A2" };
+
+            int? TimMaNccTheoThuongHieu(string tenTh)
+            {
+                var khop = dsNcc.FirstOrDefault(n =>
+                    string.Equals(n.ThuongHieuCungCap, tenTh, StringComparison.OrdinalIgnoreCase)
+                    || n.TenNcc.Contains(tenTh, StringComparison.OrdinalIgnoreCase));
+                return khop?.MaNcc ?? dsNcc.FirstOrDefault()?.MaNcc;
+            }
+
+            var dsBanh = await db.SanPhamBanhs.OrderBy(b => b.MaBanh).ToListAsync();
+            bool coSuaBanh = false;
+            for (int i = 0; i < dsBanh.Count; i++)
+            {
+                var b = dsBanh[i];
+                int idx = i % thuongHieuBanhMau.Length;
+                string tenThMacDinh = thuongHieuBanhMau[idx];
+                var thDb = dsThuongHieuDb.FirstOrDefault(t => string.Equals(t.TenThuongHieu, tenThMacDinh, StringComparison.OrdinalIgnoreCase))
+                    ?? dsThuongHieuDb.FirstOrDefault();
+
+                if (!b.MaThuongHieu.HasValue && thDb != null)
+                {
+                    b.MaThuongHieu = thDb.MaThuongHieu;
+                    coSuaBanh = true;
+                }
+                if (!b.MaNccMacDinh.HasValue)
+                {
+                    string tenThChuan = dsThuongHieuDb.FirstOrDefault(t => t.MaThuongHieu == b.MaThuongHieu)?.TenThuongHieu ?? tenThMacDinh;
+                    b.MaNccMacDinh = TimMaNccTheoThuongHieu(tenThChuan);
+                    if (b.MaNccMacDinh.HasValue) coSuaBanh = true;
+                }
+                if (string.IsNullOrWhiteSpace(b.MaVach))
+                {
+                    b.MaVach = $"8934680010{b.MaBanh:D3}";
+                    coSuaBanh = true;
+                }
+                if (string.IsNullOrWhiteSpace(b.ViTriKho))
+                {
+                    b.ViTriKho = viTriBanhMau[idx];
+                    coSuaBanh = true;
+                }
+                if (string.IsNullOrWhiteSpace(b.DonViTinh))
+                {
+                    b.DonViTinh = "Cái";
+                    coSuaBanh = true;
+                }
+            }
+            if (coSuaBanh)
+            {
+                await db.SaveChangesAsync();
+            }
+
+            string[] thuongHieuComboMau = { "Đồng Khánh", "Kinh Đô", "Như Lan", "Nguyệt Cát" };
+            var dsCombo = await db.ComboMauCoSans.OrderBy(c => c.MaCb).ToListAsync();
+            bool coSuaCombo = false;
+            for (int i = 0; i < dsCombo.Count; i++)
+            {
+                var cb = dsCombo[i];
+                string tenThMacDinh = thuongHieuComboMau[i % thuongHieuComboMau.Length];
+                var thDb = dsThuongHieuDb.FirstOrDefault(t => string.Equals(t.TenThuongHieu, tenThMacDinh, StringComparison.OrdinalIgnoreCase))
+                    ?? dsThuongHieuDb.FirstOrDefault();
+
+                if (!cb.MaThuongHieu.HasValue && thDb != null)
+                {
+                    cb.MaThuongHieu = thDb.MaThuongHieu;
+                    coSuaCombo = true;
+                }
+                if (!cb.MaDm.HasValue && maDmComboMacDinh.HasValue)
+                {
+                    cb.MaDm = maDmComboMacDinh.Value;
+                    coSuaCombo = true;
+                }
+                if (string.IsNullOrWhiteSpace(cb.MaVach))
+                {
+                    cb.MaVach = $"8934680990{cb.MaCb:D3}";
+                    coSuaCombo = true;
+                }
+                if (string.IsNullOrWhiteSpace(cb.ViTriKho))
+                {
+                    cb.ViTriKho = "Kệ B1";
+                    coSuaCombo = true;
+                }
+                if (string.IsNullOrWhiteSpace(cb.DonViTinh))
+                {
+                    cb.DonViTinh = "Hộp";
+                    coSuaCombo = true;
+                }
+                if (cb.TongTonKho <= 0)
+                {
+                    cb.TongTonKho = 35 + ((i + 1) * 5);
+                    coSuaCombo = true;
+                }
+                if (cb.TrongLuongGram <= 0)
+                {
+                    cb.TrongLuongGram = 750;
+                    coSuaCombo = true;
+                }
+            }
+            if (coSuaCombo)
+            {
+                await db.SaveChangesAsync();
+            }
+        }
+
         private static async Task DiTruDuLieuCauHinhMoRongAsync(WebApplication app, CSDLBanhTrungThuContext db)
         {
             var jsonOpt = new JsonSerializerOptions
@@ -417,32 +673,7 @@ namespace WebBanhTrungThu.Data
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
             };
 
-            // Tự động chuyển đổi khóa cũ ("NGUYETCAT_ERP_METADATA" / "KIOT_METADATA_STORE") sang khóa chuẩn "CAUHINH_MORONG_NGUYETCAT"
-            var banGhiMoi = await db.CauHinhHeThongs
-                .FirstOrDefaultAsync(c => c.KhoaCauHinh == DichVuCauHinhHeThong.KHOA_CAU_HINH_MORONG);
-
-            var dsBanGhiCu = await db.CauHinhHeThongs
-                .Where(c => c.KhoaCauHinh == DichVuCauHinhHeThong.KHOA_CU_1 || c.KhoaCauHinh == DichVuCauHinhHeThong.KHOA_CU_2)
-                .ToListAsync();
-
-            if (banGhiMoi == null && dsBanGhiCu.Count > 0)
-            {
-                var banGhiCu = dsBanGhiCu.First();
-                db.CauHinhHeThongs.Add(new CauHinhHeThong
-                {
-                    KhoaCauHinh = DichVuCauHinhHeThong.KHOA_CAU_HINH_MORONG,
-                    GiaTriJson = banGhiCu.GiaTriJson,
-                    MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO Đại lý Nguyệt Cát ERP",
-                    NgayCapNhat = DateTime.Now
-                });
-            }
-
-            if (dsBanGhiCu.Count > 0)
-            {
-                db.CauHinhHeThongs.RemoveRange(dsBanGhiCu);
-                await db.SaveChangesAsync();
-            }
-
+            // Đảm bảo khóa cấu hình tài khoản MoMo tồn tại trong dbo.CauHinhHeThong
             if (!await db.CauHinhHeThongs.AnyAsync(c => c.KhoaCauHinh == DichVuCauHinhHeThong.KHOA_CAU_HINH_QR_MOMO))
             {
                 db.CauHinhHeThongs.Add(new CauHinhHeThong
@@ -454,16 +685,54 @@ namespace WebBanhTrungThu.Data
                 });
             }
 
-            if (!await db.CauHinhHeThongs.AnyAsync(c => c.KhoaCauHinh == DichVuCauHinhHeThong.KHOA_CAU_HINH_MORONG))
+            // Di trú & dọn sạch mọi khóa JSON mở rộng cũ ngoài 4 khóa cài đặt hệ thống chuẩn
+            var khoaHeThongChuan = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                db.CauHinhHeThongs.Add(new CauHinhHeThong
+                DichVuCauHinhHeThong.KHOA_CAU_HINH_QR_MOMO,
+                "CAU_HINH_CUA_HANG",
+                "CAU_HINH_VAN_CHUYEN",
+                "CAU_HINH_HOI_VIEN_VIP"
+            };
+
+            var cacKhoaCuThua = await db.CauHinhHeThongs
+                .Where(c => !khoaHeThongChuan.Contains(c.KhoaCauHinh))
+                .ToListAsync();
+
+            if (cacKhoaCuThua.Count > 0)
+            {
+                foreach (var rowCu in cacKhoaCuThua)
                 {
-                    KhoaCauHinh = DichVuCauHinhHeThong.KHOA_CAU_HINH_MORONG,
-                    GiaTriJson = JsonSerializer.Serialize(DichVuCauHinhHeThong.TaoDuLieuMacDinh(), jsonOpt),
-                    MoTa = "Dữ liệu mở rộng Hàng hóa, Thương hiệu, Vị trí kho và Nhật ký FEFO Đại lý Nguyệt Cát ERP",
-                    NgayCapNhat = DateTime.Now
-                });
+                    if (string.IsNullOrWhiteSpace(rowCu.GiaTriJson)) continue;
+                    try
+                    {
+                        var storeCu = JsonSerializer.Deserialize<DuLieuMoRongHeThongRoot>(rowCu.GiaTriJson, jsonOpt);
+                        if (storeCu != null)
+                        {
+                            await ChuyenDuLieuJsonCuLenBangSqlAsync(db, storeCu);
+                        }
+                    }
+                    catch
+                    {
+                        // Bỏ qua JSON cũ không tương thích
+                    }
+                }
+
+                db.CauHinhHeThongs.RemoveRange(cacKhoaCuThua);
+                await db.SaveChangesAsync();
             }
+
+            await db.Database.ExecuteSqlRawAsync(@"
+                IF OBJECT_ID('dbo.CauHinhHeThong', 'U') IS NOT NULL
+                BEGIN
+                    DELETE FROM dbo.CauHinhHeThong
+                    WHERE KhoaCauHinh NOT IN (
+                        N'CAU_HINH_QR_MOMO',
+                        N'CAU_HINH_CUA_HANG',
+                        N'CAU_HINH_VAN_CHUYEN',
+                        N'CAU_HINH_HOI_VIEN_VIP'
+                    );
+                END;
+            ");
 
             var cacDotCoThiep = await db.DotGiaoHangDaDiems
                 .Include(d => d.MaDhNavigation)
@@ -513,6 +782,111 @@ namespace WebBanhTrungThu.Data
                         GhiChu = $"Thu tiền đơn hàng #{dh.MaTraCuuDh}",
                         NgayLap = dh.NgayDat
                     });
+                }
+            }
+
+            await db.SaveChangesAsync();
+        }
+
+        private static async Task ChuyenDuLieuJsonCuLenBangSqlAsync(CSDLBanhTrungThuContext db, DuLieuMoRongHeThongRoot storeCu)
+        {
+            var dsThuongHieu = await db.ThuongHieus.ToListAsync();
+            var dsNcc = await db.NhaCungCaps.AsNoTracking().ToListAsync();
+
+            if (storeCu.Items != null && storeCu.Items.Count > 0)
+            {
+                var dsBanh = await db.SanPhamBanhs.ToListAsync();
+                foreach (var banh in dsBanh)
+                {
+                    if (!storeCu.Items.TryGetValue($"BANH_{banh.MaBanh}", out var meta)) continue;
+                    if (!string.IsNullOrWhiteSpace(meta.MaVach)) banh.MaVach = meta.MaVach.Trim();
+                    if (!string.IsNullOrWhiteSpace(meta.ViTriKho)) banh.ViTriKho = meta.ViTriKho.Trim();
+                    if (!string.IsNullOrWhiteSpace(meta.DonViTinh)) banh.DonViTinh = meta.DonViTinh.Trim();
+                    banh.BanTrucTiep = meta.BanTrucTiep;
+
+                    if (!string.IsNullOrWhiteSpace(meta.ThuongHieu))
+                    {
+                        var th = dsThuongHieu.FirstOrDefault(t => string.Equals(t.TenThuongHieu, meta.ThuongHieu.Trim(), StringComparison.OrdinalIgnoreCase));
+                        if (th != null) banh.MaThuongHieu = th.MaThuongHieu;
+                    }
+                    if (!string.IsNullOrWhiteSpace(meta.NhaCungCap))
+                    {
+                        var ncc = dsNcc.FirstOrDefault(n => string.Equals(n.TenNcc, meta.NhaCungCap.Trim(), StringComparison.OrdinalIgnoreCase));
+                        if (ncc != null) banh.MaNccMacDinh = ncc.MaNcc;
+                    }
+                }
+
+                var dsCombo = await db.ComboMauCoSans.ToListAsync();
+                foreach (var cb in dsCombo)
+                {
+                    if (!storeCu.Items.TryGetValue($"COMBO_{cb.MaCb}", out var meta)) continue;
+                    if (!string.IsNullOrWhiteSpace(meta.MaVach)) cb.MaVach = meta.MaVach.Trim();
+                    if (!string.IsNullOrWhiteSpace(meta.ViTriKho)) cb.ViTriKho = meta.ViTriKho.Trim();
+                    if (!string.IsNullOrWhiteSpace(meta.DonViTinh)) cb.DonViTinh = meta.DonViTinh.Trim();
+                    cb.BanTrucTiep = meta.BanTrucTiep;
+                    if (meta.TonKhoCombo.HasValue && meta.TonKhoCombo.Value > 0) cb.TongTonKho = meta.TonKhoCombo.Value;
+                    if (meta.TrongLuongComboGram.HasValue && meta.TrongLuongComboGram.Value > 0) cb.TrongLuongGram = meta.TrongLuongComboGram.Value;
+
+                    if (!string.IsNullOrWhiteSpace(meta.ThuongHieu))
+                    {
+                        var th = dsThuongHieu.FirstOrDefault(t => string.Equals(t.TenThuongHieu, meta.ThuongHieu.Trim(), StringComparison.OrdinalIgnoreCase));
+                        if (th != null) cb.MaThuongHieu = th.MaThuongHieu;
+                    }
+                }
+            }
+
+            if (storeCu.DonHangs != null && storeCu.DonHangs.Count > 0)
+            {
+                var maDhs = storeCu.DonHangs.Keys.ToList();
+                var dsDh = await db.DonHangs.Where(d => maDhs.Contains(d.MaDh)).ToListAsync();
+                var dhCoNhatKy = (await db.NhatKyTruKhoDonHangs.AsNoTracking().Select(n => n.MaDh).Distinct().ToListAsync()).ToHashSet();
+
+                foreach (var dh in dsDh)
+                {
+                    if (!storeCu.DonHangs.TryGetValue(dh.MaDh, out var meta)) continue;
+                    if (!string.IsNullOrWhiteSpace(meta.KenhBan)) dh.KenhBan = meta.KenhBan.Trim();
+                    if (meta.SoTienKhachDaTra.HasValue) dh.SoTienKhachDaTra = meta.SoTienKhachDaTra;
+                    if (!string.IsNullOrWhiteSpace(meta.MaNganHangHoan)) dh.MaNganHangHoan = meta.MaNganHangHoan.Trim();
+                    if (!string.IsNullOrWhiteSpace(meta.SoTaiKhoanHoan)) dh.SoTaiKhoanHoan = meta.SoTaiKhoanHoan.Trim();
+                    if (!string.IsNullOrWhiteSpace(meta.TenChuTkHoan)) dh.TenChuTkHoan = meta.TenChuTkHoan.Trim();
+                    if (!string.IsNullOrWhiteSpace(meta.GhiChuDieuChinhAdmin)) dh.GhiChuDieuChinhAdmin = meta.GhiChuDieuChinhAdmin.Trim();
+                    if (!string.IsNullOrWhiteSpace(meta.NguoiCapNhatCuoi)) dh.NguoiCapNhatCuoi = meta.NguoiCapNhatCuoi.Trim();
+                    if (DateTime.TryParseExact(meta.ThoiGianCapNhatCuoi, "dd/MM/yyyy HH:mm", null, System.Globalization.DateTimeStyles.None, out var dtCapNhat))
+                        dh.ThoiGianCapNhatCuoi = dtCapNhat;
+                    if (meta.DaRollbackKho) dh.DaRollbackKho = true;
+
+                    if (!dhCoNhatKy.Contains(dh.MaDh))
+                    {
+                        var setLo = (await db.LoSanXuatBanhs.AsNoTracking().Select(l => l.MaLo).ToListAsync()).ToHashSet();
+                        var setBanh = (await db.SanPhamBanhs.AsNoTracking().Select(b => b.MaBanh).ToListAsync()).ToHashSet();
+                        var setVo = (await db.MauVoHops.AsNoTracking().Select(v => v.MaVh).ToListAsync()).ToHashSet();
+
+                        foreach (var lo in meta.DanhSachLoDaTru ?? new List<NhatKyTruLoFefo>())
+                        {
+                            db.NhatKyTruKhoDonHangs.Add(new NhatKyTruKhoDonHang
+                            {
+                                MaDh = dh.MaDh,
+                                LoaiDoiTuong = "LO_BANH",
+                                MaLo = (lo.MaLo > 0 && setLo.Contains(lo.MaLo)) ? lo.MaLo : null,
+                                MaBanh = (lo.MaBanh > 0 && setBanh.Contains(lo.MaBanh)) ? lo.MaBanh : null,
+                                SoLuongDaTru = lo.SoLuongDaTru,
+                                DaHoanKho = meta.DaRollbackKho,
+                                NgayGhi = dh.NgayDat
+                            });
+                        }
+                        foreach (var vo in meta.DanhSachVoHopDaTru ?? new List<NhatKyTruVoHop>())
+                        {
+                            db.NhatKyTruKhoDonHangs.Add(new NhatKyTruKhoDonHang
+                            {
+                                MaDh = dh.MaDh,
+                                LoaiDoiTuong = "VO_HOP",
+                                MaVh = (vo.MaVh > 0 && setVo.Contains(vo.MaVh)) ? vo.MaVh : null,
+                                SoLuongDaTru = vo.SoLuongDaTru,
+                                DaHoanKho = meta.DaRollbackKho,
+                                NgayGhi = dh.NgayDat
+                            });
+                        }
+                    }
                 }
             }
 

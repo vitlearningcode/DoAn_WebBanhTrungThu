@@ -193,7 +193,8 @@ namespace WebBanhTrungThu.Services
                     HanThanhToanQr = laQrMoMo ? thoiDiemDat.AddMinutes(15) : null,
                     PhuongThucTt = laQrMoMo ? "MOMO_QR" : "COD",
                     TrangThaiTt = laQrMoMo ? "CHO_THANH_TOAN" : "CHUA_TT",
-                    TrangThaiDh = "CHO_XAC_NHAN", NgayDat = thoiDiemDat
+                    TrangThaiDh = "CHO_XAC_NHAN", NgayDat = thoiDiemDat,
+                    KenhBan = "WEB_ONLINE", DaRollbackKho = false
                 };
 
                 _context.DonHangs.Add(donHang);
@@ -312,20 +313,38 @@ namespace WebBanhTrungThu.Services
                     }
                 }
 
+                foreach (var lo in danhSachLoDaTru)
+                {
+                    _context.NhatKyTruKhoDonHangs.Add(new NhatKyTruKhoDonHang
+                    {
+                        MaDh = donHang.MaDh,
+                        LoaiDoiTuong = "LO_BANH",
+                        MaLo = lo.MaLo > 0 ? lo.MaLo : null,
+                        MaBanh = lo.MaBanh > 0 ? lo.MaBanh : null,
+                        SoLuongDaTru = lo.SoLuongDaTru,
+                        DaHoanKho = false,
+                        NgayGhi = thoiDiemDat
+                    });
+                }
+
+                foreach (var vo in danhSachVoHopDaTru)
+                {
+                    _context.NhatKyTruKhoDonHangs.Add(new NhatKyTruKhoDonHang
+                    {
+                        MaDh = donHang.MaDh,
+                        LoaiDoiTuong = "VO_HOP",
+                        MaVh = vo.MaVh > 0 ? vo.MaVh : null,
+                        SoLuongDaTru = vo.SoLuongDaTru,
+                        DaHoanKho = false,
+                        NgayGhi = thoiDiemDat
+                    });
+                }
+
                 _context.ChiTietGioHangs.RemoveRange(gioHang.ChiTietGioHangs);
                 gioHang.CodeKmdangApDung = null;
                 gioHang.NgayCapNhat = LayThoiGianHeThong();
                 await _context.SaveChangesAsync();
                 await giaoDichDb.CommitAsync();
-
-                _kiotMeta.CapNhatMetadataDonHang(donHang.MaDh, meta =>
-                {
-                    meta.KenhBan = "WEB_ONLINE";
-                    meta.DaHoanKhoDoHetHan = false;
-                    meta.DanhSachLoDaTru = danhSachLoDaTru;
-                    meta.DanhSachVoHopDaTru = danhSachVoHopDaTru;
-                    meta.Thiep3DTheoToken = mapThiepMeta;
-                });
 
                 return new KetQuaXuLyDatHang { ThanhCong = true, DonHangDaTao = donHang, LaThanhToanQrMoMo = laQrMoMo };
             }
@@ -351,7 +370,6 @@ namespace WebBanhTrungThu.Services
                 dot.TenNguoiGuiThiep ??= thiep.TenNguoiGui;
             }
 
-            _kiotMeta.GanMetadataChoDonHang(donHang);
             bool laDonQrMoMo = donHang.PhuongThucTt is "MOMO_QR" or "VIETQR" or "MOMO";
             bool laHuy = donHang.TrangThaiDh == "DA_HUY" || donHang.TrangThaiTt is "HET_HAN_HUY" or "HET_HAN_15P";
             DateTime hanTt = donHang.HanThanhToanQr ?? donHang.NgayDat.AddMinutes(15);

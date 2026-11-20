@@ -30,17 +30,17 @@ namespace WebBanhTrungThu.Services.GiaoDien
             var banh = await _db.SanPhamBanhs
                 .AsNoTracking()
                 .Include(b => b.MaDmNavigation)
+                .Include(b => b.MaThuongHieuNavigation)
+                .Include(b => b.MaNccMacDinhNavigation)
                 .Include(b => b.ThongSoDinhDuong)
                 .Include(b => b.LoSanXuatBanhs)
                 .FirstOrDefaultAsync(b => b.MaBanh == maBanh && b.TrangThaiBan);
 
             if (banh == null) return null;
 
-            var store = _cauHinhHeThong.DocDuLieu();
             var tuDienAnh = await _dichVuHinhAnh.LayTuDienUrlAnhAsync();
-            _cauHinhHeThong.GanMetadataChoBanh(banh, store);
 
-            var danhSachAnh = await TongHopDanhSachAnhBanhAsync(banh.MaBanh, store, tuDienAnh);
+            var danhSachAnh = await TongHopDanhSachAnhBanhAsync(banh.MaBanh, tuDienAnh);
             string anhChinh = danhSachAnh.FirstOrDefault() ?? "/images/default/banh-mac-dinh.png";
 
             DateOnly homNay = LayNgayHienTai();
@@ -65,7 +65,7 @@ namespace WebBanhTrungThu.Services.GiaoDien
             bool dangGiamCanDate = phanTramGiam > 0m;
             decimal giaBanThucTe = banh.DonGiaThucTe;
 
-            var dsLienQuan = await LaySanPhamLienQuanAsync(banh, store, tuDienAnh);
+            var dsLienQuan = await LaySanPhamLienQuanAsync(banh, tuDienAnh);
 
             return new ChiTietSanPhamViewModel
             {
@@ -93,7 +93,6 @@ namespace WebBanhTrungThu.Services.GiaoDien
 
         private async Task<List<string>> TongHopDanhSachAnhBanhAsync(
             int maBanh,
-            DuLieuMoRongHeThongRoot store,
             Dictionary<string, string> tuDienAnh)
         {
             var ketQua = new List<string>();
@@ -104,14 +103,6 @@ namespace WebBanhTrungThu.Services.GiaoDien
                 if (!ketQua.Contains(urlSach, StringComparer.OrdinalIgnoreCase))
                 {
                     ketQua.Add(urlSach);
-                }
-            }
-
-            if (store.Items.TryGetValue($"BANH_{maBanh}", out var meta) && meta.DanhSachAnh != null)
-            {
-                foreach (var url in meta.DanhSachAnh)
-                {
-                    ThemNeuMoi(url);
                 }
             }
 
@@ -140,21 +131,17 @@ namespace WebBanhTrungThu.Services.GiaoDien
 
         private async Task<List<SanPhamLienQuanItemViewModel>> LaySanPhamLienQuanAsync(
             SanPhamBanh banhGoc,
-            DuLieuMoRongHeThongRoot store,
             Dictionary<string, string> tuDienAnh)
         {
             var dsUngVien = await _db.SanPhamBanhs
                 .AsNoTracking()
                 .Include(b => b.MaDmNavigation)
+                .Include(b => b.MaThuongHieuNavigation)
+                .Include(b => b.MaNccMacDinhNavigation)
                 .Include(b => b.ThongSoDinhDuong)
                 .Include(b => b.LoSanXuatBanhs)
                 .Where(b => b.TrangThaiBan && b.MaBanh != banhGoc.MaBanh)
                 .ToListAsync();
-
-            foreach (var sp in dsUngVien)
-            {
-                _cauHinhHeThong.GanMetadataChoBanh(sp, store);
-            }
 
             var dsChon = dsUngVien
                 .OrderByDescending(sp => sp.MaDm == banhGoc.MaDm ? 2 : 0)
@@ -166,12 +153,10 @@ namespace WebBanhTrungThu.Services.GiaoDien
 
             return dsChon.Select(sp =>
             {
-                string anh = DichVuHinhAnh.LayUrl(tuDienAnh, "BANH", sp.MaBanh, "TACH_NEN_SLOT");
-                if (store.Items.TryGetValue($"BANH_{sp.MaBanh}", out var meta)
-                    && meta.DanhSachAnh.Count > 0
-                    && !string.IsNullOrWhiteSpace(meta.DanhSachAnh[0]))
+                string anh = DichVuHinhAnh.LayUrl(tuDienAnh, "BANH", sp.MaBanh, "ANH_CHINH");
+                if (anh == "/images/default/banh-mac-dinh.png")
                 {
-                    anh = meta.DanhSachAnh[0];
+                    anh = DichVuHinhAnh.LayUrl(tuDienAnh, "BANH", sp.MaBanh, "TACH_NEN_SLOT");
                 }
 
                 return new SanPhamLienQuanItemViewModel

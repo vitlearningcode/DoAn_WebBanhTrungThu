@@ -118,11 +118,43 @@ public partial class DonHang
     [Column(TypeName = "datetime")]
     public DateTime NgayDat { get; set; }
 
+    [StringLength(30)]
+    [Unicode(false)]
+    public string KenhBan { get; set; } = "WEB_ONLINE";
+
+    [Column(TypeName = "decimal(18, 2)")]
+    public decimal? SoTienKhachDaTra { get; set; }
+
+    [StringLength(50)]
+    [Unicode(false)]
+    public string? MaNganHangHoan { get; set; }
+
+    [StringLength(50)]
+    [Unicode(false)]
+    public string? SoTaiKhoanHoan { get; set; }
+
+    [StringLength(150)]
+    public string? TenChuTkHoan { get; set; }
+
+    [StringLength(500)]
+    public string? GhiChuDieuChinhAdmin { get; set; }
+
+    [Column(TypeName = "datetime")]
+    public DateTime? ThoiGianCapNhatCuoi { get; set; }
+
+    [StringLength(150)]
+    public string? NguoiCapNhatCuoi { get; set; }
+
+    public bool DaRollbackKho { get; set; }
+
     [InverseProperty("MaDhNavigation")]
     public virtual ICollection<ChiTietDonHang> ChiTietDonHangs { get; set; } = new List<ChiTietDonHang>();
 
     [InverseProperty("MaDhNavigation")]
     public virtual ICollection<DotGiaoHangDaDiem> DotGiaoHangDaDiems { get; set; } = new List<DotGiaoHangDaDiem>();
+
+    [InverseProperty("MaDhNavigation")]
+    public virtual ICollection<NhatKyTruKhoDonHang> NhatKyTruKhoDonHangs { get; set; } = new List<NhatKyTruKhoDonHang>();
 
     [ForeignKey("MaNd")]
     [InverseProperty("DonHangs")]

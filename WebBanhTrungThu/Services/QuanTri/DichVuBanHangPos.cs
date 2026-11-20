@@ -31,7 +31,6 @@ namespace WebBanhTrungThu.Services.QuanTri
 
         public async Task<BanHangPosViewModel> XayDungDuLieuManHinhPosAsync(string tenThuNgan, string vaiTro)
         {
-            var store = _kiotMeta.DocDuLieu();
             var tuDienAnh = await _dichVuHinhAnh.LayTuDienUrlAnhAsync();
 
             var dsBanh = await _db.SanPhamBanhs
@@ -39,23 +38,22 @@ namespace WebBanhTrungThu.Services.QuanTri
                 .Include(b => b.ThongSoDinhDuong)
                 .Include(b => b.LoSanXuatBanhs)
                 .Include(b => b.MaDmNavigation)
+                .Include(b => b.MaThuongHieuNavigation)
+                .Include(b => b.MaNccMacDinhNavigation)
                 .Where(b => b.TrangThaiBan)
                 .OrderBy(b => b.MaBanh)
                 .ToListAsync();
 
             foreach (var b in dsBanh)
             {
-                _kiotMeta.GanMetadataChoBanh(b, store);
-                string keyMeta = $"BANH_{b.MaBanh}";
-                if (store.Items.TryGetValue(keyMeta, out var metaItem) && metaItem.DanhSachAnh.Count > 0 && !string.IsNullOrWhiteSpace(metaItem.DanhSachAnh[0]))
-                {
-                    tuDienAnh[$"BANH_{b.MaBanh}_ANH_CHINH"] = metaItem.DanhSachAnh[0];
-                }
+                if (string.IsNullOrWhiteSpace(b.MaVach)) b.MaVach = $"8934680010{b.MaBanh:D3}";
             }
 
             var dsCombo = await _db.ComboMauCoSans
                 .AsNoTracking()
                 .Include(c => c.MaVhNavigation)
+                .Include(c => c.MaThuongHieuNavigation)
+                .Include(c => c.MaDmNavigation)
                 .Include(c => c.ChiTietComboMaus).ThenInclude(ct => ct.MaBanhNavigation)
                 .Where(c => c.TrangThai)
                 .OrderBy(c => c.MaCb)
@@ -63,12 +61,7 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             foreach (var cb in dsCombo)
             {
-                _kiotMeta.GanMetadataChoCombo(cb, store);
-                string keyMeta = $"COMBO_{cb.MaCb}";
-                if (store.Items.TryGetValue(keyMeta, out var metaItem) && metaItem.DanhSachAnh.Count > 0 && !string.IsNullOrWhiteSpace(metaItem.DanhSachAnh[0]))
-                {
-                    tuDienAnh[$"COMBO_{cb.MaCb}_ANH_CHINH"] = metaItem.DanhSachAnh[0];
-                }
+                if (string.IsNullOrWhiteSpace(cb.MaVach)) cb.MaVach = $"8934680990{cb.MaCb:D3}";
             }
 
             return new BanHangPosViewModel
@@ -78,7 +71,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                 DanhSachVoHop = await _db.MauVoHops.AsNoTracking().Where(v => v.TrangThai).OrderBy(v => v.MaVh).ToListAsync(),
                 DanhSachDanhMuc = await _db.DanhMucBanhs.AsNoTracking().Where(d => d.TrangThai).OrderBy(d => d.ThuTuSx).ToListAsync(),
                 BangChietKhauB2B = await _db.BangChietKhauSiB2bs.AsNoTracking().OrderBy(b => b.SlhopToiThieu).ToListAsync(),
-                DanhSachKhuyenMai = await _db.MaKhuyenMais.AsNoTracking().Where(k => k.NgayKetThuc >= DateTime.Now && k.SldaDung < k.SltoiDa).OrderBy(k => k.CodeKm).ToListAsync(),
+                DanhSachKhuyenMai = await _db.MaKhuyenMais.AsNoTracking().Where(k => k.TrangThaiKichHoat && k.NgayKetThuc >= DateTime.Now && k.SldaDung < k.SltoiDa).OrderBy(k => k.CodeKm).ToListAsync(),
                 TuDienAnh = tuDienAnh,
                 TenThuNgan = tenThuNgan,
                 VaiTroThuNgan = vaiTro
@@ -388,7 +381,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                 {
                     string code = req.CodeKm.Trim().ToUpperInvariant();
                     var km = await _db.MaKhuyenMais.FirstOrDefaultAsync(k =>
-                        k.CodeKm == code && k.NgayKetThuc >= DateTime.Now && k.SldaDung < k.SltoiDa);
+                        k.CodeKm == code && k.TrangThaiKichHoat && k.NgayKetThuc >= DateTime.Now && k.SldaDung < k.SltoiDa);
 
                     if (km != null && tongTienHang >= km.DonToiThieu)
                     {
@@ -487,7 +480,10 @@ namespace WebBanhTrungThu.Services.QuanTri
                     PhuongThucTt = ChuanHoaChuoi(req.PhuongThucTt, "TIEN_MAT"),
                     TrangThaiTt = "DA_TT",
                     TrangThaiDh = laGiaoHang ? "CHO_LAY_HANG" : "HOAN_TAT",
-                    NgayDat = LayThoiGianHeThong()
+                    NgayDat = LayThoiGianHeThong(),
+                    KenhBan = "POS_TAI_QUAY",
+                    SoTienKhachDaTra = tongThanhToanCuoi,
+                    DaRollbackKho = false
                 };
 
                 _db.DonHangs.Add(donHang);
@@ -734,15 +730,35 @@ namespace WebBanhTrungThu.Services.QuanTri
                     NgayLap = LayThoiGianHeThong()
                 });
 
+                DateTime ngayGhiNhatKy = LayThoiGianHeThong();
+                foreach (var lo in danhSachLoDaTru)
+                {
+                    _db.NhatKyTruKhoDonHangs.Add(new NhatKyTruKhoDonHang
+                    {
+                        MaDh = donHang.MaDh,
+                        LoaiDoiTuong = "LO_BANH",
+                        MaLo = lo.MaLo > 0 ? lo.MaLo : null,
+                        MaBanh = lo.MaBanh > 0 ? lo.MaBanh : null,
+                        SoLuongDaTru = lo.SoLuongDaTru,
+                        DaHoanKho = false,
+                        NgayGhi = ngayGhiNhatKy
+                    });
+                }
+                foreach (var vo in danhSachVoHopDaTru)
+                {
+                    _db.NhatKyTruKhoDonHangs.Add(new NhatKyTruKhoDonHang
+                    {
+                        MaDh = donHang.MaDh,
+                        LoaiDoiTuong = "VO_HOP",
+                        MaVh = vo.MaVh > 0 ? vo.MaVh : null,
+                        SoLuongDaTru = vo.SoLuongDaTru,
+                        DaHoanKho = false,
+                        NgayGhi = ngayGhiNhatKy
+                    });
+                }
+
                 await _db.SaveChangesAsync();
                 await transaction.CommitAsync();
-
-                _kiotMeta.CapNhatMetadataDonHang(donHang.MaDh, meta =>
-                {
-                    meta.KenhBan = "POS_TAI_QUAY";
-                    meta.DanhSachLoDaTru = danhSachLoDaTru;
-                    meta.DanhSachVoHopDaTru = danhSachVoHopDaTru;
-                });
 
                 return new
                 {

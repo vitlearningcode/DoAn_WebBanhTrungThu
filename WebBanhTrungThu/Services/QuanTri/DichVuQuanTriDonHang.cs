@@ -110,12 +110,6 @@ namespace WebBanhTrungThu.Services.QuanTri
                 }
             }
 
-            var store = _cauHinhHeThong.DocDuLieu();
-            foreach (var dh in danhSach)
-            {
-                _cauHinhHeThong.GanMetadataChoDonHang(dh, store);
-            }
-
             return danhSach;
         }
 
@@ -154,8 +148,6 @@ namespace WebBanhTrungThu.Services.QuanTri
                 .Where(t => t.MaDonHang == donHang.MaDh)
                 .ToListAsync();
             GanThiep3DChoDonHangTrongBoNho(donHang, danhSachThiep);
-
-            _cauHinhHeThong.GanMetadataChoDonHang(donHang, _cauHinhHeThong.DocDuLieu());
 
             var vm = new DonHangThanhCongViewModel
             {
@@ -248,6 +240,9 @@ namespace WebBanhTrungThu.Services.QuanTri
             }
 
             donHang.TrangThaiTt = "DA_TT";
+            donHang.SoTienKhachDaTra ??= donHang.TongThanhToanCuoi;
+            donHang.ThoiGianCapNhatCuoi = LayThoiGianHeThong();
+            donHang.NguoiCapNhatCuoi = nguoiCapNhat;
             if (donHang.TrangThaiDh == "CHO_XAC_NHAN" || donHang.TrangThaiDh == "DANG_DONG_GOI_HOP")
             {
                 donHang.TrangThaiDh = "CHO_LAY_HANG";
@@ -264,12 +259,6 @@ namespace WebBanhTrungThu.Services.QuanTri
             await _db.SaveChangesAsync();
 
             await DichVuHoiVien.CongDiemThuongDonHangAsync(_db, donHang);
-
-            _cauHinhHeThong.CapNhatMetadataDonHang(donHang.MaDh, meta =>
-            {
-                meta.ThoiGianCapNhatCuoi = LayThoiGianHeThong().ToString("dd/MM/yyyy HH:mm");
-                meta.NguoiCapNhatCuoi = nguoiCapNhat;
-            });
 
             _cauHinhHeThong.GhiNhanPhieuThuChi(new PhieuThuChiMoRong
             {
@@ -367,6 +356,13 @@ namespace WebBanhTrungThu.Services.QuanTri
                 donHang.LyDoHuy = ghiChuDieuChinh.Trim();
             }
 
+            donHang.ThoiGianCapNhatCuoi = LayThoiGianHeThong();
+            donHang.NguoiCapNhatCuoi = nguoiCapNhat;
+            if (!string.IsNullOrWhiteSpace(ghiChuDieuChinh))
+            {
+                donHang.GhiChuDieuChinhAdmin = ghiChuDieuChinh.Trim();
+            }
+
             await _db.SaveChangesAsync();
 
             if (LaTrangThaiKhoaCung(donHang.TrangThaiDh))
@@ -380,16 +376,6 @@ namespace WebBanhTrungThu.Services.QuanTri
             {
                 await DichVuHoiVien.CongDiemThuongDonHangAsync(_db, donHang);
             }
-
-            _cauHinhHeThong.CapNhatMetadataDonHang(donHang.MaDh, meta =>
-            {
-                meta.ThoiGianCapNhatCuoi = LayThoiGianHeThong().ToString("dd/MM/yyyy HH:mm");
-                meta.NguoiCapNhatCuoi = nguoiCapNhat;
-                if (!string.IsNullOrWhiteSpace(ghiChuDieuChinh))
-                {
-                    meta.GhiChuDieuChinhAdmin = ghiChuDieuChinh.Trim();
-                }
-            });
 
             string nhanCheDo = laAdminOverride ? "[Admin Override] " : "";
             return $"{nhanCheDo}Đã cập nhật hóa đơn #{donHang.MaTraCuuDh} -> Trạng thái đơn: {donHang.TrangThaiDh} | Thanh toán: {donHang.TrangThaiTt}!";
@@ -504,28 +490,36 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             int soBanhHoanKho = 0;
             int soVoHopHoanKho = 0;
-            var metaDon = _cauHinhHeThong.LayMetadataDonHang(donHang.MaDh);
 
-            if (!laXuatHuyHangLoi)
+            if (!laXuatHuyHangLoi && !donHang.DaRollbackKho)
             {
-                if (metaDon.DanhSachLoDaTru != null && metaDon.DanhSachLoDaTru.Any())
+                var nhatKyDb = await _db.NhatKyTruKhoDonHangs
+                    .Where(n => n.MaDh == donHang.MaDh && !n.DaHoanKho)
+                    .ToListAsync();
+
+                var nhatKyLoDb = nhatKyDb.Where(n => n.LoaiDoiTuong == "LO_BANH" && n.MaBanh.HasValue).ToList();
+                var nhatKyVoDb = nhatKyDb.Where(n => n.LoaiDoiTuong == "VO_HOP" && n.MaVh.HasValue).ToList();
+
+                if (nhatKyLoDb.Count > 0 || nhatKyVoDb.Count > 0)
                 {
-                    foreach (var nhatKyLo in metaDon.DanhSachLoDaTru)
+                    foreach (var nkLo in nhatKyLoDb)
                     {
-                        await HoanNhapLoSanXuatAsync(nhatKyLo.MaBanh, nhatKyLo.SoLuongDaTru, nhatKyLo.MaLo);
-                        soBanhHoanKho += nhatKyLo.SoLuongDaTru;
+                        await HoanNhapLoSanXuatAsync(nkLo.MaBanh!.Value, nkLo.SoLuongDaTru, nkLo.MaLo);
+                        soBanhHoanKho += nkLo.SoLuongDaTru;
+                        nkLo.DaHoanKho = true;
                     }
 
-                    if (metaDon.DanhSachVoHopDaTru != null && metaDon.DanhSachVoHopDaTru.Any())
+                    if (nhatKyVoDb.Count > 0)
                     {
-                        foreach (var nhatKyVo in metaDon.DanhSachVoHopDaTru)
+                        foreach (var nkVo in nhatKyVoDb)
                         {
-                            var voHop = await _db.MauVoHops.FindAsync(nhatKyVo.MaVh);
+                            var voHop = await _db.MauVoHops.FindAsync(nkVo.MaVh!.Value);
                             if (voHop != null)
                             {
-                                voHop.SltonKhoVo += nhatKyVo.SoLuongDaTru;
-                                soVoHopHoanKho += nhatKyVo.SoLuongDaTru;
+                                voHop.SltonKhoVo += nkVo.SoLuongDaTru;
+                                soVoHopHoanKho += nkVo.SoLuongDaTru;
                             }
+                            nkVo.DaHoanKho = true;
                         }
                     }
                     else
@@ -609,6 +603,8 @@ namespace WebBanhTrungThu.Services.QuanTri
                         }
                     }
                 }
+
+                donHang.DaRollbackKho = true;
             }
 
             if (canHoanTien)
@@ -634,23 +630,19 @@ namespace WebBanhTrungThu.Services.QuanTri
                 }
             }
 
+            donHang.MaNganHangHoan = maNganHangHoan?.Trim();
+            donHang.SoTaiKhoanHoan = soTaiKhoanHoan?.Trim();
+            donHang.TenChuTkHoan = tenChuTkHoan?.Trim().ToUpperInvariant();
+            if (laXuatHuyHangLoi)
+            {
+                donHang.GhiChuDieuChinhAdmin = $"[Xuất hủy hàng lỗi] {lyDoSach}";
+            }
+            donHang.ThoiGianCapNhatCuoi = LayThoiGianHeThong();
+            donHang.NguoiCapNhatCuoi = nguoiThucHien;
+
             await _db.SaveChangesAsync();
 
             await DichVuHoiVien.HoanDiemKhiHuyDonAsync(_db, donHang);
-
-            _cauHinhHeThong.CapNhatMetadataDonHang(donHang.MaDh, meta =>
-            {
-                meta.MaNganHangHoan = maNganHangHoan?.Trim();
-                meta.SoTaiKhoanHoan = soTaiKhoanHoan?.Trim();
-                meta.TenChuTkHoan = tenChuTkHoan?.Trim().ToUpperInvariant();
-                meta.LyDoHuyHoan = lyDoLuu;
-                if (laXuatHuyHangLoi)
-                {
-                    meta.GhiChuDieuChinhAdmin = $"[Xuất hủy hàng lỗi] {lyDoSach}";
-                }
-                meta.ThoiGianCapNhatCuoi = LayThoiGianHeThong().ToString("dd/MM/yyyy HH:mm");
-                meta.NguoiCapNhatCuoi = nguoiThucHien;
-            });
 
             string moTaKho = laXuatHuyHangLoi
                 ? "Xuất hủy hàng lỗi / móp hộp (Không hoàn nhập tồn kho bán)"

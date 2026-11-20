@@ -43,17 +43,16 @@ namespace WebBanhTrungThu.Services.QuanTri
                 .ThenByDescending(p => p.MaPkk)
                 .ToListAsync();
 
-            var store = _cauHinhHeThong.DocDuLieu();
             var dsBanh = await _db.SanPhamBanhs
                 .AsNoTracking()
                 .Include(b => b.MaDmNavigation)
+                .Include(b => b.MaThuongHieuNavigation)
                 .Include(b => b.LoSanXuatBanhs)
                 .OrderBy(b => b.TenBanh)
                 .ToListAsync();
 
             var dsSanPhamOption = dsBanh.Select(b =>
             {
-                _cauHinhHeThong.GanMetadataChoBanh(b, store);
                 int tonHeThong = TinhTonKhoHeThong(b);
                 return new SanPhamKhoOptionViewModel
                 {

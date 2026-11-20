@@ -293,6 +293,8 @@ namespace WebBanhTrungThu.Services.TaiKhoan
             {
                 don.TrangThaiDh = "DA_HUY";
                 don.LyDoHuy = lyDoLuu;
+                don.ThoiGianCapNhatCuoi = LayThoiGianHeThong();
+                don.NguoiCapNhatCuoi = "Khách hàng tự hủy";
 
                 var cacDotGiao = don.DotGiaoHangDaDiems != null && don.DotGiaoHangDaDiems.Any()
                     ? don.DotGiaoHangDaDiems.ToList()
@@ -325,14 +327,6 @@ namespace WebBanhTrungThu.Services.TaiKhoan
                     nd.HangTv = hangVipMoi;
                     await _db.SaveChangesAsync();
                 }
-            });
-
-            _cauHinhHeThong.CapNhatMetadataDonHang(don.MaDh, meta =>
-            {
-                meta.DaHoanKhoDoHetHan = true;
-                meta.LyDoHuyHoan = don.LyDoHuy;
-                meta.ThoiGianCapNhatCuoi = LayThoiGianHeThong().ToString("dd/MM/yyyy HH:mm");
-                meta.NguoiCapNhatCuoi = "Khách hàng tự hủy";
             });
 
             string thongBaoHoanDiem = diemDaHoan > 0 ? $" và hoàn lại {diemDaHoan:N0} điểm VIP" : string.Empty;

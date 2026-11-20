@@ -229,13 +229,8 @@ namespace WebBanhTrungThu.Services.ThanhToan
                     daHuyDonNay = true;
                 });
 
-                // Cập nhật metadata sau khi Transaction chính đã Commit xong (tránh mở DbContext thứ hai khi Transaction đang khóa)
                 if (daHuyDonNay)
                 {
-                    _kiotMeta.CapNhatMetadataDonHang(donHang.MaDh, m =>
-                    {
-                        m.DaHoanKhoDoHetHan = true;
-                    });
                     soDonDaHuy++;
                 }
             }
@@ -257,8 +252,6 @@ namespace WebBanhTrungThu.Services.ThanhToan
                 .FirstOrDefaultAsync(d => d.MaTraCuuDh == maTraCuu);
 
             if (donHang == null) return ("VE_TRANG_CHU", null);
-
-            _kiotMeta.GanMetadataChoDonHang(donHang);
 
             if (donHang.TrangThaiTt == "DA_THANH_TOAN" || donHang.TrangThaiTt == "DA_TT")
             {
@@ -302,7 +295,6 @@ namespace WebBanhTrungThu.Services.ThanhToan
             var donHang = await _context.DonHangs.FirstOrDefaultAsync(d => d.MaTraCuuDh == maTraCuu.Trim());
             if (donHang == null) return (null, 0);
 
-            _kiotMeta.GanMetadataChoDonHang(donHang);
             DateTime hanTt = donHang.HanThanhToanQr ?? donHang.NgayDat.AddMinutes(15);
 
             int soGiayConLai = (donHang.TrangThaiDh == "DA_HUY" || donHang.TrangThaiTt == "HET_HAN_HUY" || donHang.TrangThaiTt == "HET_HAN_15P")
@@ -438,7 +430,6 @@ namespace WebBanhTrungThu.Services.ThanhToan
                 };
             }
 
-            _kiotMeta.GanMetadataChoDonHang(donHang);
             DateTime hanTt = donHang.HanThanhToanQr ?? donHang.NgayDat.AddMinutes(15);
 
             if (donHang.TrangThaiTt == "HET_HAN_HUY"
@@ -479,6 +470,9 @@ namespace WebBanhTrungThu.Services.ThanhToan
 
                 donHang.TrangThaiTt = "DA_THANH_TOAN";
                 donHang.TrangThaiDh = "DA_XAC_NHAN";
+                donHang.SoTienKhachDaTra = soTienNhan;
+                donHang.ThoiGianCapNhatCuoi = LayThoiGianHeThong();
+                donHang.NguoiCapNhatCuoi = "MoMo Webhook";
                 await _context.SaveChangesAsync();
 
                 await DichVuHoiVien.CongDiemThuongDonHangAsync(_context, donHang);
@@ -487,7 +481,6 @@ namespace WebBanhTrungThu.Services.ThanhToan
 
             if (vuaXacNhanThanhToan)
             {
-                _kiotMeta.CapNhatMetadataDonHang(donHang.MaDh, m => m.SoTienKhachDaTra = soTienNhan);
                 _kiotMeta.GhiNhanPhieuThuChi(new PhieuThuChiMoRong
                 {
                     MaDonHang = donHang.MaDh,

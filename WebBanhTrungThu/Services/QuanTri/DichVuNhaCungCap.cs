@@ -38,9 +38,15 @@ namespace WebBanhTrungThu.Services.QuanTri
                 .ThenByDescending(p => p.MaPn)
                 .ToListAsync();
 
-            var store = _cauHinhHeThong.DocDuLieu();
+            var dsThuongHieuDb = await _db.ThuongHieus
+                .AsNoTracking()
+                .Where(t => t.DangHoatDong)
+                .OrderBy(t => t.MaThuongHieu)
+                .Select(t => t.TenThuongHieu)
+                .ToListAsync();
+
             var dsThuongHieu = new List<string> { "Đa thương hiệu" };
-            foreach (var th in store.DanhSachThuongHieu.Concat(dsNcc.Select(x => x.ThuongHieuCungCap)))
+            foreach (var th in dsThuongHieuDb.Concat(dsNcc.Select(x => x.ThuongHieuCungCap)))
             {
                 string sach = ChuanHoaChuoi(th);
                 if (!string.IsNullOrWhiteSpace(sach) && !dsThuongHieu.Contains(sach, StringComparer.OrdinalIgnoreCase))
