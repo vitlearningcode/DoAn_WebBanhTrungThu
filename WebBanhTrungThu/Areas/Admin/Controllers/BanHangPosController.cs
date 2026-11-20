@@ -65,7 +65,8 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         public async Task<IActionResult> ThanhToanTaiQuay([FromBody] PosCheckoutDayDuRequest? req, [FromQuery] bool dungDiemTichLuy = false)
         {
             bool suDungDiem = (req?.DungDiemTichLuy ?? false) || dungDiemTichLuy;
-            var ketQua = await _dichVuPos.ThanhToanTaiQuayAsync(req, suDungDiem);
+            int? maNdLap = LayMaNhanSuHienTai();
+            var ketQua = await _dichVuPos.ThanhToanTaiQuayAsync(req, suDungDiem, maNdLap);
             return Json(ketQua);
         }
 

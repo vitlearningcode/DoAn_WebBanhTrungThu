@@ -80,6 +80,10 @@ public partial class CSDLBanhTrungThuContext : DbContext
 
     public virtual DbSet<ChiTietKiemKho> ChiTietKiemKhos { get; set; }
 
+    public virtual DbSet<NhaCungCap> NhaCungCaps { get; set; }
+
+    public virtual DbSet<HoSoNhanVien> HoSoNhanViens { get; set; }
+
 //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
 //        => optionsBuilder.UseSqlServer("Server=DESKTOP-R0BDS56;Database=CSDL_BanhTrungThu;Trusted_Connection=True;TrustServerCertificate=True;");
@@ -192,6 +196,12 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.Property(e => e.LyDoHuy).HasMaxLength(500);
 
             entity.HasOne(d => d.MaNdNavigation).WithMany(p => p.DonHangs).HasConstraintName("FK_DH_NguoiDung");
+
+            entity.HasOne(d => d.MaNdLapNavigation)
+                .WithMany(p => p.DonHangsDaLap)
+                .HasForeignKey(d => d.MaNdLap)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_DonHang_NguoiLap");
 
             entity.HasOne(d => d.MaPhienKvlNavigation).WithMany(p => p.DonHangs).HasConstraintName("FK_DH_PhienKVL");
         });
@@ -352,6 +362,18 @@ public partial class CSDLBanhTrungThuContext : DbContext
                 .HasConstraintName("FK_PhieuThuChi_PhieuNhapKho");
         });
 
+        modelBuilder.Entity<NhaCungCap>(entity =>
+        {
+            entity.ToTable("NhaCungCap");
+            entity.HasKey(e => e.MaNcc);
+            entity.HasIndex(e => e.MaCodeNcc, "UQ_NhaCungCap_MaCodeNcc").IsUnique();
+            entity.Property(e => e.LoaiNcc).HasDefaultValue("HANG_CHINH_HANG");
+            entity.Property(e => e.ThuongHieuCungCap).HasDefaultValue("Đa thương hiệu");
+            entity.Property(e => e.PhanTramChietKhauMacDinh).HasColumnType("decimal(5, 2)").HasDefaultValue(0m);
+            entity.Property(e => e.DangHoatDong).HasDefaultValue(true);
+            entity.Property(e => e.NgayTao).HasDefaultValueSql("(getdate())");
+        });
+
         modelBuilder.Entity<PhieuNhapKho>(entity =>
         {
             entity.ToTable("PhieuNhapKho");
@@ -360,6 +382,11 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.Property(e => e.NgayNhap).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.TrangThai).HasDefaultValue("PHIEU_TAM");
             entity.Property(e => e.TrangThaiThanhToan).HasDefaultValue("CHUA_THANH_TOAN");
+            entity.HasOne(d => d.MaNccNavigation)
+                .WithMany(p => p.PhieuNhapKhos)
+                .HasForeignKey(d => d.MaNcc)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PhieuNhapKho_NhaCungCap");
             entity.HasOne(d => d.MaNdLapNavigation)
                 .WithMany()
                 .HasForeignKey(d => d.MaNdLap)
@@ -371,6 +398,8 @@ public partial class CSDLBanhTrungThuContext : DbContext
         {
             entity.ToTable("ChiTietPhieuNhap");
             entity.HasKey(e => e.MaCtpn);
+            entity.Property(e => e.PhanTramChietKhau).HasColumnType("decimal(5, 2)").HasDefaultValue(0m);
+            entity.Property(e => e.GiaNiemYet).HasColumnType("decimal(18, 0)").HasDefaultValue(0m);
             entity.HasOne(d => d.MaPnNavigation)
                 .WithMany(p => p.ChiTietPhieuNhaps)
                 .HasForeignKey(d => d.MaPn)
@@ -466,6 +495,24 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.ToTable("CauHinhHeThong");
             entity.HasKey(e => e.KhoaCauHinh);
             entity.Property(e => e.NgayCapNhat).HasDefaultValueSql("(getdate())");
+        });
+
+        modelBuilder.Entity<HoSoNhanVien>(entity =>
+        {
+            entity.ToTable("HoSoNhanVien");
+            entity.HasKey(e => e.MaNv);
+            entity.HasIndex(e => e.MaNd, "UQ_HoSoNhanVien_MaNd").IsUnique();
+            entity.HasIndex(e => e.MaCodeNv, "UQ_HoSoNhanVien_MaCodeNv").IsUnique();
+            entity.Property(e => e.ChiNhanh).HasDefaultValue("TP. Long Xuyên");
+            entity.Property(e => e.CaLamViec).HasDefaultValue("Toàn thời gian");
+            entity.Property(e => e.NgayVaoLam).HasDefaultValueSql("(CAST(GETDATE() AS DATE))");
+            entity.Property(e => e.TrangThaiLamViec).HasDefaultValue("DANG_LAM_VIEC");
+
+            entity.HasOne(d => d.MaNdNavigation)
+                .WithOne(p => p.HoSoNhanVien)
+                .HasForeignKey<HoSoNhanVien>(d => d.MaNd)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_HoSoNhanVien_NguoiDung");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -1,12 +1,28 @@
 @model WebBanhTrungThu.ViewModels.NhapKhoAdminViewModel
+@using System.Text.Encodings.Web
 @using System.Text.Json
 @{
     ViewData["Title"] = "Nhập hàng (Phiếu nhập kho) - Nguyệt Cát ERP";
+    var jsonOpts = new JsonSerializerOptions { Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
     var jsonSp = JsonSerializer.Serialize(Model.DanhSachSanPham.Select(sp => new
     {
-        maBanh = sp.MaBanh, maSku = sp.MaSku, tenBanh = sp.TenBanh,
-        giaVon = sp.GiaVon, donGiaLe = sp.DonGiaLe, tonKho = sp.TonKhoHeThong
-    }));
+        maBanh = sp.MaBanh,
+        maSku = sp.MaSku,
+        tenBanh = sp.TenBanh,
+        thuongHieu = sp.ThuongHieu,
+        giaVon = sp.GiaVon,
+        donGiaLe = sp.DonGiaLe,
+        tonKho = sp.TonKhoHeThong
+    }), jsonOpts);
+    var jsonNcc = JsonSerializer.Serialize(Model.DanhSachNccChiTiet.Select(n => new
+    {
+        maNcc = n.MaNcc,
+        maCodeNcc = n.MaCodeNcc,
+        tenNcc = n.TenNcc,
+        loaiNcc = n.LoaiNcc,
+        thuongHieuCungCap = n.ThuongHieuCungCap,
+        phanTramCk = n.PhanTramChietKhauMacDinh
+    }), jsonOpts);
 }
 
 @await Html.PartialAsync("~/Areas/Admin/Views/NhapKhoAdmin/PhanKhu/_BoLocVaKpiNhapKho.cshtml", Model)
@@ -14,6 +30,9 @@
 @await Html.PartialAsync("~/Areas/Admin/Views/NhapKhoAdmin/PhanKhu/_ModalThanhToanPhieuNhap.cshtml")
 
 @section Scripts {
-    <script>window.NGUYETCAT_DS_SP_NHAP = @Html.Raw(jsonSp);</script>
+    <script>
+        window.NGUYETCAT_DS_SP_NHAP = @Html.Raw(jsonSp);
+        window.NGUYETCAT_DS_NCC_NHAP = @Html.Raw(jsonNcc);
+    </script>
     <script src="~/js/admin-nhap-kho.js" asp-append-version="true"></script>
 }

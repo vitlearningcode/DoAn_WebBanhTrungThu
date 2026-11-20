@@ -408,16 +408,26 @@ namespace WebBanhTrungThu.Services.QuanTri
             LoSanXuatBanh? lo = null;
             if (maLoUuTien.HasValue)
             {
-                lo = await _db.LoSanXuatBanhs.FirstOrDefaultAsync(l => l.MaLo == maLoUuTien.Value);
+                lo = await _db.LoSanXuatBanhs.FirstOrDefaultAsync(l =>
+                    l.MaLo == maLoUuTien.Value
+                    && l.MaBanh == maBanh
+                    && l.TrangThaiLo != "DA_HUY"
+                    && l.TrangThaiLo != "HET_HAN");
             }
 
             lo ??= await _db.LoSanXuatBanhs
-                .Where(l => l.MaBanh == maBanh && l.TrangThaiLo != "HET_HAN")
-                .OrderByDescending(l => l.HanSuDung)
+                .Where(l => l.MaBanh == maBanh
+                         && l.TrangThaiLo != "DA_HUY"
+                         && l.TrangThaiLo != "HET_HAN"
+                         && (l.TrangThaiLo == "DANG_BAN" || l.TrangThaiLo == "SAP_HET_HAN"))
+                .OrderBy(l => l.TrangThaiLo == "DANG_BAN" ? 0 : 1)
+                .ThenByDescending(l => l.HanSuDung)
                 .FirstOrDefaultAsync();
 
             lo ??= await _db.LoSanXuatBanhs
-                .Where(l => l.MaBanh == maBanh)
+                .Where(l => l.MaBanh == maBanh
+                         && l.TrangThaiLo != "DA_HUY"
+                         && l.TrangThaiLo != "HET_HAN")
                 .OrderByDescending(l => l.HanSuDung)
                 .FirstOrDefaultAsync();
 

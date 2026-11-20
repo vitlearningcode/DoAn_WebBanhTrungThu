@@ -17,6 +17,8 @@ public partial class PhieuNhapKho
     [StringLength(50)]
     public string SoPhieuNhap { get; set; } = string.Empty;
 
+    public int? MaNcc { get; set; }
+
     [StringLength(200)]
     public string NhaCungCap { get; set; } = string.Empty;
 
@@ -50,6 +52,10 @@ public partial class PhieuNhapKho
     public string NguoiLap { get; set; } = string.Empty;
 
     public int? MaNdLap { get; set; }
+
+    [ForeignKey("MaNcc")]
+    [InverseProperty("PhieuNhapKhos")]
+    public virtual NhaCungCap? MaNccNavigation { get; set; }
 
     [ForeignKey("MaNdLap")]
     public virtual NguoiDung? MaNdLapNavigation { get; set; }

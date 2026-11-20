@@ -67,15 +67,32 @@ namespace WebBanhTrungThu.Services.QuanTri
                 };
             }).ToList();
 
-            var dsNcc = new List<string>
+            var dsNccChiTiet = await _db.NhaCungCaps
+                .AsNoTracking()
+                .Where(n => n.DangHoatDong)
+                .OrderBy(n => n.MaCodeNcc)
+                .ThenBy(n => n.TenNcc)
+                .Select(n => new NhaCungCapOptionViewModel
+                {
+                    MaNcc = n.MaNcc,
+                    MaCodeNcc = n.MaCodeNcc,
+                    TenNcc = n.TenNcc,
+                    LoaiNcc = n.LoaiNcc,
+                    ThuongHieuCungCap = n.ThuongHieuCungCap,
+                    PhanTramChietKhauMacDinh = Math.Round(n.PhanTramChietKhauMacDinh, 2)
+                })
+                .ToListAsync();
+
+            var dsThuongHieu = new List<string>();
+            foreach (var th in dsSanPhamOption.Select(sp => sp.ThuongHieu).Concat(store.DanhSachThuongHieu))
             {
-                "Kinh Đô",
-                "Như Lan",
-                "Brodard",
-                "Đồng Khánh",
-                "Givral"
-            };
-            foreach (var ncc in store.DanhSachNhaCungCap)
+                string sach = ChuanHoaChuoi(th);
+                if (!string.IsNullOrWhiteSpace(sach) && !dsThuongHieu.Contains(sach, StringComparer.OrdinalIgnoreCase))
+                    dsThuongHieu.Add(sach);
+            }
+
+            var dsNcc = new List<string>();
+            foreach (var ncc in dsNccChiTiet.Select(x => x.TenNcc))
             {
                 if (!string.IsNullOrWhiteSpace(ncc) && !dsNcc.Contains(ncc.Trim(), StringComparer.OrdinalIgnoreCase))
                     dsNcc.Add(ncc.Trim());
@@ -121,6 +138,8 @@ namespace WebBanhTrungThu.Services.QuanTri
             {
                 DanhSachPhieuNhap = dsHienThi.ToList(),
                 DanhSachSanPham = dsSanPhamOption,
+                DanhSachNccChiTiet = dsNccChiTiet,
+                DanhSachThuongHieu = dsThuongHieu,
                 DanhSachNhaCungCap = dsNcc,
                 TuKhoa = tuKhoa,
                 LocTrangThai = ttChuan,
@@ -150,6 +169,7 @@ namespace WebBanhTrungThu.Services.QuanTri
             {
                 maPn = phieu.MaPn,
                 soPhieuNhap = phieu.SoPhieuNhap,
+                maNcc = phieu.MaNcc,
                 nhaCungCap = phieu.NhaCungCap,
                 ngayNhap = phieu.NgayNhap.ToString("dd/MM/yyyy HH:mm"),
                 tongTienHang = Math.Round(phieu.TongTienHang, 0),
@@ -166,6 +186,10 @@ namespace WebBanhTrungThu.Services.QuanTri
                     maSku = ct.MaSpNavigation?.MaSku ?? string.Empty,
                     tenBanh = ct.MaSpNavigation?.TenBanh ?? $"SP #{ct.MaSp}",
                     soLuong = ct.SoLuong,
+                    giaNiemYet = ct.GiaNiemYet > 0m
+                        ? Math.Round(ct.GiaNiemYet, 0)
+                        : Math.Round(ct.MaSpNavigation?.DonGiaLe ?? 0m, 0),
+                    phanTramChietKhau = Math.Round(ct.PhanTramChietKhau, 2),
                     donGiaNhap = Math.Round(ct.DonGiaNhap, 0),
                     thanhTien = Math.Round(ct.ThanhTien, 0),
                     ngaySanXuat = ct.NgaySanXuat.ToString("yyyy-MM-dd"),
@@ -180,10 +204,34 @@ namespace WebBanhTrungThu.Services.QuanTri
             string nguoiLap,
             int? maNdLap)
         {
+            int? maNccChuan = null;
             string ncc = ChuanHoaChuoi(req.NhaCungCap);
+            if (req.MaNcc.HasValue && req.MaNcc.Value > 0)
+            {
+                var nccDb = await _db.NhaCungCaps
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(n => n.MaNcc == req.MaNcc.Value);
+                if (nccDb != null)
+                {
+                    maNccChuan = nccDb.MaNcc;
+                    ncc = nccDb.TenNcc;
+                }
+            }
+            else if (!string.IsNullOrWhiteSpace(ncc))
+            {
+                var nccDb = await _db.NhaCungCaps
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(n => n.TenNcc.ToLower() == ncc.ToLower());
+                if (nccDb != null)
+                {
+                    maNccChuan = nccDb.MaNcc;
+                    ncc = nccDb.TenNcc;
+                }
+            }
+
             if (string.IsNullOrWhiteSpace(ncc))
             {
-                return (false, "Vui lòng chọn hoặc nhập Nhà cung cấp / Hãng sản xuất!");
+                return (false, "Vui lòng chọn Nhà cung cấp!");
             }
 
             var dongNhaps = ParseChiTietNhap(req.ChiTietJson);
@@ -215,6 +263,7 @@ namespace WebBanhTrungThu.Services.QuanTri
 
                     if (phieuCu.TrangThai == "DA_NHAP_KHO")
                     {
+                        phieuCu.MaNcc = maNccChuan;
                         phieuCu.NhaCungCap = ncc.Length > 200 ? ncc[..200] : ncc;
                         phieuCu.GhiChu = string.IsNullOrWhiteSpace(req.GhiChu) ? null : req.GhiChu.Trim();
                         await _db.SaveChangesAsync();
@@ -280,6 +329,8 @@ namespace WebBanhTrungThu.Services.QuanTri
                         return (false, $"Hạn sử dụng của '{banh.TenBanh}' không thể nhỏ hơn Ngày sản xuất.");
                     }
 
+                    decimal giaNiemYet = d.GiaNiemYet > 0m ? Math.Round(d.GiaNiemYet, 0) : Math.Round(banh.DonGiaLe, 0);
+                    decimal phanTramCk = Math.Clamp(Math.Round(d.PhanTramChietKhau, 2), 0m, 100m);
                     decimal donGia = Math.Round(d.DonGiaNhap, 0);
                     decimal thanhTien = d.SoLuong * donGia;
                     tongTienHang += thanhTien;
@@ -288,6 +339,8 @@ namespace WebBanhTrungThu.Services.QuanTri
                     {
                         MaSp = d.MaSp,
                         SoLuong = d.SoLuong,
+                        GiaNiemYet = giaNiemYet,
+                        PhanTramChietKhau = phanTramCk,
                         DonGiaNhap = donGia,
                         ThanhTien = thanhTien,
                         NgaySanXuat = nsx,
@@ -298,6 +351,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                 decimal giamGia = Math.Clamp(Math.Round(req.GiamGia, 0), 0m, tongTienHang);
                 decimal tongPhaiTra = Math.Max(0m, tongTienHang - giamGia);
 
+                phieu.MaNcc = maNccChuan;
                 phieu.NhaCungCap = ncc.Length > 200 ? ncc[..200] : ncc;
                 phieu.TongTienHang = tongTienHang;
                 phieu.GiamGia = giamGia;
@@ -487,7 +541,7 @@ namespace WebBanhTrungThu.Services.QuanTri
             {
                 if (mapBanh.TryGetValue(ct.MaSp, out var banh))
                 {
-                    int tonCu = mapTonTruocNhap.GetValueOrDefault(ct.MaSp, banh.TongTonKho);
+                    int tonCu = Math.Max(0, mapTonTruocNhap.GetValueOrDefault(ct.MaSp, banh.TongTonKho));
                     if (ct.DonGiaNhap > 0m)
                     {
                         banh.GiaVon = (tonCu > 0 && banh.GiaVon > 0m)

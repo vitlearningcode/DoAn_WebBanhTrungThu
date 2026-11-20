@@ -23,6 +23,7 @@ namespace WebBanhTrungThu.Data
                 var db = scope.ServiceProvider.GetRequiredService<CSDLBanhTrungThuContext>();
 
                 await TaoCacBangMoRongVaDonBangThuaAsync(db);
+                await SeedNhaCungCapMacDinhAsync(db);
                 await DiTruDuLieuCauHinhMoRongAsync(app, db);
                 await ChuanHoaChiMucTokenThiepQrAsync(db);
                 await ChuanHoaMaKhuyenMaiVaLoBanhFefoAsync(db);
@@ -30,10 +31,11 @@ namespace WebBanhTrungThu.Data
                 await CapNhatDuongDanAnhBanhHatSenHueAsync(db);
                 await ChuanHoaTenMocChietKhauAsync(db);
                 await ChuanHoaEmailAdminVaDongBoDonHuyAsync(db);
+                await SeedHoSoNhanVienVaDongBoVaiTroAsync(db);
             }
-            catch
+            catch (Exception ex)
             {
-                // Bỏ qua nếu CSDL đang trong quá trình khởi tạo lần đầu
+                app.Logger.LogWarning(ex, "Bỏ qua lỗi khởi tạo/chuẩn hóa CSDL khi khởi động.");
             }
         }
 
@@ -106,11 +108,30 @@ namespace WebBanhTrungThu.Data
                         ALTER TABLE dbo.DonHang ADD LyDoHuy NVARCHAR(500) NULL;
                 END;
 
+                IF OBJECT_ID('dbo.NhaCungCap', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.NhaCungCap (
+                        MaNcc INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                        MaCodeNcc NVARCHAR(30) NOT NULL UNIQUE,
+                        TenNcc NVARCHAR(200) NOT NULL,
+                        LoaiNcc NVARCHAR(50) NOT NULL DEFAULT(N'HANG_CHINH_HANG'),
+                        ThuongHieuCungCap NVARCHAR(100) NOT NULL DEFAULT(N'Đa thương hiệu'),
+                        PhanTramChietKhauMacDinh DECIMAL(5,2) NOT NULL DEFAULT(0),
+                        SoDienThoai NVARCHAR(20) NULL,
+                        Email NVARCHAR(150) NULL,
+                        DiaChi NVARCHAR(300) NULL,
+                        GhiChu NVARCHAR(500) NULL,
+                        DangHoatDong BIT NOT NULL DEFAULT(1),
+                        NgayTao DATETIME NOT NULL DEFAULT(GETDATE())
+                    );
+                END;
+
                 IF OBJECT_ID('dbo.PhieuNhapKho', 'U') IS NULL
                 BEGIN
                     CREATE TABLE dbo.PhieuNhapKho (
                         MaPn INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
                         SoPhieuNhap NVARCHAR(50) NOT NULL UNIQUE,
+                        MaNcc INT NULL,
                         NhaCungCap NVARCHAR(200) NOT NULL,
                         NgayNhap DATETIME NOT NULL DEFAULT(GETDATE()),
                         TongTienHang DECIMAL(18,2) NOT NULL DEFAULT(0),
@@ -122,8 +143,15 @@ namespace WebBanhTrungThu.Data
                         GhiChu NVARCHAR(500) NULL,
                         NguoiLap NVARCHAR(150) NOT NULL,
                         MaNdLap INT NULL,
+                        CONSTRAINT FK_PhieuNhapKho_NhaCungCap FOREIGN KEY (MaNcc) REFERENCES dbo.NhaCungCap(MaNcc),
                         CONSTRAINT FK_PhieuNhapKho_NguoiDung FOREIGN KEY (MaNdLap) REFERENCES dbo.NguoiDung(MaND)
                     );
+                END;
+
+                IF OBJECT_ID('dbo.PhieuNhapKho', 'U') IS NOT NULL AND COL_LENGTH('dbo.PhieuNhapKho', 'MaNcc') IS NULL
+                BEGIN
+                    ALTER TABLE dbo.PhieuNhapKho ADD MaNcc INT NULL;
+                    ALTER TABLE dbo.PhieuNhapKho ADD CONSTRAINT FK_PhieuNhapKho_NhaCungCap FOREIGN KEY (MaNcc) REFERENCES dbo.NhaCungCap(MaNcc);
                 END;
 
                 IF OBJECT_ID('dbo.ChiTietPhieuNhap', 'U') IS NULL
@@ -134,6 +162,8 @@ namespace WebBanhTrungThu.Data
                         MaSp INT NOT NULL,
                         MaLo INT NULL,
                         SoLuong INT NOT NULL,
+                        PhanTramChietKhau DECIMAL(5,2) NOT NULL DEFAULT(0),
+                        GiaNiemYet DECIMAL(18,0) NOT NULL DEFAULT(0),
                         DonGiaNhap DECIMAL(18,2) NOT NULL,
                         ThanhTien DECIMAL(18,2) NOT NULL,
                         NgaySanXuat DATE NOT NULL,
@@ -142,6 +172,14 @@ namespace WebBanhTrungThu.Data
                         CONSTRAINT FK_CTPN_SanPham FOREIGN KEY (MaSp) REFERENCES dbo.SanPhamBanh(MaBanh),
                         CONSTRAINT FK_CTPN_LoSanXuat FOREIGN KEY (MaLo) REFERENCES dbo.LoSanXuatBanh(MaLo)
                     );
+                END;
+
+                IF OBJECT_ID('dbo.ChiTietPhieuNhap', 'U') IS NOT NULL
+                BEGIN
+                    IF COL_LENGTH('dbo.ChiTietPhieuNhap', 'PhanTramChietKhau') IS NULL
+                        ALTER TABLE dbo.ChiTietPhieuNhap ADD PhanTramChietKhau DECIMAL(5,2) NOT NULL DEFAULT(0);
+                    IF COL_LENGTH('dbo.ChiTietPhieuNhap', 'GiaNiemYet') IS NULL
+                        ALTER TABLE dbo.ChiTietPhieuNhap ADD GiaNiemYet DECIMAL(18,0) NOT NULL DEFAULT(0);
                 END;
 
                 IF OBJECT_ID('dbo.PhieuXuatKho', 'U') IS NULL
@@ -216,7 +254,159 @@ namespace WebBanhTrungThu.Data
                     ALTER TABLE dbo.PhieuThuChi ADD MaPhieuNhapLienKet INT NULL;
                     ALTER TABLE dbo.PhieuThuChi ADD CONSTRAINT FK_PhieuThuChi_PhieuNhapKho FOREIGN KEY (MaPhieuNhapLienKet) REFERENCES dbo.PhieuNhapKho(MaPn);
                 END;
+
+                IF OBJECT_ID('dbo.HoSoNhanVien', 'U') IS NULL
+                BEGIN
+                    CREATE TABLE dbo.HoSoNhanVien (
+                        MaNv INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+                        MaNd INT NOT NULL UNIQUE,
+                        MaCodeNv NVARCHAR(20) NOT NULL UNIQUE,
+                        ChucVu NVARCHAR(100) NOT NULL,
+                        ChiNhanh NVARCHAR(150) NOT NULL DEFAULT(N'TP. Long Xuyên'),
+                        CaLamViec NVARCHAR(100) NOT NULL DEFAULT(N'Toàn thời gian'),
+                        NgayVaoLam DATE NOT NULL DEFAULT(CAST(GETDATE() AS DATE)),
+                        TrangThaiLamViec NVARCHAR(30) NOT NULL DEFAULT('DANG_LAM_VIEC'),
+                        GhiChu NVARCHAR(500) NULL,
+                        CONSTRAINT FK_HoSoNhanVien_NguoiDung FOREIGN KEY (MaNd) REFERENCES dbo.NguoiDung(MaND)
+                    );
+                END;
+
+                IF OBJECT_ID('dbo.DonHang', 'U') IS NOT NULL AND COL_LENGTH('dbo.DonHang', 'MaNdLap') IS NULL
+                BEGIN
+                    ALTER TABLE dbo.DonHang ADD MaNdLap INT NULL
+                        CONSTRAINT FK_DonHang_NguoiLap FOREIGN KEY REFERENCES dbo.NguoiDung(MaND);
+                END;
             ");
+        }
+
+        private static async Task SeedNhaCungCapMacDinhAsync(CSDLBanhTrungThuContext db)
+        {
+            if (!await db.NhaCungCaps.AnyAsync())
+            {
+                DateTime bayGio = DateTime.Now;
+                db.NhaCungCaps.AddRange(
+                    new NhaCungCap
+                    {
+                        MaCodeNcc = "NCC001",
+                        TenNcc = "Nhà phân phối Kinh Đô Chính Hãng",
+                        LoaiNcc = "HANG_CHINH_HANG",
+                        ThuongHieuCungCap = "Kinh Đô",
+                        PhanTramChietKhauMacDinh = 28m,
+                        SoDienThoai = "02838270838",
+                        Email = "phanphoi.kinhdo@mondelez.vn",
+                        DiaChi = "Số 138 Hai Bà Trưng, Quận 1, TP. Hồ Chí Minh",
+                        GhiChu = "Hãng / NPP Cấp 1 chính thức các dòng Kinh Đô Trăng Vàng & Truyền Thống",
+                        DangHoatDong = true,
+                        NgayTao = bayGio
+                    },
+                    new NhaCungCap
+                    {
+                        MaCodeNcc = "NCC002",
+                        TenNcc = "Lò Bánh Đồng Khánh Chính Gốc",
+                        LoaiNcc = "HANG_CHINH_HANG",
+                        ThuongHieuCungCap = "Đồng Khánh",
+                        PhanTramChietKhauMacDinh = 26m,
+                        SoDienThoai = "02838552418",
+                        Email = "kinhdoanh@banhdongkhanh.vn",
+                        DiaChi = "Số 62 Trần Hưng Đạo, Quận 5, TP. Hồ Chí Minh",
+                        GhiChu = "Lò bánh gia truyền Đồng Khánh Bông Lúa Vàng",
+                        DangHoatDong = true,
+                        NgayTao = bayGio
+                    },
+                    new NhaCungCap
+                    {
+                        MaCodeNcc = "NCC003",
+                        TenNcc = "Bánh Trung Thu Như Lan TP.HCM",
+                        LoaiNcc = "HANG_CHINH_HANG",
+                        ThuongHieuCungCap = "Như Lan",
+                        PhanTramChietKhauMacDinh = 25m,
+                        SoDienThoai = "02838292970",
+                        Email = "daily@nhulanbakery.vn",
+                        DiaChi = "Số 50 Hàm Nghi, Quận 1, TP. Hồ Chí Minh",
+                        GhiChu = "Nguồn hàng chính gốc Như Lan TP.HCM, chiết khấu theo lô mùa vụ",
+                        DangHoatDong = true,
+                        NgayTao = bayGio
+                    },
+                    new NhaCungCap
+                    {
+                        MaCodeNcc = "NCC004",
+                        TenNcc = "Brodard Bakery Saigon",
+                        LoaiNcc = "HANG_CHINH_HANG",
+                        ThuongHieuCungCap = "Brodard",
+                        PhanTramChietKhauMacDinh = 24m,
+                        SoDienThoai = "02838223966",
+                        Email = "b2c-wholesale@brodardbakery.vn",
+                        DiaChi = "Số 11 Nguyễn Thiệp, Quận 1, TP. Hồ Chí Minh",
+                        GhiChu = "Dòng bánh Pháp thượng hạng Brodard, giao lạnh bảo quản tiêu chuẩn",
+                        DangHoatDong = true,
+                        NgayTao = bayGio
+                    },
+                    new NhaCungCap
+                    {
+                        MaCodeNcc = "NCC005",
+                        TenNcc = "Givral Bakery Chính Hãng",
+                        LoaiNcc = "HANG_CHINH_HANG",
+                        ThuongHieuCungCap = "Givral",
+                        PhanTramChietKhauMacDinh = 25m,
+                        SoDienThoai = "02838684377",
+                        Email = "nguonhang@givralbakery.vn",
+                        DiaChi = "Lô II-1B, KCN Tân Bình, Quận Tân Phú, TP. Hồ Chí Minh",
+                        GhiChu = "Hãng bánh tươi Givral ít ngọt & dòng ăn kiêng Isomalt",
+                        DangHoatDong = true,
+                        NgayTao = bayGio
+                    },
+                    new NhaCungCap
+                    {
+                        MaCodeNcc = "NCC006",
+                        TenNcc = "Đại Lý Điều Tiết Bánh Miền Tây (An Giang)",
+                        LoaiNcc = "DAI_LY_DIEU_TIET",
+                        ThuongHieuCungCap = "Đa thương hiệu",
+                        PhanTramChietKhauMacDinh = 22m,
+                        SoDienThoai = "02963841225",
+                        Email = "dieutiet.mientay@gmail.com",
+                        DiaChi = "Số 215 Trần Hưng Đạo, TP. Long Xuyên, An Giang",
+                        GhiChu = "Đại lý điều tiết nguồn hàng đa thương hiệu bổ sung gấp trong mùa cao điểm",
+                        DangHoatDong = true,
+                        NgayTao = bayGio
+                    }
+                );
+                await db.SaveChangesAsync();
+            }
+
+            // Liên kết MaNcc cho các phiếu nhập cũ chưa có khóa ngoại MaNcc (không ghi đè chuỗi NhaCungCap cũ)
+            var dsPhieuChuaGan = await db.PhieuNhapKhos
+                .Where(p => p.MaNcc == null)
+                .ToListAsync();
+
+            if (dsPhieuChuaGan.Count > 0)
+            {
+                var dsNcc = await db.NhaCungCaps.AsNoTracking().ToListAsync();
+                bool coCapNhatPn = false;
+
+                foreach (var pn in dsPhieuChuaGan)
+                {
+                    string tenCu = (pn.NhaCungCap ?? string.Empty).Trim();
+                    if (string.IsNullOrWhiteSpace(tenCu)) continue;
+
+                    var khop = dsNcc.FirstOrDefault(n =>
+                        string.Equals(n.TenNcc, tenCu, StringComparison.OrdinalIgnoreCase))
+                        ?? dsNcc.FirstOrDefault(n =>
+                            !string.Equals(n.ThuongHieuCungCap, "Đa thương hiệu", StringComparison.OrdinalIgnoreCase) &&
+                            (string.Equals(n.ThuongHieuCungCap, tenCu, StringComparison.OrdinalIgnoreCase) ||
+                             tenCu.Contains(n.ThuongHieuCungCap, StringComparison.OrdinalIgnoreCase)));
+
+                    if (khop != null)
+                    {
+                        pn.MaNcc = khop.MaNcc;
+                        coCapNhatPn = true;
+                    }
+                }
+
+                if (coCapNhatPn)
+                {
+                    await db.SaveChangesAsync();
+                }
+            }
         }
 
         private static async Task DiTruDuLieuCauHinhMoRongAsync(WebApplication app, CSDLBanhTrungThuContext db)
@@ -429,7 +619,7 @@ namespace WebBanhTrungThu.Data
                 if (!loConHan.Any() && banh.TongTonKho > 0)
                 {
                     var loCu = banh.LoSanXuatBanhs.OrderByDescending(l => l.HanSuDung).FirstOrDefault();
-                    if (loCu != null && loCu.TrangThaiLo != "HET_HAN")
+                    if (loCu != null && loCu.TrangThaiLo != "HET_HAN" && loCu.TrangThaiLo != "DA_HUY")
                     {
                         loCu.HanSuDung = homNay.AddDays(45);
                         loCu.TrangThaiLo = "DANG_BAN";
@@ -616,6 +806,205 @@ namespace WebBanhTrungThu.Data
                       AND ISNULL(d.TrangThaiGiao, '') <> 'DA_HUY';
                 END;
             ");
+        }
+
+        private static async Task SeedHoSoNhanVienVaDongBoVaiTroAsync(CSDLBanhTrungThuContext db)
+        {
+            var vaiTroBatBuoc = new (string MaVt, string TenVt, string MoTa)[]
+            {
+                ("ADMIN", "Chủ cửa hàng", "Toàn quyền quản trị cửa hàng, kho bãi, nhân sự và sổ quỹ Nguyệt Cát ERP"),
+                ("NHAN_VIEN", "Nhân viên Bán hàng", "Nhân viên bán hàng tại quầy POS và xử lý đơn hàng trực tuyến"),
+                ("KHACH_TV", "Khách thành viên", "Khách hàng thành viên tích điểm")
+            };
+
+            bool coThayDoiVt = false;
+            foreach (var vt in vaiTroBatBuoc)
+            {
+                var vtDb = await db.VaiTros.FirstOrDefaultAsync(v => v.MaVt == vt.MaVt);
+                if (vtDb == null)
+                {
+                    db.VaiTros.Add(new VaiTro
+                    {
+                        MaVt = vt.MaVt,
+                        TenVt = vt.TenVt,
+                        MoTa = vt.MoTa
+                    });
+                    coThayDoiVt = true;
+                }
+                else if (vt.MaVt == "NHAN_VIEN" && vtDb.TenVt != vt.TenVt)
+                {
+                    vtDb.TenVt = vt.TenVt;
+                    coThayDoiVt = true;
+                }
+            }
+            if (coThayDoiVt)
+            {
+                await db.SaveChangesAsync();
+            }
+
+            string mkSha = ThongTinPhienHelper.BamMatKhauSHA256("123456");
+            var taiKhoanNoiBoMau = new (string Email, string Sdt, string HoTen, string MaVt, string HangTv)[]
+            {
+                ("admin@nguyetcat.vn", "0814585526", "Lê Minh Đức (Chủ cửa hàng)", "ADMIN", "Kim Cương"),
+                ("thungan@nguyetcat.vn", "0908111222", "Trần Thu Ngân (Nhân viên Bán hàng)", "NHAN_VIEN", "Vàng"),
+                ("giaohang@nguyetcat.vn", "0908333444", "Nguyễn Văn Giao (Nhân viên Bán hàng)", "NHAN_VIEN", "Bạc")
+            };
+
+            bool coThayDoiNd = false;
+            foreach (var tk in taiKhoanNoiBoMau)
+            {
+                var tonTai = await db.NguoiDungs.FirstOrDefaultAsync(u => u.Email == tk.Email || u.Sdt == tk.Sdt);
+                if (tonTai == null)
+                {
+                    db.NguoiDungs.Add(new NguoiDung
+                    {
+                        MaVt = tk.MaVt,
+                        HoTen = tk.HoTen,
+                        Sdt = tk.Sdt,
+                        Email = tk.Email,
+                        MatKhauHash = mkSha,
+                        DiemTichLuy = 500,
+                        HangTv = tk.HangTv,
+                        TrangThai = true,
+                        NgayTao = DateTime.Now
+                    });
+                    coThayDoiNd = true;
+                }
+            }
+            if (coThayDoiNd)
+            {
+                await db.SaveChangesAsync();
+            }
+
+            // Đồng bộ vai trò nội bộ hiện hữu về đúng 2 vai trò: ADMIN (Chủ cửa hàng) & NHAN_VIEN (Nhân viên Bán hàng)
+            var cacVaiTroCuCapDuoi = new[] { "THU_NGAN", "GIAO_HANG", "NV_BAN_HANG" };
+            var tatCaNoiBo = await db.NguoiDungs
+                .Where(u => u.MaVt == "ADMIN"
+                         || u.MaVt == "QUAN_TRI"
+                         || u.MaVt == "NHAN_VIEN"
+                         || cacVaiTroCuCapDuoi.Contains(u.MaVt)
+                         || u.Email == "admin@nguyetcat.vn"
+                         || u.Email == "thungan@nguyetcat.vn"
+                         || u.Email == "giaohang@nguyetcat.vn")
+                .OrderBy(u => u.MaNd)
+                .ToListAsync();
+
+            bool coDongBoVt = false;
+            foreach (var nd in tatCaNoiBo)
+            {
+                if (string.Equals(nd.Email, "admin@nguyetcat.vn", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(nd.MaVt, "QUAN_TRI", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(nd.MaVt, "ADMIN", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (nd.MaVt != "ADMIN")
+                    {
+                        nd.MaVt = "ADMIN";
+                        coDongBoVt = true;
+                    }
+                }
+                else if (nd.MaVt != "NHAN_VIEN")
+                {
+                    nd.MaVt = "NHAN_VIEN";
+                    coDongBoVt = true;
+                }
+            }
+            if (coDongBoVt)
+            {
+                await db.SaveChangesAsync();
+            }
+
+            // Seed bản ghi dbo.HoSoNhanVien cho các tài khoản nội bộ chưa có hồ sơ
+            var dsMaNdDaCoHoSo = await db.HoSoNhanViens
+                .AsNoTracking()
+                .Select(h => h.MaNd)
+                .ToListAsync();
+            var setMaNdDaCo = dsMaNdDaCoHoSo.ToHashSet();
+
+            var dsCodeDaDung = await db.HoSoNhanViens
+                .AsNoTracking()
+                .Select(h => h.MaCodeNv)
+                .ToListAsync();
+            var setCodeDaDung = new HashSet<string>(dsCodeDaDung, StringComparer.OrdinalIgnoreCase);
+
+            int soThuTuKeTiep = 1;
+            string SinhMaNvKeTiep()
+            {
+                while (true)
+                {
+                    string ungVien = $"NV{soThuTuKeTiep:D3}";
+                    soThuTuKeTiep++;
+                    if (!setCodeDaDung.Contains(ungVien))
+                    {
+                        setCodeDaDung.Add(ungVien);
+                        return ungVien;
+                    }
+                }
+            }
+
+            bool coThemHoSo = false;
+            foreach (var nd in tatCaNoiBo)
+            {
+                if (setMaNdDaCo.Contains(nd.MaNd)) continue;
+
+                string emailLower = (nd.Email ?? string.Empty).Trim().ToLowerInvariant();
+                string maCodeUutien;
+                string chucVu;
+                string caLamViec;
+                string ghiChu;
+
+                if (emailLower == "admin@nguyetcat.vn" || nd.MaVt == "ADMIN")
+                {
+                    maCodeUutien = "NV001";
+                    chucVu = "Chủ cửa hàng";
+                    caLamViec = "Toàn thời gian";
+                    ghiChu = "Chủ cửa hàng quản trị toàn hệ thống Nguyệt Cát ERP";
+                }
+                else if (emailLower == "thungan@nguyetcat.vn")
+                {
+                    maCodeUutien = "NV002";
+                    chucVu = "Nhân viên Bán hàng";
+                    caLamViec = "Ca sáng (07:30 - 14:30)";
+                    ghiChu = "Nhân viên bán hàng tại quầy POS & xử lý đơn trực tuyến";
+                }
+                else if (emailLower == "giaohang@nguyetcat.vn")
+                {
+                    maCodeUutien = "NV003";
+                    chucVu = "Nhân viên Bán hàng";
+                    caLamViec = "Ca chiều (14:00 - 21:00)";
+                    ghiChu = "Nhân viên bán hàng & điều phối giao nhận đơn hàng";
+                }
+                else
+                {
+                    maCodeUutien = string.Empty;
+                    chucVu = "Nhân viên Bán hàng";
+                    caLamViec = "Toàn thời gian";
+                    ghiChu = "Nhân sự nội bộ Nguyệt Cát";
+                }
+
+                string maCodeChot = !string.IsNullOrEmpty(maCodeUutien) && !setCodeDaDung.Contains(maCodeUutien)
+                    ? maCodeUutien
+                    : SinhMaNvKeTiep();
+                setCodeDaDung.Add(maCodeChot);
+
+                db.HoSoNhanViens.Add(new HoSoNhanVien
+                {
+                    MaNd = nd.MaNd,
+                    MaCodeNv = maCodeChot,
+                    ChucVu = chucVu,
+                    ChiNhanh = "TP. Long Xuyên",
+                    CaLamViec = caLamViec,
+                    NgayVaoLam = DateOnly.FromDateTime(nd.NgayTao == default ? DateTime.Today : nd.NgayTao),
+                    TrangThaiLamViec = nd.TrangThai ? "DANG_LAM_VIEC" : "TAM_KHOA",
+                    GhiChu = ghiChu
+                });
+                setMaNdDaCo.Add(nd.MaNd);
+                coThemHoSo = true;
+            }
+
+            if (coThemHoSo)
+            {
+                await db.SaveChangesAsync();
+            }
         }
     }
 }

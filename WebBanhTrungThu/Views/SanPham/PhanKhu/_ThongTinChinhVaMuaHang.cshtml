@@ -12,7 +12,7 @@
             <div class="sp-ct-gallery-main khung-anh-banh-sang">
                 @if (Model.DangGiamCanDate)
                 {
-                    <span class="sp-ct-badge-giam">-@Model.PhanTramGiamCanDate.ToString("N0")% Cận Date</span>
+                    <span class="sp-ct-badge-giam">-@Model.PhanTramGiamCanDate.ToString("N0")%</span>
                 }
                 <img id="imgSanPhamChiTietChinh" src="@Model.AnhChinh" alt="@sp.TenBanh" class="img-fluid" />
             </div>
@@ -75,46 +75,49 @@
                     {
                         <del class="chu-nau-phu fs-6">@Model.GiaGoc.ToString("N0") đ</del>
                         <span class="badge rounded-pill" style="background: #FEE2E2; color: #B91C1C; border: 1px solid #FECACA;">
-                            Ưu đãi cận date -@Model.PhanTramGiamCanDate.ToString("N0")%
+                            Giảm @Model.PhanTramGiamCanDate.ToString("N0")%
                         </span>
                     }
                     <span class="small chu-nau-phu">/ @sp.DonViTinh</span>
                 </div>
             </div>
 
-            <!-- Tình trạng tồn kho & Hạn sử dụng lô FEFO gần nhất -->
+            <!-- Tình trạng & Hạn sử dụng -->
             <div class="sp-ct-khung-fefo p-3 mb-4">
                 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div>
-                        <span class="small chu-nau-phu d-block">Tình trạng kho hàng:</span>
-                        @if (Model.ConHang)
+                        <span class="small chu-nau-phu d-block mb-1">Tình trạng:</span>
+                        @{
+                            int tonHienThi = Model.TonKhoKhaDung;
+                        }
+                        @if (tonHienThi <= 0)
                         {
-                            <strong class="text-success">Còn hàng (@Model.TonKhoKhaDung.ToString("N0") @sp.DonViTinh khả dụng)</strong>
+                            <span class="badge rounded-pill px-3 py-1" style="background: #FEE2E2; color: #B91C1C; border: 1px solid #FECACA;">Hết hàng</span>
+                        }
+                        else if (tonHienThi <= 15)
+                        {
+                            <span class="badge rounded-pill px-3 py-1" style="background: #FFEDD5; color: #C2410C; border: 1px solid #FDBA74;">Sắp hết hàng</span>
                         }
                         else
                         {
-                            <strong class="text-danger">Tạm hết hàng</strong>
+                            <span class="badge rounded-pill px-3 py-1" style="background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;">Còn hàng</span>
                         }
                     </div>
 
                     @if (Model.LoFefoGanNhat != null)
                     {
                         <div class="text-md-end">
-                            <span class="small chu-nau-phu d-block">Hạn sử dụng lô xuất trước (FEFO):</span>
+                            <span class="small chu-nau-phu d-block">Hạn sử dụng:</span>
                             <strong class="chu-do-son-mai">
-                                HSD: @Model.LoFefoGanNhat.HanSuDung.ToString("dd/MM/yyyy")
-                                @if (Model.SoNgayConLaiHsd.HasValue)
-                                {
-                                    <span class="fw-normal chu-nau-phu">(còn @Model.SoNgayConLaiHsd ngày • lô còn @Model.LoFefoGanNhat.SlconLai.ToString("N0"))</span>
-                                }
+                                HSD: @Model.LoFefoGanNhat.HanSuDung.ToString("dd/MM/yyyy") • Hàng chính hãng mới nhất
                             </strong>
                         </div>
                     }
                     else
                     {
                         <div class="text-md-end">
-                            <span class="small chu-nau-phu d-block">Lô sản xuất mới:</span>
-                            <strong class="chu-nau-tram">Bánh nướng tươi theo đợt lễ hội</strong>
+                            <span class="small chu-nau-phu d-block">Hạn sử dụng:</span>
+                            <strong class="chu-nau-tram">Hàng chính hãng mới nhất • Bánh nướng theo đợt lễ hội</strong>
                         </div>
                     }
                 </div>

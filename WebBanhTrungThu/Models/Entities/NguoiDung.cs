@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -49,6 +49,12 @@ public partial class NguoiDung
 
     [InverseProperty("MaNdNavigation")]
     public virtual ICollection<DonHang> DonHangs { get; set; } = new List<DonHang>();
+
+    [InverseProperty("MaNdLapNavigation")]
+    public virtual ICollection<DonHang> DonHangsDaLap { get; set; } = new List<DonHang>();
+
+    [InverseProperty("MaNdNavigation")]
+    public virtual HoSoNhanVien? HoSoNhanVien { get; set; }
 
     [InverseProperty("MaNdNavigation")]
     public virtual ICollection<GioHang> GioHangs { get; set; } = new List<GioHang>();

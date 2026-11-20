@@ -4,11 +4,12 @@
     var thongBao = await ThongKeVaSoQuy.LayThongBaoQuanTriAsync();
     string tenDangNhap = User.Identity?.Name ?? "Lê Minh Đức (Admin)";
     bool laChuCuaHang = User.IsInRole("QUAN_TRI") || User.IsInRole("ADMIN");
+    int soThongBaoHienThi = laChuCuaHang ? thongBao.TongSoThongBao : thongBao.SoDonChoXacNhan;
 }
 
 <!-- TẦNG 1: TOP HEADER TRẮNG 48PX (CHỈ GIỮ ĐÚNG 6 MỤC BÊN PHẢI LOGO) -->
 <header class="kv-top-header">
-    <a href="@(laChuCuaHang ? "/Admin/Dashboard/Index" : "/Admin/DonHangAdmin/Index?tab=GIAO_HANG")" class="kv-brand">
+    <a href="@(laChuCuaHang ? "/Admin/Dashboard/Index" : "/Admin/DonHangAdmin/Index")" class="kv-brand">
         <span class="kv-brand-circle">N</span>
         <span class="kv-brand-text">Nguyệt Cát ERP</span>
     </a>
@@ -19,10 +20,13 @@
             <i class="bi bi-truck"></i> Giao hàng
         </a>
 
-        <!-- 2. Kho ảnh -->
-        <a href="/Admin/KhoAnhAdmin/Index" class="kv-top-link hide-mobile">
-            <i class="bi bi-images"></i> Kho ảnh
-        </a>
+        @if (laChuCuaHang)
+        {
+            <!-- 2. Kho ảnh -->
+            <a href="/Admin/KhoAnhAdmin/Index" class="kv-top-link hide-mobile">
+                <i class="bi bi-images"></i> Kho ảnh
+            </a>
+        }
 
         <!-- 3. Thông báo thực tế từ SQL -->
         <div class="dropdown">
@@ -31,18 +35,18 @@
                     id="btnThongBaoQuanTri"
                     data-bs-toggle="dropdown"
                     aria-expanded="false"
-                    title="Thông báo đơn chờ xác nhận &amp; lô bánh cận date">
+                    title="Thông báo vận hành đơn hàng">
                 <i class="bi bi-bell"></i>
-                @if (thongBao.TongSoThongBao > 0)
+                @if (soThongBaoHienThi > 0)
                 {
-                    <span class="kv-notif-badge">@(thongBao.TongSoThongBao > 99 ? "99+" : thongBao.TongSoThongBao.ToString())</span>
+                    <span class="kv-notif-badge">@(soThongBaoHienThi > 99 ? "99+" : soThongBaoHienThi.ToString())</span>
                 }
             </button>
 
             <div class="dropdown-menu dropdown-menu-end kv-notif-dropdown p-0" aria-labelledby="btnThongBaoQuanTri">
                 <div class="kv-notif-header">
                     <span class="fw-bold text-dark">Thông báo vận hành</span>
-                    <span class="badge bg-primary text-white rounded-pill">@thongBao.TongSoThongBao mục cần xử lý</span>
+                    <span class="badge bg-primary text-white rounded-pill">@soThongBaoHienThi mục cần xử lý</span>
                 </div>
 
                 <div class="kv-notif-body">
@@ -70,39 +74,45 @@
                         <div class="px-3 py-2 small text-muted">Không có đơn hàng mới chờ xác nhận.</div>
                     }
 
-                    <div class="kv-notif-section-title border-top">
-                        <span>Lô bánh sắp cận date (@thongBao.SoLoSapCanDate)</span>
-                        <a href="/Admin/KiemKhoAdmin/Index">Kiểm kho FEFO</a>
-                    </div>
-                    @if (thongBao.LoSapCanDate.Any())
+                    @if (laChuCuaHang)
                     {
-                        foreach (var lo in thongBao.LoSapCanDate)
+                        <div class="kv-notif-section-title border-top">
+                            <span>Lô bánh sắp cận date (@thongBao.SoLoSapCanDate)</span>
+                            <a href="/Admin/KiemKhoAdmin/Index">Kiểm kho FEFO</a>
+                        </div>
+                        @if (thongBao.LoSapCanDate.Any())
                         {
-                            <a href="/Admin/KiemKhoAdmin/Index" class="kv-notif-item">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <strong style="color: #B45309;">@lo.MaLoCode</strong>
-                                    <span class="small fw-semibold text-danger">Còn @lo.SoNgayConLai ngày</span>
-                                </div>
-                                <div class="small text-muted text-truncate">
-                                    @lo.TenBanh • Tồn: @lo.SlConLai • HSD: @lo.HanSuDung.ToString("dd/MM/yyyy")
-                                </div>
-                            </a>
+                            foreach (var lo in thongBao.LoSapCanDate)
+                            {
+                                <a href="/Admin/KiemKhoAdmin/Index" class="kv-notif-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <strong style="color: #B45309;">@lo.MaLoCode</strong>
+                                        <span class="small fw-semibold text-danger">Còn @lo.SoNgayConLai ngày</span>
+                                    </div>
+                                    <div class="small text-muted text-truncate">
+                                        @lo.TenBanh • Tồn: @lo.SlConLai • HSD: @lo.HanSuDung.ToString("dd/MM/yyyy")
+                                    </div>
+                                </a>
+                            }
                         }
-                    }
-                    else
-                    {
-                        <div class="px-3 py-2 small text-muted">Không có lô bánh nào sắp cận hạn sử dụng.</div>
+                        else
+                        {
+                            <div class="px-3 py-2 small text-muted">Không có lô bánh nào sắp cận hạn sử dụng.</div>
+                        }
                     }
                 </div>
             </div>
         </div>
 
-        <!-- 4. Cài đặt -->
-        <a href="/Admin/CaiDatAdmin/Index"
-           class="kv-icon-btn @(ctrl == "CaiDatAdmin" ? "text-primary bg-light" : "")"
-           title="Cài đặt hệ thống">
-            <i class="bi bi-gear"></i>
-        </a>
+        @if (laChuCuaHang)
+        {
+            <!-- 4. Cài đặt -->
+            <a href="/Admin/CaiDatAdmin/Index"
+               class="kv-icon-btn @(ctrl == "CaiDatAdmin" ? "text-primary bg-light" : "")"
+               title="Cài đặt hệ thống">
+                <i class="bi bi-gear"></i>
+            </a>
+        }
 
         <!-- 5. Tên Admin & 6. Đăng xuất -->
         <div class="d-flex align-items-center gap-2 ps-2 border-start">
@@ -179,20 +189,30 @@
         {
             <!-- 4. Đối tác / Khách hàng -->
             <li class="kv-nav-item">
-                <a href="/Admin/KhachHangAdmin/Index" class="kv-nav-link @(ctrl == "KhachHangAdmin" ? "active" : "")">
+                <a href="/Admin/KhachHangAdmin/Index" class="kv-nav-link @(ctrl == "KhachHangAdmin" || ctrl == "NhaCungCapAdmin" ? "active" : "")">
                     <i class="bi bi-people"></i> Đối tác <i class="bi bi-chevron-down" style="font-size: 10px;"></i>
                 </a>
-                <div class="kv-dropdown-menu">
+                <div class="kv-dropdown-menu" style="min-width: 230px;">
                     <a href="/Admin/KhachHangAdmin/Index" class="kv-dropdown-item">
                         <i class="bi bi-person-vcard"></i> Khách hàng
                     </a>
+                    <a href="/Admin/NhaCungCapAdmin/Index" class="kv-dropdown-item">
+                        <i class="bi bi-building"></i> Nhà cung cấp
+                    </a>
                     <a href="/Admin/KhachHangAdmin/KhuyenMai" class="kv-dropdown-item">
-                        <i class="bi bi-ticket-perforated"></i> Khuyến mãi
+                        <i class="bi bi-ticket-perforated"></i> Chương trình khuyến mãi
                     </a>
                 </div>
             </li>
 
-            <!-- 5. Sổ quỹ -->
+            <!-- 5. Nhân viên -->
+            <li class="kv-nav-item">
+                <a href="/Admin/NhanVienAdmin/Index" class="kv-nav-link @(ctrl == "NhanVienAdmin" ? "active" : "")">
+                    <i class="bi bi-person-badge"></i> Nhân viên
+                </a>
+            </li>
+
+            <!-- 6. Sổ quỹ -->
             <li class="kv-nav-item">
                 <a href="/Admin/SoQuyAdmin/Index" class="kv-nav-link @(ctrl == "SoQuyAdmin" ? "active" : "")">
                     <i class="bi bi-wallet2"></i> Sổ quỹ
@@ -201,10 +221,7 @@
         }
     </ul>
 
-    @if (laChuCuaHang)
-    {
-        <a href="/Admin/BanHangPos/Index" class="btn-kv-pos-highlight">
-            <i class="bi bi-cart-check-fill"></i> Bán hàng (POS)
-        </a>
-    }
+    <a href="/Admin/BanHangPos/Index" class="btn-kv-pos-highlight">
+        <i class="bi bi-cart-check-fill"></i> Bán hàng (POS)
+    </a>
 </nav>

@@ -19,6 +19,12 @@ public partial class ChiTietPhieuNhap
 
     public int SoLuong { get; set; }
 
+    [Column(TypeName = "decimal(5, 2)")]
+    public decimal PhanTramChietKhau { get; set; }
+
+    [Column(TypeName = "decimal(18, 0)")]
+    public decimal GiaNiemYet { get; set; }
+
     [Column(TypeName = "decimal(18, 2)")]
     public decimal DonGiaNhap { get; set; }
 

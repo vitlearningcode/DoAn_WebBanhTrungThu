@@ -32,6 +32,8 @@ namespace WebBanhTrungThu.ViewModels
     {
         public List<PhieuNhapKho> DanhSachPhieuNhap { get; set; } = new();
         public List<SanPhamKhoOptionViewModel> DanhSachSanPham { get; set; } = new();
+        public List<NhaCungCapOptionViewModel> DanhSachNccChiTiet { get; set; } = new();
+        public List<string> DanhSachThuongHieu { get; set; } = new();
         public List<string> DanhSachNhaCungCap { get; set; } = new();
         public string? TuKhoa { get; set; }
         public string LocTrangThai { get; set; } = "ALL";
@@ -50,6 +52,8 @@ namespace WebBanhTrungThu.ViewModels
     {
         public int MaSp { get; set; }
         public int SoLuong { get; set; }
+        public decimal GiaNiemYet { get; set; }
+        public decimal PhanTramChietKhau { get; set; }
         public decimal DonGiaNhap { get; set; }
         public DateTime? NgaySanXuat { get; set; }
         public DateTime? HanSuDung { get; set; }
@@ -58,6 +62,7 @@ namespace WebBanhTrungThu.ViewModels
     public class LuuPhieuNhapRequest
     {
         public int MaPn { get; set; }
+        public int? MaNcc { get; set; }
         public string NhaCungCap { get; set; } = string.Empty;
         public decimal GiamGia { get; set; }
         public string? GhiChu { get; set; }

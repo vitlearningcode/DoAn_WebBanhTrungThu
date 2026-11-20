@@ -1,0 +1,11 @@
+@model WebBanhTrungThu.ViewModels.NhaCungCapAdminViewModel
+@{
+    ViewData["Title"] = "Nhà cung cấp - Nguyệt Cát ERP";
+}
+
+@await Html.PartialAsync("~/Areas/Admin/Views/NhaCungCapAdmin/PhanKhu/_BoLocVaKpiNhaCungCap.cshtml", Model)
+@await Html.PartialAsync("~/Areas/Admin/Views/NhaCungCapAdmin/PhanKhu/_ModalLuuNhaCungCap.cshtml", Model)
+
+@section Scripts {
+    <script src="~/js/admin-nha-cung-cap.js" asp-append-version="true"></script>
+}

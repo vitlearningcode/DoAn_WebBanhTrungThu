@@ -280,7 +280,10 @@
                 const detailId = tr.getAttribute('data-detail-id');
                 if (detailId) {
                     const dRow = document.getElementById(detailId);
-                    if (dRow) dRow.classList.remove('open');
+                    if (dRow) {
+                        dRow.classList.remove('open');
+                        dRow.classList.add('d-none');
+                    }
                 }
             }
         });

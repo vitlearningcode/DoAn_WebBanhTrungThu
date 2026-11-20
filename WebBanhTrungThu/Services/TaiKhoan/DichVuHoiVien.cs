@@ -65,11 +65,27 @@ namespace WebBanhTrungThu.Services.TaiKhoan
             await DamBaoVaiTroVaTaiKhoanDemoAsync();
 
             var nd = await _db.NguoiDungs
-                .FirstOrDefaultAsync(u => (u.Email == taiKhoan || u.Sdt == taiKhoan) && u.TrangThai);
+                .Include(u => u.HoSoNhanVien)
+                .FirstOrDefaultAsync(u => u.Email == taiKhoan || u.Sdt == taiKhoan);
 
             if (nd == null)
             {
-                return (false, "Tài khoản không tồn tại hoặc đã bị khóa!", null);
+                return (false, "Tài khoản không tồn tại hoặc mật khẩu chưa đúng!", null);
+            }
+
+            if (!nd.TrangThai
+                || (nd.HoSoNhanVien != null
+                    && string.Equals(nd.HoSoNhanVien.TrangThaiLamViec, "TAM_KHOA", StringComparison.OrdinalIgnoreCase)))
+            {
+                bool laNhanSu = nd.HoSoNhanVien != null
+                    || (!string.Equals(nd.MaVt, "KHACH_TV", StringComparison.OrdinalIgnoreCase)
+                        && !string.Equals(nd.MaVt, "KHACH_HANG", StringComparison.OrdinalIgnoreCase));
+
+                string thongBaoKhoa = laNhanSu
+                    ? "Tài khoản nhân viên hiện đang bị tạm khóa. Vui lòng liên hệ Chủ cửa hàng để được mở khóa!"
+                    : "Tài khoản của bạn hiện đang bị khóa. Vui lòng liên hệ quản trị viên!";
+
+                return (false, thongBaoKhoa, null);
             }
 
             string maBamSha256 = ThongTinPhienHelper.BamMatKhauSHA256(mkNhap);
@@ -672,8 +688,9 @@ namespace WebBanhTrungThu.Services.TaiKhoan
         {
             var danhSachVaiTro = new (string MaVt, string TenVt, string MoTa)[]
             {
+                ("ADMIN", "Chủ cửa hàng", "Toàn quyền quản trị hệ thống & nhân sự Nguyệt Cát ERP"),
                 ("QUAN_TRI", "Quản trị viên", "Toàn quyền quản trị hệ thống & Admin Override"),
-                ("NHAN_VIEN", "Nhân viên bán hàng", "Nhân viên Order - Bán hàng & Thu ngân"),
+                ("NHAN_VIEN", "Nhân viên Bán hàng", "Nhân viên Order - Bán hàng & Thu ngân"),
                 ("THU_NGAN", "Thu ngân & Bán hàng", "Xác nhận thanh toán QR, chuẩn bị hàng CHO_LAY_HANG, xử lý hoàn tiền"),
                 ("GIAO_HANG", "Nhân viên giao hàng", "Nhận đơn từ CHO_LAY_HANG -> DANG_GIAO -> xác nhận HOAN_TAT"),
                 ("KHACH_TV", "Khách thành viên", "Khách hàng thành viên tích điểm")
@@ -703,9 +720,9 @@ namespace WebBanhTrungThu.Services.TaiKhoan
 
             var taiKhoanMau = new (string Sdt, string Email, string HoTen, string MaVt, string HangTv)[]
             {
-                ("0908111222", "thungan@nguyetcat.vn", "Trần Thu Ngân (Order & Thu ngân)", "THU_NGAN", "Vàng"),
-                ("0908333444", "giaohang@nguyetcat.vn", "Nguyễn Văn Giao (Giao vận)", "GIAO_HANG", "Bạc"),
-                ("0814585526", "admin@nguyetcat.vn", "Lê Minh Đức (Quản trị viên)", "QUAN_TRI", "Kim Cương")
+                ("0908111222", "thungan@nguyetcat.vn", "Trần Thu Ngân (Nhân viên Bán hàng)", "NHAN_VIEN", "Vàng"),
+                ("0908333444", "giaohang@nguyetcat.vn", "Nguyễn Văn Giao (Nhân viên Bán hàng)", "NHAN_VIEN", "Bạc"),
+                ("0814585526", "admin@nguyetcat.vn", "Lê Minh Đức (Chủ cửa hàng)", "ADMIN", "Kim Cương")
             };
 
             bool coThayDoiNd = false;

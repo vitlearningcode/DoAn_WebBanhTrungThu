@@ -119,6 +119,8 @@
                                                 <th>Mã lô sinh ra</th>
                                                 <th class="text-center">NSX</th>
                                                 <th class="text-center">HSD</th>
+                                                <th class="text-end">Giá niêm yết</th>
+                                                <th class="text-center">CK (%)</th>
                                                 <th class="text-end">Số lượng</th>
                                                 <th class="text-end">Đơn giá nhập</th>
                                                 <th class="text-end">Thành tiền</th>
@@ -127,6 +129,7 @@
                                         <tbody>
                                             @foreach (var ct in p.ChiTietPhieuNhaps)
                                             {
+                                                decimal giaNiemYetDong = ct.GiaNiemYet > 0m ? ct.GiaNiemYet : (ct.MaSpNavigation?.DonGiaLe ?? 0m);
                                                 <tr>
                                                     <td class="text-primary fw-medium">@(ct.MaSpNavigation?.MaSku ?? "---")</td>
                                                     <td class="fw-medium">@(ct.MaSpNavigation?.TenBanh ?? $"SP #{ct.MaSp}")</td>
@@ -142,6 +145,8 @@
                                                     </td>
                                                     <td class="text-center">@ct.NgaySanXuat.ToString("dd/MM/yyyy")</td>
                                                     <td class="text-center">@ct.HanSuDung.ToString("dd/MM/yyyy")</td>
+                                                    <td class="text-end text-muted so-tien">@giaNiemYetDong.ToString("N0") đ</td>
+                                                    <td class="text-center so-tien">@ct.PhanTramChietKhau.ToString("0.##")%</td>
                                                     <td class="text-end fw-bold so-tien">@ct.SoLuong.ToString("N0")</td>
                                                     <td class="text-end so-tien">@ct.DonGiaNhap.ToString("N0") đ</td>
                                                     <td class="text-end fw-semibold text-primary so-tien">@ct.ThanhTien.ToString("N0") đ</td>

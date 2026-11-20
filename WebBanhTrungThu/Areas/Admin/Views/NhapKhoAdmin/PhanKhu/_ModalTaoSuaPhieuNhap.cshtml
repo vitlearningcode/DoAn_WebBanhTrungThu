@@ -1,37 +1,48 @@
 @model WebBanhTrungThu.ViewModels.NhapKhoAdminViewModel
 
 <div class="modal fade" id="modalTaoSuaPhieuNhap" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable" style="max-width: 1220px;">
         <div class="modal-content kv-modal-content">
             <form id="frmLuuPhieuNhap" asp-area="Admin" asp-controller="NhapKhoAdmin" asp-action="LuuPhieuNhap" method="post" onsubmit="return chuanBiSubmitPhieuNhap();">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="MaPn" id="pn_MaPn" value="0" />
                 <input type="hidden" name="HoanThanhNhapKho" id="pn_HoanThanhNhapKho" value="true" />
                 <input type="hidden" name="ChiTietJson" id="pn_ChiTietJson" value="[]" />
+                <input type="hidden" name="NhaCungCap" id="pn_NhaCungCap" value="" />
 
                 <div class="kv-modal-header pb-2 border-bottom">
                     <div>
                         <h5 class="kv-modal-title" id="pn_ModalTitle">Tạo phiếu nhập hàng (Đa sản phẩm)</h5>
-                        <div class="small text-muted" id="pn_ModalSub">Tự động sinh lô FEFO và cập nhật giá vốn, tồn kho sau khi hoàn thành nhập.</div>
+                        <div class="small text-muted" id="pn_ModalSub">Tự động áp chiết khấu từ Nhà cung cấp, tính giá nhập 2 chiều và sinh lô FEFO sau khi hoàn thành.</div>
                     </div>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
                 <div class="kv-modal-body">
                     <div class="row g-3 mb-3">
-                        <div class="col-md-5">
-                            <label class="kv-field-label">Nhà cung cấp / Hãng sản xuất <span class="text-danger">*</span></label>
-                            <input type="text" name="NhaCungCap" id="pn_NhaCungCap" list="dlNhaCungCapNhap" class="kv-form-control" required
-                                   placeholder="Chọn hoặc nhập tên hãng: Kinh Đô, Như Lan, Brodard..." />
-                            <datalist id="dlNhaCungCapNhap">
-                                @foreach (var ncc in Model.DanhSachNhaCungCap)
+                        <div class="col-md-6">
+                            <label class="kv-field-label" for="pn_MaNcc">Nhà cung cấp <span class="text-danger">*</span></label>
+                            <select name="MaNcc" id="pn_MaNcc" class="form-select form-select-sm" required onchange="khiDoiNhaCungCapNhap()">
+                                <option value="">-- Chọn nhà cung cấp --</option>
+                                @foreach (var ncc in Model.DanhSachNccChiTiet)
                                 {
-                                    <option value="@ncc"></option>
+                                    <option value="@ncc.MaNcc"
+                                            data-ten="@ncc.TenNcc"
+                                            data-ck="@ncc.PhanTramChietKhauMacDinh.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                            data-thuonghieu="@ncc.ThuongHieuCungCap">
+                                        @ncc.TenNcc (CK: @ncc.PhanTramChietKhauMacDinh.ToString("0.##")%)
+                                    </option>
                                 }
-                            </datalist>
+                            </select>
+                            <div class="d-flex align-items-center flex-wrap gap-2 mt-1 small text-muted">
+                                <span>Chiết khấu mặc định: <strong id="pn_LblCkNcc" class="text-success">0%</strong></span>
+                                <button type="button" id="pn_BtnApDungCkNcc" class="btn btn-link btn-sm p-0 text-decoration-none d-none" onclick="apDungCkNccChoTatCaDong()">
+                                    Áp dụng CK của NCC cho tất cả dòng
+                                </button>
+                            </div>
                         </div>
-                        <div class="col-md-7">
-                            <label class="kv-field-label">Ghi chú phiếu nhập</label>
+                        <div class="col-md-6">
+                            <label class="kv-field-label" for="pn_GhiChu">Ghi chú phiếu nhập</label>
                             <input type="text" name="GhiChu" id="pn_GhiChu" class="kv-form-control" maxlength="500"
                                    placeholder="VD: Nhập lô bánh đợt rằm tháng 8, kiểm đủ số lượng..." />
                         </div>
@@ -39,18 +50,33 @@
 
                     <div id="pn_BoxChonSanPham" class="p-3 rounded mb-3" style="background: #F8FAFC; border: 1px solid #E5E7EB;">
                         <div class="row g-2 align-items-end">
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold mb-1">Thêm sản phẩm vào phiếu nhập</label>
-                                <select id="pn_ChonSpSelect" class="form-select form-select-sm">
-                                    <option value="">-- Chọn bánh trung thu cần nhập --</option>
-                                    @foreach (var sp in Model.DanhSachSanPham)
+                            <div class="col-md-2">
+                                <label class="form-label small fw-bold mb-1" for="pn_LocThuongHieu">Thương hiệu</label>
+                                <select id="pn_LocThuongHieu" class="form-select form-select-sm" onchange="locSanPhamTheoThuongHieuNhap()">
+                                    <option value="ALL">Tất cả thương hiệu</option>
+                                    @foreach (var th in Model.DanhSachThuongHieu)
                                     {
-                                        <option value="@sp.MaBanh">[@sp.MaSku] @sp.TenBanh (Giá vốn: @sp.GiaVon.ToString("N0") đ | Tồn: @sp.TonKhoHeThong)</option>
+                                        <option value="@th">@th</option>
                                     }
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <button type="button" class="btn-kv-blue w-100" onclick="themDongTuSelectNhap()">
+                                <label class="form-label small fw-bold mb-1" for="pn_NhapNhanhMaBanh">Mã bánh (nhập nhanh)</label>
+                                <input type="text" id="pn_NhapNhanhMaBanh" class="form-control form-control-sm"
+                                       placeholder="VD: SP000108 hoặc BANH-BN01" autocomplete="off" />
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold mb-1" for="pn_ChonSpSelect">Sản phẩm bánh</label>
+                                <select id="pn_ChonSpSelect" class="form-select form-select-sm">
+                                    <option value="">-- Chọn bánh trung thu --</option>
+                                    @foreach (var sp in Model.DanhSachSanPham)
+                                    {
+                                        <option value="@sp.MaBanh">[@sp.MaSku] @sp.TenBanh • Giá bán: @sp.DonGiaLe.ToString("N0") đ • Tồn: @sp.TonKhoHeThong</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn-kv-blue w-100 text-nowrap" onclick="themDongTuSelectNhap()">
                                     <i class="bi bi-plus-circle"></i> Thêm dòng hàng
                                 </button>
                             </div>
@@ -61,14 +87,16 @@
                         <table class="kv-comp-table table table-bordered align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th style="width: 40px;">#</th>
-                                    <th>Sản phẩm bánh</th>
-                                    <th style="width: 105px;" class="text-center">Số lượng</th>
-                                    <th style="width: 140px;" class="text-end">Đơn giá nhập (đ)</th>
-                                    <th style="width: 140px;" class="text-center">Ngày SX</th>
-                                    <th style="width: 140px;" class="text-center">Hạn sử dụng</th>
-                                    <th style="width: 135px;" class="text-end">Thành tiền</th>
-                                    <th style="width: 45px;"></th>
+                                    <th style="width: 38px;">#</th>
+                                    <th style="min-width: 195px;">Sản phẩm bánh</th>
+                                    <th style="width: 115px;" class="text-end">Giá niêm yết (đ)</th>
+                                    <th style="width: 90px;" class="text-center">CK (%)</th>
+                                    <th style="width: 135px;" class="text-end">Đơn giá nhập (đ)</th>
+                                    <th style="width: 90px;" class="text-center">Số lượng</th>
+                                    <th style="width: 132px;" class="text-center">Ngày SX</th>
+                                    <th style="width: 132px;" class="text-center">Hạn SD</th>
+                                    <th style="width: 125px;" class="text-end">Thành tiền</th>
+                                    <th style="width: 44px;" class="text-center">Xóa</th>
                                 </tr>
                             </thead>
                             <tbody id="pn_TbodyDongNhap"></tbody>
@@ -77,18 +105,18 @@
 
                     <div class="row g-3 align-items-end pt-2 border-top">
                         <div class="col-md-3">
-                            <label class="kv-field-label">Giảm giá hóa đơn (đ)</label>
-                            <input type="number" name="GiamGia" id="pn_GiamGia" value="0" min="0" step="1000"
+                            <label class="kv-field-label" for="pn_GiamGia">Giảm giá hóa đơn (đ)</label>
+                            <input type="number" name="GiamGia" id="pn_GiamGia" value="0" min="0" step="1"
                                    class="kv-form-control text-end fw-semibold" oninput="tinhTongPhieuNhap()" />
                         </div>
                         <div class="col-md-3" id="pn_WrapTraNgay">
-                            <label class="kv-field-label">Thanh toán ngay khi nhập (đ)</label>
-                            <input type="number" name="SoTienThanhToanNgay" id="pn_TraNgay" value="0" min="0" step="1000"
+                            <label class="kv-field-label" for="pn_TraNgay">Thanh toán ngay khi nhập (đ)</label>
+                            <input type="number" name="SoTienThanhToanNgay" id="pn_TraNgay" value="0" min="0" step="1"
                                    class="kv-form-control text-end fw-semibold text-success" />
                         </div>
                         <div class="col-md-3" id="pn_WrapPhuongThuc">
-                            <label class="kv-field-label">Phương thức chi</label>
-                            <select name="PhuongThucThanhToan" id="pn_PhuongThuc" class="form-select">
+                            <label class="kv-field-label" for="pn_PhuongThuc">Phương thức chi</label>
+                            <select name="PhuongThucThanhToan" id="pn_PhuongThuc" class="form-select form-select-sm">
                                 <option value="CHUYEN_KHOAN">Chuyển khoản</option>
                                 <option value="TIEN_MAT">Tiền mặt</option>
                             </select>

@@ -743,3 +743,112 @@ td, th, .so-tien, .ton-kho, .kpi-value, .pos-price-final, .pos-stock-pill {
         display: none !important;
     }
 }
+
+@media (max-width: 767.98px) {
+    html, body {
+        height: auto;
+        min-height: 100vh;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+
+    .pos-topbar {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 8px 10px;
+        height: auto;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    .pos-search-wrap {
+        width: 100%;
+        max-width: 100%;
+        order: 2;
+    }
+
+    .pos-tabs-bar {
+        width: 100%;
+        height: auto;
+        padding-top: 2px;
+        order: 3;
+    }
+
+    .pos-btn-top-action {
+        order: 4;
+        height: 30px;
+        padding: 0 10px;
+        font-size: 12px;
+    }
+
+    .pos-topbar-actions {
+        order: 1;
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 6px !important;
+        min-width: 0;
+    }
+
+    .pos-user-badge {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 11.5px;
+    }
+
+    .pos-btn-manage,
+    .pos-btn-logout {
+        height: 30px;
+        padding: 0 8px;
+        font-size: 11.5px;
+    }
+
+    .pos-workspace {
+        flex-direction: column;
+        height: auto;
+        padding: 8px;
+        max-width: 100%;
+    }
+
+    .pos-left-col,
+    .pos-right-col {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        min-width: 0;
+    }
+
+    .pos-cart-panel,
+    .pos-catalog-panel {
+        height: auto;
+        max-width: 100%;
+    }
+
+    .pos-cart-table-wrap {
+        overflow-x: auto;
+        max-height: 280px;
+    }
+
+    .pos-product-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    #selPosVoucher {
+        width: 145px !important;
+        max-width: 48vw;
+    }
+
+    #inpPosTienKhachDua {
+        width: 130px !important;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .pos-user-role {
+        display: none;
+    }
+}

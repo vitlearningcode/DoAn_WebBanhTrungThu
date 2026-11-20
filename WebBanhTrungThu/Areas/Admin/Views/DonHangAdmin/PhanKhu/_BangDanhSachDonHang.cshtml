@@ -1,6 +1,7 @@
 @model List<WebBanhTrungThu.Models.Entities.DonHang>
 @{
     string tuKhoa = ViewBag.TuKhoa as string ?? "";
+    string maDonMo = Context.Request.Query["maDon"].ToString().Trim();
 
     static (string TenCongTyGoc, string? EmailVat, string? YeuCauEpKimLogo) TachThongTinB2B(WebBanhTrungThu.Models.Entities.DonHang don)
     {
@@ -45,7 +46,7 @@
                    oninput="document.getElementById('fltDhTuKhoaLeft').value = this.value; locHoaDonClient();" />
         </div>
 
-        <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
             <a href="/" target="_blank" class="btn-kv-blue text-decoration-none">
                 <i class="bi bi-plus-lg"></i> Tạo mới
             </a>
@@ -59,7 +60,7 @@
     </div>
 
     <div class="kv-card overflow-hidden">
-        <div class="table-responsive">
+        <div class="table-responsive w-100">
             <table class="kv-table">
                 <thead>
                     <tr>
@@ -81,7 +82,8 @@
                     {
                         var dh = Model[i];
                         decimal tongGiam = Math.Round(dh.TienChietKhauB2b + dh.TienGiamHangVip + dh.TienGiamVoucher + dh.TienGiamDiemVip, 0);
-                        bool moMacDinh = (i == 0);
+                        bool moMacDinh = (!string.IsNullOrWhiteSpace(maDonMo) && string.Equals(dh.MaTraCuuDh, maDonMo, StringComparison.OrdinalIgnoreCase))
+                                      || (!string.IsNullOrWhiteSpace(tuKhoa) && string.Equals(dh.MaTraCuuDh, tuKhoa.Trim(), StringComparison.OrdinalIgnoreCase));
                         string searchKey = $"{dh.MaTraCuuDh} {dh.HoTenNguoiMua} {dh.SdtnguoiMua} {dh.TenCongTy}".ToLowerInvariant();
                         bool laHomNay = dh.NgayDat.Date == DateTime.Today;
                         bool laThangNay = dh.NgayDat.Year == DateTime.Now.Year && dh.NgayDat.Month == DateTime.Now.Month;
@@ -160,7 +162,7 @@
                             </td>
                         </tr>
 
-                        <tr id="detail-dh-@dh.MaDh" class="kv-detail-row @(moMacDinh ? "open" : "")" onclick="event.stopPropagation();">
+                        <tr id="detail-dh-@dh.MaDh" class="kv-detail-row @(moMacDinh ? "open" : "d-none")" onclick="event.stopPropagation();">
                             <td colspan="9" class="p-0">
                                 <div class="kv-detail-box">
                                     <div class="kv-detail-tabs">

@@ -262,7 +262,7 @@ namespace WebBanhTrungThu.Services.QuanTri
             };
         }
 
-        public async Task<object> ThanhToanTaiQuayAsync(PosCheckoutRequest? req, bool dungDiemTichLuy = false)
+        public async Task<object> ThanhToanTaiQuayAsync(PosCheckoutRequest? req, bool dungDiemTichLuy = false, int? maNdLap = null)
         {
             if (req == null || req.DanhSachMon == null || !req.DanhSachMon.Any())
             {
@@ -358,7 +358,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                     }
 
                     bool coLoConHan = !banh.LoSanXuatBanhs.Any()
-                        || banh.LoSanXuatBanhs.Any(l => l.HanSuDung >= homNay && l.TrangThaiLo != "HET_HAN" && l.SlconLai > 0);
+                        || banh.LoSanXuatBanhs.Any(l => l.HanSuDung >= homNay && l.TrangThaiLo != "HET_HAN" && l.TrangThaiLo != "DA_HUY" && l.SlconLai > 0);
                     if (!coLoConHan)
                     {
                         return new { thanhCong = false, thongBao = $"Sản phẩm [{banh.MaSku}] {banh.TenBanh} hiện chỉ còn lô đã hết hạn sử dụng, không thể xuất bán!" };
@@ -450,10 +450,18 @@ namespace WebBanhTrungThu.Services.QuanTri
                 string sdtMua = khachMember?.Sdt ?? ChuanHoaChuoi(req.SdtKhach, "0900000000");
                 string? emailMua = khachMember?.Email ?? (!string.IsNullOrWhiteSpace(req.EmailKhach) ? req.EmailKhach.Trim() : null);
 
+                int? maNdLapHopLe = null;
+                if (maNdLap.HasValue && maNdLap.Value > 0
+                    && await _db.NguoiDungs.AsNoTracking().AnyAsync(u => u.MaNd == maNdLap.Value))
+                {
+                    maNdLapHopLe = maNdLap.Value;
+                }
+
                 var donHang = new DonHang
                 {
                     MaTraCuuDh = maTraCuu,
                     MaNd = khachMember?.MaNd,
+                    MaNdLap = maNdLapHopLe,
                     MaPhienKvl = null,
                     HoTenNguoiMua = hoTenMua,
                     SdtnguoiMua = sdtMua,
@@ -548,7 +556,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                     banh.TongTonKho = Math.Max(0, banh.TongTonKho - soLuongCanTru);
                     int conPhaiTru = soLuongCanTru;
                     var cacLoKhaDung = banh.LoSanXuatBanhs
-                        .Where(l => l.SlconLai > 0 && l.TrangThaiLo != "HET_HAN")
+                        .Where(l => l.SlconLai > 0 && l.TrangThaiLo != "HET_HAN" && l.TrangThaiLo != "DA_HUY")
                         .OrderBy(l => l.HanSuDung)
                         .ToList();
 

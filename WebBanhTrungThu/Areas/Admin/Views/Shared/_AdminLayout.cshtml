@@ -79,12 +79,18 @@
         function toggleKvDetailRow(rowId, masterTr) {
             const detailRow = document.getElementById(rowId);
             if (!detailRow) return;
-            const isOpen = detailRow.classList.contains('open');
+            const isOpen = detailRow.classList.contains('open') && !detailRow.classList.contains('d-none');
 
-            document.querySelectorAll('.kv-detail-row.open').forEach(r => r.classList.remove('open'));
+            document.querySelectorAll('.kv-detail-row').forEach(r => {
+                if (r.classList.contains('open')) {
+                    r.classList.remove('open');
+                    r.classList.add('d-none');
+                }
+            });
             document.querySelectorAll('.kv-master-row.active-row').forEach(r => r.classList.remove('active-row'));
 
             if (!isOpen) {
+                detailRow.classList.remove('d-none');
                 detailRow.classList.add('open');
                 if (masterTr) masterTr.classList.add('active-row');
             }

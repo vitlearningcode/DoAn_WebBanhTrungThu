@@ -9,6 +9,6 @@ namespace WebBanhTrungThu.Services.Interfaces
         Task<object> TraCuuHoiVienPosAsync(string? sdt);
         Task<object> TimKhachHangPosAsync(string? tuKhoa);
         Task<object> ThemKhachHangNhanhPosAsync(string hoTen, string sdt, string? email);
-        Task<object> ThanhToanTaiQuayAsync(PosCheckoutRequest? req, bool dungDiemTichLuy = false);
+        Task<object> ThanhToanTaiQuayAsync(PosCheckoutRequest? req, bool dungDiemTichLuy = false, int? maNdLap = null);
     }
 }

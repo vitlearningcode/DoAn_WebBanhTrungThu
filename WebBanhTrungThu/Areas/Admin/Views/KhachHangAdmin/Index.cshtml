@@ -183,9 +183,8 @@
                             decimal tongBan = Math.Round(nd.DonHangs.Where(d => d.TrangThaiDh != "DA_HUY").Sum(d => d.TongThanhToanCuoi), 0);
                             bool laDoanhNghiep = nd.DonHangs.Any(d => d.LaDonDoanhNghiepB2b) || nd.HangTv == "DoanhNghiep";
                             string searchKey = $"KH{nd.MaNd:D4} {nd.HoTen} {nd.Sdt} {nd.Email} {nd.HangTv}".ToLowerInvariant();
-                            bool moMacDinh = (i == 0);
 
-                            <tr class="kv-master-row @(moMacDinh ? "active-row" : "")"
+                            <tr class="kv-master-row"
                                 data-detail-id="detail-nd-@nd.MaNd"
                                 data-search="@searchKey"
                                 data-hangtv="@nd.HangTv"
@@ -206,7 +205,7 @@
                             </tr>
 
                             <!-- DÒNG MỞ RỘNG: LỊCH SỬ MUA HÀNG & SỔ ĐỊA CHỈ ĐA ĐIỂM NHẬN -->
-                            <tr id="detail-nd-@nd.MaNd" class="kv-detail-row @(moMacDinh ? "open" : "")" onclick="event.stopPropagation();">
+                            <tr id="detail-nd-@nd.MaNd" class="kv-detail-row d-none" onclick="event.stopPropagation();">
                                 <td colspan="8" class="p-0">
                                     <div class="kv-detail-box">
                                         <div class="kv-detail-tabs">
@@ -226,8 +225,8 @@
                                         <div id="paneTabKh1_@nd.MaNd">
                                             @if (nd.DonHangs.Any())
                                             {
-                                                <div class="table-responsive">
-                                                    <table class="table table-sm table-bordered align-middle mb-0" style="font-size: 13px;">
+                                                <div class="kv-kh-history-scroll">
+                                                    <table class="table table-sm table-bordered align-middle mb-0 kv-kh-history-table" style="font-size: 13px;">
                                                         <thead class="table-light">
                                                             <tr>
                                                                 <th>Mã hóa đơn</th>
@@ -386,7 +385,10 @@
                     const dId = tr.getAttribute('data-detail-id');
                     if (dId) {
                         const dRow = document.getElementById(dId);
-                        if (dRow) dRow.classList.remove('open');
+                        if (dRow) {
+                            dRow.classList.remove('open');
+                            dRow.classList.add('d-none');
+                        }
                     }
                 }
             });

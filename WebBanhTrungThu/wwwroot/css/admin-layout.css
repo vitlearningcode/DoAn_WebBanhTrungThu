@@ -94,6 +94,8 @@ html, body {
 }
 
 .form-select.form-select-sm,
+.modal .form-select,
+.kv-modal-body .form-select,
 .kv-role-select {
     appearance: none !important;
     -webkit-appearance: none !important;
@@ -101,6 +103,7 @@ html, body {
     display: block;
     height: 34px;
     min-height: 34px;
+    max-height: 38px;
     line-height: 1.25;
     white-space: nowrap;
     overflow: hidden;
@@ -113,6 +116,8 @@ html, body {
 }
 
 .form-select.form-select-sm::picker-icon,
+.modal .form-select::picker-icon,
+.kv-modal-body .form-select::picker-icon,
 .kv-role-select::picker-icon {
     display: none;
 }
@@ -270,6 +275,7 @@ html, body {
 .kv-main-table-area {
     flex-grow: 1;
     min-width: 0;
+    max-width: 100%;
 }
 
 .kv-card {
@@ -277,6 +283,14 @@ html, body {
     border-radius: 6px;
     border: 1px solid var(--kv-border);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    max-width: 100%;
+}
+
+.kv-main-table-area .table-responsive {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .kv-filter-box {
@@ -1062,10 +1076,52 @@ td, th, .so-tien, .ton-kho, .kpi-value, .kv-table td, .kv-table th {
 }
 
 @media (max-width: 992px) {
+    html, body {
+        overflow-x: hidden;
+        max-width: 100%;
+    }
+    .kv-top-header {
+        padding: 0 10px;
+        gap: 6px;
+        max-width: 100%;
+    }
+    .kv-navbar {
+        height: auto;
+        min-height: 44px;
+        padding: 6px 10px;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .kv-nav-list {
+        flex-wrap: wrap;
+        gap: 4px;
+        height: auto;
+    }
+    .kv-nav-link {
+        padding: 0 10px;
+        height: 32px;
+        font-size: 12.5px;
+    }
+    .btn-kv-pos-highlight {
+        padding: 4px 10px;
+        font-size: 12.5px;
+    }
+    .kv-page-container {
+        padding: 12px 10px 28px;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
     .kv-layout-2col {
         flex-direction: column;
+        align-items: stretch;
     }
-    .kv-sidebar-filter {
+    .kv-sidebar-filter,
+    .kv-main-table-area {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+    .kv-search-box {
         width: 100%;
     }
     .kv-top-links .hide-mobile {
@@ -1251,4 +1307,21 @@ td, th, .so-tien, .ton-kho, .kpi-value, .kv-table td, .kv-table th {
     .kv-settings-sidebar {
         width: 100%;
     }
+}
+
+.kv-kh-history-scroll {
+    max-height: 235px;
+    overflow-y: auto;
+    overflow-x: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: #ffffff;
+}
+
+.kv-kh-history-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f8fafc !important;
+    box-shadow: inset 0 -1px 0 #e5e7eb;
 }

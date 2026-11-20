@@ -1,0 +1,72 @@
+@model WebBanhTrungThu.ViewModels.NhaCungCapAdminViewModel
+
+<div class="kv-card p-3 mb-3">
+    <div class="row g-3 text-end align-items-center">
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Tổng đối tác cung ứng</div>
+            <div class="fs-5 fw-bold text-dark so-tien">@Model.TongSoNcc nhà cung cấp</div>
+            <small class="text-muted">@Model.SoHangChinhHang hãng chính hãng • @Model.SoDaiLyDieuTiet đại lý điều tiết</small>
+        </div>
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Chiết khấu nhập TB</div>
+            <div class="fs-5 fw-bold text-primary so-tien">@Model.ChietKhauTrungBinh.ToString("0.#")%</div>
+        </div>
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Tổng giá trị đã nhập</div>
+            <div class="fs-5 fw-bold text-success so-tien">@Model.TongGiaTriDaNhap.ToString("N0") đ</div>
+        </div>
+        <div class="col-md-3 pe-3">
+            <div class="text-muted small">Công nợ còn phải trả</div>
+            <div class="fs-5 fw-bold @(Model.TongCongNoPhaiTra > 0 ? "text-danger" : "text-dark") so-tien">@Model.TongCongNoPhaiTra.ToString("N0") đ</div>
+        </div>
+    </div>
+</div>
+
+<div class="kv-layout-2col">
+    <aside class="kv-sidebar-filter">
+        <h1 class="kv-page-heading">Nhà cung cấp</h1>
+        <div class="kv-filter-box">
+            <div class="kv-filter-title"><span>Loại đối tác</span></div>
+            <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="radNccLoai" value="ALL" checked="@(Model.LocLoaiNcc == "ALL")" onchange="locNhaCungCapClient()" /> Tất cả
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="radNccLoai" value="HANG_CHINH_HANG" checked="@(Model.LocLoaiNcc == "HANG_CHINH_HANG")" onchange="locNhaCungCapClient()" /> Hãng / NPP Cấp 1
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="radNccLoai" value="DAI_LY_DIEU_TIET" checked="@(Model.LocLoaiNcc == "DAI_LY_DIEU_TIET")" onchange="locNhaCungCapClient()" /> Đại lý điều tiết
+                </label>
+            </div>
+        </div>
+        <div class="kv-filter-box">
+            <div class="kv-filter-title"><span>Trạng thái hợp tác</span></div>
+            <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="radNccTrangThai" value="ALL" checked="@(Model.LocTrangThai == "ALL")" onchange="locNhaCungCapClient()" /> Tất cả
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="radNccTrangThai" value="ACTIVE" checked="@(Model.LocTrangThai == "ACTIVE")" onchange="locNhaCungCapClient()" /> Đang hợp tác
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="radNccTrangThai" value="INACTIVE" checked="@(Model.LocTrangThai == "INACTIVE")" onchange="locNhaCungCapClient()" /> Ngừng hợp tác
+                </label>
+            </div>
+        </div>
+    </aside>
+
+    <div class="kv-main-table-area">
+        <div class="kv-toolbar">
+            <div class="kv-search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="txtTimNhaCungCap" value="@Model.TuKhoa" placeholder="Tìm theo mã NCC, tên đối tác, thương hiệu, SĐT..." oninput="locNhaCungCapClient()" />
+            </div>
+            <div class="kv-toolbar-actions">
+                <a href="/Admin/NhapKhoAdmin/Index" class="kv-btn-tool"><i class="bi bi-box-arrow-in-down"></i> Phiếu nhập kho</a>
+                <button type="button" class="kv-btn-primary" onclick="moModalTaoNhaCungCap()"><i class="bi bi-plus-lg"></i> Thêm nhà cung cấp</button>
+            </div>
+        </div>
+
+        @await Html.PartialAsync("~/Areas/Admin/Views/NhaCungCapAdmin/PhanKhu/_BangNhaCungCap.cshtml", Model)
+    </div>
+</div>

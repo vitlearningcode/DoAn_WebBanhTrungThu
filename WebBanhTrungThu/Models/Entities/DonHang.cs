@@ -22,6 +22,9 @@ public partial class DonHang
     [Column("MaND")]
     public int? MaNd { get; set; }
 
+    [Column("MaNdLap")]
+    public int? MaNdLap { get; set; }
+
     [Column("MaPhienKVL")]
     [StringLength(64)]
     [Unicode(false)]
@@ -124,6 +127,10 @@ public partial class DonHang
     [ForeignKey("MaNd")]
     [InverseProperty("DonHangs")]
     public virtual NguoiDung? MaNdNavigation { get; set; }
+
+    [ForeignKey("MaNdLap")]
+    [InverseProperty("DonHangsDaLap")]
+    public virtual NguoiDung? MaNdLapNavigation { get; set; }
 
     [ForeignKey("MaPhienKvl")]
     [InverseProperty("DonHangs")]

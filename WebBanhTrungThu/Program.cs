@@ -52,8 +52,10 @@ builder.Services.AddScoped<IDichVuThongKeVaSoQuy, DichVuThongKeVaSoQuy>();
 builder.Services.AddScoped<IDichVuCauHinhHeThong, DichVuCauHinhHeThong>();
 builder.Services.AddScoped<IDichVuCaiDatHeThong, DichVuCaiDatHeThong>();
 builder.Services.AddScoped<IDichVuNhapKho, DichVuNhapKho>();
+builder.Services.AddScoped<IDichVuNhaCungCap, DichVuNhaCungCap>();
 builder.Services.AddScoped<IDichVuXuatKho, DichVuXuatKho>();
 builder.Services.AddScoped<IDichVuKiemKho, DichVuKiemKho>();
+builder.Services.AddScoped<IDichVuQuanTriNhanVien, DichVuQuanTriNhanVien>();
 
 // 4. Cấu hình Cookie Authentication thuần
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

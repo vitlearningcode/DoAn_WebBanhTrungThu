@@ -18,6 +18,11 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
             _dichVuBangGia = dichVuBangGia;
         }
 
+        private static readonly string[] _vaiTroNoiBo =
+        {
+            "ADMIN", "QUAN_TRI", "NHAN_VIEN", "THU_NGAN", "GIAO_HANG", "NV_BAN_HANG"
+        };
+
         [HttpGet]
         public async Task<IActionResult> Index(string? tuKhoa, string? locHangTv)
         {
@@ -25,6 +30,8 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
                 .AsNoTracking()
                 .Include(u => u.DonHangs)
                 .Include(u => u.SoDiaChis)
+                .Where(u => !_vaiTroNoiBo.Contains(u.MaVt)
+                         && !_db.HoSoNhanViens.Any(nv => nv.MaNd == u.MaNd))
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(tuKhoa))
