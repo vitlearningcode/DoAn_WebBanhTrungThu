@@ -110,12 +110,14 @@ namespace WebBanhTrungThu.Services.QuanTri
             if (vh == null) return null;
 
             bool dangDung = await _db.ComboMauCoSans.AnyAsync(c => c.MaVh == maVh)
-                            || await _db.HopQuaTuChons.AnyAsync(h => h.MaVh == maVh);
+                            || await _db.HopQuaTuChons.AnyAsync(h => h.MaVh == maVh)
+                            || await _db.NhatKyTruKhoDonHangs.AnyAsync(n => n.MaVh == maVh)
+                            || await _db.PhieuKhoVoHops.AnyAsync(p => p.MaVh == maVh);
             if (dangDung)
             {
                 vh.TrangThai = false;
                 await _db.SaveChangesAsync();
-                return $"Mẫu vỏ hộp [{vh.MaCodeVh}] {vh.TenVoHop} đã có đơn/combo liên kết -> Đã chuyển sang Ngừng sử dụng!";
+                return $"Mẫu vỏ hộp [{vh.MaCodeVh}] {vh.TenVoHop} đã có đơn/combo/chứng từ liên kết -> Đã chuyển sang Ngừng sử dụng!";
             }
 
             _db.MauVoHops.Remove(vh);
@@ -177,6 +179,12 @@ namespace WebBanhTrungThu.Services.QuanTri
             var moc = await _db.BangChietKhauSiB2bs.FindAsync(maMocCk);
             if (moc == null) return null;
 
+            bool daGanDonHang = await _db.DonHangs.AnyAsync(d => d.MaMocCk == maMocCk);
+            if (daGanDonHang)
+            {
+                return $"Mốc chiết khấu \"{moc.TenMocB2b}\" đã được áp dụng cho đơn hàng trong CSDL nên không thể xóa trực tiếp.";
+            }
+
             string ten = moc.TenMocB2b;
             _db.BangChietKhauSiB2bs.Remove(moc);
             await _db.SaveChangesAsync();
@@ -233,12 +241,14 @@ namespace WebBanhTrungThu.Services.QuanTri
             var cb = await _db.ComboMauCoSans.Include(c => c.ChiTietComboMaus).FirstOrDefaultAsync(c => c.MaCb == maCb);
             if (cb == null) return null;
 
-            bool coTrongGio = await _db.ChiTietGioHangs.AnyAsync(g => g.MaCb == maCb);
-            if (coTrongGio)
+            bool dangLienKet = await _db.ChiTietGioHangs.AnyAsync(g => g.MaCb == maCb)
+                            || await _db.ChiTietDonHangs.AnyAsync(d => d.MaCb == maCb);
+            if (dangLienKet)
             {
                 cb.TrangThai = false;
+                cb.BanTrucTiep = false;
                 await _db.SaveChangesAsync();
-                return $"Combo [{cb.MaCodeCb}] đang có trong giỏ hàng -> Đã chuyển sang Ngừng kinh doanh!";
+                return $"Combo [{cb.MaCodeCb}] đang có trong đơn hàng hoặc giỏ hàng -> Đã chuyển sang Ngừng kinh doanh!";
             }
 
             if (cb.ChiTietComboMaus.Any()) _db.ChiTietComboMaus.RemoveRange(cb.ChiTietComboMaus);

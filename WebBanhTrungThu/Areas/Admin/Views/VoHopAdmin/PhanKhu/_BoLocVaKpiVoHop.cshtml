@@ -1,0 +1,64 @@
+@model WebBanhTrungThu.ViewModels.VoHopAdminIndexViewModel
+
+<div class="kv-card p-3 mb-3">
+    <div class="row g-3 text-end align-items-center">
+        <div class="col-6 col-md-3 border-end pe-3 pe-md-4">
+            <div class="text-muted small">Tổng mẫu vỏ hộp</div>
+            <div class="fs-5 fw-bold text-dark so-tien">@Model.TongMauVoHop.ToString("N0") mẫu</div>
+        </div>
+        <div class="col-6 col-md-3 border-end pe-3 pe-md-4">
+            <div class="text-muted small">Tổng tồn kho vỏ</div>
+            <div class="fs-5 fw-bold text-primary so-tien">@Model.TongTonKhoVo.ToString("N0") vỏ</div>
+        </div>
+        <div class="col-6 col-md-3 border-end pe-3 pe-md-4">
+            <div class="text-muted small">Mẫu sắp hết (&le; 20)</div>
+            <div class="fs-5 fw-bold @(Model.SoMauSapHet > 0 ? "text-danger" : "text-success") so-tien">@Model.SoMauSapHet mẫu</div>
+        </div>
+        <div class="col-6 col-md-3 pe-3">
+            <div class="text-muted small">Tổng giá trị nhập vỏ hộp</div>
+            <div class="fs-5 fw-bold text-success so-tien">@Model.TongGiaTriNhapVoHop.ToString("N0") đ</div>
+        </div>
+    </div>
+</div>
+
+<div class="kv-layout-2col">
+    <aside class="kv-sidebar-filter">
+        <h1 class="kv-page-heading">Vỏ hộp quà tặng</h1>
+        <div class="kv-filter-box">
+            <div class="kv-filter-title"><span>Sức chứa bánh</span></div>
+            <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radVhSucChua" value="0" checked="@(!Model.SucChuaLoc.HasValue)" onchange="locVoHopClient()" /> Tất cả sức chứa</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radVhSucChua" value="2" checked="@(Model.SucChuaLoc == 2)" onchange="locVoHopClient()" /> Hộp 2 bánh</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radVhSucChua" value="4" checked="@(Model.SucChuaLoc == 4)" onchange="locVoHopClient()" /> Hộp 4 bánh</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radVhSucChua" value="6" checked="@(Model.SucChuaLoc == 6)" onchange="locVoHopClient()" /> Hộp 6 bánh</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radVhSucChua" value="8" checked="@(Model.SucChuaLoc >= 8)" onchange="locVoHopClient()" /> Hộp 8+ bánh</label>
+            </div>
+        </div>
+        <div class="kv-filter-box">
+            <div class="kv-filter-title"><span>Tồn kho &amp; Trạng thái</span></div>
+            <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radVhTon" value="ALL" checked="@(Model.TrangThaiTonLoc == "ALL")" onchange="locVoHopClient()" /> Tất cả</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radVhTon" value="SAP_HET" checked="@(Model.TrangThaiTonLoc == "SAP_HET")" onchange="locVoHopClient()" /> Sắp hết (&le; 20)</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radVhTon" value="CON_HANG" checked="@(Model.TrangThaiTonLoc == "CON_HANG")" onchange="locVoHopClient()" /> Đủ tồn (&gt; 20)</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radVhTon" value="NGUNG_KD" checked="@(Model.TrangThaiTonLoc == "NGUNG_KD")" onchange="locVoHopClient()" /> Ngừng sử dụng</label>
+            </div>
+        </div>
+    </aside>
+
+    <div class="kv-main-table-area">
+        <div class="kv-toolbar">
+            <div class="kv-search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="txtTimVoHop" value="@Model.TuKhoa" placeholder="Tìm mã vỏ hộp, tên mẫu, chất liệu..." oninput="locVoHopClient()" />
+            </div>
+            <div class="kv-toolbar-actions">
+                <button type="button" class="kv-btn-primary" onclick="moModalTaoVoHop()">
+                    <i class="bi bi-plus-lg"></i> Thêm mẫu vỏ hộp
+                </button>
+            </div>
+        </div>
+
+        @await Html.PartialAsync("~/Areas/Admin/Views/VoHopAdmin/PhanKhu/_BangDanhSachVoHop.cshtml", Model)
+        @await Html.PartialAsync("~/Areas/Admin/Views/VoHopAdmin/PhanKhu/_BangLichSuKhoVoHop.cshtml", Model)
+    </div>
+</div>

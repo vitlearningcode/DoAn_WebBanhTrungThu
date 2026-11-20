@@ -71,4 +71,13 @@ public partial class NguoiDung
 
     [InverseProperty("MaNdNavigation")]
     public virtual ICollection<SoDiaChi> SoDiaChis { get; set; } = new List<SoDiaChi>();
+
+    [InverseProperty("MaNdKiemNavigation")]
+    public virtual ICollection<PhieuKiemKho> PhieuKiemKhos { get; set; } = new List<PhieuKiemKho>();
+
+    [InverseProperty("MaNdCapNhatNavigation")]
+    public virtual ICollection<CauHinhHeThong> CauHinhHeThongs { get; set; } = new List<CauHinhHeThong>();
+
+    [InverseProperty("MaNdLapNavigation")]
+    public virtual ICollection<PhieuKhoVoHop> PhieuKhoVoHops { get; set; } = new List<PhieuKhoVoHop>();
 }

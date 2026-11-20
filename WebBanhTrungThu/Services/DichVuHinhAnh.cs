@@ -136,6 +136,23 @@ namespace WebBanhTrungThu.Services
                         ThuTuHienThi = 1
                     };
                     _db.LienKetHinhAnhs.Add(lkMoi);
+
+                    if (string.Equals(req.LoaiDoiTuong, "BANH", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var banh = await _db.SanPhamBanhs.FindAsync(req.MaDoiTuong);
+                        if (banh != null) banh.MaAnhChinh = hinhMoi.MaHa;
+                    }
+                    else if (string.Equals(req.LoaiDoiTuong, "VOHOP", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var voHop = await _db.MauVoHops.FindAsync(req.MaDoiTuong);
+                        if (voHop != null) voHop.MaAnhChinh = hinhMoi.MaHa;
+                    }
+                    else if (string.Equals(req.LoaiDoiTuong, "COMBO", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var combo = await _db.ComboMauCoSans.FindAsync(req.MaDoiTuong);
+                        if (combo != null) combo.MaAnhChinh = hinhMoi.MaHa;
+                    }
+
                     await _db.SaveChangesAsync();
                 }
             });

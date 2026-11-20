@@ -45,6 +45,12 @@ public partial class MauVoHop
 
     public bool TrangThai { get; set; }
 
+    public int? MaAnhChinh { get; set; }
+
+    [ForeignKey("MaAnhChinh")]
+    [InverseProperty("MauVoHops")]
+    public virtual KhoHinhAnh? MaAnhChinhNavigation { get; set; }
+
     [InverseProperty("MaVhNavigation")]
     public virtual ICollection<ComboMauCoSan> ComboMauCoSans { get; set; } = new List<ComboMauCoSan>();
 
@@ -53,4 +59,7 @@ public partial class MauVoHop
 
     [InverseProperty("MaVhNavigation")]
     public virtual ICollection<NhatKyTruKhoDonHang> NhatKyTruKhoDonHangs { get; set; } = new List<NhatKyTruKhoDonHang>();
+
+    [InverseProperty("MaVhNavigation")]
+    public virtual ICollection<PhieuKhoVoHop> PhieuKhoVoHops { get; set; } = new List<PhieuKhoVoHop>();
 }

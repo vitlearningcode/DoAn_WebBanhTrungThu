@@ -1,0 +1,135 @@
+@model WebBanhTrungThu.ViewModels.VoHopAdminIndexViewModel
+
+<div class="kv-card overflow-hidden mb-3">
+    <div class="table-responsive">
+        <table class="kv-table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Ảnh</th>
+                    <th>Mã vỏ</th>
+                    <th>Tên mẫu vỏ hộp</th>
+                    <th class="text-center">Sức chứa</th>
+                    <th class="text-end">Giá bán riêng</th>
+                    <th class="text-center">Trà Ô Long</th>
+                    <th class="text-end">Tồn kho vỏ</th>
+                    <th class="text-center">Trạng thái</th>
+                    <th class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyVoHop">
+                @foreach (var vh in Model.DanhSachVoHop)
+                {
+                    string searchKey = $"{vh.MaCodeVh} {vh.TenVoHop} {vh.MoTaChatLieu} {vh.KieuBoCucLuoi}".ToLowerInvariant();
+                    string mucTon = vh.SltonKhoVo <= 0 ? "HET_HANG" : (vh.SltonKhoVo <= 20 ? "SAP_HET" : "CON_HANG");
+
+                    <tr class="kv-master-row"
+                        data-search="@searchKey"
+                        data-succhua="@vh.SucChuaBanh"
+                        data-ton="@vh.SltonKhoVo"
+                        data-mucton="@mucTon"
+                        data-trangthai="@(vh.TrangThai ? "DANG_DUNG" : "NGUNG_KD")">
+                        <td>
+                            <img src="@vh.UrlAnh" alt="@vh.TenVoHop" class="kv-thumb-36" onerror="window.kvImgFallback(this)" />
+                        </td>
+                        <td class="fw-bold text-primary text-nowrap">@vh.MaCodeVh</td>
+                        <td>
+                            <div class="fw-semibold text-dark">@vh.TenVoHop</div>
+                            <small class="text-muted">
+                                @(string.IsNullOrWhiteSpace(vh.MoTaChatLieu) ? "Chưa mô tả chất liệu" : vh.MoTaChatLieu)
+                                @if (vh.SoComboLienKet > 0)
+                                {
+                                    <span> • @vh.SoComboLienKet combo</span>
+                                }
+                            </small>
+                        </td>
+                        <td class="text-center text-nowrap">
+                            <span class="badge" style="background: #EBF5FF; color: #005AC3; border: 1px solid #BFDBFE;">
+                                @vh.SucChuaBanh bánh (@vh.KieuBoCucLuoi)
+                            </span>
+                        </td>
+                        <td class="text-end fw-semibold so-tien text-nowrap">@vh.GiaVoHopRieng.ToString("N0") đ</td>
+                        <td class="text-center text-nowrap">
+                            @if (vh.KemTraOlong)
+                            {
+                                <span class="badge" style="background: #ECFDF5; color: #047857; border: 1px solid #A7F3D0;">Kèm trà</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">Không</span>
+                            }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            @if (vh.SltonKhoVo <= 0)
+                            {
+                                <span class="badge so-tien" style="background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;">0 (Hết vỏ)</span>
+                            }
+                            else if (vh.SltonKhoVo <= 20)
+                            {
+                                <span class="badge so-tien" style="background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;">@vh.SltonKhoVo.ToString("N0") (Sắp hết)</span>
+                            }
+                            else
+                            {
+                                <span class="fw-bold text-dark so-tien">@vh.SltonKhoVo.ToString("N0")</span>
+                            }
+                        </td>
+                        <td class="text-center text-nowrap">
+                            @if (vh.TrangThai)
+                            {
+                                <span class="badge" style="background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;">Đang sử dụng</span>
+                            }
+                            else
+                            {
+                                <span class="badge" style="background: #F3F4F6; color: #4B5563; border: 1px solid #D1D5DB;">Ngừng sử dụng</span>
+                            }
+                        </td>
+                        <td class="text-end text-nowrap">
+                            <div class="d-inline-flex align-items-center gap-1">
+                                <button type="button" class="btn btn-sm btn-outline-success py-1 px-2"
+                                        style="font-size: 12px; flex-shrink: 0; white-space: nowrap;"
+                                        onclick="moModalNhapXuatVoHop(@vh.MaVh, '@vh.MaCodeVh', '@vh.TenVoHop.Replace("'", "\\'")', @vh.SltonKhoVo, 'NHAP_VO_HOP')">
+                                    <i class="bi bi-box-arrow-in-down"></i> Nhập kho
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-warning py-1 px-2"
+                                        style="font-size: 12px; flex-shrink: 0; white-space: nowrap; color: #92400E; border-color: #F59E0B;"
+                                        onclick="moModalNhapXuatVoHop(@vh.MaVh, '@vh.MaCodeVh', '@vh.TenVoHop.Replace("'", "\\'")', @vh.SltonKhoVo, 'XUAT_HUY_VO_HOP')">
+                                    <i class="bi bi-box-arrow-up"></i> Xuất hủy
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2"
+                                        style="font-size: 12px; flex-shrink: 0; white-space: nowrap;"
+                                        data-mavh="@vh.MaVh"
+                                        data-macode="@vh.MaCodeVh"
+                                        data-ten="@vh.TenVoHop"
+                                        data-succhua="@vh.SucChuaBanh"
+                                        data-gia="@vh.GiaVoHopRieng.ToString("0")"
+                                        data-vip="@vh.SlbanhThuongHangToiThieu"
+                                        data-luoi="@vh.KieuBoCucLuoi"
+                                        data-tra="@(vh.KemTraOlong ? "true" : "false")"
+                                        data-mota="@(vh.MoTaChatLieu ?? "")"
+                                        data-maanh="@(vh.MaAnhChinh?.ToString() ?? "")"
+                                        data-urlanh="@vh.UrlAnh"
+                                        data-trangthai="@(vh.TrangThai ? "true" : "false")"
+                                        onclick="moModalSuaVoHop(this)">
+                                    <i class="bi bi-pencil-square"></i> Sửa
+                                </button>
+                                <form asp-area="Admin" asp-controller="VoHopAdmin" asp-action="ChuyenTrangThai" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="maVh" value="@vh.MaVh" />
+                                    <button type="submit" class="btn btn-sm @(vh.TrangThai ? "btn-outline-secondary" : "btn-outline-success") py-1 px-2"
+                                            style="font-size: 12px; flex-shrink: 0; white-space: nowrap;">
+                                        @(vh.TrangThai ? "Tắt" : "Bật")
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+
+                <tr id="rowTrongVoHop" style="@(Model.DanhSachVoHop.Any() ? "display: none;" : "")">
+                    <td colspan="9" class="text-center text-muted py-4">
+                        Không có mẫu vỏ hộp nào phù hợp bộ lọc hiện tại.
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>

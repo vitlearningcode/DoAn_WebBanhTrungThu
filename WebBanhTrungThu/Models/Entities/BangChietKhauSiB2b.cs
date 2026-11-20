@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -32,4 +32,7 @@ public partial class BangChietKhauSiB2b
     public decimal PhiKhuonInLogo { get; set; }
 
     public int SoNgaySanXuatCongThem { get; set; }
+
+    [InverseProperty("MaMocCkNavigation")]
+    public virtual ICollection<DonHang> DonHangs { get; set; } = new List<DonHang>();
 }

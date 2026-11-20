@@ -31,7 +31,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> LuuThanhToanMoMo(CauHinhThanhToanQr model)
         {
-            var (thanhCong, thongBao) = await _dichVuCaiDat.LuuCauHinhMoMoAsync(model);
+            var (thanhCong, thongBao) = await _dichVuCaiDat.LuuCauHinhMoMoAsync(model, LayMaNhanSuHienTai());
             TempData[thanhCong ? "ThongBaoAdmin" : "LoiAdmin"] = thongBao;
             return RedirectToAction(nameof(Index), new { muc = "momo" });
         }
@@ -40,7 +40,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> LuuCuaHang(CauHinhCuaHang model)
         {
-            var (thanhCong, thongBao) = await _dichVuCaiDat.LuuCauHinhCuaHangAsync(model);
+            var (thanhCong, thongBao) = await _dichVuCaiDat.LuuCauHinhCuaHangAsync(model, LayMaNhanSuHienTai());
             TempData[thanhCong ? "ThongBaoAdmin" : "LoiAdmin"] = thongBao;
             return RedirectToAction(nameof(Index), new { muc = "cuahang" });
         }
@@ -49,7 +49,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> LuuVanChuyen(CauHinhVanChuyen model)
         {
-            var (thanhCong, thongBao) = await _dichVuCaiDat.LuuCauHinhVanChuyenAsync(model);
+            var (thanhCong, thongBao) = await _dichVuCaiDat.LuuCauHinhVanChuyenAsync(model, LayMaNhanSuHienTai());
             TempData[thanhCong ? "ThongBaoAdmin" : "LoiAdmin"] = thongBao;
             return RedirectToAction(nameof(Index), new { muc = "vanchuyen" });
         }
@@ -58,7 +58,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> LuuHoiVienVip(CauHinhHoiVienVip model)
         {
-            var (thanhCong, thongBao) = await _dichVuCaiDat.LuuCauHinhHoiVienVipAsync(model);
+            var (thanhCong, thongBao) = await _dichVuCaiDat.LuuCauHinhHoiVienVipAsync(model, LayMaNhanSuHienTai());
             TempData[thanhCong ? "ThongBaoAdmin" : "LoiAdmin"] = thongBao;
             return RedirectToAction(nameof(Index), new { muc = "hoivien" });
         }

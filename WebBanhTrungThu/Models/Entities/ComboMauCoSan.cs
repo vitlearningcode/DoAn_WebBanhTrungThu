@@ -62,8 +62,17 @@ public partial class ComboMauCoSan
 
     public int TrongLuongGram { get; set; } = 600;
 
+    public int? MaAnhChinh { get; set; }
+
+    [ForeignKey("MaAnhChinh")]
+    [InverseProperty("ComboMauCoSans")]
+    public virtual KhoHinhAnh? MaAnhChinhNavigation { get; set; }
+
     [InverseProperty("MaCbNavigation")]
     public virtual ICollection<ChiTietComboMau> ChiTietComboMaus { get; set; } = new List<ChiTietComboMau>();
+
+    [InverseProperty("MaCbNavigation")]
+    public virtual ICollection<ChiTietDonHang> ChiTietDonHangs { get; set; } = new List<ChiTietDonHang>();
 
     [InverseProperty("MaCbNavigation")]
     public virtual ICollection<ChiTietGioHang> ChiTietGioHangs { get; set; } = new List<ChiTietGioHang>();

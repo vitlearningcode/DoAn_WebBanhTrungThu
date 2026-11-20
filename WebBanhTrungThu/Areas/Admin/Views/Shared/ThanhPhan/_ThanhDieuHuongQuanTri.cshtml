@@ -141,12 +141,15 @@
 
             <!-- 2. Hàng hóa -->
             <li class="kv-nav-item">
-                <a href="/Admin/SanPhamAdmin/Index" class="kv-nav-link @(ctrl == "SanPhamAdmin" || ctrl == "KhoAnhAdmin" || ctrl == "NhapKhoAdmin" || ctrl == "XuatKhoAdmin" || ctrl == "KiemKhoAdmin" ? "active" : "")">
+                <a href="/Admin/SanPhamAdmin/Index" class="kv-nav-link @(ctrl == "SanPhamAdmin" || ctrl == "VoHopAdmin" || ctrl == "KhoAnhAdmin" || ctrl == "NhapKhoAdmin" || ctrl == "XuatKhoAdmin" || ctrl == "KiemKhoAdmin" ? "active" : "")">
                     <i class="bi bi-box-seam"></i> Hàng hóa <i class="bi bi-chevron-down" style="font-size: 10px;"></i>
                 </a>
                 <div class="kv-dropdown-menu" style="min-width: 225px;">
                     <a href="/Admin/SanPhamAdmin/Index" class="kv-dropdown-item">
                         <i class="bi bi-grid"></i> Danh mục hàng hóa
+                    </a>
+                    <a href="/Admin/VoHopAdmin/Index" class="kv-dropdown-item">
+                        <i class="bi bi-gift"></i> Quản lý Vỏ hộp
                     </a>
                     <a href="/Admin/SanPhamAdmin/ThietLapGia" class="kv-dropdown-item">
                         <i class="bi bi-tags"></i> Thiết lập giá

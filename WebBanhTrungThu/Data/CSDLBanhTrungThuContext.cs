@@ -88,6 +88,8 @@ public partial class CSDLBanhTrungThuContext : DbContext
 
     public virtual DbSet<NhatKyTruKhoDonHang> NhatKyTruKhoDonHangs { get; set; }
 
+    public virtual DbSet<PhieuKhoVoHop> PhieuKhoVoHops { get; set; }
+
 //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
 //        => optionsBuilder.UseSqlServer("Server=DESKTOP-R0BDS56;Database=CSDL_BanhTrungThu;Trusted_Connection=True;TrustServerCertificate=True;");
@@ -110,6 +112,12 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.Property(e => e.ThuTuHienThi).HasDefaultValue(1);
 
             entity.HasOne(d => d.MaAnhNenNavigation).WithMany(p => p.CauHinhLandingPages).HasConstraintName("FK_Landing_AnhNen");
+
+            entity.HasOne(d => d.MaAnhPhuParallaxNavigation)
+                .WithMany(p => p.CauHinhLandingPageAnhPhus)
+                .HasForeignKey(d => d.MaAnhPhuParallax)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_Landing_AnhPhu");
         });
 
         modelBuilder.Entity<ChiTietComboMau>(entity =>
@@ -132,6 +140,24 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.HasOne(d => d.MaDhNavigation).WithMany(p => p.ChiTietDonHangs).HasConstraintName("FK_CTDH_DonHang");
 
             entity.HasOne(d => d.MaDotGhNavigation).WithMany(p => p.ChiTietDonHangs).HasConstraintName("FK_CTDH_DotGH");
+
+            entity.HasOne(d => d.MaBanhNavigation)
+                .WithMany(p => p.ChiTietDonHangs)
+                .HasForeignKey(d => d.MaBanh)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_CTDH_SanPhamBanh");
+
+            entity.HasOne(d => d.MaCbNavigation)
+                .WithMany(p => p.ChiTietDonHangs)
+                .HasForeignKey(d => d.MaCb)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_CTDH_ComboMau");
+
+            entity.HasOne(d => d.MaHopTcNavigation)
+                .WithMany(p => p.ChiTietDonHangs)
+                .HasForeignKey(d => d.MaHopTc)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_CTDH_HopTuChon");
         });
 
         modelBuilder.Entity<ChiTietGioHang>(entity =>
@@ -185,6 +211,12 @@ public partial class CSDLBanhTrungThuContext : DbContext
                 .HasForeignKey(d => d.MaDm)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK_Combo_DanhMuc");
+
+            entity.HasOne(d => d.MaAnhChinhNavigation)
+                .WithMany(p => p.ComboMauCoSans)
+                .HasForeignKey(d => d.MaAnhChinh)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_Combo_AnhChinh");
         });
 
         modelBuilder.Entity<DanhMucBanh>(entity =>
@@ -232,6 +264,24 @@ public partial class CSDLBanhTrungThuContext : DbContext
                 .HasConstraintName("FK_DonHang_NguoiLap");
 
             entity.HasOne(d => d.MaPhienKvlNavigation).WithMany(p => p.DonHangs).HasConstraintName("FK_DH_PhienKVL");
+
+            entity.HasOne(d => d.MaAnhLogoCongTyNavigation)
+                .WithMany(p => p.DonHangs)
+                .HasForeignKey(d => d.MaAnhLogoCongTy)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_DonHang_AnhLogoCongTy");
+
+            entity.HasOne(d => d.MaKmNavigation)
+                .WithMany(p => p.DonHangs)
+                .HasForeignKey(d => d.MaKm)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_DonHang_MaKhuyenMai");
+
+            entity.HasOne(d => d.MaMocCkNavigation)
+                .WithMany(p => p.DonHangs)
+                .HasForeignKey(d => d.MaMocCk)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_DonHang_BangChietKhau");
         });
 
         modelBuilder.Entity<DotGiaoHangDaDiem>(entity =>
@@ -256,6 +306,13 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.HasOne(d => d.MaNdNavigation).WithMany(p => p.GioHangs).HasConstraintName("FK_GH_NguoiDung");
 
             entity.HasOne(d => d.MaPhienKvlNavigation).WithMany(p => p.GioHangs).HasConstraintName("FK_GH_PhienKVL");
+
+            entity.HasOne(d => d.CodeKmdangApDungNavigation)
+                .WithMany(p => p.GioHangs)
+                .HasPrincipalKey(p => p.CodeKm)
+                .HasForeignKey(d => d.CodeKmdangApDung)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_GioHang_MaKhuyenMai");
         });
 
         modelBuilder.Entity<HopQuaTuChon>(entity =>
@@ -315,8 +372,14 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.HasKey(e => e.MaVh).HasName("PK__MauVoHop__272510328E056350");
 
             entity.Property(e => e.KieuBoCucLuoi).HasDefaultValue("grid-2x2");
-            entity.Property(e => e.SltonKhoVo).HasDefaultValue(50);
-            entity.Property(e => e.TrangThai).HasDefaultValue(true);
+            entity.Property(e => e.SltonKhoVo).HasDefaultValue(50).ValueGeneratedNever();
+            entity.Property(e => e.TrangThai).HasDefaultValue(true).ValueGeneratedNever();
+
+            entity.HasOne(d => d.MaAnhChinhNavigation)
+                .WithMany(p => p.MauVoHops)
+                .HasForeignKey(d => d.MaAnhChinh)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_MauVoHop_AnhChinh");
         });
 
         modelBuilder.Entity<NguoiDung>(entity =>
@@ -369,6 +432,12 @@ public partial class CSDLBanhTrungThuContext : DbContext
                 .HasForeignKey(d => d.MaNccMacDinh)
                 .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK_SPBanh_NhaCungCap");
+
+            entity.HasOne(d => d.MaAnhChinhNavigation)
+                .WithMany(p => p.SanPhamBanhs)
+                .HasForeignKey(d => d.MaAnhChinh)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_SPBanh_AnhChinh");
         });
 
         modelBuilder.Entity<SoDiaChi>(entity =>
@@ -397,6 +466,11 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.ToTable("PhieuThuChi");
             entity.HasKey(e => e.MaPhieu);
             entity.Property(e => e.NgayLap).HasDefaultValueSql("(getdate())");
+            entity.HasOne(d => d.MaDonHangLienKetNavigation)
+                .WithMany(p => p.PhieuThuChis)
+                .HasForeignKey(d => d.MaDonHangLienKet)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PhieuThuChi_DonHang");
             entity.HasOne(d => d.MaPhieuNhapLienKetNavigation)
                 .WithMany(p => p.PhieuThuChis)
                 .HasForeignKey(d => d.MaPhieuNhapLienKet)
@@ -506,6 +580,11 @@ public partial class CSDLBanhTrungThuContext : DbContext
                 .HasForeignKey(d => d.MaPxLienKet)
                 .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName("FK_PhieuKiemKho_PhieuXuat");
+            entity.HasOne(d => d.MaNdKiemNavigation)
+                .WithMany(p => p.PhieuKiemKhos)
+                .HasForeignKey(d => d.MaNdKiem)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PhieuKiemKho_NguoiDung");
         });
 
         modelBuilder.Entity<ChiTietKiemKho>(entity =>
@@ -530,6 +609,16 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.HasKey(e => e.MaThiep);
             entity.HasIndex(e => e.MaTokenQr, "UQ_ThiepChucMung3D_MaTokenQr").IsUnique();
             entity.Property(e => e.NgayTao).HasDefaultValueSql("(getdate())");
+            entity.HasOne(d => d.MaDonHangNavigation)
+                .WithMany(p => p.ThiepChucMung3ds)
+                .HasForeignKey(d => d.MaDonHang)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_Thiep3D_DonHang");
+            entity.HasOne(d => d.MaDotGiaoNavigation)
+                .WithMany(p => p.ThiepChucMung3ds)
+                .HasForeignKey(d => d.MaDotGiao)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_Thiep3D_DotGiaoHang");
         });
 
         modelBuilder.Entity<CauHinhHeThong>(entity =>
@@ -537,6 +626,39 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.ToTable("CauHinhHeThong");
             entity.HasKey(e => e.KhoaCauHinh);
             entity.Property(e => e.NgayCapNhat).HasDefaultValueSql("(getdate())");
+            entity.HasOne(d => d.MaNdCapNhatNavigation)
+                .WithMany(p => p.CauHinhHeThongs)
+                .HasForeignKey(d => d.MaNdCapNhat)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_CauHinhHeThong_NguoiDung");
+        });
+
+        modelBuilder.Entity<PhieuKhoVoHop>(entity =>
+        {
+            entity.ToTable("PhieuKhoVoHop");
+            entity.HasKey(e => e.MaPvh);
+            entity.HasIndex(e => e.SoPhieu, "UQ_PhieuKhoVoHop_SoPhieu").IsUnique();
+            entity.Property(e => e.NgayGiaoDich).HasDefaultValueSql("(getdate())");
+            entity.HasOne(d => d.MaVhNavigation)
+                .WithMany(p => p.PhieuKhoVoHops)
+                .HasForeignKey(d => d.MaVh)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PKVH_MauVoHop");
+            entity.HasOne(d => d.MaNccNavigation)
+                .WithMany(p => p.PhieuKhoVoHops)
+                .HasForeignKey(d => d.MaNcc)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PKVH_NhaCungCap");
+            entity.HasOne(d => d.MaPhieuChiNavigation)
+                .WithMany(p => p.PhieuKhoVoHops)
+                .HasForeignKey(d => d.MaPhieuChi)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PKVH_PhieuThuChi");
+            entity.HasOne(d => d.MaNdLapNavigation)
+                .WithMany(p => p.PhieuKhoVoHops)
+                .HasForeignKey(d => d.MaNdLap)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PKVH_NguoiDung");
         });
 
         modelBuilder.Entity<HoSoNhanVien>(entity =>
