@@ -1,4 +1,4 @@
-﻿# =============================================================================
+# =============================================================================
 # SCRIPT DỌN DẸP RÁC BIÊN DỊCH & ĐÓNG GÓI ĐỒ ÁN SẠCH (< 3MB)
 # Cách chạy: Mở PowerShell tại thư mục gốc Solution và gõ: ./don-dep-dong-goi.ps1
 # =============================================================================
@@ -42,7 +42,7 @@ if (Test-Path $duongDanFileZip) {
 }
 
 $danhSachThanhPhanCanNen = @()
-foreach ($muc in @("WebBanhTrungThu", "DoAn_WebBanhTrungThu.slnx", ".gitignore")) {
+foreach ($muc in @("WebBanhTrungThu", "DoAn_WebBanhTrungThu.slnx", ".gitignore", "README.md")) {
     $duongDanDayDu = Join-Path $thuMucGoc $muc
     if (Test-Path $duongDanDayDu) {
         $danhSachThanhPhanCanNen += $duongDanDayDu
