@@ -1,0 +1,53 @@
+@model WebBanhTrungThu.ViewModels.CaiDatHeThongViewModel
+@{
+    ViewData["Title"] = "Cài đặt hệ thống - Nguyệt Cát ERP";
+    string muc = Model.MucDangChon;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="kv-page-heading mb-1">Cài đặt hệ thống</h1>
+        <p class="text-muted mb-0" style="font-size: 13px;">Quản lý thông tin thanh toán QR, chi nhánh đại lý, biểu phí giao hàng và chính sách hội viên VIP.</p>
+    </div>
+</div>
+
+<div class="kv-settings-layout">
+    <aside class="kv-settings-sidebar">
+        <nav class="kv-settings-nav" aria-label="Danh mục cài đặt hệ thống">
+            <a href="/Admin/CaiDatAdmin/Index?muc=momo" class="kv-settings-nav-item @(muc == "momo" ? "active" : "")">
+                <i class="bi bi-qr-code-scan"></i>
+                <span>Thanh toán &amp; QR MoMo</span>
+            </a>
+            <a href="/Admin/CaiDatAdmin/Index?muc=cuahang" class="kv-settings-nav-item @(muc == "cuahang" ? "active" : "")">
+                <i class="bi bi-shop"></i>
+                <span>Thông tin Đại lý &amp; Chi nhánh</span>
+            </a>
+            <a href="/Admin/CaiDatAdmin/Index?muc=vanchuyen" class="kv-settings-nav-item @(muc == "vanchuyen" ? "active" : "")">
+                <i class="bi bi-truck"></i>
+                <span>Vận chuyển &amp; Phí giao hàng</span>
+            </a>
+            <a href="/Admin/CaiDatAdmin/Index?muc=hoivien" class="kv-settings-nav-item @(muc == "hoivien" ? "active" : "")">
+                <i class="bi bi-award"></i>
+                <span>Hội viên VIP &amp; Điểm tích lũy</span>
+            </a>
+        </nav>
+    </aside>
+
+    <section class="kv-settings-content">
+        @switch (muc)
+        {
+            case "cuahang":
+                @await Html.PartialAsync("~/Areas/Admin/Views/CaiDatAdmin/PhanKhu/_CaiDatCuaHang.cshtml", Model)
+                break;
+            case "vanchuyen":
+                @await Html.PartialAsync("~/Areas/Admin/Views/CaiDatAdmin/PhanKhu/_CaiDatVanChuyen.cshtml", Model)
+                break;
+            case "hoivien":
+                @await Html.PartialAsync("~/Areas/Admin/Views/CaiDatAdmin/PhanKhu/_CaiDatHoiVienVip.cshtml", Model)
+                break;
+            default:
+                @await Html.PartialAsync("~/Areas/Admin/Views/CaiDatAdmin/PhanKhu/_CaiDatThanhToanMoMo.cshtml", Model)
+                break;
+        }
+    </section>
+</div>

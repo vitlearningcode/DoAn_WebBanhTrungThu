@@ -1,0 +1,72 @@
+@model WebBanhTrungThu.ViewModels.NhapKhoAdminViewModel
+
+<div class="kv-card p-3 mb-3">
+    <div class="row g-3 text-end align-items-center">
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Tổng phiếu nhập</div>
+            <div class="fs-5 fw-bold text-dark so-tien">@Model.TongSoPhieu phiếu</div>
+            <small class="text-muted">@Model.SoPhieuDaNhap đã nhập • @Model.SoPhieuTam phiếu tạm</small>
+        </div>
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Tổng giá trị nhập kho</div>
+            <div class="fs-5 fw-bold text-primary so-tien">@Model.TongGiaTriNhap.ToString("N0") đ</div>
+        </div>
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Đã thanh toán NCC</div>
+            <div class="fs-5 fw-bold text-success so-tien">@Model.TongDaThanhToan.ToString("N0") đ</div>
+        </div>
+        <div class="col-md-3 pe-3">
+            <div class="text-muted small">Công nợ còn phải trả</div>
+            <div class="fs-5 fw-bold @(Model.TongConNo > 0 ? "text-danger" : "text-dark") so-tien">@Model.TongConNo.ToString("N0") đ</div>
+        </div>
+    </div>
+</div>
+
+<div class="kv-layout-2col">
+    <aside class="kv-sidebar-filter">
+        <h1 class="kv-page-heading">Nhập hàng</h1>
+        <div class="kv-filter-box">
+            <div class="kv-filter-title"><span>Trạng thái phiếu</span></div>
+            <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPnTrangThai" value="ALL" checked onchange="locPhieuNhapClient()" /> Tất cả</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPnTrangThai" value="PHIEU_TAM" onchange="locPhieuNhapClient()" /> Phiếu tạm</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPnTrangThai" value="DA_NHAP_KHO" onchange="locPhieuNhapClient()" /> Đã nhập kho</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPnTrangThai" value="DA_HUY" onchange="locPhieuNhapClient()" /> Đã hủy</label>
+            </div>
+        </div>
+        <div class="kv-filter-box">
+            <div class="kv-filter-title"><span>Thanh toán</span></div>
+            <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPnThanhToan" value="ALL" checked onchange="locPhieuNhapClient()" /> Tất cả</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPnThanhToan" value="CHUA_THANH_TOAN" onchange="locPhieuNhapClient()" /> Chưa thanh toán</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPnThanhToan" value="THANH_TOAN_MOT_PHAN" onchange="locPhieuNhapClient()" /> Trả một phần</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPnThanhToan" value="DA_THANH_TOAN" onchange="locPhieuNhapClient()" /> Đã thanh toán</label>
+            </div>
+        </div>
+        <div class="kv-filter-box">
+            <div class="kv-filter-title"><span>Nhà cung cấp / Hãng</span></div>
+            <select id="fltPnNhaCungCap" class="kv-select" onchange="locPhieuNhapClient()">
+                <option value="ALL">Tất cả nhà cung cấp</option>
+                @foreach (var ncc in Model.DanhSachNhaCungCap)
+                {
+                    <option value="@ncc">@ncc</option>
+                }
+            </select>
+        </div>
+    </aside>
+
+    <div class="kv-main-table-area">
+        <div class="kv-toolbar">
+            <div class="kv-search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="txtTimPhieuNhap" value="@Model.TuKhoa" placeholder="Tìm theo mã PN-, NCC, tên bánh..." oninput="locPhieuNhapClient()" />
+            </div>
+            <div class="kv-toolbar-actions">
+                <a href="/Admin/SoQuyAdmin/Index?locLoaiPhieu=CHI" class="kv-btn-tool"><i class="bi bi-wallet2"></i> Sổ quỹ phiếu chi</a>
+                <button type="button" class="kv-btn-primary" onclick="moModalTaoPhieuNhap()"><i class="bi bi-plus-lg"></i> Tạo phiếu nhập hàng</button>
+            </div>
+        </div>
+
+        @await Html.PartialAsync("~/Areas/Admin/Views/NhapKhoAdmin/PhanKhu/_BangPhieuNhap.cshtml", Model)
+    </div>
+</div>

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -48,4 +48,6 @@ public partial class MaKhuyenMai
 
     [Column(TypeName = "datetime")]
     public DateTime NgayKetThuc { get; set; }
+
+    public bool TrangThaiKichHoat { get; set; } = true;
 }

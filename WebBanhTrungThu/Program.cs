@@ -1,10 +1,17 @@
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
-using System.Text.Json.Serialization;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Middlewares;
 using WebBanhTrungThu.Services;
+using WebBanhTrungThu.Services.GiaoDien;
+using WebBanhTrungThu.Services.GioHang;
+using WebBanhTrungThu.Services.Interfaces;
+using WebBanhTrungThu.Services.Nen;
+using WebBanhTrungThu.Services.QuanTri;
+using WebBanhTrungThu.Services.TaiKhoan;
+using WebBanhTrungThu.Services.ThanhToan;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,15 +23,41 @@ builder.Services.AddControllersWithViews()
         options.JsonSerializerOptions.WriteIndented = true;
     });
 
-// Đăng ký các Service nghiệp vụ dùng chung toàn hệ thống (Đặt ngay dưới AddDbContext):
-builder.Services.AddScoped<DichVuHinhAnh>();
-builder.Services.AddScoped<DichVuGioHang>();
-
 // 2. Đăng ký DbContext kết nối tới SQL Server (25 bảng)
 builder.Services.AddDbContext<CSDLBanhTrungThuContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("ChuoiKetNoiCSDL")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("ChuoiKetNoiCSDL"),
+        sql => sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
 
-// 3. Cấu hình Cookie Authentication thuần (Thay thế Individual Accounts rườm rà)
+// 3. Đăng ký các Service nghiệp vụ theo chuẩn Dependency Inversion (Interface -> Implementation)
+builder.Services.AddScoped<IDichVuHinhAnh, DichVuHinhAnh>();
+builder.Services.AddScoped<IDichVuHoiVien, DichVuHoiVien>();
+builder.Services.AddScoped<IDichVuHopQuaTuChon, DichVuHopQuaTuChon>();
+builder.Services.AddScoped<IDichVuKhuyenMaiGioHang, DichVuKhuyenMaiGioHang>();
+builder.Services.AddScoped<IDichVuGioHang, DichVuGioHang>();
+builder.Services.AddScoped<IDichVuBaoMatCaptcha, DichVuBaoMatCaptcha>();
+builder.Services.AddScoped<IDichVuTinhGiaDonHang, DichVuTinhGiaDonHang>();
+builder.Services.AddScoped<IDichVuTonKhoFefo, DichVuTonKhoFefo>();
+builder.Services.AddScoped<IDichVuCongThanhToanMoMo, DichVuCongThanhToanMoMo>();
+builder.Services.AddScoped<IDichVuThanhToan, DichVuThanhToan>();
+builder.Services.AddHostedService<DichVuNenHuyDonQuaHan>();
+builder.Services.AddScoped<IDichVuQuanTriSanPham, DichVuQuanTriSanPham>();
+builder.Services.AddScoped<IDichVuQuanTriBangGia, DichVuQuanTriBangGia>();
+builder.Services.AddScoped<IDichVuQuanTriKhoFefo, DichVuQuanTriKhoFefo>();
+builder.Services.AddScoped<IDichVuQuanTriDonHang, DichVuQuanTriDonHang>();
+builder.Services.AddScoped<IDichVuBanHangPos, DichVuBanHangPos>();
+builder.Services.AddScoped<IDichVuTrangChu, DichVuTrangChu>();
+builder.Services.AddScoped<IDichVuChiTietSanPham, DichVuChiTietSanPham>();
+builder.Services.AddScoped<IDichVuThongKeVaSoQuy, DichVuThongKeVaSoQuy>();
+builder.Services.AddScoped<IDichVuCauHinhHeThong, DichVuCauHinhHeThong>();
+builder.Services.AddScoped<IDichVuCaiDatHeThong, DichVuCaiDatHeThong>();
+builder.Services.AddScoped<IDichVuNhapKho, DichVuNhapKho>();
+builder.Services.AddScoped<IDichVuNhaCungCap, DichVuNhaCungCap>();
+builder.Services.AddScoped<IDichVuXuatKho, DichVuXuatKho>();
+builder.Services.AddScoped<IDichVuKiemKho, DichVuKiemKho>();
+builder.Services.AddScoped<IDichVuQuanTriNhanVien, DichVuQuanTriNhanVien>();
+
+// 4. Cấu hình Cookie Authentication thuần
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -36,7 +69,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true;
     });
 
-// 4. Đăng ký Session & HttpContextAccessor
+// 5. Đăng ký Session & HttpContextAccessor
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSession(options =>
 {
@@ -47,7 +80,9 @@ builder.Services.AddSession(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// 6. Khởi tạo & Chuẩn hóa dữ liệu CSDL khi khởi động (Tách riêng sang Data/KhoiTaoCsdl.cs)
+await KhoiTaoCsdl.KhoiTaoVaChuanHoaDuLieuAsync(app);
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -55,11 +90,9 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-// 5. Phục vụ file tĩnh mặc định trong wwwroot
 app.UseStaticFiles();
 
-// 6. Ánh xạ thư mục trên ổ cứng máy tính (C:\Users\MinhDuc\KhoAnhBanhTrungThu) thành đường dẫn "/kho-anh-may"
+// 7. Ánh xạ thư mục kho ảnh trên ổ cứng máy tính thành đường dẫn "/kho-anh-may"
 var thuMucODia = builder.Configuration["CauHinhKhoAnh:ThuMucODiaMay"] ?? @"C:\Users\MinhDuc\KhoAnhBanhTrungThu";
 if (!Directory.Exists(thuMucODia))
 {
@@ -72,15 +105,19 @@ app.UseStaticFiles(new StaticFileOptions
 });
 
 app.UseRouting();
-
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// 7. Kích hoạt Middleware tự động cấp mã Phiên Khách Vãng Lai (Guest Cart)
+// 8. Kích hoạt Middleware tự động cấp mã Phiên Khách Vãng Lai (Guest Cart)
 app.UseMiddleware<PhienKhachVangLaiMiddleware>();
 
-// 8. Cấu hình Route cho phân khu Admin (Areas) và trang khách hàng
+// 9. Cấu hình Route cho phân khu Admin (Areas) và trang khách hàng
+app.MapControllerRoute(
+    name: "admin_soquy",
+    pattern: "Admin/SoQuy",
+    defaults: new { area = "Admin", controller = "SoQuyAdmin", action = "Index" });
+
 app.MapControllerRoute(
     name: "areas",
     pattern: "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");

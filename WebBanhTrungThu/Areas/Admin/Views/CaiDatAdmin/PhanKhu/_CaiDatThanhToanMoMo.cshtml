@@ -1,0 +1,96 @@
+@model WebBanhTrungThu.ViewModels.CaiDatHeThongViewModel
+@{
+    var qr = Model.CauHinhQr;
+}
+
+<div class="kv-card p-4">
+    <div class="border-bottom pb-3 mb-4">
+        <h2 class="h5 fw-bold text-dark mb-1">Thanh toán &amp; Tài khoản nhận tiền QR MoMo</h2>
+        <p class="text-muted small mb-0">Cập nhật thông tin tài khoản nhận chuyển khoản áp dụng cho cổng thanh toán trực tuyến và quầy bán hàng POS.</p>
+    </div>
+
+    <div class="row g-4 align-items-start">
+        <div class="col-lg-7">
+            <form asp-area="Admin" asp-controller="CaiDatAdmin" asp-action="LuuThanhToanMoMo" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="kv-field-label" for="inpMoMoSdt">Số điện thoại / Tài khoản MoMo *</label>
+                        <input id="inpMoMoSdt" type="text" name="SoTaiKhoanMoMo" class="kv-form-control fw-bold"
+                               value="@qr.SoTaiKhoanMoMo" placeholder="0814585526" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="kv-field-label" for="inpMoMoChuTk">Tên chủ tài khoản (Không dấu) *</label>
+                        <input id="inpMoMoChuTk" type="text" name="TenChuTaiKhoan" class="kv-form-control text-uppercase fw-bold"
+                               value="@qr.TenChuTaiKhoan" placeholder="LE MINH DUC" required />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="kv-field-label" for="inpMoMoCong">Cổng / Ví điện tử</label>
+                        <input id="inpMoMoCong" type="text" name="TenNganHangVi" class="kv-form-control"
+                               value="@qr.TenNganHangVi" placeholder="MOMO" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="kv-field-label" for="inpMoMoBin">Mã BIN ngân hàng (VietQR)</label>
+                        <input id="inpMoMoBin" type="text" name="MaBinNganHang" class="kv-form-control"
+                               value="@qr.MaBinNganHang" placeholder="970422" />
+                    </div>
+
+                    <div class="col-md-8">
+                        <label class="kv-field-label" for="inpMoMoCuPhap">Tiền tố / Mẫu nội dung chuyển khoản</label>
+                        <input id="inpMoMoCuPhap" type="text" name="CuPhapChuyenKhoan" class="kv-form-control"
+                               value="@qr.CuPhapChuyenKhoan" placeholder="NGUYETCAT {MaTraCuuDh}" />
+                        <small class="text-muted">Biến <code>{MaTraCuuDh}</code> sẽ tự động thay thế bằng mã đơn hàng khi tạo QR.</small>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="kv-field-label" for="inpMoMoCho">Thời hạn giữ QR (phút)</label>
+                        <input id="inpMoMoCho" type="number" min="5" max="60" name="ThoiGianChoPhut" class="kv-form-control"
+                               value="@(qr.ThoiGianChoPhut > 0 ? qr.ThoiGianChoPhut : 15)" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="kv-field-label" for="inpStkNganHang">Số tài khoản ngân hàng (tùy chọn)</label>
+                        <input id="inpStkNganHang" type="text" name="SoTaiKhoanNganHang" class="kv-form-control"
+                               value="@qr.SoTaiKhoanNganHang" placeholder="Để trống nếu dùng số ví MoMo" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="kv-field-label" for="inpTenNganHangQr">Tên ngân hàng liên kết (tùy chọn)</label>
+                        <input id="inpTenNganHangQr" type="text" name="TenNganHangVietQr" class="kv-form-control"
+                               value="@qr.TenNganHangVietQr" placeholder="VD: MB Bank" />
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-top d-flex justify-content-end">
+                    <button type="submit" class="btn-kv-blue px-4 py-2">
+                        <i class="bi bi-check2-circle me-1"></i> Lưu cấu hình Thanh toán &amp; QR
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="p-3 rounded border text-center" style="background: #F8FAFC; border-color: #E2E8F0 !important;">
+                <div class="small fw-bold text-primary mb-2">Xem trước mã QR mẫu (500.000 đ)</div>
+                <img src="@Model.AnhQrMauBase64" alt="Mã QR MoMo mẫu"
+                     class="img-fluid rounded border bg-white p-2 mb-3"
+                     style="max-width: 210px;" />
+
+                <div class="text-start small bg-white p-3 rounded border">
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="text-muted">Số ví / TK:</span>
+                        <strong class="text-dark">@qr.SoDienThoaiHienThi</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="text-muted">Chủ tài khoản:</span>
+                        <strong class="text-dark">@qr.TenChuTaiKhoan</strong>
+                    </div>
+                    <div class="d-flex justify-content-between py-1">
+                        <span class="text-muted">Nội dung CK mẫu:</span>
+                        <strong class="text-primary">@Model.NoiDungCkMau</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

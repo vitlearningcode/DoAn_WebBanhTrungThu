@@ -1,0 +1,70 @@
+@model WebBanhTrungThu.ViewModels.TrangThanhToanViewModel
+@{
+    ViewData["Title"] = "Thanh Toán Đơn Hàng - Nguyệt Cát";
+    string ngayHenMacDinh = DateTime.Now.AddDays(2).ToString("yyyy-MM-dd");
+
+    var dc0 = Model.DanhSachSoDiaChi.FirstOrDefault();
+    string tinhThanhBanDau = dc0?.TinhThanh ?? "TP. Hồ Chí Minh";
+    string diaChiGhepBanDau = dc0 != null ? $"{dc0.DiaChiCuThe}, {dc0.PhuongXa}, {dc0.QuanHuyen}, {dc0.TinhThanh}" : "";
+
+    string? tenBanhHetHangBanDau = TempData["TenBanhHetHang"] as string ?? ViewBag.TenBanhHetHangKhiTaiTrang as string;
+    string? thongBaoHetHangBanDau = TempData["LoiThanhToan"] as string ?? ViewBag.ThongBaoHetHangKhiTaiTrang as string;
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/thanh-toan.css" asp-append-version="true" />
+}
+
+<section class="py-4 trang-thanh-toan-bitis">
+<div class="container">
+<form asp-controller="ThanhToan" asp-action="DatHang" method="post" id="formDatHangTrungThu" onsubmit="return chuanBiTruocKhiGuiDon(event)">
+@if (TempData["LoiThanhToan"] != null)
+{
+    <div class="alert alert-danger border border-danger mb-4 rounded-3">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i><strong>@TempData["LoiThanhToan"]</strong>
+    </div>
+}
+@Html.AntiForgeryToken()
+<input type="hidden" name="TocDoGiaoHang" id="hidTocDoGiaoHang" value="GIAO_TIEU_CHUAN" />
+<input type="hidden" name="CoThiep3D" id="hidCoThiep3D" value="false" />
+<input type="hidden" name="DanhSachDotGiao[0].TinhThanhPho" id="dot0_TinhThanhPho" value="@tinhThanhBanDau" />
+<input type="hidden" name="DanhSachDotGiao[0].DiaChiGiaoChiTiet" id="dot0_DiaChi" value="@diaChiGhepBanDau" />
+<input type="hidden" name="DanhSachDotGiao[0].NgayHenGiao" value="@ngayHenMacDinh" />
+<input type="hidden" name="DanhSachDotGiao[0].KhungGioGiao" value="Sáng (08:00 - 11:30)" />
+
+<div class="row g-4 align-items-start">
+    <div class="col-lg-7 cot-trai-bitis">
+        <div class="khung-cot-trai-bitis">
+            @await Html.PartialAsync("~/Views/ThanhToan/PhanKhu/_FormThongTinGiaoHang.cshtml", Model)
+            @await Html.PartialAsync("~/Views/ThanhToan/PhanKhu/_PhuongThucThanhToanVaCaptcha.cshtml", Model)
+        </div>
+    </div>
+
+    <div class="col-lg-5 cot-phai-bitis">
+        @await Html.PartialAsync("~/Views/ThanhToan/PhanKhu/_TomTatDonHangVaVoucher.cshtml", Model)
+    </div>
+</div>
+</form>
+</div>
+</section>
+
+@section Scripts {
+<script>
+window.CAU_HINH_THANH_TOAN = {
+    tongSoHop: @Model.TongSoHop,
+    tongTienHang: @Model.TongTienHang.ToString(System.Globalization.CultureInfo.InvariantCulture),
+    tienCkB2B: @Model.TienChietKhauB2B.ToString(System.Globalization.CultureInfo.InvariantCulture),
+    tienGiamVoucher: @Model.TienGiamVoucher.ToString(System.Globalization.CultureInfo.InvariantCulture),
+    codeKmDangDung: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CodeKmDangDung ?? "")),
+    phanTramGiamVip: @Model.PhanTramGiamVip.ToString(System.Globalization.CultureInfo.InvariantCulture),
+    diemTichLuy: @Model.DiemTichLuy,
+    mienPhiLogo: @(Model.MienPhiInLogo ? "true" : "false"),
+    phiLogoMacDinh: @Model.PhiInLogoMacDinh.ToString(System.Globalization.CultureInfo.InvariantCulture),
+    ngayHenMacDinh: "@ngayHenMacDinh",
+    tenBanhHetHangBanDau: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(tenBanhHetHangBanDau)),
+    thongBaoHetHangBanDau: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(thongBaoHetHangBanDau))
+};
+</script>
+<script src="~/js/modules/nhan-hang-thay.js" asp-append-version="true"></script>
+<script src="~/js/thanh-toan.js" asp-append-version="true"></script>
+}

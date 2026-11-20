@@ -1,0 +1,88 @@
+@model WebBanhTrungThu.ViewModels.CaiDatHeThongViewModel
+@{
+    var hv = Model.CauHinhHoiVienVip;
+}
+
+<div class="kv-card p-4">
+    <div class="border-bottom pb-3 mb-4">
+        <h2 class="h5 fw-bold text-dark mb-1">Hội viên VIP &amp; Điểm tích lũy</h2>
+        <p class="text-muted small mb-0">Cấu hình tỷ lệ tích điểm, quy đổi điểm thành tiền, trần tiêu điểm mỗi đơn và bảng 4 mốc hạng Đồng / Bạc / Vàng / Kim Cương.</p>
+    </div>
+
+    <form asp-area="Admin" asp-controller="CaiDatAdmin" asp-action="LuuHoiVienVip" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <label class="kv-field-label" for="inpHvTienDiem">Số tiền tích 1 điểm (đ)</label>
+                <input id="inpHvTienDiem" type="number" min="1000" step="1000" name="SoTienMotDiem"
+                       class="kv-form-control fw-bold" value="@hv.SoTienMotDiem" />
+                <small class="text-muted">Mặc định: 10.000đ = 1 điểm</small>
+            </div>
+            <div class="col-md-3">
+                <label class="kv-field-label" for="inpHvGiaTriDiem">1 điểm quy đổi (đ)</label>
+                <input id="inpHvGiaTriDiem" type="number" min="100" step="100" name="GiaTriQuyDoiMotDiem"
+                       class="kv-form-control fw-bold" value="@hv.GiaTriQuyDoiMotDiem" />
+                <small class="text-muted">Mặc định: 1 điểm = 1.000đ</small>
+            </div>
+            <div class="col-md-3">
+                <label class="kv-field-label" for="inpHvTran">Trần tiêu điểm / đơn (%)</label>
+                <input id="inpHvTran" type="number" min="1" max="100" name="TranTieuDiemPhanTram"
+                       class="kv-form-control fw-bold" value="@hv.TranTieuDiemPhanTram" />
+                <small class="text-muted">Mặc định: tối đa 50% giá trị đơn</small>
+            </div>
+            <div class="col-md-3">
+                <label class="kv-field-label" for="inpHvDangKy">Điểm tặng đăng ký mới</label>
+                <input id="inpHvDangKy" type="number" min="0" step="10" name="DiemTangDangKyMoi"
+                       class="kv-form-control fw-bold" value="@hv.DiemTangDangKyMoi" />
+                <small class="text-muted">Mặc định: +50 điểm</small>
+            </div>
+        </div>
+
+        <h3 class="h6 fw-bold text-dark mb-2">Bảng 4 mốc hạng Hội viên VIP</h3>
+        <div class="table-responsive">
+            <table class="kv-table border">
+                <thead>
+                    <tr>
+                        <th>Hạng hội viên</th>
+                        <th style="width: 220px;">Mốc điểm xét hạng tối thiểu</th>
+                        <th style="width: 220px;">Ưu đãi giảm giá tự động (%)</th>
+                        <th>Quyền lợi tóm tắt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="badge" style="background: #F3F4F6; color: #374151; border: 1px solid #D1D5DB;">Đồng</span></td>
+                        <td class="fw-semibold text-muted">0 điểm (Mặc định)</td>
+                        <td class="fw-semibold text-muted">0%</td>
+                        <td class="small text-muted">Tích lũy điểm theo mỗi đơn hàng hợp lệ.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge" style="background: #E0F2FE; color: #0369A1; border: 1px solid #BAE6FD;">Bạc</span></td>
+                        <td><input type="number" min="1" name="MocBacDiem" class="kv-form-control" value="@hv.MocBacDiem" /></td>
+                        <td><input type="number" min="0" max="50" step="0.5" name="PhanTramGiamBac" class="kv-form-control" value="@hv.PhanTramGiamBac" /></td>
+                        <td class="small text-muted">Giảm trực tiếp @hv.PhanTramGiamBac.ToString("0.#")% trên hóa đơn hội viên.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge" style="background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;">Vàng</span></td>
+                        <td><input type="number" min="1" name="MocVangDiem" class="kv-form-control" value="@hv.MocVangDiem" /></td>
+                        <td><input type="number" min="0" max="50" step="0.5" name="PhanTramGiamVang" class="kv-form-control" value="@hv.PhanTramGiamVang" /></td>
+                        <td class="small text-muted">Giảm trực tiếp @hv.PhanTramGiamVang.ToString("0.#")% &amp; ưu tiên xử lý đơn.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge" style="background: #EDE9FE; color: #5B21B6; border: 1px solid #DDD6FE;">Kim Cương</span></td>
+                        <td><input type="number" min="1" name="MocKimCuongDiem" class="kv-form-control" value="@hv.MocKimCuongDiem" /></td>
+                        <td><input type="number" min="0" max="50" step="0.5" name="PhanTramGiamKimCuong" class="kv-form-control" value="@hv.PhanTramGiamKimCuong" /></td>
+                        <td class="small text-muted">Giảm @hv.PhanTramGiamKimCuong.ToString("0.#")% cao nhất &amp; đặc quyền quà VIP.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-4 pt-3 border-top d-flex justify-content-end">
+            <button type="submit" class="btn-kv-blue px-4 py-2">
+                <i class="bi bi-check2-circle me-1"></i> Lưu cấu hình Hội viên VIP
+            </button>
+        </div>
+    </form>
+</div>

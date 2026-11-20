@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Models.Entities;
@@ -30,8 +30,6 @@ public partial class CSDLBanhTrungThuContext : DbContext
 
     public virtual DbSet<ComboMauCoSan> ComboMauCoSans { get; set; }
 
-    public virtual DbSet<CongThucBanhNl> CongThucBanhNls { get; set; }
-
     public virtual DbSet<DanhMucBanh> DanhMucBanhs { get; set; }
 
     public virtual DbSet<DonHang> DonHangs { get; set; }
@@ -54,8 +52,6 @@ public partial class CSDLBanhTrungThuContext : DbContext
 
     public virtual DbSet<NguoiDung> NguoiDungs { get; set; }
 
-    public virtual DbSet<NguyenLieu> NguyenLieus { get; set; }
-
     public virtual DbSet<PhienKhachVangLai> PhienKhachVangLais { get; set; }
 
     public virtual DbSet<SanPhamBanh> SanPhamBanhs { get; set; }
@@ -65,6 +61,32 @@ public partial class CSDLBanhTrungThuContext : DbContext
     public virtual DbSet<ThongSoDinhDuong> ThongSoDinhDuongs { get; set; }
 
     public virtual DbSet<VaiTro> VaiTros { get; set; }
+
+    public virtual DbSet<PhieuThuChi> PhieuThuChis { get; set; }
+
+    public virtual DbSet<ThiepChucMung3d> ThiepChucMung3ds { get; set; }
+
+    public virtual DbSet<CauHinhHeThong> CauHinhHeThongs { get; set; }
+
+    public virtual DbSet<PhieuNhapKho> PhieuNhapKhos { get; set; }
+
+    public virtual DbSet<ChiTietPhieuNhap> ChiTietPhieuNhaps { get; set; }
+
+    public virtual DbSet<PhieuXuatKho> PhieuXuatKhos { get; set; }
+
+    public virtual DbSet<ChiTietPhieuXuat> ChiTietPhieuXuats { get; set; }
+
+    public virtual DbSet<PhieuKiemKho> PhieuKiemKhos { get; set; }
+
+    public virtual DbSet<ChiTietKiemKho> ChiTietKiemKhos { get; set; }
+
+    public virtual DbSet<NhaCungCap> NhaCungCaps { get; set; }
+
+    public virtual DbSet<HoSoNhanVien> HoSoNhanViens { get; set; }
+
+    public virtual DbSet<ThuongHieu> ThuongHieus { get; set; }
+
+    public virtual DbSet<NhatKyTruKhoDonHang> NhatKyTruKhoDonHangs { get; set; }
 
 //    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 //#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
@@ -144,19 +166,25 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.HasKey(e => e.MaCb).HasName("PK__ComboMau__27258E1ACF216E7D");
 
             entity.Property(e => e.TrangThai).HasDefaultValue(true);
+            entity.Property(e => e.ViTriKho).HasDefaultValue("Kệ B1");
+            entity.Property(e => e.DonViTinh).HasDefaultValue("Hộp");
+            entity.Property(e => e.BanTrucTiep).HasDefaultValue(true);
+            entity.Property(e => e.TongTonKho).HasDefaultValue(40);
+            entity.Property(e => e.TrongLuongGram).HasDefaultValue(600);
 
             entity.HasOne(d => d.MaVhNavigation).WithMany(p => p.ComboMauCoSans)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Combo_MauVoHop");
-        });
 
-        modelBuilder.Entity<CongThucBanhNl>(entity =>
-        {
-            entity.HasKey(e => new { e.MaBanh, e.MaNl }).HasName("PK__CongThuc__5F83E17C0491859F");
+            entity.HasOne(d => d.MaThuongHieuNavigation).WithMany(p => p.ComboMauCoSans)
+                .HasForeignKey(d => d.MaThuongHieu)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_Combo_ThuongHieu");
 
-            entity.HasOne(d => d.MaBanhNavigation).WithMany(p => p.CongThucBanhNls).HasConstraintName("FK_CTNL_Banh");
-
-            entity.HasOne(d => d.MaNlNavigation).WithMany(p => p.CongThucBanhNls).HasConstraintName("FK_CTNL_NguyenLieu");
+            entity.HasOne(d => d.MaDmNavigation).WithMany(p => p.ComboMauCoSans)
+                .HasForeignKey(d => d.MaDm)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_Combo_DanhMuc");
         });
 
         modelBuilder.Entity<DanhMucBanh>(entity =>
@@ -177,8 +205,31 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.Property(e => e.PhuongThucTt).HasDefaultValue("COD");
             entity.Property(e => e.TrangThaiDh).HasDefaultValue("CHO_XAC_NHAN");
             entity.Property(e => e.TrangThaiTt).HasDefaultValue("CHUA_TT");
+            entity.Property(e => e.TienGiamHangVip).HasColumnType("decimal(18, 0)").HasDefaultValue(0m);
+            entity.Property(e => e.PhanTramGiamVip).HasDefaultValue(0);
+            entity.Property(e => e.SoDiemDaDung).HasDefaultValue(0);
+            entity.Property(e => e.TienGiamDiemVip).HasColumnType("decimal(18, 0)").HasDefaultValue(0m);
+            entity.Property(e => e.HanThanhToanQr).HasColumnType("datetime");
+            entity.Property(e => e.DaCongDiemThuong).HasDefaultValue(false);
+            entity.Property(e => e.DaHoanDiemKhiHuy).HasDefaultValue(false);
+            entity.Property(e => e.LyDoHuy).HasMaxLength(500);
+            entity.Property(e => e.KenhBan).HasDefaultValue("WEB_ONLINE");
+            entity.Property(e => e.SoTienKhachDaTra).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.MaNganHangHoan).HasMaxLength(50);
+            entity.Property(e => e.SoTaiKhoanHoan).HasMaxLength(50);
+            entity.Property(e => e.TenChuTkHoan).HasMaxLength(150);
+            entity.Property(e => e.GhiChuDieuChinhAdmin).HasMaxLength(500);
+            entity.Property(e => e.ThoiGianCapNhatCuoi).HasColumnType("datetime");
+            entity.Property(e => e.NguoiCapNhatCuoi).HasMaxLength(150);
+            entity.Property(e => e.DaRollbackKho).HasDefaultValue(false);
 
             entity.HasOne(d => d.MaNdNavigation).WithMany(p => p.DonHangs).HasConstraintName("FK_DH_NguoiDung");
+
+            entity.HasOne(d => d.MaNdLapNavigation)
+                .WithMany(p => p.DonHangsDaLap)
+                .HasForeignKey(d => d.MaNdLap)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_DonHang_NguoiLap");
 
             entity.HasOne(d => d.MaPhienKvlNavigation).WithMany(p => p.DonHangs).HasConstraintName("FK_DH_PhienKVL");
         });
@@ -256,6 +307,7 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.Property(e => e.ChoPhepKhachVangLai).HasDefaultValue(true);
             entity.Property(e => e.LoaiGiam).HasDefaultValue("PHAN_TRAM");
             entity.Property(e => e.SltoiDa).HasDefaultValue(100);
+            entity.Property(e => e.TrangThaiKichHoat).HasDefaultValue(true);
         });
 
         modelBuilder.Entity<MauVoHop>(entity =>
@@ -281,13 +333,6 @@ public partial class CSDLBanhTrungThuContext : DbContext
                 .HasConstraintName("FK_ND_VaiTro");
         });
 
-        modelBuilder.Entity<NguyenLieu>(entity =>
-        {
-            entity.HasKey(e => e.MaNl).HasName("PK__NguyenLi__2725D73C41190141");
-
-            entity.Property(e => e.LaNguyenLieuChay).HasDefaultValue(true);
-        });
-
         modelBuilder.Entity<PhienKhachVangLai>(entity =>
         {
             entity.HasKey(e => e.MaPhienKvl).HasName("PK__PhienKha__D3B00463407751DA");
@@ -307,10 +352,23 @@ public partial class CSDLBanhTrungThuContext : DbContext
             entity.Property(e => e.SoTrungMuoi).HasDefaultValue(1);
             entity.Property(e => e.TrangThaiBan).HasDefaultValue(true);
             entity.Property(e => e.TrongLuongGram).HasDefaultValue(150);
+            entity.Property(e => e.ViTriKho).HasDefaultValue("Kệ A1");
+            entity.Property(e => e.DonViTinh).HasDefaultValue("Cái");
+            entity.Property(e => e.BanTrucTiep).HasDefaultValue(true);
 
             entity.HasOne(d => d.MaDmNavigation).WithMany(p => p.SanPhamBanhs)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_SPBanh_DanhMuc");
+
+            entity.HasOne(d => d.MaThuongHieuNavigation).WithMany(p => p.SanPhamBanhs)
+                .HasForeignKey(d => d.MaThuongHieu)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_SPBanh_ThuongHieu");
+
+            entity.HasOne(d => d.MaNccMacDinhNavigation).WithMany(p => p.SanPhamBanhs)
+                .HasForeignKey(d => d.MaNccMacDinh)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_SPBanh_NhaCungCap");
         });
 
         modelBuilder.Entity<SoDiaChi>(entity =>
@@ -332,6 +390,212 @@ public partial class CSDLBanhTrungThuContext : DbContext
         modelBuilder.Entity<VaiTro>(entity =>
         {
             entity.HasKey(e => e.MaVt).HasName("PK__VaiTro__2725103ECB282279");
+        });
+
+        modelBuilder.Entity<PhieuThuChi>(entity =>
+        {
+            entity.ToTable("PhieuThuChi");
+            entity.HasKey(e => e.MaPhieu);
+            entity.Property(e => e.NgayLap).HasDefaultValueSql("(getdate())");
+            entity.HasOne(d => d.MaPhieuNhapLienKetNavigation)
+                .WithMany(p => p.PhieuThuChis)
+                .HasForeignKey(d => d.MaPhieuNhapLienKet)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PhieuThuChi_PhieuNhapKho");
+        });
+
+        modelBuilder.Entity<NhaCungCap>(entity =>
+        {
+            entity.ToTable("NhaCungCap");
+            entity.HasKey(e => e.MaNcc);
+            entity.HasIndex(e => e.MaCodeNcc, "UQ_NhaCungCap_MaCodeNcc").IsUnique();
+            entity.Property(e => e.LoaiNcc).HasDefaultValue("HANG_CHINH_HANG");
+            entity.Property(e => e.ThuongHieuCungCap).HasDefaultValue("Đa thương hiệu");
+            entity.Property(e => e.PhanTramChietKhauMacDinh).HasColumnType("decimal(5, 2)").HasDefaultValue(0m);
+            entity.Property(e => e.DangHoatDong).HasDefaultValue(true);
+            entity.Property(e => e.NgayTao).HasDefaultValueSql("(getdate())");
+        });
+
+        modelBuilder.Entity<PhieuNhapKho>(entity =>
+        {
+            entity.ToTable("PhieuNhapKho");
+            entity.HasKey(e => e.MaPn);
+            entity.HasIndex(e => e.SoPhieuNhap, "UQ_PhieuNhapKho_SoPhieuNhap").IsUnique();
+            entity.Property(e => e.NgayNhap).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.TrangThai).HasDefaultValue("PHIEU_TAM");
+            entity.Property(e => e.TrangThaiThanhToan).HasDefaultValue("CHUA_THANH_TOAN");
+            entity.HasOne(d => d.MaNccNavigation)
+                .WithMany(p => p.PhieuNhapKhos)
+                .HasForeignKey(d => d.MaNcc)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PhieuNhapKho_NhaCungCap");
+            entity.HasOne(d => d.MaNdLapNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaNdLap)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PhieuNhapKho_NguoiDung");
+        });
+
+        modelBuilder.Entity<ChiTietPhieuNhap>(entity =>
+        {
+            entity.ToTable("ChiTietPhieuNhap");
+            entity.HasKey(e => e.MaCtpn);
+            entity.Property(e => e.PhanTramChietKhau).HasColumnType("decimal(5, 2)").HasDefaultValue(0m);
+            entity.Property(e => e.GiaNiemYet).HasColumnType("decimal(18, 0)").HasDefaultValue(0m);
+            entity.HasOne(d => d.MaPnNavigation)
+                .WithMany(p => p.ChiTietPhieuNhaps)
+                .HasForeignKey(d => d.MaPn)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_CTPN_PhieuNhap");
+            entity.HasOne(d => d.MaSpNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaSp)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_CTPN_SanPham");
+            entity.HasOne(d => d.MaLoNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaLo)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_CTPN_LoSanXuat");
+        });
+
+        modelBuilder.Entity<PhieuXuatKho>(entity =>
+        {
+            entity.ToTable("PhieuXuatKho");
+            entity.HasKey(e => e.MaPx);
+            entity.HasIndex(e => e.SoPhieuXuat, "UQ_PhieuXuatKho_SoPhieuXuat").IsUnique();
+            entity.Property(e => e.NgayXuat).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.TrangThai).HasDefaultValue("HOAN_THANH");
+            entity.HasOne(d => d.MaNdLapNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaNdLap)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PhieuXuatKho_NguoiDung");
+        });
+
+        modelBuilder.Entity<ChiTietPhieuXuat>(entity =>
+        {
+            entity.ToTable("ChiTietPhieuXuat");
+            entity.HasKey(e => e.MaCtpx);
+            entity.HasOne(d => d.MaPxNavigation)
+                .WithMany(p => p.ChiTietPhieuXuats)
+                .HasForeignKey(d => d.MaPx)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_CTPX_PhieuXuat");
+            entity.HasOne(d => d.MaSpNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaSp)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_CTPX_SanPham");
+            entity.HasOne(d => d.MaLoNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaLo)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_CTPX_LoSanXuat");
+        });
+
+        modelBuilder.Entity<PhieuKiemKho>(entity =>
+        {
+            entity.ToTable("PhieuKiemKho");
+            entity.HasKey(e => e.MaPkk);
+            entity.HasIndex(e => e.SoPhieuKiem, "UQ_PhieuKiemKho_SoPhieuKiem").IsUnique();
+            entity.Property(e => e.NgayKiem).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.TrangThai).HasDefaultValue("PHIEU_TAM");
+            entity.HasOne(d => d.MaPxLienKetNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaPxLienKet)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_PhieuKiemKho_PhieuXuat");
+        });
+
+        modelBuilder.Entity<ChiTietKiemKho>(entity =>
+        {
+            entity.ToTable("ChiTietKiemKho");
+            entity.HasKey(e => e.MaCtkk);
+            entity.HasOne(d => d.MaPkkNavigation)
+                .WithMany(p => p.ChiTietKiemKhos)
+                .HasForeignKey(d => d.MaPkk)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_CTKK_PhieuKiemKho");
+            entity.HasOne(d => d.MaSpNavigation)
+                .WithMany()
+                .HasForeignKey(d => d.MaSp)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_CTKK_SanPham");
+        });
+
+        modelBuilder.Entity<ThiepChucMung3d>(entity =>
+        {
+            entity.ToTable("ThiepChucMung3D");
+            entity.HasKey(e => e.MaThiep);
+            entity.HasIndex(e => e.MaTokenQr, "UQ_ThiepChucMung3D_MaTokenQr").IsUnique();
+            entity.Property(e => e.NgayTao).HasDefaultValueSql("(getdate())");
+        });
+
+        modelBuilder.Entity<CauHinhHeThong>(entity =>
+        {
+            entity.ToTable("CauHinhHeThong");
+            entity.HasKey(e => e.KhoaCauHinh);
+            entity.Property(e => e.NgayCapNhat).HasDefaultValueSql("(getdate())");
+        });
+
+        modelBuilder.Entity<HoSoNhanVien>(entity =>
+        {
+            entity.ToTable("HoSoNhanVien");
+            entity.HasKey(e => e.MaNv);
+            entity.HasIndex(e => e.MaNd, "UQ_HoSoNhanVien_MaNd").IsUnique();
+            entity.HasIndex(e => e.MaCodeNv, "UQ_HoSoNhanVien_MaCodeNv").IsUnique();
+            entity.Property(e => e.ChiNhanh).HasDefaultValue("TP. Long Xuyên");
+            entity.Property(e => e.CaLamViec).HasDefaultValue("Toàn thời gian");
+            entity.Property(e => e.NgayVaoLam).HasDefaultValueSql("(CAST(GETDATE() AS DATE))");
+            entity.Property(e => e.TrangThaiLamViec).HasDefaultValue("DANG_LAM_VIEC");
+
+            entity.HasOne(d => d.MaNdNavigation)
+                .WithOne(p => p.HoSoNhanVien)
+                .HasForeignKey<HoSoNhanVien>(d => d.MaNd)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_HoSoNhanVien_NguoiDung");
+        });
+
+        modelBuilder.Entity<ThuongHieu>(entity =>
+        {
+            entity.ToTable("ThuongHieu");
+            entity.HasKey(e => e.MaThuongHieu);
+            entity.HasIndex(e => e.MaCodeThuongHieu, "UQ_ThuongHieu_MaCodeThuongHieu").IsUnique();
+            entity.HasIndex(e => e.TenThuongHieu, "UQ_ThuongHieu_TenThuongHieu").IsUnique();
+            entity.Property(e => e.DangHoatDong).HasDefaultValue(true);
+        });
+
+        modelBuilder.Entity<NhatKyTruKhoDonHang>(entity =>
+        {
+            entity.ToTable("NhatKyTruKhoDonHang");
+            entity.HasKey(e => e.MaNk);
+            entity.Property(e => e.DaHoanKho).HasDefaultValue(false);
+            entity.Property(e => e.NgayGhi).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.MaDhNavigation)
+                .WithMany(p => p.NhatKyTruKhoDonHangs)
+                .HasForeignKey(d => d.MaDh)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_NKTK_DonHang");
+
+            entity.HasOne(d => d.MaLoNavigation)
+                .WithMany(p => p.NhatKyTruKhoDonHangs)
+                .HasForeignKey(d => d.MaLo)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_NKTK_LoSanXuat");
+
+            entity.HasOne(d => d.MaBanhNavigation)
+                .WithMany(p => p.NhatKyTruKhoDonHangs)
+                .HasForeignKey(d => d.MaBanh)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_NKTK_SanPhamBanh");
+
+            entity.HasOne(d => d.MaVhNavigation)
+                .WithMany(p => p.NhatKyTruKhoDonHangs)
+                .HasForeignKey(d => d.MaVh)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK_NKTK_MauVoHop");
         });
 
         OnModelCreatingPartial(modelBuilder);

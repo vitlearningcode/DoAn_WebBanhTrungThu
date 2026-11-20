@@ -1,0 +1,137 @@
+@model WebBanhTrungThu.ViewModels.LandingPageViewModel
+@using WebBanhTrungThu.Services
+
+<!-- =========================================================================
+     TẦNG 3 (03): BỘ SƯU TẬP TUYỆT PHẨM BÁNH & TRÀ TRUNG THU (NỀN KEM GIẤY DÓ SÁNG)
+     ========================================================================= -->
+<section id="tang-bo-suu-tap" class="tang-phan-khu nen-giay-do-sang border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
+    <div class="container py-1 section-reveal">
+        <div class="text-center mb-2">
+            <span class="text-uppercase small chu-do-son-mai fw-bold" style="letter-spacing: 1.5px; font-size: 0.72rem;">Tinh Hoa Hội Tụ Từ Bốn Thương Hiệu Danh Tiếng</span>
+            <h2 class="font-co-phong fw-bold chu-nau-tram mb-1" style="font-size: 1.6rem;">Tuyệt Phẩm Bánh Trung Thu &amp; Thưởng Trà</h2>
+        </div>
+
+        <!-- Thanh nút lọc nhanh theo Hương Vị & Dinh Dưỡng -->
+        <div class="d-flex justify-content-center flex-wrap gap-2 mb-2" id="nhomLocDinhDuong">
+            <button class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1 active" data-loc="ALL" onclick="locSanPham('ALL', this)">Tất Cả Vị Bánh (@Model.DanhSachBanh.Count)</button>
+            <button class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1" data-loc="VIP" onclick="locSanPham('VIP', this)">Bánh Thượng Hạng Biếu Tặng</button>
+            <button class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1" data-loc="ISOMALT" onclick="locSanPham('ISOMALT', this)">Đường Ăn Kiêng Isomalt (GI Thấp)</button>
+            <button class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1" data-loc="LAVA" onclick="locSanPham('LAVA', this)">Nhân Chảy Kim Sa Lava</button>
+            <button class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1" data-loc="CHAY" onclick="locSanPham('CHAY', this)">Bánh Thuần Chay Thanh Đạm</button>
+        </div>
+
+        <!-- Thanh nút lọc nhanh theo Thương Hiệu -->
+        <div class="d-flex justify-content-center align-items-center flex-wrap gap-2 mb-2" id="nhomLocThuongHieu">
+            <span class="small chu-do-son-mai fw-bold me-1">Thương hiệu:</span>
+            <button type="button" class="btn btn-sm btn-do-son-mai rounded-pill px-3 py-1 btn-thuong-hieu" data-th="ALL" onclick="locTheoThuongHieu('ALL', this)">
+                Tất cả thương hiệu
+            </button>
+            @foreach (var th in Model.DanhSachThuongHieu)
+            {
+                <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-3 py-1 btn-thuong-hieu" data-th="@th" onclick="locTheoThuongHieu('@th', this)">
+                    @th
+                </button>
+            }
+        </div>
+
+        <!-- Khung Slider Ngang 1 Hàng Duy Nhất (4 thẻ / khung nhìn) kèm 2 nút mũi tên [‹] [›] -->
+        <div class="khung-slider-bst position-relative">
+            <button type="button" class="btn-mui-ten-bst btn-mui-ten-trai" onclick="truotBstBanh(-1)" aria-label="Trượt danh sách bánh sang trái" title="Xem bánh trước">
+                ‹
+            </button>
+
+            <div class="dai-truot-san-pham-bst" id="luoiSanPhamBanh">
+                @foreach (var b in Model.DanhSachBanh)
+                {
+                    string anhBanh = DichVuHinhAnh.LayUrl(Model.TuDienAnh, "BANH", b.MaBanh, "TACH_NEN_SLOT");
+                    int calo = b.ThongSoDinhDuong?.NangLuongCalo ?? 400;
+                    int gi = b.ThongSoDinhDuong?.ChiSoDuongHuyetGi ?? 55;
+                    decimal duong = b.ThongSoDinhDuong?.LuongDuongGram ?? 15;
+
+                    <div class="item-banh-card"
+                         data-thuonghieu="@b.ThuongHieu"
+                         data-isomalt="@(b.MucDoNgot == "ISOMALT_TIEUDUONG" ? "1" : "0")"
+                         data-vip="@(b.LaBanhThuongHang ? "1" : "0")"
+                         data-lava="@(b.NhomHuongVi == "LAVA_CHAY" ? "1" : "0")"
+                         data-chay="@(b.LaBanhChay ? "1" : "0")">
+                        <div class="card-hoang-gia p-2 h-100 d-flex flex-column justify-content-between" style="padding: 12px !important;">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-1 mb-1">
+                                    <span class="tem-lua-thuong-hieu" style="font-size: 0.66rem; padding: 2px 8px;">🏮 @b.ThuongHieu</span>
+                                    <div class="d-flex align-items-center gap-1">
+                                        @if (b.DangXaCanDate)
+                                        {
+                                            <span class="badge bg-danger text-white rounded-pill" style="font-size: 0.65rem;">Ưu đãi -@b.PhanTramGiamCanDateHieuLuc.ToString("N0")%</span>
+                                        }
+                                        @if (b.MucDoNgot == "ISOMALT_TIEUDUONG")
+                                        {
+                                            <span class="badge badge-isomalt rounded-pill" style="font-size: 0.65rem;">🌿 GI Thấp: @gi</span>
+                                        }
+                                        else if (b.LaBanhThuongHang)
+                                        {
+                                            <span class="badge badge-thuong-hang rounded-pill" style="font-size: 0.65rem;">👑 Thượng Hạng</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge rounded-pill" style="background: var(--mau-nen-ngoc-trai); color: var(--mau-chu-phu); border: 1px solid var(--mau-vien-vang-dong); font-size: 0.65rem;">@b.TrongLuongGram g</span>
+                                        }
+                                    </div>
+                                </div>
+
+                                <a asp-controller="SanPham" asp-action="ChiTiet" asp-route-id="@b.MaBanh"
+                                   class="khung-anh-banh-sang khung-anh-banh-bst text-center my-1 d-flex text-decoration-none"
+                                   title="Xem chi tiết @b.TenBanh">
+                                    <img src="@anhBanh" class="img-fluid" alt="@b.TenBanh" />
+                                </a>
+
+                                <h5 class="font-co-phong fs-5 fw-bold chu-nau-tram mb-1 text-truncate" title="@b.TenBanh">
+                                    <a asp-controller="SanPham" asp-action="ChiTiet" asp-route-id="@b.MaBanh"
+                                       class="chu-nau-tram text-decoration-none link-ten-banh-bst">
+                                        @b.TenBanh
+                                    </a>
+                                </h5>
+                                <p class="small chu-nau-phu mb-2 mo-ta-banh-2-dong">@b.MoTaNgan</p>
+                            </div>
+
+                            <div>
+                                <div class="p-1 rounded mb-2 d-flex justify-content-around text-center small" style="background: var(--mau-nen-giay-do); border: 1px solid var(--mau-vien-vang-dong); font-size: 0.74rem;">
+                                    <div><strong class="chu-nau-tram d-block lh-1">@calo</strong><span class="chu-nau-phu" style="font-size:0.65rem;">Kcal</span></div>
+                                    <div class="border-start ps-2" style="border-color: var(--mau-vien-vang-dong) !important;"><strong class="chu-do-son-mai d-block lh-1">@duong.ToString("N0") g</strong><span class="chu-nau-phu" style="font-size:0.65rem;">Đường</span></div>
+                                    <div class="border-start ps-2" style="border-color: var(--mau-vien-vang-dong) !important;"><strong class="text-success d-block lh-1">@gi</strong><span class="chu-nau-phu" style="font-size:0.65rem;">Chỉ số GI</span></div>
+                                </div>
+
+                                <div class="bst-card-footer d-flex justify-content-between align-items-center gap-1">
+                                    <div class="bst-card-price">
+                                        @if (b.DangXaCanDate)
+                                        {
+                                            <del class="chu-nau-phu d-block lh-1" style="font-size: 0.7rem;">@b.DonGiaLe.ToString("N0") đ</del>
+                                            <span class="fs-6 fw-bold chu-do-son-mai text-nowrap">@b.DonGiaThucTe.ToString("N0") đ</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="fs-6 fw-bold chu-do-son-mai text-nowrap">@b.DonGiaLe.ToString("N0") đ</span>
+                                        }
+                                    </div>
+                                    <div class="bst-card-actions d-flex gap-1">
+                                        <button type="button" class="btn btn-sm btn-vien-vang rounded-pill btn-bst-action text-nowrap"
+                                                onclick="themBanhLeVaoGio(@b.MaBanh, 1)" title="Mua lẻ bánh này">
+                                            🛒 Mua lẻ
+                                        </button>
+                                        <a href="#tang-tu-chon-hop" class="btn btn-sm btn-do-son-mai rounded-pill btn-bst-action text-nowrap"
+                                           onclick="datBanhVaoOTrong(@b.MaBanh, '@b.TenBanh', @Math.Round(b.DonGiaThucTe, 0), @calo, @(b.LaBanhThuongHang ? "true" : "false"), '@anhBanh', '@(b.ThongSoDinhDuong?.CanhBaoDiUng)', '@b.ThuongHieu', @gi)">
+                                            Xếp vào hộp ↑
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <button type="button" class="btn-mui-ten-bst btn-mui-ten-phai" onclick="truotBstBanh(1)" aria-label="Trượt danh sách bánh sang phải" title="Xem bánh tiếp theo">
+                ›
+            </button>
+        </div>
+    </div>
+</section>

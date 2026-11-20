@@ -1,0 +1,256 @@
+@model WebBanhTrungThu.ViewModels.DonHangThanhCongViewModel
+@{
+    Layout = null;
+    var dh = Model.DonHang;
+    decimal tongGiamGia = dh.TienChietKhauB2b + dh.TienGiamHangVip + dh.TienGiamVoucher + dh.TienGiamDiemVip;
+    decimal tongPhiShipVaLogo = dh.TongPhiVanChuyen + dh.PhiInLogo;
+
+    var dotCoQrDauTien = Model.DanhSachDotGiaoQr.FirstOrDefault(x => x.DotGiao.CoKemThiepQr && !string.IsNullOrWhiteSpace(x.AnhQrBase64));
+    string linkTraCuuHoacThiep = dotCoQrDauTien != null && !string.IsNullOrWhiteSpace(dotCoQrDauTien.DotGiao.MaTokenThiepQr)
+        ? $"{Context.Request.Scheme}://{Context.Request.Host}/Thiep3D/Xem/{dotCoQrDauTien.DotGiao.MaTokenThiepQr}"
+        : $"{Context.Request.Scheme}://{Context.Request.Host}/ThanhToan/ThanhCong?maDon={Uri.EscapeDataString(dh.MaTraCuuDh)}";
+
+    string qrImgSrc = dotCoQrDauTien != null && !string.IsNullOrWhiteSpace(dotCoQrDauTien.AnhQrBase64)
+        ? dotCoQrDauTien.AnhQrBase64
+        : $"https://api.qrserver.com/v1/create-qr-code/?size=110x110&data={Uri.EscapeDataString(linkTraCuuHoacThiep)}";
+
+    string rawCongTy = dh.TenCongTy ?? string.Empty;
+    string tenCongTyGoc = rawCongTy;
+    string? emailVatB2B = null;
+    string? yeuCauEpKimLogo = null;
+    int idxLogo = rawCongTy.IndexOf(" | Ép kim Logo:", StringComparison.OrdinalIgnoreCase);
+    if (idxLogo >= 0)
+    {
+        yeuCauEpKimLogo = rawCongTy[(idxLogo + " | Ép kim Logo:".Length)..].Trim();
+        tenCongTyGoc = rawCongTy[..idxLogo].Trim();
+    }
+    int idxVat = tenCongTyGoc.IndexOf(" | VAT:", StringComparison.OrdinalIgnoreCase);
+    if (idxVat >= 0)
+    {
+        emailVatB2B = tenCongTyGoc[(idxVat + " | VAT:".Length)..].Trim();
+        tenCongTyGoc = tenCongTyGoc[..idxVat].Trim();
+    }
+    if (string.IsNullOrWhiteSpace(emailVatB2B) && dh.LaDonDoanhNghiepB2b)
+    {
+        emailVatB2B = dh.EmailNguoiMua;
+    }
+    if (string.IsNullOrWhiteSpace(yeuCauEpKimLogo) && dh.PhiInLogo > 0)
+    {
+        yeuCauEpKimLogo = $"Có yêu cầu ép kim Logo doanh nghiệp (+{dh.PhiInLogo:N0}đ)";
+    }
+    bool laDonB2BVat = dh.LaDonDoanhNghiepB2b || !string.IsNullOrWhiteSpace(dh.TenCongTy) || !string.IsNullOrWhiteSpace(dh.MaSoThue);
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <title>In Hóa Đơn K80 #@dh.MaTraCuuDh - Nguyệt Cát</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <style>
+        body {
+            background: #F3F4F6;
+            font-family: "Inter", "Segoe UI", Arial, sans-serif;
+            color: #000000;
+            font-size: 12px;
+            line-height: 1.45;
+            margin: 0;
+            padding: 0;
+        }
+
+        td, th, .so-tien, .ton-kho, .kpi-value {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .khung-hoa-don-k80 {
+            width: 80mm;
+            max-width: 100%;
+            margin: 18px auto;
+            background: #FFFFFF;
+            padding: 14px 12px;
+            border: 1px solid #D1D5DB;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+        }
+
+        .duong-ke-net-dut {
+            border-top: 1px dashed #111827;
+            margin: 8px 0;
+        }
+
+        .bang-hang-k80 {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11.5px;
+        }
+
+        .bang-hang-k80 thead th {
+            border-bottom: 1px solid #111827;
+            padding: 4px 2px;
+            font-weight: 700;
+        }
+
+        .bang-hang-k80 tbody td {
+            padding: 5px 2px;
+            vertical-align: top;
+            border-bottom: 1px dashed #D1D5DB;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .dong-banh-con-k80 {
+            font-size: 10.5px;
+            color: #1F2937;
+            padding-left: 8px;
+            margin-top: 2px;
+        }
+
+        @@page {
+            size: 80mm auto;
+            margin: 2mm;
+        }
+
+        @@media print {
+            body {
+                background: #FFFFFF !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .khung-hoa-don-k80 {
+                width: 80mm !important;
+                margin: 0 auto !important;
+                padding: 4px 2px !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="text-center py-2 no-print bg-dark text-white">
+        <button onclick="window.print()" class="btn btn-success btn-sm fw-bold px-3 me-2">🖨️ In Hóa Đơn K80</button>
+        <button onclick="window.close()" class="btn btn-outline-light btn-sm">Đóng cửa sổ</button>
+    </div>
+
+    <div class="khung-hoa-don-k80">
+        <!-- 1. PHẦN ĐẦU HÓA ĐƠN (HEADER) -->
+        <div class="text-center">
+            <div class="fw-bold" style="font-size: 13.5px; letter-spacing: 0.2px;">NGUYỆT CÁT – TINH HOA TRĂNG RẰM</div>
+            <div style="font-size: 11px;">128 Nguyễn Huệ, Quận 1, TP.HCM • Hotline: 1900 6886</div>
+        </div>
+
+        <div class="duong-ke-net-dut"></div>
+
+        <div class="text-center">
+            <div class="fw-bold" style="font-size: 13px;">HÓA ĐƠN BÁN HÀNG / PHIẾU GIAO QUÀ</div>
+            <div style="font-size: 11px;">
+                Số HĐ: <strong>@dh.MaTraCuuDh</strong> • Ngày giờ: @dh.NgayDat.ToString("dd/MM/yyyy HH:mm")
+            </div>
+        </div>
+
+        <div class="mt-1" style="font-size: 11.5px;">
+            <div>Khách hàng: <strong>@dh.HoTenNguoiMua - @dh.SdtnguoiMua</strong></div>
+            @if (laDonB2BVat)
+            {
+                <div class="mt-1 p-1 rounded" style="border: 1px solid #111827; background: #FFFBEB;">
+                    <div class="fw-bold">[ĐƠN SỈ • XUẤT VAT]</div>
+                    @if (!string.IsNullOrWhiteSpace(tenCongTyGoc))
+                    {
+                        <div>Doanh nghiệp: <strong>@tenCongTyGoc</strong></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(dh.MaSoThue))
+                    {
+                        <div>Mã số thuế: <strong>@dh.MaSoThue</strong></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(emailVatB2B))
+                    {
+                        <div>Email nhận VAT: <strong>@emailVatB2B</strong></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(yeuCauEpKimLogo))
+                    {
+                        <div>Ép kim Logo: <strong>@yeuCauEpKimLogo</strong></div>
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="duong-ke-net-dut"></div>
+
+        <!-- 2. BẢNG CHI TIẾT HÀNG HÓA -->
+        <table class="bang-hang-k80">
+            <thead>
+                <tr>
+                    <th class="text-start">Tên món</th>
+                    <th class="text-center" style="width: 34px;">SL</th>
+                    <th class="text-end" style="width: 82px;">Thành tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ct in dh.ChiTietDonHangs)
+                {
+                    <tr>
+                        <td>
+                            <div class="fw-bold">@ct.TenSanPhamLuuCung</div>
+                            @if (!string.IsNullOrWhiteSpace(ct.CauHinhHopJson))
+                            {
+                                try
+                                {
+                                    var mangO = Newtonsoft.Json.Linq.JArray.Parse(ct.CauHinhHopJson);
+                                    foreach (var o in mangO.OrderBy(x => x.Value<int?>("ViTriOTrongHop") ?? 0))
+                                    {
+                                        int viTri = o.Value<int?>("ViTriOTrongHop") ?? 1;
+                                        string tenBanh = o.Value<string>("TenBanh") ?? "Bánh Trung Thu";
+                                        <div class="dong-banh-con-k80">- Ô @viTri: @tenBanh</div>
+                                    }
+                                }
+                                catch { }
+                            }
+                        </td>
+                        <td class="text-center fw-semibold">@ct.SoLuong</td>
+                        <td class="text-end fw-semibold so-tien">@ct.ThanhTien.ToString("N0") đ</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- 3. PHẦN TỔNG KẾT THANH TOÁN -->
+        <div class="mt-2" style="font-size: 11.5px;">
+            <div class="d-flex justify-content-between">
+                <span>Tổng tiền hàng:</span>
+                <strong class="so-tien">@dh.TongTienHang.ToString("N0") đ</strong>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span>Chiết khấu / Voucher:</span>
+                <strong class="so-tien">-@tongGiamGia.ToString("N0") đ</strong>
+            </div>
+            <div class="d-flex justify-content-between">
+                <span>Phí giao hàng:</span>
+                <strong class="so-tien">+@tongPhiShipVaLogo.ToString("N0") đ</strong>
+            </div>
+
+            <div class="duong-ke-net-dut"></div>
+
+            <div class="d-flex justify-content-between fw-bold" style="font-size: 14px;">
+                <span>TỔNG THANH TOÁN:</span>
+                <span class="so-tien">@dh.TongThanhToanCuoi.ToString("N0") đ</span>
+            </div>
+        </div>
+
+        <div class="duong-ke-net-dut"></div>
+
+        <!-- 4. CHÂN HÓA ĐƠN KÈM MÃ QR (FOOTER 110x110PX) -->
+        <div class="text-center mt-2">
+            <div class="d-inline-block p-1 border rounded bg-white mb-1">
+                <img src="@qrImgSrc" width="110" height="110" alt="Mã QR Hóa Đơn #@dh.MaTraCuuDh" />
+            </div>
+            @if (dotCoQrDauTien != null && !string.IsNullOrWhiteSpace(dotCoQrDauTien.DotGiao.MaTokenThiepQr))
+            {
+                <div style="font-size: 10.5px;" class="fw-semibold mb-1">
+                    Token Thiệp 3D: @dotCoQrDauTien.DotGiao.MaTokenThiepQr
+                </div>
+            }
+            <div class="fst-italic" style="font-size: 10.5px; line-height: 1.35;">
+                "Quét mã QR để mở Thiệp Chúc Trung Thu 3D &amp; Tra cứu hành trình đơn hàng. Cảm ơn Quý khách!"
+            </div>
+        </div>
+    </div>
+</body>
+</html>

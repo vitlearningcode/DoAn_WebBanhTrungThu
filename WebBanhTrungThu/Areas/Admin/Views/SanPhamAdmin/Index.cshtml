@@ -1,0 +1,45 @@
+@model WebBanhTrungThu.ViewModels.SanPhamAdminViewModel
+@{
+    ViewData["Title"] = "Danh mục Hàng hóa - Nguyệt Cát ERP";
+}
+
+<div class="kv-layout-2col">
+    @await Html.PartialAsync("~/Areas/Admin/Views/SanPhamAdmin/PhanKhu/_BoLocHangHoaSidebar.cshtml", Model)
+
+    <div class="kv-main-table-area">
+        <div class="kv-toolbar">
+            <div class="kv-search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="txtTimKiemHangHoa" value="@Model.TuKhoa" placeholder="Theo mã, tên hàng" oninput="locBangHangHoaClient()" />
+            </div>
+            <div class="kv-toolbar-actions">
+                <div class="dropdown">
+                    <button class="kv-btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"><i class="bi bi-plus-lg"></i> Tạo mới</button>
+                    <ul class="dropdown-menu shadow-sm border" style="font-size: 13.5px; min-width: 230px;">
+                        <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="moModalTaoMoi(false)"><i class="bi bi-box me-2 text-primary"></i>+ Thêm hàng hóa (Bánh lẻ)</a></li>
+                        <li><a class="dropdown-item py-2" href="javascript:void(0)" onclick="moModalTaoMoi(true)"><i class="bi bi-boxes me-2 text-success"></i>+ Thêm combo - đóng gói</a></li>
+                    </ul>
+                </div>
+                <button type="button" class="kv-btn-tool" data-bs-toggle="modal" data-bs-target="#modalImportHangHoa"><i class="bi bi-upload"></i> Import</button>
+                <div class="dropdown">
+                    <button type="button" class="kv-btn-tool dropdown-toggle" data-bs-toggle="dropdown"><i class="bi bi-download"></i> Export Excel</button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border" style="font-size: 13px;">
+                        <li><a class="dropdown-item py-2" href="/Admin/SanPhamAdmin/XuatExcel?dinhDang=xlsx"><i class="bi bi-file-earmark-excel text-success me-2"></i>Xuất Excel (.xlsx)</a></li>
+                        <li><a class="dropdown-item py-2" href="/Admin/SanPhamAdmin/XuatExcel?dinhDang=csv"><i class="bi bi-filetype-csv text-primary me-2"></i>Xuất CSV (UTF-8 BOM)</a></li>
+                    </ul>
+                </div>
+                <a href="/Admin/CaiDatAdmin/Index" class="kv-btn-icon-sq" title="Cài đặt hệ thống"><i class="bi bi-gear"></i></a>
+            </div>
+        </div>
+
+        @await Html.PartialAsync("~/Areas/Admin/Views/SanPhamAdmin/PhanKhu/_BangHangHoaVaLoFefo.cshtml", Model)
+    </div>
+</div>
+
+@await Html.PartialAsync("~/Areas/Admin/Views/SanPhamAdmin/PhanKhu/_ModalLuuHangHoaVaCombo.cshtml", Model)
+@await Html.PartialAsync("~/Areas/Admin/Views/SanPhamAdmin/PhanKhu/_ModalDanhMucVaNhapLoFefo.cshtml", Model)
+@await Html.PartialAsync("~/Areas/Admin/Views/SanPhamAdmin/PhanKhu/_ModalImportHangHoa.cshtml")
+
+@section Scripts {
+    <script src="~/js/admin-san-pham.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,263 @@
+@model WebBanhTrungThu.Models.Entities.DotGiaoHangDaDiem
+@{
+    string tenKinhGui = !string.IsNullOrWhiteSpace(Model.TenNguoiNhanThiep) ? Model.TenNguoiNhanThiep : Model.TenNguoiNhan;
+    string tenNguoiGui = !string.IsNullOrWhiteSpace(Model.TenNguoiGuiThiep)
+        ? Model.TenNguoiGuiThiep
+        : (Model.MaDhNavigation?.HoTenNguoiMua ?? "Quý Khách Nguyệt Cát");
+    ViewData["Title"] = $"Thiệp Chúc Mừng QR 3D - Kính Gửi {tenKinhGui}";
+}
+
+<style>
+    .san-khau-thiep-3d {
+        perspective: 1600px;
+        max-width: 560px;
+        width: 100%;
+        margin: 0 auto;
+        min-height: 360px;
+        position: relative;
+    }
+
+    .khung-thiep-lat-3d {
+        width: 100%;
+        min-height: 380px;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.85s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .khung-thiep-lat-3d.da-mo-thiep {
+        transform: rotateY(-180deg);
+    }
+
+    .mat-ngoai-thiep,
+    .mat-trong-thiep {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        min-height: 380px;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        border-radius: 20px;
+        padding: 28px 24px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 18px 42px rgba(0, 0, 0, 0.65);
+        overflow: hidden;
+    }
+
+    .mat-ngoai-thiep {
+        background: radial-gradient(circle at center, #7A1215 0%, #4A080A 65%, #2B0202 100%);
+        border: 2px solid #C89B3C;
+        z-index: 2;
+    }
+
+    /* Nắp phong bì sơn mài phía trên */
+    .nap-phong-bi-son-mai {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 155px;
+        background: linear-gradient(180deg, rgba(92, 6, 6, 0.96) 0%, rgba(122, 18, 21, 0.88) 100%);
+        clip-path: polygon(0 0, 100% 0, 50% 100%);
+        border-bottom: 1.5px solid #C89B3C;
+        transform-origin: top center;
+        transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .khung-thiep-lat-3d.dang-mo-nap .nap-phong-bi-son-mai,
+    .khung-thiep-lat-3d.da-mo-thiep .nap-phong-bi-son-mai {
+        transform: rotateX(165deg);
+        opacity: 0;
+    }
+
+    .mat-trong-thiep {
+        background: radial-gradient(circle at top, #1C2541 0%, #0B132B 90%);
+        border: 2px solid var(--mau-vang-anh-kim);
+        transform: rotateY(180deg);
+    }
+
+    #con-dau-sap-mo-thiep {
+        width: 84px;
+        height: 84px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 30% 30%, #F3D078, #C89B3C 65%, #8C6218);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), inset 0 0 10px rgba(92, 6, 6, 0.45);
+        border: 2px double rgba(255, 253, 249, 0.78);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #2B0202;
+        font-weight: 800;
+        cursor: pointer;
+        position: relative;
+        z-index: 3;
+        padding: 6px;
+        text-align: center;
+        transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.42s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+    }
+
+    #con-dau-sap-mo-thiep:hover {
+        transform: scale(1.06);
+        box-shadow: 0 8px 26px rgba(200, 155, 60, 0.65);
+    }
+
+    #con-dau-sap-mo-thiep.da-niem-phong-mo {
+        transform: scale(1.12);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .vanh-trang-ram {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #FFFDE7 10%, #FFD54F 65%, rgba(255, 213, 79, 0) 100%);
+        box-shadow: 0 0 32px #FFD54F, 0 0 60px rgba(212, 175, 55, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.85rem;
+        margin-bottom: 6px;
+    }
+
+    @@media (max-width: 575.98px) {
+        .san-khau-thiep-3d {
+            max-width: 100%;
+        }
+
+        .mat-ngoai-thiep,
+        .mat-trong-thiep {
+            padding: 20px 14px;
+            min-height: 350px;
+        }
+
+        .nap-phong-bi-son-mai {
+            height: 122px;
+        }
+
+        .san-khau-thiep-3d h2,
+        .san-khau-thiep-3d h3 {
+            font-size: 1.3rem !important;
+        }
+
+        .san-khau-thiep-3d p.fs-4 {
+            font-size: 1.05rem !important;
+        }
+    }
+</style>
+
+<section class="d-flex align-items-center justify-content-center py-4" style="min-height: calc(100vh - 180px);">
+    <div class="container px-3 text-center">
+        <!-- SÂN KHẤU LẬT THIỆP 3D GỌN TRONG 1 KHUNG MÀN HÌNH -->
+        <div class="san-khau-thiep-3d">
+            <div id="khungThiep3D" class="khung-thiep-lat-3d">
+                <!-- MẶT NGOÀI: PHONG BÌ KHÉP KÍN & CON DẤU SÁP VÀNG KIM -->
+                <div class="mat-ngoai-thiep">
+                    <div class="nap-phong-bi-son-mai" aria-hidden="true"></div>
+                    <div class="w-100 border-bottom border-warning pb-2 position-relative" style="z-index: 2;">
+                        <small class="text-uppercase chu-vang-kim fw-bold" style="letter-spacing: 1.5px; font-size: 0.78rem;">
+                            🌕 PHONG BÌ SƠN MÀI ĐOÀN VIÊN NGUYỆT CÁT
+                        </small>
+                    </div>
+
+                    <div class="my-2 position-relative" style="z-index: 3;">
+                        <div id="con-dau-sap-mo-thiep" class="con-dau-sap-vang mx-auto mb-3" onclick="latMoThiep3D(true)" title="Chạm vào con dấu sáp để mở niêm phong thiệp">
+                            <span style="font-size: 0.56rem; letter-spacing: 0.4px; line-height: 1.25; font-weight: 800; color: #2B0202;">NGUYỆT CÁT • MỞ THIỆP</span>
+                        </div>
+
+                        <h2 class="font-co-phong fs-3 fw-bold chu-vang-kim mb-1">
+                            Kính gửi: @tenKinhGui
+                        </h2>
+                        <p class="text-light opacity-75 small mb-0">
+                            Thiệp chúc Trung Thu từ <strong>@tenNguoiGui</strong>
+                        </p>
+                    </div>
+
+                    <div class="w-100 position-relative" style="z-index: 3;">
+                        <button type="button" class="btn btn-vang-kim rounded-pill px-4 py-2 shadow-sm" onclick="latMoThiep3D(false)">
+                            🌕 Chạm Để Mở Thiệp Chúc Mừng
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MẶT TRONG: MẶT TRĂNG NHỎ GỌN, KÍNH GỬI, LỜI CHÚC CHÍNH, NGƯỜI GỬI & 2 NÚT NHỎ -->
+                <div class="mat-trong-thiep">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="vanh-trang-ram">🌕</div>
+                        <h3 class="font-co-phong fs-3 chu-vang-kim mb-0">
+                            Kính gửi: @tenKinhGui
+                        </h3>
+                    </div>
+
+                    <div class="p-3 my-2 rounded-3 border border-warning w-100" style="background: rgba(11, 19, 43, 0.72);">
+                        <p class="font-co-phong fs-4 fst-italic text-light mb-2">
+                            "@(string.IsNullOrWhiteSpace(Model.LoiChucThiep) ? "Kính chúc Gia đình mùa Trăng Rằm Đoàn Viên, Viên Mãn & An Khang!" : Model.LoiChucThiep)"
+                        </p>
+                        <div class="text-end chu-vang-kim fw-bold small">
+                            Người gửi: @tenNguoiGui
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-center gap-2 w-100 pt-1">
+                        <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-3" onclick="dongThiep3D()">
+                            Khép Lại Phong Bì
+                        </button>
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-sm btn-vang-kim rounded-pill px-3">
+                            Về Trang Chủ Nguyệt Cát
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        let boHenGioMoThiep3D = null;
+
+        function latMoThiep3D(bamTrucTiepConDau = true) {
+            const el = document.getElementById("khungThiep3D");
+            const conDau = document.getElementById("con-dau-sap-mo-thiep");
+            if (!el) return;
+
+            if (boHenGioMoThiep3D) {
+                clearTimeout(boHenGioMoThiep3D);
+                boHenGioMoThiep3D = null;
+            }
+
+            if (conDau) {
+                conDau.classList.add("da-niem-phong-mo");
+            }
+            el.classList.add("dang-mo-nap");
+
+            const doTreMo = bamTrucTiepConDau ? 260 : 320;
+            boHenGioMoThiep3D = setTimeout(() => {
+                el.classList.add("da-mo-thiep");
+            }, doTreMo);
+        }
+
+        function dongThiep3D() {
+            const el = document.getElementById("khungThiep3D");
+            const conDau = document.getElementById("con-dau-sap-mo-thiep");
+            if (boHenGioMoThiep3D) {
+                clearTimeout(boHenGioMoThiep3D);
+                boHenGioMoThiep3D = null;
+            }
+            if (el) {
+                el.classList.remove("da-mo-thiep");
+                el.classList.remove("dang-mo-nap");
+            }
+            if (conDau) {
+                conDau.classList.remove("da-niem-phong-mo");
+            }
+        }
+    </script>
+}

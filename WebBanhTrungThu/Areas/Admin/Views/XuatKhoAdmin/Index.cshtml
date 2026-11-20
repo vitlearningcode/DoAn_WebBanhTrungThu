@@ -1,0 +1,59 @@
+@model WebBanhTrungThu.ViewModels.XuatKhoAdminViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Xuất hàng / Xuất hủy / Tiêu dùng nội bộ - Nguyệt Cát ERP";
+    var jsonSp = JsonSerializer.Serialize(Model.DanhSachSanPham.Select(sp => new
+    {
+        maBanh = sp.MaBanh, maSku = sp.MaSku, tenBanh = sp.TenBanh,
+        giaVon = sp.GiaVon, tonKho = sp.TonKhoHeThong,
+        los = sp.DanhSachLo.Select(l => new { maLo = l.MaLo, maLoCode = l.MaLoCode, hanSuDung = l.HanSuDung, slConLai = l.SlConLai })
+    }));
+}
+
+@await Html.PartialAsync("~/Areas/Admin/Views/XuatKhoAdmin/PhanKhu/_KpiXuatKho.cshtml", Model)
+
+<div class="kv-layout-2col">
+    <aside class="kv-sidebar-filter">
+        <h1 class="kv-page-heading">Xuất hàng / Hủy</h1>
+        <div class="kv-filter-box">
+            <div class="kv-filter-title"><span>Nhóm lý do xuất</span></div>
+            <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPxLoai" value="ALL" checked onchange="locPhieuXuatClient()" /> Tất cả</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPxLoai" value="XUAT_HUY_LOI" onchange="locPhieuXuatClient()" /> Xuất hủy hàng lỗi / hư bể</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPxLoai" value="TRA_NHA_SAN_XUAT" onchange="locPhieuXuatClient()" /> Xuất trả NSX / hãng</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPxLoai" value="TIEU_DUNG_NOI_BO" onchange="locPhieuXuatClient()" /> Xuất tiêu dùng nội bộ</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPxLoai" value="CHINH_LECH_KIEM_KHO" onchange="locPhieuXuatClient()" /> Chênh lệch kiểm kho</label>
+            </div>
+        </div>
+        <div class="kv-filter-box">
+            <div class="kv-filter-title"><span>Trạng thái phiếu</span></div>
+            <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPxTrangThai" value="ALL" checked onchange="locPhieuXuatClient()" /> Tất cả</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPxTrangThai" value="HOAN_THANH" onchange="locPhieuXuatClient()" /> Hoàn thành</label>
+                <label class="d-flex align-items-center gap-2"><input type="radio" name="radPxTrangThai" value="DA_HUY" onchange="locPhieuXuatClient()" /> Đã hủy (Hoàn kho)</label>
+            </div>
+        </div>
+    </aside>
+
+    <div class="kv-main-table-area">
+        <div class="kv-toolbar">
+            <div class="kv-search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="txtTimPhieuXuat" value="@Model.TuKhoa" placeholder="Tìm theo mã PX-, đối tượng, ghi chú, tên bánh..." oninput="locPhieuXuatClient()" />
+            </div>
+            <div class="kv-toolbar-actions">
+                <a href="/Admin/KiemKhoAdmin/Index" class="kv-btn-tool"><i class="bi bi-clipboard-check"></i> Kiểm kho</a>
+                <button type="button" class="kv-btn-primary" onclick="moModalTaoPhieuXuat()"><i class="bi bi-plus-lg"></i> Tạo phiếu xuất kho</button>
+            </div>
+        </div>
+
+        @await Html.PartialAsync("~/Areas/Admin/Views/XuatKhoAdmin/PhanKhu/_BangPhieuXuat.cshtml", Model)
+    </div>
+</div>
+
+@await Html.PartialAsync("~/Areas/Admin/Views/XuatKhoAdmin/PhanKhu/_ModalTaoPhieuXuat.cshtml", Model)
+
+@section Scripts {
+    <script>window.NGUYETCAT_DS_SP_XUAT = @Html.Raw(jsonSp);</script>
+    <script src="~/js/admin-xuat-kho.js" asp-append-version="true"></script>
+}

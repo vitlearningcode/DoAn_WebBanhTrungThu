@@ -1,0 +1,77 @@
+@model WebBanhTrungThu.ViewModels.DonHangThanhCongViewModel
+@{
+    var dh = Model.DonHang;
+    bool coThiep3D = dh.ThiepChucMung3Ds.Any() && Model.DanhSachDotGiaoQr.Any();
+    bool laDonQrMoMo = dh.PhuongThucTt == "MOMO_QR"
+                    || dh.PhuongThucTt == "VIETQR"
+                    || dh.PhuongThucTt == "MOMO";
+    bool laTrangThaiA_DaHuy = dh.TrangThaiDh == "DA_HUY"
+                           || dh.TrangThaiTt == "HET_HAN_HUY"
+                           || dh.TrangThaiTt == "HET_HAN_15P";
+    bool laDaThanhToan = !laTrangThaiA_DaHuy
+                      && (dh.TrangThaiTt == "DA_THANH_TOAN" || dh.TrangThaiTt == "DA_TT");
+    bool laTrangThaiB_ChoQr = !laTrangThaiA_DaHuy && !laDaThanhToan && laDonQrMoMo;
+    bool coCotPhai = !laTrangThaiA_DaHuy && (laTrangThaiB_ChoQr || coThiep3D);
+
+    ViewData["Title"] = laTrangThaiA_DaHuy
+        ? $"Đơn Hàng Đã Bị Hủy #{dh.MaTraCuuDh}"
+        : laTrangThaiB_ChoQr
+            ? $"Chờ Thanh Toán Đơn Hàng #{dh.MaTraCuuDh}"
+            : $"Đặt Hàng Thành Công #{dh.MaTraCuuDh}";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/thanh-toan.css" asp-append-version="true" />
+}
+
+<section class="trang-thanh-toan-sang">
+    <div class="khung-trang-thanh-cong @(coCotPhai ? "co-cot-phai" : "")">
+        <div class="luoi-trang-thanh-cong">
+            <!-- CỘT TRÁI: THÔNG TIN BIÊN LAI & BẢNG SẢN PHẨM -->
+            <div>
+                @await Html.PartialAsync("~/Views/ThanhToan/PhanKhu/_BienLaiDonHang.cshtml", Model)
+            </div>
+
+            <!-- CỘT PHẢI: KHUNG QR THANH TOÁN MOMO & THIỆP 3D -->
+            @if (coCotPhai)
+            {
+                <div>
+                    @await Html.PartialAsync("~/Views/ThanhToan/PhanKhu/_KhungQrThiepVaMoMo.cshtml", Model)
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        (function luuDonVuaDatVaoLocalStorage() {
+            try {
+                const donMoi = {
+                    maTraCuuDh: "@Model.DonHang.MaTraCuuDh",
+                    sdtNguoiMua: "@Model.DonHang.SdtnguoiMua",
+                    tongThanhToan: @Math.Round(Model.DonHang.TongThanhToanCuoi, 0),
+                    thoiGian: "@Model.DonHang.NgayDat.ToString("dd/MM/yyyy HH:mm")"
+                };
+                if (!donMoi.maTraCuuDh) return;
+
+                let danhSachCu = [];
+                const chuoiCu = localStorage.getItem("nguyetCat_DonGanDay");
+                if (chuoiCu) {
+                    const parsed = JSON.parse(chuoiCu);
+                    if (Array.isArray(parsed)) {
+                        danhSachCu = parsed.filter(x => x && x.maTraCuuDh !== donMoi.maTraCuuDh);
+                    }
+                }
+                danhSachCu.unshift(donMoi);
+                localStorage.setItem("nguyetCat_DonGanDay", JSON.stringify(danhSachCu.slice(0, 5)));
+
+                if (typeof hienThiDanhSachDonVuaDatNhanh === "function") {
+                    hienThiDanhSachDonVuaDatNhanh();
+                }
+            } catch (err) {
+                console.warn("Không thể lưu lịch sử đơn gần đây:", err);
+            }
+        })();
+    </script>
+}

@@ -1,0 +1,82 @@
+@model WebBanhTrungThu.ViewModels.CaiDatHeThongViewModel
+@{
+    var ch = Model.CauHinhCuaHang;
+}
+
+<div class="kv-card p-4">
+    <div class="border-bottom pb-3 mb-4">
+        <h2 class="h5 fw-bold text-dark mb-1">Thông tin Đại lý &amp; Chi nhánh</h2>
+        <p class="text-muted small mb-0">Thông tin thương hiệu, hotline tư vấn, khung giờ hoạt động và địa chỉ 2 chi nhánh tại TP. Long Xuyên &amp; Quận 1 TP.HCM.</p>
+    </div>
+
+    <form asp-area="Admin" asp-controller="CaiDatAdmin" asp-action="LuuCuaHang" method="post">
+        @Html.AntiForgeryToken()
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <label class="kv-field-label" for="inpChTenDaiLy">Tên đại lý phân phối *</label>
+                <input id="inpChTenDaiLy" type="text" name="TenDaiLy" class="kv-form-control fw-semibold"
+                       value="@ch.TenDaiLy" required />
+            </div>
+            <div class="col-md-6">
+                <label class="kv-field-label" for="inpChHotline">Hotline tư vấn &amp; đặt hàng *</label>
+                <input id="inpChHotline" type="text" name="Hotline" class="kv-form-control fw-semibold"
+                       value="@ch.Hotline" required />
+            </div>
+            <div class="col-md-6">
+                <label class="kv-field-label" for="inpChEmail">Email chăm sóc khách hàng</label>
+                <input id="inpChEmail" type="email" name="EmailLienHe" class="kv-form-control"
+                       value="@ch.EmailLienHe" />
+            </div>
+            <div class="col-md-6">
+                <label class="kv-field-label" for="inpChGioMo">Giờ mở cửa phục vụ</label>
+                <input id="inpChGioMo" type="text" name="GioMoCua" class="kv-form-control"
+                       value="@ch.GioMoCua" />
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="p-3 rounded border" style="background: #F9FAFB;">
+                    <div class="fw-bold text-primary mb-3"><i class="bi bi-geo-alt-fill me-1"></i> Chi nhánh 1 — TP. Long Xuyên</div>
+                    <div class="mb-2">
+                        <label class="kv-field-label" for="inpCn1Ten">Tên chi nhánh</label>
+                        <input id="inpCn1Ten" type="text" name="TenChiNhanh1" class="kv-form-control" value="@ch.TenChiNhanh1" />
+                    </div>
+                    <div class="mb-2">
+                        <label class="kv-field-label" for="inpCn1Dc">Địa chỉ chi nhánh</label>
+                        <input id="inpCn1Dc" type="text" name="DiaChiChiNhanh1" class="kv-form-control" value="@ch.DiaChiChiNhanh1" />
+                    </div>
+                    <div>
+                        <label class="kv-field-label" for="inpCn1Sdt">Điện thoại chi nhánh</label>
+                        <input id="inpCn1Sdt" type="text" name="SdtChiNhanh1" class="kv-form-control" value="@ch.SdtChiNhanh1" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="p-3 rounded border" style="background: #F9FAFB;">
+                    <div class="fw-bold text-primary mb-3"><i class="bi bi-geo-alt-fill me-1"></i> Chi nhánh 2 — Quận 1, TP.HCM</div>
+                    <div class="mb-2">
+                        <label class="kv-field-label" for="inpCn2Ten">Tên chi nhánh</label>
+                        <input id="inpCn2Ten" type="text" name="TenChiNhanh2" class="kv-form-control" value="@ch.TenChiNhanh2" />
+                    </div>
+                    <div class="mb-2">
+                        <label class="kv-field-label" for="inpCn2Dc">Địa chỉ chi nhánh</label>
+                        <input id="inpCn2Dc" type="text" name="DiaChiChiNhanh2" class="kv-form-control" value="@ch.DiaChiChiNhanh2" />
+                    </div>
+                    <div>
+                        <label class="kv-field-label" for="inpCn2Sdt">Điện thoại chi nhánh</label>
+                        <input id="inpCn2Sdt" type="text" name="SdtChiNhanh2" class="kv-form-control" value="@ch.SdtChiNhanh2" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-top d-flex justify-content-end">
+            <button type="submit" class="btn-kv-blue px-4 py-2">
+                <i class="bi bi-check2-circle me-1"></i> Lưu thông tin Đại lý &amp; Chi nhánh
+            </button>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,213 @@
+@model WebBanhTrungThu.ViewModels.NhanVienAdminViewModel
+
+<div class="kv-main-table-area">
+    <div class="kv-toolbar">
+        <div class="kv-search-box">
+            <i class="bi bi-search"></i>
+            <input type="text" id="txtTimNhanVien" value="@Model.TuKhoa"
+                   placeholder="Tìm theo mã NV, họ tên, SĐT, email, chi nhánh..."
+                   oninput="locNhanVienClient()" />
+        </div>
+        <div class="kv-toolbar-actions">
+            <a href="/Admin/BanHangPos/Index" class="kv-btn-tool"><i class="bi bi-cart-check"></i> Bán hàng (POS)</a>
+            <button type="button" class="kv-btn-primary" onclick="moModalTaoNhanVien()">
+                <i class="bi bi-person-plus"></i> Thêm nhân viên
+            </button>
+        </div>
+    </div>
+
+    <div class="kv-card overflow-hidden">
+        <div class="table-responsive w-100 kv-table-wrap">
+            <table class="kv-table kv-bang-nhan-vien align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Nhân viên</th>
+                        <th>Vai trò</th>
+                        <th>Chi nhánh &amp; Ca làm</th>
+                        <th>Liên hệ</th>
+                        <th class="text-center">Đơn POS</th>
+                        <th class="text-end text-nowrap">Doanh số POS</th>
+                        <th class="text-center">Trạng thái</th>
+                        <th class="text-end">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="tbodyNhanVien">
+                    @foreach (var nv in Model.DanhSachNhanVien)
+                    {
+                        string detailId = $"detailNv_{nv.MaNd}";
+                        string trangThaiCode = nv.DangLamViec ? "DANG_LAM_VIEC" : "TAM_KHOA";
+                        string searchKey = $"{nv.MaCodeNv} {nv.HoTen} {nv.Sdt} {nv.Email} {nv.ChiNhanh} {nv.CaLamViec} {nv.TenVaiTroHienThi}".ToLowerInvariant();
+                        bool laTaiKhoanHienTai = Model.MaNdDangNhap.HasValue && Model.MaNdDangNhap.Value == nv.MaNd;
+
+                        <tr class="kv-master-row"
+                            data-detail-id="@detailId"
+                            data-search="@searchKey"
+                            data-vaitro="@nv.MaVt"
+                            data-chinhanh="@nv.ChiNhanh"
+                            data-ca="@nv.CaLamViec"
+                            data-trangthai="@trangThaiCode"
+                            onclick="toggleKvDetailRow('@detailId', this)">
+                            <td class="fw-bold text-primary text-nowrap">@nv.MaCodeNv</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-1 flex-wrap">
+                                    <span class="fw-semibold text-dark">@nv.HoTen</span>
+                                    @if (laTaiKhoanHienTai)
+                                    {
+                                        <span class="kv-tag-mini member">Đang đăng nhập</span>
+                                    }
+                                </div>
+                                <small class="text-muted">Vào làm: @nv.NgayVaoLam.ToString("dd/MM/yyyy")</small>
+                            </td>
+                            <td class="text-nowrap">
+                                @if (nv.MaVt == "ADMIN")
+                                {
+                                    <span class="badge" style="background: #EBF5FF; color: #005AC3; border: 1px solid #BFDBFE;">Chủ cửa hàng</span>
+                                }
+                                else
+                                {
+                                    <span class="badge" style="background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A;">Nhân viên Bán hàng</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="fw-medium text-dark">@nv.ChiNhanh</div>
+                                <small class="text-muted">@nv.CaLamViec</small>
+                            </td>
+                            <td>
+                                <div>@nv.Sdt</div>
+                                <small class="text-muted">@nv.Email</small>
+                            </td>
+                            <td class="text-center fw-semibold so-tien">@nv.TongDonDaLap.ToString("N0")</td>
+                            <td class="text-end fw-semibold text-primary so-tien">@nv.TongDoanhSo.ToString("N0") đ</td>
+                            <td class="text-center text-nowrap">
+                                @if (nv.DangLamViec)
+                                {
+                                    <span class="badge" style="background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;">Đang làm việc</span>
+                                }
+                                else
+                                {
+                                    <span class="badge" style="background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;">Đang tạm khóa</span>
+                                }
+                            </td>
+                            <td class="text-end text-nowrap" onclick="event.stopPropagation();">
+                                <div class="d-inline-flex align-items-center gap-1">
+                                    <button type="button" class="btn btn-sm btn-outline-primary py-1 px-2"
+                                            style="font-size: 12px; flex-shrink: 0; white-space: nowrap;"
+                                            onclick="moModalSuaNhanVien(@nv.MaNd)">
+                                        <i class="bi bi-pencil-square"></i> Sửa
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary py-1 px-2"
+                                            style="font-size: 12px; flex-shrink: 0; white-space: nowrap;"
+                                            data-mand="@nv.MaNd"
+                                            data-macode="@nv.MaCodeNv"
+                                            data-hoten="@nv.HoTen"
+                                            onclick="moModalDatLaiMatKhauNv(this)">
+                                        <i class="bi bi-key"></i> Đổi MK
+                                    </button>
+                                    <form asp-area="Admin" asp-controller="NhanVienAdmin" asp-action="ChuyenTrangThaiKhoa" method="post" class="d-inline m-0"
+                                          data-macode="@nv.MaCodeNv"
+                                          data-hoten="@nv.HoTen"
+                                          data-danglam="@(nv.DangLamViec ? "1" : "0")"
+                                          onsubmit="return xacNhanChuyenTrangThaiKhoaNv(this);">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="maNd" value="@nv.MaNd" />
+                                        @if (nv.DangLamViec)
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-outline-danger py-1 px-2"
+                                                    style="font-size: 12px; flex-shrink: 0; white-space: nowrap;">
+                                                <i class="bi bi-lock"></i> Khóa
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-outline-success py-1 px-2"
+                                                    style="font-size: 12px; flex-shrink: 0; white-space: nowrap;">
+                                                <i class="bi bi-unlock"></i> Mở khóa
+                                            </button>
+                                        }
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr id="@detailId" class="kv-detail-row d-none" onclick="event.stopPropagation();">
+                            <td colspan="9" class="p-0">
+                                <div class="kv-detail-box">
+                                    <div class="row g-3 mb-3" style="font-size: 13px;">
+                                        <div class="col-md-6">
+                                            <div><span class="text-muted">Mã nhân viên:</span> <strong>@nv.MaCodeNv</strong> • <span class="text-muted">Chức vụ:</span> <strong>@nv.ChucVu</strong></div>
+                                            <div class="mt-1"><span class="text-muted">Chi nhánh / Ca:</span> <strong>@nv.ChiNhanh</strong> • @nv.CaLamViec</div>
+                                            <div class="mt-1"><span class="text-muted">Ghi chú:</span> @(string.IsNullOrWhiteSpace(nv.GhiChu) ? "Không có ghi chú" : nv.GhiChu)</div>
+                                        </div>
+                                        <div class="col-md-6 text-md-end">
+                                            <div><span class="text-muted">Tổng đơn hợp lệ:</span> <strong class="text-dark so-tien">@nv.SoDonHopLe.ToString("N0") / @nv.TongDonDaLap.ToString("N0") đơn</strong></div>
+                                            <div class="mt-1"><span class="text-muted">Doanh số POS ghi nhận:</span> <strong class="text-primary so-tien">@nv.TongDoanhSo.ToString("N0") đ</strong></div>
+                                            <div class="mt-1"><span class="text-muted">Ngày vào làm:</span> @nv.NgayVaoLam.ToString("dd/MM/yyyy")</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="fw-semibold small text-dark mb-2">
+                                        Lịch sử lập đơn hàng &amp; doanh số POS (@nv.TongDonDaLap đơn):
+                                    </div>
+
+                                    @if (nv.DanhSachDonGanDay.Any())
+                                    {
+                                        <div class="kv-kh-history-scroll">
+                                            <table class="table table-sm table-bordered align-middle mb-0 kv-kh-history-table" style="font-size: 12.5px;">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Mã hóa đơn</th>
+                                                        <th>Thời gian lập</th>
+                                                        <th>Khách hàng</th>
+                                                        <th>Thanh toán</th>
+                                                        <th class="text-end">Giá trị đơn</th>
+                                                        <th>Trạng thái</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach (var dh in nv.DanhSachDonGanDay)
+                                                    {
+                                                        <tr>
+                                                            <td>
+                                                                <a href="/Admin/DonHangAdmin/Index?tuKhoa=@dh.MaTraCuuDh" class="fw-semibold text-primary text-decoration-none">
+                                                                    @dh.MaTraCuuDh
+                                                                </a>
+                                                            </td>
+                                                            <td>@dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</td>
+                                                            <td>@dh.HoTenNguoiMua (@dh.SdtNguoiMua)</td>
+                                                            <td>@dh.PhuongThucTt</td>
+                                                            <td class="text-end fw-semibold so-tien">@dh.TongThanhToanCuoi.ToString("N0") đ</td>
+                                                            <td>@dh.TenTrangThaiDhHienThi</td>
+                                                        </tr>
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-muted small py-2">Nhân viên này chưa lập hóa đơn POS nào.</div>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+
+                    @if (!Model.DanhSachNhanVien.Any())
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                Chưa có hồ sơ nhân viên nào trong hệ thống. Nhấn <strong>+ Thêm nhân viên</strong> để tạo mới.
+                            </td>
+                        </tr>
+                    }
+                    <tr id="nv_EmptyFilterRow" class="d-none">
+                        <td colspan="9" class="text-center text-muted py-4">
+                            Không tìm thấy nhân viên nào khớp với bộ lọc hiện tại.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

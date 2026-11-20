@@ -1,0 +1,155 @@
+@model WebBanhTrungThu.ViewModels.TrangThanhToanViewModel
+@{
+    decimal tienHangSauUuDaiBanDau = Math.Max(0m, Model.TongTienHang - Model.TienChietKhauB2B - Model.TienGiamVoucher - Model.TienGiamVip);
+    bool duMienPhiShip = tienHangSauUuDaiBanDau >= 500000m;
+    decimal tongThanhToanBanDau = Math.Max(0m, tienHangSauUuDaiBanDau + (duMienPhiShip ? 0m : 30000m));
+
+    decimal tienGiamToiDaChoPhepBanDau = Math.Floor((tienHangSauUuDaiBanDau * 0.5m) / 1000m) * 1000m;
+    int soDiemToiDaDuocDungBanDau = Math.Min(Math.Max(0, Model.DiemTichLuy), (int)(tienGiamToiDaChoPhepBanDau / 1000m));
+    decimal tienGiamTuDiemBanDau = soDiemToiDaDuocDungBanDau * 1000m;
+    var viVn = System.Globalization.CultureInfo.GetCultureInfo("vi-VN");
+}
+
+<div class="khung-cot-phai-bitis">
+<div class="danh-sach-san-pham-bitis mb-3">
+@foreach (var item in Model.DanhSachMon)
+{
+    string tenMon = Model.LayTenMon(item);
+    string anhSanPham = Model.LayAnhMon(item);
+
+    <div class="dong-san-pham-bitis">
+        <div class="d-flex align-items-center justify-content-between gap-3">
+            <div class="khung-anh-san-pham-bitis">
+                <img src="@anhSanPham" alt="@tenMon" class="anh-thu-nho-bitis" />
+                <span class="cham-so-luong-bitis">@item.SoLuong</span>
+            </div>
+            <div class="ten-san-pham-bitis"><strong class="d-block text-dark">@tenMon</strong></div>
+            <div class="gia-san-pham-bitis">@((item.SoLuong * item.DonGiaTamTinh).ToString("N0")) đ</div>
+        </div>
+
+        @if (item.LoaiSanPham == 3 && item.MaHopTcNavigation != null)
+        {
+            var danhSachO = item.MaHopTcNavigation.ChiTietHopTuChons.OrderBy(x => x.ViTriOtrongHop).ToList();
+            if (danhSachO.Any())
+            {
+                <div class="bang-thanh-phan-hop-2-cot mt-2">
+                    @foreach (var o in danhSachO)
+                    {
+                        <div class="dong-thanh-phan-hop">
+                            <span class="cot-o-banh">Ô @o.ViTriOtrongHop</span>
+                            <span class="cot-ten-banh">@(o.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu")</span>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+}
+</div>
+
+<div class="khung-ma-khuyen-mai-bitis py-3 border-top border-bottom">
+    <div class="d-flex gap-2 mb-2">
+        <input type="text" id="txtMaGiamGiaCheckout" class="input-phang-bitis" value="@Model.CodeKmDangDung" placeholder="Mã khuyến mãi" style="flex: 1; min-width: 0;" />
+        <button type="button" id="btnSuDungMaVoucherCheckout" class="btn-su-dung-ma-bitis" onclick="apDungMaGiamGiaTrangThanhToan()">Sử dụng</button>
+    </div>
+    <div id="thong-bao-voucher" class="mb-2" aria-live="polite" style="display: @(!string.IsNullOrEmpty(Model.CodeKmDangDung) ? "block" : "none");">
+        @if (!string.IsNullOrEmpty(Model.CodeKmDangDung))
+        {
+            <div class="hop-thong-bao-voucher-ok">
+                <span>✓ Đang áp dụng mã <strong>@Model.CodeKmDangDung</strong> (-@Model.TienGiamVoucher.ToString("N0", viVn)đ)</span>
+                <button type="button" class="btn-go-ma-voucher" onclick="goMaGiamGiaTrangThanhToan()">Gỡ mã</button>
+            </div>
+        }
+    </div>
+
+    <div class="danh-sach-voucher-goi-y-bitis d-flex flex-column gap-2">
+        @if (Model.DanhSachVoucherGoiY.Any())
+        {
+            @foreach (var km in Model.DanhSachVoucherGoiY)
+            {
+                bool dangApDung = string.Equals(Model.CodeKmDangDung, km.CodeKm, StringComparison.OrdinalIgnoreCase);
+                string moTaUuDai = km.LoaiGiam == "PHAN_TRAM"
+                    ? (km.GiamToiDa > 0 ? $"Giảm {km.GiaTriGiam:0.##}% (tối đa {km.GiamToiDa.ToString("N0", viVn)}đ)" : $"Giảm {km.GiaTriGiam:0.##}%")
+                    : $"Giảm trực tiếp {km.GiaTriGiam.ToString("N0", viVn)}đ";
+                string dieuKienDon = km.DonToiThieu > 0
+                    ? $"Đơn từ {km.DonToiThieu.ToString("N0", viVn)}đ"
+                    : "Mọi đơn hàng";
+
+                <div class="the-voucher-truc-quan-bitis">
+                    <div class="icon-hop-qua-voucher"><i class="bi bi-gift-fill"></i></div>
+                    <div class="noi-dung-the-voucher">
+                        <div class="fw-bold text-dark small">@moTaUuDai</div>
+                        <div class="text-secondary" style="font-size: 0.74rem;">@dieuKienDon</div>
+                        <div class="d-flex align-items-center flex-wrap gap-1 mt-1">
+                            <span class="nhan-ma-vang-bitis">@km.CodeKm</span>
+                            <span class="text-muted small">HSD: @km.NgayKetThuc.ToString("dd/MM/yyyy")</span>
+                        </div>
+                    </div>
+                    <button type="button"
+                            class="btn-ap-dung-ma-vang-bitis @(dangApDung ? "dang-ap-dung" : "")"
+                            data-code-voucher="@km.CodeKm"
+                            onclick="chonNhanhMaCheckout('@km.CodeKm')">
+                        @(dangApDung ? "Đang dùng" : "Áp dụng mã")
+                    </button>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="the-voucher-truc-quan-bitis">
+                <div class="icon-hop-qua-voucher"><i class="bi bi-gift-fill"></i></div>
+                <div class="noi-dung-the-voucher">
+                    <div class="fw-bold text-dark small">Giảm trực tiếp 15.000đ</div>
+                    <div class="text-secondary" style="font-size: 0.74rem;">Đơn từ 100.000đ</div>
+                    <div class="d-flex align-items-center flex-wrap gap-1 mt-1">
+                        <span class="nhan-ma-vang-bitis">QUATANG15K</span>
+                        <span class="text-muted small">HSD: 31/12/2027</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-ap-dung-ma-vang-bitis" data-code-voucher="QUATANG15K" onclick="chonNhanhMaCheckout('QUATANG15K')">Áp dụng mã</button>
+            </div>
+            <div class="the-voucher-truc-quan-bitis">
+                <div class="icon-hop-qua-voucher"><i class="bi bi-gift-fill"></i></div>
+                <div class="noi-dung-the-voucher">
+                    <div class="fw-bold text-dark small">Giảm 10% đơn Lễ Hội</div>
+                    <div class="text-secondary" style="font-size: 0.74rem;">Đơn từ 400.000đ</div>
+                    <div class="d-flex align-items-center flex-wrap gap-1 mt-1">
+                        <span class="nhan-ma-vang-bitis">TRANGTRON2026</span>
+                        <span class="text-muted small">HSD: 31/12/2027</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-ap-dung-ma-vang-bitis" data-code-voucher="TRANGTRON2026" onclick="chonNhanhMaCheckout('TRANGTRON2026')">Áp dụng mã</button>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model.DaDangNhap && Model.DiemTichLuy > 0)
+{
+    <div class="py-3 border-bottom">
+        <div class="form-check form-switch d-flex align-items-center gap-2 m-0">
+            <input class="form-check-input mt-0" type="checkbox" role="switch" id="chk-su-dung-diem-vip" name="SuDungDiemTichLuy" value="true" @(soDiemToiDaDuocDungBanDau <= 0 ? "disabled" : "") onchange="capNhatBangTinhThanhToan()" />
+            <input type="hidden" id="hidDungDiemTichLuy" name="DungDiemTichLuy" value="false" />
+            <label class="form-check-label text-dark small fw-medium" for="chk-su-dung-diem-vip">
+                Dùng <span id="lblDiemToiDaDuocDung">@soDiemToiDaDuocDungBanDau.ToString("N0", viVn)</span> / @Model.DiemTichLuy.ToString("N0", viVn) điểm tích lũy (Giảm -<span id="lblTienGiamDiemDuKien">@tienGiamTuDiemBanDau.ToString("N0", viVn)</span> đ)
+            </label>
+        </div>
+        <small id="lblGhiChuDiemTichLuyCheckout" class="text-muted d-block mt-1" style="font-size: 0.76rem;">Quy đổi 1 điểm = 1.000đ • Dùng tối đa 50% tiền hàng</small>
+    </div>
+}
+
+<div class="pt-3">
+    <div class="d-flex justify-content-between align-items-center py-1"><span class="text-secondary">Tạm tính</span><strong class="text-dark">@Model.TongTienHang.ToString("N0") đ</strong></div>
+    @if (Model.TienChietKhauB2B > 0)
+    {
+        <div class="d-flex justify-content-between align-items-center py-1 text-warning"><span>Chiết khấu số lượng lớn (@Model.PhanTramCkB2B.ToString("0.##")%)</span><strong>-@Model.TienChietKhauB2B.ToString("N0") đ</strong></div>
+    }
+    <div id="dongGiamGiaVoucherCheckout" class="d-flex justify-content-between align-items-center py-1 text-success" style="display: @(Model.TienGiamVoucher > 0 ? "flex" : "none") !important;"><span>Ưu đãi mã khuyến mãi</span><strong id="lblTienGiamVoucherCheckout">-@Model.TienGiamVoucher.ToString("N0") đ</strong></div>
+    <div id="dongGiamGiaHangVipCheckout" class="d-flex justify-content-between align-items-center py-1 text-primary" style="display: @(Model.TienGiamVip > 0 ? "flex" : "none") !important;"><span>Ưu đãi Hạng @Model.HangTv (@Model.PhanTramGiamVip.ToString("0.##")%)</span><strong id="lblTienGiamHangVipCheckout">-@Model.TienGiamVip.ToString("N0") đ</strong></div>
+    <div id="dongGiamGiaDiemCheckout" class="d-flex justify-content-between align-items-center py-1 text-success" style="display: none !important;"><span>Tiêu điểm tích lũy (<span id="lblSoDiemSuDungCheckout">0</span> điểm)</span><strong id="lblTienGiamDiemCheckout">-0 đ</strong></div>
+    <div id="dongPhiLogoB2BCheckout" class="d-flex justify-content-between align-items-center py-1 text-secondary" style="display: none !important;"><span>Phí khuôn ép kim Logo</span><strong id="lblPhiInLogoCheckout" class="text-dark">0 đ</strong></div>
+    <div class="d-flex justify-content-between align-items-center py-1"><span class="text-secondary">Phí vận chuyển <span id="lblSoDiemGiaoCheckout" class="d-none">1</span></span><strong id="lblPhiShipCheckout" class="text-dark">@(duMienPhiShip ? "0 đ" : "30.000 đ")</strong></div>
+    <hr class="my-3" />
+    <div class="d-flex justify-content-between align-items-baseline"><span class="fw-bold text-dark">Tổng cộng</span><strong id="lblTongThanhToanCuoiCheckout" class="fs-4 fw-bold text-dark">@tongThanhToanBanDau.ToString("N0") đ</strong></div>
+</div>
+</div>

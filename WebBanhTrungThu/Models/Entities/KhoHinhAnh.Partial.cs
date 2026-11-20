@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.RegularExpressions;
 
 namespace WebBanhTrungThu.Models.Entities
@@ -18,10 +18,21 @@ namespace WebBanhTrungThu.Models.Entities
                 if (LoaiLuuTru == 3)
                 {
                     string? driveId = LayMaFileDriveTuDong();
-                    if (!string.IsNullOrEmpty(driveId))
+                    bool laIdGiaLap = string.IsNullOrEmpty(driveId)
+                                      || driveId.Contains("1AbCdEfGhIjKlMnOpQrStUvWxYz123456", StringComparison.OrdinalIgnoreCase);
+
+                    if (!laIdGiaLap)
                     {
                         return $"https://lh3.googleusercontent.com/d/{driveId}";
                     }
+
+                    // Nếu mã Drive là dữ liệu mẫu giả lập hoặc không hợp lệ, ưu tiên trả về DuongDanCucBo
+                    if (!string.IsNullOrWhiteSpace(DuongDanCucBo))
+                    {
+                        return DuongDanCucBo;
+                    }
+
+                    return "/images/banh/fallback-lava.png";
                 }
 
                 // Nguồn 1 (wwwroot) hoặc Nguồn 2 (Ổ cứng đã map qua /kho-anh-may)

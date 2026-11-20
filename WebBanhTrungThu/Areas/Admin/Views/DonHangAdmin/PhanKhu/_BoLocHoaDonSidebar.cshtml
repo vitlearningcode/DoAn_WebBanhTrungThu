@@ -1,0 +1,89 @@
+@{
+    string tuKhoa = ViewBag.TuKhoa as string ?? "";
+    string locTrangThai = ViewBag.LocTrangThai as string ?? "ALL";
+    string locLoaiDon = ViewBag.LocLoaiDon as string ?? "ALL";
+    string locPhuongThuc = ViewBag.LocPhuongThuc as string ?? "ALL";
+    string locThoiGian = ViewBag.LocThoiGian as string ?? "ALL";
+}
+
+<!-- CỘT TRÁI (250PX): BỘ LỌC GIAO DỊCH / HÓA ĐƠN CHUẨN NGUYETCAT_ERP -->
+<aside class="kv-sidebar-filter">
+    <h1 class="kv-page-heading">Hóa đơn</h1>
+
+    <div id="boxLocHoaDonClient">
+        <div class="kv-filter-box">
+            <div class="kv-filter-title">
+                <span>Tìm kiếm</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <input type="text" id="fltDhTuKhoaLeft" value="@tuKhoa" class="kv-input"
+                   placeholder="Theo mã hóa đơn, SĐT, tên khách"
+                   oninput="document.getElementById('fltDhTuKhoaTop').value = this.value; locHoaDonClient();" />
+        </div>
+
+        <div class="kv-filter-box">
+            <div class="kv-filter-title">
+                <span>Thời gian</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <div class="d-flex flex-column gap-1">
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="fltDhThoiGian" value="ALL" @(locThoiGian == "ALL" ? "checked" : "") onchange="locHoaDonClient()" />
+                    <span>Toàn thời gian</span>
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="fltDhThoiGian" value="HOM_NAY" @(locThoiGian == "HOM_NAY" ? "checked" : "") onchange="locHoaDonClient()" />
+                    <span>Hôm nay</span>
+                </label>
+                <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                    <input type="radio" name="fltDhThoiGian" value="THANG_NAY" @(locThoiGian == "THANG_NAY" ? "checked" : "") onchange="locHoaDonClient()" />
+                    <span>Tháng này</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="kv-filter-box">
+            <div class="kv-filter-title">
+                <span>Trạng thái giao hàng</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <select id="fltDhTrangThai" class="kv-select" onchange="locHoaDonClient()">
+                <option value="ALL" selected="@(locTrangThai == "ALL")">Tất cả</option>
+                <option value="GIAO_HANG" selected="@(locTrangThai == "GIAO_HANG")">Đơn giao hàng (Chờ lấy &amp; Đang giao)</option>
+                <option value="CHO_XAC_NHAN" selected="@(locTrangThai == "CHO_XAC_NHAN")">Chờ xác nhận</option>
+                <option value="CHO_LAY_HANG" selected="@(locTrangThai == "CHO_LAY_HANG" || locTrangThai == "DANG_DONG_GOI_HOP")">Chờ lấy hàng (Đã đóng gói)</option>
+                <option value="DANG_GIAO" selected="@(locTrangThai == "DANG_GIAO")">Đang giao hàng</option>
+                <option value="HOAN_TAT" selected="@(locTrangThai == "HOAN_TAT")">Hoàn tất</option>
+                <option value="DA_HUY" selected="@(locTrangThai == "DA_HUY")">Đã hủy</option>
+            </select>
+        </div>
+
+        <div class="kv-filter-box">
+            <div class="kv-filter-title">
+                <span>Loại đơn &amp; Kênh bán</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <select id="fltDhLoaiDon" class="kv-select" onchange="locHoaDonClient()">
+                <option value="ALL" selected="@(locLoaiDon == "ALL")">Tất cả</option>
+                <option value="B2C" selected="@(locLoaiDon == "B2C")">Đơn khách lẻ</option>
+                <option value="B2B" selected="@(locLoaiDon == "B2B")">Đơn sỉ chiết khấu / VAT</option>
+                <option value="GUEST" selected="@(locLoaiDon == "GUEST")">Khách vãng lai (Guest)</option>
+                <option value="MEMBER" selected="@(locLoaiDon == "MEMBER")">Khách thành viên (Member)</option>
+            </select>
+        </div>
+
+        <div class="kv-filter-box">
+            <div class="kv-filter-title">
+                <span>Phương thức thanh toán</span>
+                <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+            </div>
+            <select id="fltDhPhuongThuc" class="kv-select" onchange="locHoaDonClient()">
+                <option value="ALL" selected="@(locPhuongThuc == "ALL")">Tất cả</option>
+                <option value="COD" selected="@(locPhuongThuc == "COD")">COD (Tiền mặt)</option>
+                <option value="VIETQR" selected="@(locPhuongThuc == "VIETQR")">VIETQR (Chuyển khoản)</option>
+                <option value="VNPAY" selected="@(locPhuongThuc == "VNPAY")">VNPAY</option>
+                <option value="MOMO" selected="@(locPhuongThuc == "MOMO")">MOMO</option>
+            </select>
+        </div>
+    </div>
+</aside>

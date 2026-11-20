@@ -1,4 +1,4 @@
-﻿using WebBanhTrungThu.Models.Entities;
+using WebBanhTrungThu.Models.Entities;
 
 namespace WebBanhTrungThu.ViewModels
 {
@@ -8,11 +8,12 @@ namespace WebBanhTrungThu.ViewModels
         public CauHinhLandingPage? HeroBanner { get; set; }
         public CauHinhLandingPage? BoxBuilderIntro { get; set; }
 
-        // 2. Dữ liệu Sản phẩm, Danh mục & Dinh dưỡng (Tầng 3 & Tầng 4)
+        // 2. Dữ liệu Sản phẩm, Danh mục, Thương hiệu & Dinh dưỡng (Tầng 3 & Tầng 4)
         public List<DanhMucBanh> DanhMucs { get; set; } = new();
         public List<SanPhamBanh> DanhSachBanh { get; set; } = new();
         public List<MauVoHop> DanhSachVoHop { get; set; } = new();
         public List<ComboMauCoSan> DanhSachCombo { get; set; } = new();
+        public List<string> DanhSachThuongHieu { get; set; } = new();
 
         // 3. Bảng chiết khấu sỉ B2B (Tầng 5) & Khuyến mãi
         public List<BangChietKhauSiB2b> BangGiaSiB2B { get; set; } = new();

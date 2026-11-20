@@ -1,0 +1,68 @@
+@model WebBanhTrungThu.ViewModels.ChiTietSanPhamViewModel
+
+@if (Model.SanPhamLienQuan.Any())
+{
+    <div class="mt-2">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+                <span class="text-uppercase small chu-do-son-mai fw-bold" style="letter-spacing: 1px; font-size: 0.72rem;">Gợi ý cùng dòng vị &amp; thương hiệu</span>
+                <h2 class="font-co-phong fs-3 fw-bold chu-nau-tram mb-0">Sản Phẩm Liên Quan</h2>
+            </div>
+            <a href="/#tang-bo-suu-tap" class="btn btn-sm btn-vien-vang rounded-pill px-3">Xem toàn bộ bộ sưu tập</a>
+        </div>
+
+        <div class="row g-3">
+            @foreach (var item in Model.SanPhamLienQuan)
+            {
+                <div class="col-sm-6 col-lg-3">
+                    <div class="card-hoang-gia p-3 h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center gap-1 mb-2">
+                                <span class="tem-lua-thuong-hieu" style="font-size: 0.66rem; padding: 2px 8px;">@item.ThuongHieu</span>
+                                @if (item.DangGiamCanDate)
+                                {
+                                    <span class="badge bg-danger text-white rounded-pill" style="font-size: 0.65rem;">-@item.PhanTramGiamCanDate.ToString("N0")%</span>
+                                }
+                                else if (item.LaIsomalt)
+                                {
+                                    <span class="badge badge-isomalt rounded-pill" style="font-size: 0.65rem;">GI @item.ChiSoGi</span>
+                                }
+                                else
+                                {
+                                    <span class="badge rounded-pill" style="background: var(--mau-nen-ngoc-trai); color: var(--mau-chu-phu); border: 1px solid var(--mau-vien-vang-dong); font-size: 0.65rem;">@item.TrongLuongGram g</span>
+                                }
+                            </div>
+
+                            <a asp-controller="SanPham" asp-action="ChiTiet" asp-route-id="@item.MaBanh"
+                               class="khung-anh-banh-sang khung-anh-banh-bst text-center my-2 d-flex text-decoration-none">
+                                <img src="@item.AnhDaiDien" class="img-fluid" alt="@item.TenBanh" />
+                            </a>
+
+                            <h3 class="h6 font-co-phong fs-5 fw-bold mb-1">
+                                <a asp-controller="SanPham" asp-action="ChiTiet" asp-route-id="@item.MaBanh"
+                                   class="chu-nau-tram text-decoration-none sp-ct-link-ten" title="@item.TenBanh">
+                                    @item.TenBanh
+                                </a>
+                            </h3>
+                            <div class="small chu-nau-phu mb-2">@item.NangLuongCalo Kcal • GI @item.ChiSoGi</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center gap-2 pt-2 border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
+                            <div>
+                                @if (item.DangGiamCanDate)
+                                {
+                                    <del class="chu-nau-phu d-block lh-1" style="font-size: 0.7rem;">@item.GiaGoc.ToString("N0") đ</del>
+                                }
+                                <strong class="chu-do-son-mai text-nowrap">@item.GiaBanThucTe.ToString("N0") đ</strong>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-vien-vang rounded-pill px-3 text-nowrap flex-shrink-0"
+                                    onclick="themBanhLeVaoGio(@item.MaBanh, 1, this)">
+                                Mua lẻ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}

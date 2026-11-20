@@ -1,0 +1,23 @@
+@model WebBanhTrungThu.ViewModels.KiemKhoAdminViewModel
+
+<div class="kv-card p-3 mb-3">
+    <div class="row g-3 text-end align-items-center">
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Tổng phiếu kiểm kho</div>
+            <div class="fs-5 fw-bold text-dark so-tien">@Model.TongSoPhieu phiếu</div>
+            <small class="text-muted">@Model.SoPhieuDaCanBang đã cân bằng • @Model.SoPhieuTam phiếu tạm</small>
+        </div>
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Tổng SL lệch tăng</div>
+            <div class="fs-5 fw-bold text-success so-tien">+@Model.TongLechTang.ToString("N0") sp</div>
+        </div>
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Tổng SL lệch giảm (Thiếu)</div>
+            <div class="fs-5 fw-bold text-danger so-tien">-@Model.TongLechGiam.ToString("N0") sp</div>
+        </div>
+        <div class="col-md-3 pe-3">
+            <div class="text-muted small">Tổng giá trị chênh lệch</div>
+            <div class="fs-5 fw-bold @(Model.TongGiaTriLech < 0 ? "text-danger" : Model.TongGiaTriLech > 0 ? "text-success" : "text-dark") so-tien">@Model.TongGiaTriLech.ToString("N0") đ</div>
+        </div>
+    </div>
+</div>

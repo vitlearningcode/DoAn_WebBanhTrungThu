@@ -1,0 +1,45 @@
+@model WebBanhTrungThu.ViewModels.HoSoThanhVienViewModel
+@{
+    ViewData["Title"] = $"Hồ Sơ Thành Viên - {Model.NguoiDung.HoTen}";
+}
+
+<section class="trang-ho-so-thanh-vien">
+    <div class="container py-4 khung-ho-so-thanh-vien">
+        @if (TempData["ThongBaoHoSo"] != null)
+        {
+            <div class="thong-bao-ho-so alert alert-dismissible fade show" role="alert">
+                <div class="thong-bao-ho-so-noi-dung">
+                    <i class="bi bi-check2-circle" aria-hidden="true"></i>
+                    <span>@TempData["ThongBaoHoSo"]</span>
+                </div>
+                <a href="/ThanhToan" class="btn-lien-ket-thong-bao">Đi tới thanh toán</a>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng thông báo"></button>
+            </div>
+        }
+
+        @if (TempData["LoiHoSo"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show py-2 px-3 mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>
+                <span>@TempData["LoiHoSo"]</span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Đóng cảnh báo"></button>
+            </div>
+        }
+
+        <div class="row g-4">
+            <!-- CỘT TRÁI: THẺ ĐỊNH DANH HỘI VIÊN, TIẾN TRÌNH VIP & MENU ĐIỀU HƯỚNG DỌC -->
+            @await Html.PartialAsync("~/Views/TaiKhoan/PhanKhu/_TheHoiVienSidebar.cshtml", Model)
+
+            <!-- CỘT PHẢI: KHÔNG GIAN NỘI DUNG 3 TAB ĐỘC LẬP -->
+            <div class="col-lg-8 col-xl-9">
+                @await Html.PartialAsync("~/Views/TaiKhoan/PhanKhu/_TabLichSuDonHang.cshtml", Model)
+                @await Html.PartialAsync("~/Views/TaiKhoan/PhanKhu/_TabSoDiaChi.cshtml", Model)
+                @await Html.PartialAsync("~/Views/TaiKhoan/PhanKhu/_TabBoSuuTapHop.cshtml", Model)
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script src="~/js/modules/so-dia-chi.js" asp-append-version="true"></script>
+}

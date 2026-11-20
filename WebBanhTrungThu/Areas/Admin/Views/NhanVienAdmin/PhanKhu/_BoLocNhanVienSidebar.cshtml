@@ -1,0 +1,57 @@
+@model WebBanhTrungThu.ViewModels.NhanVienAdminViewModel
+
+<aside class="kv-sidebar-filter">
+    <h1 class="kv-page-heading">Nhân viên</h1>
+
+    <div class="kv-filter-box">
+        <div class="kv-filter-title"><span>Vai trò hệ thống</span></div>
+        <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+            <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                <input type="radio" name="radNvVaiTro" value="ALL" checked="@(Model.LocVaiTro == "ALL")" onchange="locNhanVienClient()" /> Tất cả
+            </label>
+            <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                <input type="radio" name="radNvVaiTro" value="ADMIN" checked="@(Model.LocVaiTro == "ADMIN")" onchange="locNhanVienClient()" /> Chủ cửa hàng (ADMIN)
+            </label>
+            <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                <input type="radio" name="radNvVaiTro" value="NHAN_VIEN" checked="@(Model.LocVaiTro == "NHAN_VIEN")" onchange="locNhanVienClient()" /> Nhân viên Bán hàng
+            </label>
+        </div>
+    </div>
+
+    <div class="kv-filter-box">
+        <div class="kv-filter-title"><span>Chi nhánh làm việc</span></div>
+        <select id="fltNvChiNhanh" class="form-select form-select-sm" onchange="locNhanVienClient()">
+            <option value="ALL" selected="@(Model.LocChiNhanh == "ALL")">Tất cả chi nhánh</option>
+            @foreach (var cn in Model.DanhSachChiNhanh)
+            {
+                <option value="@cn" selected="@(string.Equals(Model.LocChiNhanh, cn, StringComparison.OrdinalIgnoreCase))">@cn</option>
+            }
+        </select>
+    </div>
+
+    <div class="kv-filter-box">
+        <div class="kv-filter-title"><span>Ca làm việc</span></div>
+        <select id="fltNvCaLamViec" class="form-select form-select-sm" onchange="locNhanVienClient()">
+            <option value="ALL" selected="@(Model.LocCaLamViec == "ALL")">Tất cả ca làm việc</option>
+            @foreach (var ca in Model.DanhSachCaLamViec)
+            {
+                <option value="@ca" selected="@(string.Equals(Model.LocCaLamViec, ca, StringComparison.OrdinalIgnoreCase))">@ca</option>
+            }
+        </select>
+    </div>
+
+    <div class="kv-filter-box">
+        <div class="kv-filter-title"><span>Trạng thái làm việc</span></div>
+        <div class="d-flex flex-column gap-2" style="font-size: 13px;">
+            <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                <input type="radio" name="radNvTrangThai" value="ALL" checked="@(Model.LocTrangThai == "ALL")" onchange="locNhanVienClient()" /> Tất cả
+            </label>
+            <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                <input type="radio" name="radNvTrangThai" value="DANG_LAM_VIEC" checked="@(Model.LocTrangThai == "DANG_LAM_VIEC")" onchange="locNhanVienClient()" /> Đang làm việc
+            </label>
+            <label class="d-flex align-items-center gap-2" style="cursor:pointer;">
+                <input type="radio" name="radNvTrangThai" value="TAM_KHOA" checked="@(Model.LocTrangThai == "TAM_KHOA")" onchange="locNhanVienClient()" /> Đang tạm khóa
+            </label>
+        </div>
+    </div>
+</aside>

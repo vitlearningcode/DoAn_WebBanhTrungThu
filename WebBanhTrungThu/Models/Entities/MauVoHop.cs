@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -50,4 +50,7 @@ public partial class MauVoHop
 
     [InverseProperty("MaVhNavigation")]
     public virtual ICollection<HopQuaTuChon> HopQuaTuChons { get; set; } = new List<HopQuaTuChon>();
+
+    [InverseProperty("MaVhNavigation")]
+    public virtual ICollection<NhatKyTruKhoDonHang> NhatKyTruKhoDonHangs { get; set; } = new List<NhatKyTruKhoDonHang>();
 }

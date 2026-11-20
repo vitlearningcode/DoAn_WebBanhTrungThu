@@ -1,0 +1,507 @@
+@model WebBanhTrungThu.ViewModels.SoQuyAdminViewModel
+@{
+    ViewData["Title"] = "Sổ quỹ - Nguyệt Cát ERP";
+    decimal chenhLechThuChi = Model.TongThuTrongKy - Model.TongChiTrongKy;
+}
+
+<style>
+    .kv-page-heading {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin: 0 0 14px 0;
+    }
+
+    .kv-select, .kv-input {
+        width: 100%;
+        height: 34px;
+        border: 1px solid #D1D5DA;
+        border-radius: 6px;
+        padding: 0 10px;
+        font-size: 13px;
+        color: #1F2937;
+        background-color: #FFFFFF;
+        outline: none;
+    }
+
+    .kv-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+
+    .kv-search-box {
+        position: relative;
+        width: 360px;
+        max-width: 100%;
+    }
+
+    .kv-search-box i {
+        position: absolute;
+        left: 11px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6B7280;
+        font-size: 14px;
+    }
+
+    .kv-search-box input {
+        width: 100%;
+        height: 36px;
+        padding: 0 12px 0 34px;
+        border: 1px solid #D1D5DA;
+        border-radius: 6px;
+        background: #FFFFFF;
+        font-size: 13.5px;
+        color: #1F2937;
+        outline: none;
+    }
+</style>
+
+<!-- THANH 4 CHỈ SỐ ĐẦU TRANG SỔ QUỸ (SQL-FIRST TỪ dbo.PhieuThuChi) -->
+<div class="kv-card p-3 mb-3">
+    <div class="row g-3 text-end align-items-center">
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Quỹ đầu kỳ</div>
+            <div class="fs-5 fw-bold text-dark so-tien">@Model.QuyDauKy.ToString("N0") đ</div>
+        </div>
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Tổng thu</div>
+            <div class="fs-5 fw-bold so-tien" style="color: #0070F4;">+@Model.TongThuTrongKy.ToString("N0") đ</div>
+            <small class="text-muted">@Model.SoPhieuThu phiếu thu</small>
+        </div>
+        <div class="col-md-3 border-end pe-4">
+            <div class="text-muted small">Tổng chi</div>
+            <div class="fs-5 fw-bold text-danger so-tien">-@Model.TongChiTrongKy.ToString("N0") đ</div>
+            <small class="text-muted">@Model.SoPhieuChi phiếu chi</small>
+        </div>
+        <div class="col-md-3 pe-3">
+            <div class="text-muted small">Tồn quỹ</div>
+            <div class="fs-5 fw-bold text-success so-tien">@Model.TonQuyCuoiKy.ToString("N0") đ</div>
+            <small class="text-muted">Chênh lệch thu - chi: @(chenhLechThuChi >= 0 ? "+" : "-")@Math.Abs(chenhLechThuChi).ToString("N0") đ</small>
+        </div>
+    </div>
+</div>
+
+<div class="kv-layout-2col">
+    <!-- ========================================================================= -->
+    <!-- CỘT TRÁI (250PX): BỘ LỌC SỔ QUỸ CHUẨN NGUYETCAT_ERP                       -->
+    <!-- ========================================================================= -->
+    <aside class="kv-sidebar-filter">
+        <h1 class="kv-page-heading">Sổ quỹ</h1>
+
+        <div>
+            <!-- 1. Loại phiếu -->
+            <div class="kv-filter-box">
+                <div class="kv-filter-title">
+                    <span>Loại phiếu</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+                <div class="d-flex flex-column gap-2">
+                    <label class="d-flex align-items-center justify-content-between" style="cursor:pointer;">
+                        <span class="d-flex align-items-center gap-2">
+                            <input type="radio" name="fltSqLoaiPhieu" value="ALL" checked="@(Model.LocLoaiPhieu == "ALL")" onchange="locSoQuyClient()" />
+                            <span>Tất cả phiếu</span>
+                        </span>
+                        <span class="badge bg-light text-dark border">@Model.TongSoPhieu</span>
+                    </label>
+                    <label class="d-flex align-items-center justify-content-between" style="cursor:pointer;">
+                        <span class="d-flex align-items-center gap-2">
+                            <input type="radio" name="fltSqLoaiPhieu" value="THU" checked="@(Model.LocLoaiPhieu == "THU")" onchange="locSoQuyClient()" />
+                            <span>Phiếu thu (THU)</span>
+                        </span>
+                        <span class="badge" style="background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;">@Model.SoPhieuThu</span>
+                    </label>
+                    <label class="d-flex align-items-center justify-content-between" style="cursor:pointer;">
+                        <span class="d-flex align-items-center gap-2">
+                            <input type="radio" name="fltSqLoaiPhieu" value="CHI" checked="@(Model.LocLoaiPhieu == "CHI")" onchange="locSoQuyClient()" />
+                            <span>Phiếu chi (CHI)</span>
+                        </span>
+                        <span class="badge" style="background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;">@Model.SoPhieuChi</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- 2. Phương thức thanh toán -->
+            <div class="kv-filter-box">
+                <div class="kv-filter-title">
+                    <span>Phương thức thanh toán</span>
+                    <i class="bi bi-chevron-up text-muted" style="font-size: 11px;"></i>
+                </div>
+                <div class="d-flex flex-column gap-2">
+                    <label class="d-flex align-items-center justify-content-between" style="cursor:pointer;">
+                        <span class="d-flex align-items-center gap-2">
+                            <input type="radio" name="fltSqPhuongThuc" value="ALL" checked="@(Model.LocPhuongThuc == "ALL")" onchange="locSoQuyClient()" />
+                            <span>Tất cả</span>
+                        </span>
+                        <span class="text-muted small">@Model.TongSoPhieu phiếu</span>
+                    </label>
+                    <label class="d-flex align-items-center justify-content-between" style="cursor:pointer;">
+                        <span class="d-flex align-items-center gap-2">
+                            <input type="radio" name="fltSqPhuongThuc" value="TIEN_MAT" checked="@(Model.LocPhuongThuc == "TIEN_MAT" || Model.LocPhuongThuc == "COD")" onchange="locSoQuyClient()" />
+                            <span>Tiền mặt / COD</span>
+                        </span>
+                        <span class="text-muted small">@Model.SoPhieuTienMat phiếu</span>
+                    </label>
+                    <label class="d-flex align-items-center justify-content-between" style="cursor:pointer;">
+                        <span class="d-flex align-items-center gap-2">
+                            <input type="radio" name="fltSqPhuongThuc" value="CHUYEN_KHOAN" checked="@(Model.LocPhuongThuc == "CHUYEN_KHOAN" || Model.LocPhuongThuc == "VIETQR")" onchange="locSoQuyClient()" />
+                            <span>Chuyển khoản / VietQR</span>
+                        </span>
+                        <span class="text-muted small">@Model.SoPhieuChuyenKhoan phiếu</span>
+                    </label>
+                    <label class="d-flex align-items-center justify-content-between" style="cursor:pointer;">
+                        <span class="d-flex align-items-center gap-2">
+                            <input type="radio" name="fltSqPhuongThuc" value="VI_DIEN_TU" checked="@(Model.LocPhuongThuc == "VI_DIEN_TU" || Model.LocPhuongThuc == "MOMO" || Model.LocPhuongThuc == "MOMO_QR" || Model.LocPhuongThuc == "VNPAY")" onchange="locSoQuyClient()" />
+                            <span>Ví MoMo / VNPay</span>
+                        </span>
+                        <span class="text-muted small">@Model.SoPhieuViDienTu phiếu</span>
+                    </label>
+                    <label class="d-flex align-items-center justify-content-between" style="cursor:pointer;">
+                        <span class="d-flex align-items-center gap-2">
+                            <input type="radio" name="fltSqPhuongThuc" value="THE_NGAN_HANG" checked="@(Model.LocPhuongThuc == "THE_NGAN_HANG")" onchange="locSoQuyClient()" />
+                            <span>Thẻ ngân hàng</span>
+                        </span>
+                        <span class="text-muted small">@Model.SoPhieuTheNganHang phiếu</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ========================================================================= -->
+    <!-- CỘT PHẢI: BẢNG PHIẾU THU / CHI THẬT TỪ dbo.PhieuThuChi                    -->
+    <!-- ========================================================================= -->
+    <div class="kv-main-table-area">
+        <div class="kv-toolbar">
+            <div class="kv-search-box">
+                <i class="bi bi-search"></i>
+                <input type="text" id="txtTimSoQuy" value="@Model.TuKhoa"
+                       placeholder="Theo mã phiếu (PTH/PCH), mã đơn, hạng mục, đối tượng..."
+                       oninput="locSoQuyClient(true)" />
+            </div>
+
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <button type="button" class="btn-kv-green" onclick="moModalLapPhieu('THU')">
+                    <i class="bi bi-plus-lg"></i> Lập phiếu thu
+                </button>
+                <button type="button" class="btn-kv-danger-outline" onclick="moModalLapPhieu('CHI')">
+                    <i class="bi bi-dash-lg"></i> Lập phiếu chi
+                </button>
+                <a href="/Admin/CaiDatAdmin/Index?muc=momo" class="btn-kv-blue text-decoration-none">
+                    <i class="bi bi-gear"></i> Cài đặt QR / MoMo (@Model.CauHinhQr.SoDienThoaiHienThi)
+                </a>
+                <button type="button" class="btn-kv-outline" onclick="window.print();">
+                    <i class="bi bi-download"></i> Xuất file
+                </button>
+            </div>
+        </div>
+
+        @if (TempData["LoiAdmin"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show py-2 px-3 small mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>@TempData["LoiAdmin"]
+                <button type="button" class="btn-close py-2" data-bs-dismiss="alert"></button>
+            </div>
+        }
+
+        <div class="kv-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="kv-table">
+                    <thead>
+                        <tr>
+                            <th>Mã phiếu</th>
+                            <th>Thời gian</th>
+                            <th>Hạng mục &amp; Diễn giải</th>
+                            <th>Đối tượng nộp / nhận</th>
+                            <th>Phương thức</th>
+                            <th>Loại phiếu</th>
+                            <th class="text-end">Giá trị</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodySoQuy">
+                        @foreach (var item in Model.DanhSachPhieuThuChi)
+                        {
+                            bool laChi = item.LoaiPhieu == "CHI";
+                            string ptUpper = item.PhuongThuc.ToUpperInvariant();
+                            string nhomPt = ptUpper switch
+                            {
+                                "TIEN_MAT" or "COD" => "TIEN_MAT",
+                                "CHUYEN_KHOAN" or "VIETQR" => "CHUYEN_KHOAN",
+                                "MOMO" or "MOMO_QR" or "VNPAY" => "VI_DIEN_TU",
+                                "THE_NGAN_HANG" => "THE_NGAN_HANG",
+                                _ => ptUpper
+                            };
+                            string tenPhuongThuc = ptUpper switch
+                            {
+                                "COD" => "Tiền mặt (COD)",
+                                "TIEN_MAT" => "Tiền mặt tại quầy",
+                                "VIETQR" => "Chuyển khoản VietQR",
+                                "CHUYEN_KHOAN" => "Chuyển khoản ngân hàng",
+                                "MOMO" or "MOMO_QR" => $"Ví MoMo / QR ({Model.CauHinhQr.SoDienThoaiHienThi})",
+                                "VNPAY" => "Ví VNPay",
+                                "THE_NGAN_HANG" => "Quẹt thẻ ngân hàng",
+                                _ => item.PhuongThuc
+                            };
+                            string searchKey = $"{item.MaPhieu} {item.MaTraCuuDh} {item.HangMuc} {item.DoiTuong} {item.SdtDoiTuong} {item.GhiChu} {tenPhuongThuc} {item.LoaiPhieu}".ToLowerInvariant();
+
+                            <tr class="border-bottom" style="@(laChi ? "background-color: #FEF2F2;" : "")"
+                                data-loai="@item.LoaiPhieu"
+                                data-pt="@ptUpper"
+                                data-pt-group="@nhomPt"
+                                data-search="@searchKey">
+                                <td class="fw-semibold @(laChi ? "text-danger" : "")" style="@(laChi ? "" : "color: #0070F4;")">
+                                    @item.MaPhieu
+                                </td>
+                                <td class="text-nowrap">@item.NgayLap.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    <div class="fw-medium text-dark">
+                                        @item.HangMuc
+                                        @if (!string.IsNullOrWhiteSpace(item.MaTraCuuDh))
+                                        {
+                                            <span>
+                                                (<a href="/Admin/DonHangAdmin/Index?tuKhoa=@item.MaTraCuuDh" class="text-decoration-none fw-medium" style="color: #0070F4;">#@item.MaTraCuuDh</a>)
+                                            </span>
+                                        }
+                                    </div>
+                                    @if (!string.IsNullOrWhiteSpace(item.GhiChu))
+                                    {
+                                        <div class="small text-muted">@item.GhiChu</div>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="fw-medium text-dark">@item.DoiTuong</div>
+                                    @if (!string.IsNullOrWhiteSpace(item.SdtDoiTuong))
+                                    {
+                                        <small class="text-muted">@item.SdtDoiTuong</small>
+                                    }
+                                </td>
+                                <td>@tenPhuongThuc</td>
+                                <td>
+                                    @if (laChi)
+                                    {
+                                        <span class="badge" style="background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA;">Phiếu chi</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge" style="background: #DCFCE7; color: #166534; border: 1px solid #BBF7D0;">Phiếu thu</span>
+                                    }
+                                </td>
+                                <td class="text-end fw-bold so-tien text-nowrap @(laChi ? "text-danger" : "")" style="@(laChi ? "" : "color: #0070F4;")">
+                                    @(laChi ? "-" : "+")@item.SoTien.ToString("N0") đ
+                                </td>
+                            </tr>
+                        }
+                        <tr id="rowTrongSoQuy" style="@(Model.DanhSachPhieuThuChi.Count == 0 ? "" : "display: none;")">
+                            <td colspan="7" class="text-center text-muted py-4">
+                                Không có chứng từ thu/chi nào khớp điều kiện lọc hiện tại.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const daLocServerSoQuy = @(Model.DaLocServer ? "true" : "false");
+        let boDemTimSoQuy = null;
+
+        function locSoQuyClient(laTuTimKiem) {
+            const tk = (document.getElementById('txtTimSoQuy')?.value || '').trim().toLowerCase();
+            const loai = document.querySelector('input[name="fltSqLoaiPhieu"]:checked')?.value || 'ALL';
+            const pt = document.querySelector('input[name="fltSqPhuongThuc"]:checked')?.value || 'ALL';
+
+            if (daLocServerSoQuy) {
+                const dieuHuong = () => {
+                    const params = new URLSearchParams();
+                    if (loai !== 'ALL') params.set('locLoaiPhieu', loai);
+                    if (pt !== 'ALL') params.set('locPhuongThuc', pt);
+                    if (tk !== '') params.set('tuKhoa', tk);
+                    const qs = params.toString();
+                    window.location.href = '/Admin/SoQuyAdmin/Index' + (qs ? '?' + qs : '');
+                };
+
+                if (laTuTimKiem) {
+                    clearTimeout(boDemTimSoQuy);
+                    boDemTimSoQuy = setTimeout(dieuHuong, 400);
+                } else {
+                    dieuHuong();
+                }
+                return;
+            }
+
+            let soDongHien = 0;
+            document.querySelectorAll('#tbodySoQuy tr[data-loai]').forEach(tr => {
+                let hien = true;
+                if (tk !== '') {
+                    const s = tr.getAttribute('data-search') || '';
+                    if (!s.includes(tk)) hien = false;
+                }
+                if (hien && loai !== 'ALL') {
+                    if (tr.getAttribute('data-loai') !== loai) hien = false;
+                }
+                if (hien && pt !== 'ALL') {
+                    const rowPt = tr.getAttribute('data-pt') || '';
+                    const rowPtGroup = tr.getAttribute('data-pt-group') || '';
+                    if (rowPt !== pt && rowPtGroup !== pt) {
+                        hien = false;
+                    }
+                }
+                tr.style.display = hien ? '' : 'none';
+                if (hien) soDongHien++;
+            });
+
+            const rowTrong = document.getElementById('rowTrongSoQuy');
+            if (rowTrong) {
+                rowTrong.style.display = soDongHien === 0 ? '' : 'none';
+            }
+        }
+
+        function capNhatGiaoDienModalLapPhieu(loai) {
+            const laChi = loai === 'CHI';
+            const header = document.getElementById('headerModalLapPhieu');
+            const title = document.getElementById('tieuDeModalLapPhieu');
+            const btn = document.getElementById('btnLuuPhieuThuChi');
+            const hangMuc = document.getElementById('inpHangMucPhieu');
+            const doiTuong = document.getElementById('inpDoiTuongPhieu');
+
+            if (header) {
+                header.classList.remove('bg-success', 'bg-danger');
+                header.classList.add(laChi ? 'bg-danger' : 'bg-success');
+            }
+            if (title) {
+                title.textContent = laChi ? 'Lập Phiếu Chi thủ công' : 'Lập Phiếu Thu thủ công';
+            }
+            if (btn) {
+                btn.classList.remove('btn-success', 'btn-danger');
+                btn.classList.add(laChi ? 'btn-danger' : 'btn-success');
+                btn.textContent = laChi ? 'Lưu Phiếu Chi' : 'Lưu Phiếu Thu';
+            }
+            if (hangMuc && !hangMuc.dataset.userEdited) {
+                hangMuc.value = laChi ? 'Chi phí vận hành / nhập hàng' : 'Thu tiền bán hàng / công nợ';
+            }
+            if (doiTuong) {
+                doiTuong.placeholder = laChi ? 'VD: NPP Bánh Kinh Đô Miền Nam' : 'VD: Công ty TNHH Minh Khang';
+            }
+        }
+
+        function moModalLapPhieu(loai) {
+            const selLoai = document.getElementById('selLoaiPhieuThuCong');
+            const hangMuc = document.getElementById('inpHangMucPhieu');
+            if (hangMuc) {
+                delete hangMuc.dataset.userEdited;
+            }
+            if (selLoai) {
+                selLoai.value = loai === 'CHI' ? 'CHI' : 'THU';
+            }
+            capNhatGiaoDienModalLapPhieu(loai === 'CHI' ? 'CHI' : 'THU');
+
+            const modalEl = document.getElementById('modalLapPhieuThuChi');
+            if (modalEl && window.bootstrap) {
+                bootstrap.Modal.getOrCreateInstance(modalEl).show();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const hangMuc = document.getElementById('inpHangMucPhieu');
+            if (hangMuc) {
+                hangMuc.addEventListener('input', () => {
+                    hangMuc.dataset.userEdited = 'true';
+                });
+            }
+            const selLoai = document.getElementById('selLoaiPhieuThuCong');
+            if (selLoai) {
+                selLoai.addEventListener('change', () => {
+                    capNhatGiaoDienModalLapPhieu(selLoai.value);
+                });
+            }
+        });
+    </script>
+}
+
+<!-- MODAL LẬP PHIẾU THU / CHI THỦ CÔNG TRỰC TIẾP VÀO dbo.PhieuThuChi -->
+<div class="modal fade" id="modalLapPhieuThuChi" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form asp-area="Admin" asp-controller="SoQuyAdmin" asp-action="LapPhieuThuChi" method="post">
+                @Html.AntiForgeryToken()
+                <div id="headerModalLapPhieu" class="modal-header bg-success text-white py-2">
+                    <h6 id="tieuDeModalLapPhieu" class="modal-title fw-bold mb-0">Lập Phiếu Thu thủ công</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-3">
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold">Loại phiếu *</label>
+                            <select id="selLoaiPhieuThuCong" name="loaiPhieu" class="form-select form-select-sm fw-semibold">
+                                <option value="THU">Phiếu thu (THU)</option>
+                                <option value="CHI">Phiếu chi (CHI)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-7">
+                            <label class="form-label small fw-bold">Số tiền (đ) *</label>
+                            <input type="number" name="soTien" class="form-control form-control-sm fw-bold"
+                                   min="1000" step="1000" required placeholder="VD: 500000" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Hạng mục thu / chi *</label>
+                        <input id="inpHangMucPhieu" type="text" name="hangMuc" list="dsHangMucGoiY"
+                               class="form-control form-control-sm" maxlength="100" required
+                               placeholder="VD: Thu tiền bán hàng / Nhập lô bánh từ hãng" />
+                        <datalist id="dsHangMucGoiY">
+                            <option value="Thu tiền bán hàng"></option>
+                            <option value="Thu công nợ khách hàng"></option>
+                            <option value="Nhập lô bánh từ hãng"></option>
+                            <option value="Chi vận chuyển / đóng gói"></option>
+                            <option value="Chi hoàn tiền khách hàng"></option>
+                        </datalist>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Phương thức thanh toán *</label>
+                            <select name="phuongThuc" class="form-select form-select-sm">
+                                <option value="TIEN_MAT">Tiền mặt tại quầy</option>
+                                <option value="COD">Tiền mặt (COD)</option>
+                                <option value="CHUYEN_KHOAN">Chuyển khoản ngân hàng</option>
+                                <option value="VIETQR">Chuyển khoản VietQR</option>
+                                <option value="MOMO_QR">Ví MoMo / QR</option>
+                                <option value="VNPAY">Ví VNPay</option>
+                                <option value="THE_NGAN_HANG">Quẹt thẻ ngân hàng</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Mã đơn hàng liên kết (tùy chọn)</label>
+                            <input type="text" name="maTraCuuDh" class="form-control form-control-sm"
+                                   placeholder="VD: TT2026-0001" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Đối tượng nộp / nhận tiền *</label>
+                        <input id="inpDoiTuongPhieu" type="text" name="doiTuong" class="form-control form-control-sm"
+                               maxlength="150" required placeholder="VD: Công ty TNHH Minh Khang" />
+                    </div>
+
+                    <div class="mb-1">
+                        <label class="form-label small fw-bold">Ghi chú / Diễn giải</label>
+                        <textarea name="ghiChu" class="form-control form-control-sm" rows="2" maxlength="500"
+                                  placeholder="Ghi chú chi tiết chứng từ..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button id="btnLuuPhieuThuChi" type="submit" class="btn btn-sm btn-success fw-bold">Lưu Phiếu Thu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

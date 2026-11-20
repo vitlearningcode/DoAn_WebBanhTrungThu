@@ -1,0 +1,45 @@
+<div class="modal fade" id="modalThanhToanPhieuNhap" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form asp-area="Admin" asp-controller="NhapKhoAdmin" asp-action="ThanhToanPhieuNhap" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="MaPn" id="tt_MaPn" value="0" />
+
+                <div class="modal-header bg-success text-white py-2">
+                    <h6 class="modal-title fw-bold mb-0"><i class="bi bi-cash-coin me-1"></i> Thanh toán phiếu nhập <span id="tt_SoPhieu"></span></h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body p-3">
+                    <div class="p-2 rounded mb-3" style="background: #F8FAFC; border: 1px solid #E5E7EB;">
+                        <div class="small text-muted">Nhà cung cấp: <strong class="text-dark" id="tt_NhaCungCap"></strong></div>
+                        <div class="small text-muted mt-1">Số tiền còn nợ: <strong class="text-danger fs-6" id="tt_ConNoLbl">0 đ</strong></div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Số tiền thanh toán (đ) <span class="text-danger">*</span></label>
+                        <input type="number" name="SoTienTra" id="tt_SoTienTra" class="form-control fw-bold text-end text-success" min="1" step="1" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Phương thức chi (Ghi nhận vào Sổ quỹ)</label>
+                        <select name="PhuongThuc" class="form-select">
+                            <option value="CHUYEN_KHOAN">Chuyển khoản</option>
+                            <option value="TIEN_MAT">Tiền mặt</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-1">
+                        <label class="form-label small fw-bold">Ghi chú phiếu chi</label>
+                        <input type="text" name="GhiChu" class="form-control" maxlength="300" placeholder="VD: Chuyển khoản thanh toán đợt nhập bánh..." />
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn-kv-green"><i class="bi bi-check2-circle"></i> Xác nhận chi &amp; Ghi Sổ quỹ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
