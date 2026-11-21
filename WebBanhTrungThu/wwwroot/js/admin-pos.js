@@ -7,6 +7,7 @@
     const DS_COMBO_POS = Array.isArray(cfg.dsComboPos) ? cfg.dsComboPos : [];
     const BANG_B2B_POS = Array.isArray(cfg.bangB2B) ? cfg.bangB2B : [];
     const DS_VOUCHER_POS = Array.isArray(cfg.dsVoucher) ? cfg.dsVoucher : [];
+    const CAU_HINH_QR_POS = cfg.cauHinhQr || {};
     const NGAY_HEN_MAC_DINH_POS = cfg.ngayHenMacDinh || '';
 
     let boLocPillHienTai = 'ALL';
@@ -247,7 +248,7 @@
                     const thCanTim = boLocPillHienTai.substring(3);
                     if ((b.thuongHieu || '') !== thCanTim) return;
                 } else if (boLocPillHienTai === 'ISOMALT') {
-                    if (b.mucDoNgot !== 'ISOMALT_TIEUDUONG' && !b.laBanhChay) return;
+                    if (b.mucDoNgot !== 'ISOMALT_TIEUDUONG' && b.mucDoNgot !== 'DUONG_ISOMALT') return;
                 }
 
                 if (kw !== '') {
@@ -603,8 +604,16 @@
         const img = document.getElementById('imgPosVietQrLive');
         if (!img) return;
         const amount = Math.max(0, Math.round(khachCanTraHienTai));
+        const maBin = (CAU_HINH_QR_POS.maBin || '970422').trim();
+        const stk = (CAU_HINH_QR_POS.soTaiKhoan || '').trim();
+        const tenNh = (CAU_HINH_QR_POS.tenNganHang || 'VietQR').trim();
+        const chuTk = (CAU_HINH_QR_POS.tenChuTaiKhoan || 'NGUYET CAT').trim();
+        const lblCaption = document.getElementById('lblPosVietQrCaption');
+        if (lblCaption && stk) {
+            lblCaption.innerText = `Quét mã VietQR (${tenNh} - ${stk} - ${chuTk})`;
+        }
         delete img.dataset.fallbackApplied;
-        img.src = `https://img.vietqr.io/image/MB-0814585526-compact2.png?amount=${amount}&addInfo=${encodeURIComponent('POS NGUYET CAT')}`;
+        img.src = `https://img.vietqr.io/image/${encodeURIComponent(maBin)}-${encodeURIComponent(stk)}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent('POS NGUYET CAT')}&accountName=${encodeURIComponent(chuTk)}`;
     }
 
     window.chuyenCheDoMuaPos = function (cheDo, boQuaLuu) {

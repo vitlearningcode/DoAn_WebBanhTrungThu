@@ -4,19 +4,14 @@
     var homNay = DateOnly.FromDateTime(DateTime.Today);
     var mocCanhBaoFefo = DateOnly.FromDateTime(DateTime.Today.AddDays(10));
 
+    bool laAdminDashboard = User.IsInRole("QUAN_TRI") || User.IsInRole("ADMIN");
     var danhSachLoCanhBaoFefo = Model.DanhSachLoCanDate
-        .Where(l => l.SlconLai > 0 && (l.HanSuDung <= mocCanhBaoFefo || l.PhanTramGiamCanDate > 0 || l.TrangThaiLo == "XA_CAN_DATE"))
+        .Where(l => l.SlconLai > 0
+            && !string.Equals(l.TrangThaiLo, "DA_HUY", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(l.TrangThaiLo, "HET_HAN", StringComparison.OrdinalIgnoreCase)
+            && (l.HanSuDung <= mocCanhBaoFefo || l.PhanTramGiamCanDate > 0 || string.Equals(l.TrangThaiLo, "XA_CAN_DATE", StringComparison.OrdinalIgnoreCase)))
         .OrderBy(l => l.HanSuDung)
         .ToList();
-
-    if (!danhSachLoCanhBaoFefo.Any())
-    {
-        danhSachLoCanhBaoFefo = Model.DanhSachLoCanDate
-            .Where(l => l.SlconLai > 0)
-            .OrderBy(l => l.HanSuDung)
-            .Take(2)
-            .ToList();
-    }
 
     (string TenTrangThaiLo, string StyleBadgeLo) AnhXaTrangThaiLo(WebBanhTrungThu.Models.Entities.LoSanXuatBanh lo)
     {
@@ -32,7 +27,7 @@
     }
 }
 
-@if (danhSachLoCanhBaoFefo.Any())
+@if (laAdminDashboard && danhSachLoCanhBaoFefo.Any())
 {
     <!-- THANH CẢNH BÁO LÔ CẬN DATE TỰ ĐỘNG & XẢ KHO -30% 1-CLICK (SMART FEFO BANNER - NHÁNH 5.0.2) -->
     <div class="banner-canh-bao-fefo" id="bannerCanhBaoFefoDashboard">
@@ -266,8 +261,15 @@
             nutBam.innerText = "Đang áp giá -30%...";
 
             try {
+                const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || '';
+                const fd = new FormData();
+                fd.append("maLo", maLo);
+                fd.append("mucGiam", 30);
+                if (token) fd.append("__RequestVerificationToken", token);
+
                 const res = await fetch(`/Admin/BanHangPos/KichHoatXaKhoNhanh?maLo=${maLo}&mucGiam=30`, {
-                    method: "POST"
+                    method: "POST",
+                    body: fd
                 });
                 const data = await res.json();
                 if (data && data.thanhCong) {

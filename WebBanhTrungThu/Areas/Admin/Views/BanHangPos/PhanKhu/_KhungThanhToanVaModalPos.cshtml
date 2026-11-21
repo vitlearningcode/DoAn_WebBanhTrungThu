@@ -139,8 +139,14 @@
                     <strong class="text-danger" id="lblPosTienThua">0 đ</strong>
                 </div>
             </div>
+            @{
+                var qrPos = Model.CauHinhQr ?? new WebBanhTrungThu.Services.CauHinhThanhToanQr();
+                string stkPos = !string.IsNullOrWhiteSpace(qrPos.SoTaiKhoanNganHang) ? qrPos.SoTaiKhoanNganHang.Trim() : (qrPos.SoTaiKhoanMoMo ?? string.Empty).Trim();
+                string tenNhPos = !string.IsNullOrWhiteSpace(qrPos.TenNganHangVietQr) ? qrPos.TenNganHangVietQr.Trim() : (!string.IsNullOrWhiteSpace(qrPos.TenNganHangVi) ? qrPos.TenNganHangVi.Trim() : "VietQR");
+                string chuTkPos = !string.IsNullOrWhiteSpace(qrPos.TenChuTaiKhoan) ? qrPos.TenChuTaiKhoan.Trim() : "NGUYET CAT";
+            }
             <div id="boxPosVietQr" class="p-2 rounded border bg-light text-center" style="display: none;">
-                <div class="small fw-semibold text-primary mb-1">Quét mã VietQR Ngân hàng Quân Đội (MB Bank - 0814585526)</div>
+                <div class="small fw-semibold text-primary mb-1" id="lblPosVietQrCaption">Quét mã VietQR (@tenNhPos - @stkPos - @chuTkPos)</div>
                 <img id="imgPosVietQrLive" src="" alt="Mã VietQR POS" style="max-width: 175px; border-radius: 6px; border: 1px solid #D1D5DB; background: #fff; padding: 4px;" onerror="window.kvImgFallback(this)" />
             </div>
         </div>

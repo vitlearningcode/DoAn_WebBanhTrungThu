@@ -1,4 +1,5 @@
 using WebBanhTrungThu.Models.Entities;
+using WebBanhTrungThu.Services;
 
 namespace WebBanhTrungThu.ViewModels
 {
@@ -16,6 +17,7 @@ namespace WebBanhTrungThu.ViewModels
         public Dictionary<string, string> TuDienAnh { get; set; } = new();
         public string TenThuNgan { get; set; } = string.Empty;
         public string VaiTroThuNgan { get; set; } = string.Empty;
+        public CauHinhThanhToanQr CauHinhQr { get; set; } = new();
 
         /// <summary>
         /// Tên gọi khác của <see cref="BangChietKhauSiB2B"/> (Controller dùng tên này).

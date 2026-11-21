@@ -71,6 +71,8 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "QUAN_TRI,ADMIN")]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> KichHoatXaKhoNhanh(int maLo, int mucGiam = 30)
         {
             var ketQua = await _dichVuKhoFefo.KichHoatXaKhoNhanhAsync(maLo, mucGiam);

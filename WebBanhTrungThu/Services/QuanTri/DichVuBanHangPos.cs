@@ -74,7 +74,8 @@ namespace WebBanhTrungThu.Services.QuanTri
                 DanhSachKhuyenMai = await _db.MaKhuyenMais.AsNoTracking().Where(k => k.TrangThaiKichHoat && k.NgayKetThuc >= DateTime.Now && k.SldaDung < k.SltoiDa).OrderBy(k => k.CodeKm).ToListAsync(),
                 TuDienAnh = tuDienAnh,
                 TenThuNgan = tenThuNgan,
-                VaiTroThuNgan = vaiTro
+                VaiTroThuNgan = vaiTro,
+                CauHinhQr = _kiotMeta.LayCauHinhQr()
             };
         }
 
