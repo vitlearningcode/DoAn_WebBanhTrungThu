@@ -22,18 +22,64 @@
 
     let _huyDonSoMon = 0;
 
+    function tenPhuongThucTtDep(pt) {
+        const s = (pt || '').trim().toUpperCase();
+        if (s === 'TIEN_MAT') return 'Tiền mặt tại quầy';
+        if (s === 'COD') return 'Thanh toán khi nhận hàng (COD)';
+        if (s === 'MOMO_QR' || s === 'MOMO') return 'Ví MoMo QR';
+        if (s === 'CHUYEN_KHOAN' || s === 'CHUYEN_KHOAN_QR' || s === 'VIETQR') return 'Chuyển khoản VietQR';
+        if (s === 'VNPAY') return 'Ví VNPay';
+        if (s === 'VI_DIEN_TU' || s === 'THE_NGAN_HANG') return 'Thẻ / Ví điện tử';
+        return pt || 'Thanh toán đơn hàng';
+    }
+
+    function tenTrangThaiTtDep(tt) {
+        const s = (tt || '').trim().toUpperCase();
+        if (s === 'DA_TT' || s === 'DA_THANH_TOAN') return 'Đã thanh toán';
+        if (s === 'DA_HOAN_TIEN') return 'Đã hoàn tiền';
+        if (s === 'CHO_XAC_MINH_CK') return 'Chờ xác minh chuyển khoản';
+        return 'Chưa thanh toán';
+    }
+
+    function tenTrangThaiDhDep(st) {
+        const s = (st || '').trim().toUpperCase();
+        if (s === 'CHO_XAC_NHAN' || s === 'CHO_DUYET') return 'Chờ xác nhận';
+        if (s === 'DA_XAC_NHAN' || s === 'CHO_LAY_HANG' || s === 'DANG_DONG_GOI_HOP') return 'Chờ lấy hàng';
+        if (s === 'DANG_GIAO') return 'Đang giao hàng';
+        if (s === 'HOAN_TAT' || s === 'DA_GIAO') return 'Hoàn tất';
+        if (s === 'DA_HUY') return 'Đã hủy';
+        if (s === 'HOAN_TIEN_TRA_HANG') return 'Hoàn tiền / Trả hàng';
+        return st || 'Đang xử lý';
+    }
+
     window.moModalCapNhatTrangThai = function (maDh, maTraCuu, hoTen, tongTien, phuongThucTt, trangThaiDh, trangThaiTt, soDotGiao) {
         document.getElementById('lblMdCnMaDon').textContent = '#' + maTraCuu;
         document.getElementById('lblMdCnKhachHang').textContent = hoTen;
         document.getElementById('lblMdCnSoDotGiao').textContent = soDotGiao;
-        document.getElementById('lblMdCnPhuongThuc').textContent = phuongThucTt + ' (' + trangThaiTt + ')';
-        document.getElementById('lblMdCnTongTien').textContent = Number(tongTien).toLocaleString('vi-VN') + ' đ';
+        document.getElementById('lblMdCnPhuongThuc').textContent = tenPhuongThucTtDep(phuongThucTt) + ' (' + tenTrangThaiTtDep(trangThaiTt) + ')';
+
+        const pt = (phuongThucTt || '').toUpperCase();
+        const laDonQrChuyenKhoan = pt.includes('QR') || pt.includes('MOMO') || pt.includes('CHUYEN_KHOAN');
+        const daThanhToan = (trangThaiTt === 'DA_TT' || trangThaiTt === 'DA_THANH_TOAN');
+        const soTienFmt = Number(tongTien).toLocaleString('vi-VN') + ' đ';
+
+        const lblTongTien = document.getElementById('lblMdCnTongTien');
+        if (lblTongTien) {
+            if (daThanhToan) {
+                lblTongTien.className = 'text-success fw-bold so-tien';
+                lblTongTien.textContent = 'Đã thanh toán: ' + soTienFmt + ' • Cần thu hộ: 0 đ';
+            } else {
+                lblTongTien.className = 'text-danger fw-bold so-tien';
+                lblTongTien.textContent = 'Cần thu COD: ' + soTienFmt;
+            }
+        }
 
         document.getElementById('inpQrMaDh').value = maDh;
         document.getElementById('inpNextStepMaDh').value = maDh;
-        document.getElementById('inpOverrideMaDh').value = maDh;
+        const inpOverride = document.getElementById('inpOverrideMaDh');
+        if (inpOverride) inpOverride.value = maDh;
 
-        const st = (trangThaiDh === 'DANG_DONG_GOI_HOP') ? 'CHO_LAY_HANG' : trangThaiDh;
+        const st = (trangThaiDh === 'DANG_DONG_GOI_HOP' || trangThaiDh === 'DA_XAC_NHAN') ? 'CHO_LAY_HANG' : trangThaiDh;
         const biKhoaCung = (st === 'DA_HUY' || st === 'HOAN_TIEN_TRA_HANG');
         const thuTu = ['CHO_XAC_NHAN', 'CHO_LAY_HANG', 'DANG_GIAO', 'HOAN_TAT'];
         const stStepper = (st === 'DA_GIAO') ? 'HOAN_TAT' : st;
@@ -55,12 +101,17 @@
         const lblKhoaCung = document.getElementById('lblTrangThaiKhoaCung');
         if (boxKhoaCung) {
             boxKhoaCung.style.display = biKhoaCung ? 'block' : 'none';
-            if (lblKhoaCung) lblKhoaCung.textContent = st;
+            if (lblKhoaCung) lblKhoaCung.textContent = tenTrangThaiDhDep(st);
         }
 
         const boxQr = document.getElementById('boxXacNhanQrThuNgan');
         if (boxQr) {
-            boxQr.style.display = (trangThaiTt === 'CHUA_TT' && !biKhoaCung) ? 'block' : 'none';
+            boxQr.style.display = (!daThanhToan && !biKhoaCung && laDonQrChuyenKhoan) ? 'block' : 'none';
+        }
+
+        const boxNextSteps = document.getElementById('boxChuyenBuocTiepTheo');
+        if (boxNextSteps) {
+            boxNextSteps.style.display = biKhoaCung ? 'none' : 'block';
         }
 
         ['CHO_XAC_NHAN', 'CHO_LAY_HANG', 'DANG_GIAO', 'HOAN_TAT'].forEach(k => {
@@ -137,8 +188,8 @@
 
         document.getElementById('lblHuyTrangThaiTt').textContent =
             _huyDonDangDaTt
-                ? ('ĐÃ THANH TOÁN (' + _huyDonSoTien.toLocaleString('vi-VN') + ' đ) ➔ Bắt buộc Hoàn tiền')
-                : ('CHƯA THANH TOÁN (' + phuongThucTt + ') ➔ Hủy trực tiếp');
+                ? ('Đã thanh toán (' + _huyDonSoTien.toLocaleString('vi-VN') + ' đ) ➔ Bắt buộc hoàn tiền')
+                : ('Chưa thanh toán (' + tenPhuongThucTtDep(phuongThucTt) + ') ➔ Hủy trực tiếp');
 
         const boxHoanTien = document.getElementById('boxHoanTienVietQr');
         const btnSubmit = document.getElementById('btnSubmitXacNhanHuy');
@@ -149,15 +200,15 @@
             document.getElementById('lblHuyThongTinKhach').textContent = hoTen + ' - ' + sdt;
             document.getElementById('lblSoTienQrPreview').textContent = 'Số tiền hoàn: ' + _huyDonSoTien.toLocaleString('vi-VN') + ' đ';
             btnSubmit.innerHTML = laTraHangSauGiao
-                ? '💸 Xác nhận Đổi trả / Hoàn tiền &amp; Ghi Sổ Quỹ'
-                : '💸 Xác nhận Đã Hoàn Tiền &amp; Hủy Đơn Hàng';
+                ? '<i class="bi bi-cash-coin me-1"></i>Xác nhận Đổi trả / Hoàn tiền &amp; Ghi Sổ Quỹ'
+                : '<i class="bi bi-cash-coin me-1"></i>Xác nhận Đã Hoàn Tiền &amp; Hủy Đơn Hàng';
 
             document.getElementById('txtSoTaiKhoanHoan').value = '';
             document.getElementById('txtTenChuTkHoan').value = boDauTiengViet(hoTen).toUpperCase();
             capNhatAnhVietQrHoanTien();
         } else {
             boxHoanTien.style.display = 'none';
-            btnSubmit.innerHTML = '🗑️ Xác nhận Hủy Đơn Hàng &amp; Xử lý kho';
+            btnSubmit.innerHTML = '<i class="bi bi-trash3 me-1"></i>Xác nhận Hủy Đơn Hàng &amp; Xử lý kho';
         }
 
         const modalEl = document.getElementById('modalHuyDonVaHoanTien');
@@ -271,7 +322,14 @@
             }
 
             if (hien && phuongThuc !== 'ALL') {
-                if (tr.getAttribute('data-phuongthuc') !== phuongThuc) hien = false;
+                const ptRow = (tr.getAttribute('data-phuongthuc') || '').toUpperCase();
+                if (phuongThuc === 'MOMO') {
+                    if (!ptRow.includes('MOMO')) hien = false;
+                } else if (phuongThuc === 'VIETQR') {
+                    if (!ptRow.includes('VIETQR') && !ptRow.includes('CHUYEN_KHOAN')) hien = false;
+                } else if (ptRow !== phuongThuc) {
+                    hien = false;
+                }
             }
 
             tr.style.display = hien ? '' : 'none';

@@ -136,9 +136,14 @@ namespace WebBanhTrungThu.ViewModels
         /// </summary>
         public string AnhXaHinhThucThanhToan(string? maPhuongThuc)
         {
-            return string.Equals((maPhuongThuc ?? string.Empty).Trim(), "COD", StringComparison.OrdinalIgnoreCase)
-                ? "Thanh toán khi nhận (COD)"
-                : "Chuyển khoản QR";
+            return (maPhuongThuc ?? string.Empty).Trim().ToUpperInvariant() switch
+            {
+                "COD" => "Thanh toán khi nhận (COD)",
+                "TIEN_MAT" => "Tiền mặt tại quầy",
+                "MOMO_QR" or "MOMO" => "Ví MoMo QR",
+                "VI_DIEN_TU" or "THE_NGAN_HANG" => "Thẻ / Ví điện tử",
+                _ => "Chuyển khoản QR"
+            };
         }
 
         /// <summary>

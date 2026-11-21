@@ -13,6 +13,13 @@
     window.moModalDongHopTuChonPos = function () {
         dsBanhDangChonTrongHop = [];
         document.getElementById('inpPosTenHopTuChon').value = '';
+        const inpTimHop = document.getElementById('txtPosTimBanhTrongHop');
+        if (inpTimHop) inpTimHop.value = '';
+        const selHangHop = document.getElementById('selPosLocHangHop');
+        if (selHangHop) selHangHop.value = 'ALL';
+        if (typeof window.locBanhTrongModalHopPos === 'function') {
+            window.locBanhTrongModalHopPos();
+        }
         renderSlotHopTuChonPos();
         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalDongHopPos')).show();
     };
@@ -54,10 +61,18 @@
 
     function renderSlotHopTuChonPos() {
         const sel = document.getElementById('selPosVoHopTuChon');
-        if (!sel) return;
-        const opt = sel.options[sel.selectedIndex];
+        if (!sel || sel.options.length === 0) return;
+        const opt = sel.options[sel.selectedIndex] || sel.options[0];
         const sucChua = parseInt(opt.getAttribute('data-succhua') || '4');
         const giaVo = Number(opt.getAttribute('data-giavo') || 0);
+        const tonVo = Number(opt.getAttribute('data-tonvo') || 0);
+
+        const lblMetaSucChua = document.getElementById('lblPosMetaSucChuaVo');
+        if (lblMetaSucChua) lblMetaSucChua.innerText = `${sucChua} bánh`;
+        const lblMetaGiaVo = document.getElementById('lblPosMetaGiaVo');
+        if (lblMetaGiaVo) lblMetaGiaVo.innerText = `${dinhDangN0(giaVo)} đ`;
+        const lblMetaTonVo = document.getElementById('lblPosMetaTonVo');
+        if (lblMetaTonVo) lblMetaTonVo.innerText = dinhDangN0(tonVo);
 
         document.getElementById('lblPosDemBanhHop').innerText = `${dsBanhDangChonTrongHop.length}/${sucChua}`;
         const listEl = document.getElementById('listSlotHopPos');
@@ -67,15 +82,24 @@
         for (let i = 0; i < sucChua; i++) {
             const b = dsBanhDangChonTrongHop[i];
             const div = document.createElement('div');
-            div.className = 'p-2 rounded border d-flex justify-content-between align-items-center ' + (b ? 'bg-white' : 'bg-light text-muted');
+            div.className = 'pos-hop-slot-item ' + (b ? 'is-filled' : 'is-empty');
             if (b) {
                 tongGiaHop += b.giaBan;
                 div.innerHTML = `
-                    <span class="small"><strong>Ô ${i + 1}:</strong> ${b.ten} (${dinhDangN0(b.giaBan)} đ)</span>
-                    <button type="button" class="btn btn-sm text-danger p-0" onclick="xoaBanhKhoiSlotHopPos(${i})"><i class="bi bi-x-circle"></i></button>
+                    <span class="pos-hop-slot-badge active">Ô ${i + 1}</span>
+                    <div class="pos-hop-slot-info">
+                        <div class="pos-hop-slot-name" title="${b.ten}">${b.ten}</div>
+                        <div class="pos-hop-slot-price so-tien">${dinhDangN0(b.giaBan)} đ</div>
+                    </div>
+                    <button type="button" class="pos-hop-slot-remove" onclick="xoaBanhKhoiSlotHopPos(${i})" title="Bỏ bánh khỏi ô này">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
                 `;
             } else {
-                div.innerHTML = `<span class="small">Ô ${i + 1}: Chưa chọn bánh (Chạm bánh bên phải)</span>`;
+                div.innerHTML = `
+                    <span class="pos-hop-slot-badge">Ô ${i + 1}</span>
+                    <span class="pos-hop-slot-placeholder">Chưa chọn bánh — chạm bánh bên phải</span>
+                `;
             }
             listEl.appendChild(div);
         }
@@ -352,12 +376,12 @@
                 }
             } else {
                 nutBam.disabled = false;
-                nutBam.innerText = '⚡ Kích hoạt xả kho -30%';
+                nutBam.innerHTML = '<i class="bi bi-lightning-charge-fill"></i> Kích hoạt xả kho -30%';
                 alert((data && data.thongBao) || 'Không thể kích hoạt xả kho!');
             }
         } catch (err) {
             nutBam.disabled = false;
-            nutBam.innerText = '⚡ Kích hoạt xả kho -30%';
+            nutBam.innerHTML = '<i class="bi bi-lightning-charge-fill"></i> Kích hoạt xả kho -30%';
             alert('Lỗi kết nối máy chủ khi kích hoạt xả kho!');
         }
     };
@@ -396,7 +420,7 @@
         <div class="mb-2"><label class="form-label small fw-bold mb-1">Họ tên khách hàng <span class="text-danger">*</span></label><input type="text" id="inpPosNewCustName" class="form-control form-control-sm" placeholder="VD: Nguyễn Minh Anh" /></div>
         <div class="mb-2"><label class="form-label small fw-bold mb-1">Số điện thoại <span class="text-danger">*</span></label><input type="text" id="inpPosNewCustPhone" class="form-control form-control-sm" placeholder="VD: 0909123456" /></div>
         <div class="mb-1"><label class="form-label small fw-bold mb-1">Email (tùy chọn)</label><input type="email" id="inpPosNewCustEmail" class="form-control form-control-sm" placeholder="khachhang@gmail.com" /></div>
-        <small class="text-success d-block mt-1">🎁 Tự động tặng <strong>+50 điểm</strong> mở thẻ mới (MK: <code>123456</code>).</small>
+        <small class="text-success d-block mt-1"><i class="bi bi-gift me-1"></i>Tự động tặng <strong>+50 điểm</strong> mở thẻ mới (MK: <code>123456</code>).</small>
       </div>
       <div class="modal-footer py-2 px-3 bg-light">
         <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Bỏ qua</button>
@@ -466,7 +490,7 @@
         <a id="btnMoTrangInChuanKiot" href="#" target="_blank" class="btn btn-outline-primary btn-sm"><i class="bi bi-printer"></i> Mở trang in K80 riêng</a>
         <div class="d-flex gap-2">
           <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
-          <button type="button" class="btn btn-success btn-sm fw-bold px-3" onclick="window.print()">🖨️ In Hóa Đơn K80</button>
+          <button type="button" class="btn btn-success btn-sm fw-bold px-3" onclick="window.print()"><i class="bi bi-printer-fill me-1"></i>In Hóa Đơn K80</button>
         </div>
       </div>
     </div>

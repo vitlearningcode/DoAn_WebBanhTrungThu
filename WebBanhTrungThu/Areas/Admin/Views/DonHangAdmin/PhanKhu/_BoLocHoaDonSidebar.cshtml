@@ -67,8 +67,8 @@
                 <option value="ALL" selected="@(locLoaiDon == "ALL")">Tất cả</option>
                 <option value="B2C" selected="@(locLoaiDon == "B2C")">Đơn khách lẻ</option>
                 <option value="B2B" selected="@(locLoaiDon == "B2B")">Đơn sỉ chiết khấu / VAT</option>
-                <option value="GUEST" selected="@(locLoaiDon == "GUEST")">Khách vãng lai (Guest)</option>
-                <option value="MEMBER" selected="@(locLoaiDon == "MEMBER")">Khách thành viên (Member)</option>
+                <option value="GUEST" selected="@(locLoaiDon == "GUEST")">Khách vãng lai</option>
+                <option value="MEMBER" selected="@(locLoaiDon == "MEMBER")">Khách hội viên</option>
             </select>
         </div>
 
@@ -79,10 +79,11 @@
             </div>
             <select id="fltDhPhuongThuc" class="kv-select" onchange="locHoaDonClient()">
                 <option value="ALL" selected="@(locPhuongThuc == "ALL")">Tất cả</option>
-                <option value="COD" selected="@(locPhuongThuc == "COD")">COD (Tiền mặt)</option>
-                <option value="VIETQR" selected="@(locPhuongThuc == "VIETQR")">VIETQR (Chuyển khoản)</option>
-                <option value="VNPAY" selected="@(locPhuongThuc == "VNPAY")">VNPAY</option>
-                <option value="MOMO" selected="@(locPhuongThuc == "MOMO")">MOMO</option>
+                <option value="COD" selected="@(locPhuongThuc == "COD")">Thanh toán khi nhận hàng (COD)</option>
+                <option value="TIEN_MAT" selected="@(locPhuongThuc == "TIEN_MAT")">Tiền mặt tại quầy</option>
+                <option value="MOMO" selected="@(locPhuongThuc == "MOMO")">Ví MoMo QR</option>
+                <option value="VIETQR" selected="@(locPhuongThuc == "VIETQR")">Chuyển khoản VietQR</option>
+                <option value="VNPAY" selected="@(locPhuongThuc == "VNPAY")">Ví VNPay</option>
             </select>
         </div>
     </div>

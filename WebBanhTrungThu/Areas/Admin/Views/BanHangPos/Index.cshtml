@@ -49,25 +49,25 @@ window.kvImgFallback = function (img) {
     </div>
     <div class="pos-tabs-bar" id="barMultiTabsHoaDon"></div>
     <button type="button" class="pos-btn-top-action" onclick="moModalDongHopTuChonPos()" title="Đóng Hộp Quà Tự Chọn (F6)">
-        🎁 Đóng Hộp Quà Tự Chọn (F6)
+        <i class="bi bi-gift"></i> <span>Đóng Hộp (F6)</span>
     </button>
     <div class="d-flex align-items-center gap-2 pos-topbar-actions">
-        <span class="badge bg-light text-primary fw-semibold px-2 py-1 pos-user-badge">
+        <span class="pos-user-badge">
             <i class="bi bi-person-badge me-1"></i><span class="pos-user-name">@Model.TenThuNgan</span>@if (!daCoNhanVaiTro) { <text> <span class="pos-user-role">(@tenVaiTroHienThi)</span></text> }
         </span>
         <a href="/Admin/DonHangAdmin/Index" class="pos-btn-manage pos-btn-orders" title="Xem &amp; xử lý Đơn hàng Online">
-            <i class="bi bi-receipt-cutoff"></i> Đơn hàng Online
+            <i class="bi bi-receipt-cutoff"></i> <span>Đơn Online</span>
         </a>
         @if (laChuCuaHang)
         {
             <a href="/Admin/Dashboard/Index" class="pos-btn-manage" title="Quay về Trang Quản Trị Nguyệt Cát ERP">
-                <i class="bi bi-arrow-left"></i> Về Trang Quản Trị
+                <i class="bi bi-grid-1x2"></i> <span>Quản trị</span>
             </a>
         }
         <form asp-area="" asp-controller="TaiKhoan" asp-action="DangXuat" method="post" class="d-inline m-0">
             @Html.AntiForgeryToken()
             <button type="submit" class="pos-btn-logout" title="Đăng xuất tài khoản">
-                <i class="bi bi-box-arrow-right"></i> Đăng xuất
+                <i class="bi bi-box-arrow-right"></i> <span>Đăng xuất</span>
             </button>
         </form>
     </div>

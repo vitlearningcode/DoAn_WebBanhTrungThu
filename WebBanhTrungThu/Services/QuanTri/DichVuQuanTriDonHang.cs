@@ -57,11 +57,11 @@ namespace WebBanhTrungThu.Services.QuanTri
             {
                 if (locTrangThai == "GIAO_HANG")
                 {
-                    query = query.Where(d => d.TrangThaiDh == "CHO_LAY_HANG" || d.TrangThaiDh == "DANG_DONG_GOI_HOP" || d.TrangThaiDh == "DANG_GIAO");
+                    query = query.Where(d => d.TrangThaiDh == "CHO_LAY_HANG" || d.TrangThaiDh == "DANG_DONG_GOI_HOP" || d.TrangThaiDh == "DA_XAC_NHAN" || d.TrangThaiDh == "DANG_GIAO");
                 }
                 else if (locTrangThai == "CHO_LAY_HANG" || locTrangThai == "DANG_DONG_GOI_HOP")
                 {
-                    query = query.Where(d => d.TrangThaiDh == "CHO_LAY_HANG" || d.TrangThaiDh == "DANG_DONG_GOI_HOP");
+                    query = query.Where(d => d.TrangThaiDh == "CHO_LAY_HANG" || d.TrangThaiDh == "DANG_DONG_GOI_HOP" || d.TrangThaiDh == "DA_XAC_NHAN");
                 }
                 else if (locTrangThai == "CHO_XAC_NHAN" || locTrangThai == "CHO_DUYET")
                 {
@@ -218,7 +218,7 @@ namespace WebBanhTrungThu.Services.QuanTri
             return hienTai switch
             {
                 "CHO_XAC_NHAN" => moi is "DA_XAC_NHAN" or "CHO_LAY_HANG" or "DA_HUY",
-                "DA_XAC_NHAN" => moi is "CHO_LAY_HANG" or "DA_HUY",
+                "DA_XAC_NHAN" => moi is "CHO_LAY_HANG" or "DANG_GIAO" or "DA_HUY",
                 "CHO_LAY_HANG" => moi is "DANG_GIAO" or "DA_HUY",
                 "DANG_GIAO" => moi is "DA_GIAO" or "HOAN_TAT" or "DA_HUY" or "HOAN_TIEN_TRA_HANG",
                 "DA_GIAO" => moi is "HOAN_TAT" or "HOAN_TIEN_TRA_HANG",
@@ -236,14 +236,22 @@ namespace WebBanhTrungThu.Services.QuanTri
             if (donHang == null) return null;
             if (LaTrangThaiKhoaCung(donHang.TrangThaiDh))
             {
-                return $"🔒 Đơn hàng #{donHang.MaTraCuuDh} đang ở trạng thái khóa cứng ({donHang.TrangThaiDh}), không thể xác nhận thanh toán!";
+                return $"Đơn hàng #{donHang.MaTraCuuDh} đang ở trạng thái khóa cứng ({donHang.TrangThaiDh}), không thể xác nhận thanh toán!";
+            }
+
+            string pt = (donHang.PhuongThucTt ?? string.Empty).Trim().ToUpperInvariant();
+            bool laDonQrChuyenKhoan = (pt.Contains("QR") || pt.Contains("MOMO") || pt.Contains("CHUYEN_KHOAN"))
+                                      && pt != "COD" && pt != "TIEN_MAT";
+            if (!laDonQrChuyenKhoan)
+            {
+                return $"Đơn hàng COD/Tiền mặt (#{donHang.MaTraCuuDh}) không sử dụng thao tác xác nhận chuyển khoản QR.";
             }
 
             donHang.TrangThaiTt = "DA_TT";
             donHang.SoTienKhachDaTra ??= donHang.TongThanhToanCuoi;
             donHang.ThoiGianCapNhatCuoi = LayThoiGianHeThong();
             donHang.NguoiCapNhatCuoi = nguoiCapNhat;
-            if (donHang.TrangThaiDh == "CHO_XAC_NHAN" || donHang.TrangThaiDh == "DANG_DONG_GOI_HOP")
+            if (donHang.TrangThaiDh == "CHO_XAC_NHAN" || donHang.TrangThaiDh == "DANG_DONG_GOI_HOP" || donHang.TrangThaiDh == "DA_XAC_NHAN")
             {
                 donHang.TrangThaiDh = "CHO_LAY_HANG";
             }
@@ -265,14 +273,14 @@ namespace WebBanhTrungThu.Services.QuanTri
                 MaDonHang = donHang.MaDh,
                 MaTraCuuDh = donHang.MaTraCuuDh,
                 LoaiPhieu = "THU",
-                PhuongThuc = donHang.PhuongThucTt,
+                PhuongThuc = donHang.PhuongThucTt ?? "CHUYEN_KHOAN",
                 SoTien = donHang.TongThanhToanCuoi,
                 NguoiNopNhan = donHang.HoTenNguoiMua,
                 NoiDung = $"Thu xác nhận chuyển khoản QR đơn #{donHang.MaTraCuuDh}",
                 ThoiGian = LayThoiGianHeThong()
             });
 
-            return $"⚡ Đã xác nhận nhận chuyển khoản QR cho đơn #{donHang.MaTraCuuDh} ({donHang.TongThanhToanCuoi:N0} đ) -> Tự động đẩy sang trạng thái Chờ lấy hàng (CHO_LAY_HANG)!";
+            return $"Đã xác nhận nhận chuyển khoản QR cho đơn #{donHang.MaTraCuuDh} ({donHang.TongThanhToanCuoi:N0} đ) và chuyển đơn sang trạng thái Chờ lấy hàng.";
         }
 
         public async Task<string?> CapNhatTrangThaiDonHangAsync(
@@ -291,7 +299,7 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             if (LaTrangThaiKhoaCung(donHang.TrangThaiDh))
             {
-                return $"🔒 Đơn hàng #{donHang.MaTraCuuDh} đang ở trạng thái khóa cứng ({donHang.TrangThaiDh}). TUYỆT ĐỐI không cho phép chuyển ngược trạng thái!";
+                return $"Đơn hàng #{donHang.MaTraCuuDh} đã ở trạng thái khóa hoàn tất ({donHang.TenTrangThaiDhHienThi}), không thể chuyển ngược trạng thái!";
             }
 
             if (!string.IsNullOrWhiteSpace(trangThaiDh))
@@ -299,7 +307,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                 string trangThaiMoiChuan = trangThaiDh.Trim().ToUpperInvariant();
                 if (!KiemTraChuyenTrangThaiHopLe(donHang.TrangThaiDh, trangThaiMoiChuan, laAdminOverride))
                 {
-                    return $"⚠️ Chuyển trạng thái không hợp lệ cho đơn #{donHang.MaTraCuuDh}: Không thể chuyển từ {donHang.TrangThaiDh} sang {trangThaiMoiChuan}!";
+                    return $"Chuyển trạng thái không hợp lệ cho đơn #{donHang.MaTraCuuDh}: không thể chuyển từ \"{donHang.TenTrangThaiDhHienThi}\" sang trạng thái mới đã chọn!";
                 }
 
                 donHang.TrangThaiDh = trangThaiMoiChuan;
@@ -316,7 +324,8 @@ namespace WebBanhTrungThu.Services.QuanTri
                 {
                     if (string.Equals(donHang.PhuongThucTt, "COD", StringComparison.OrdinalIgnoreCase))
                     {
-                        donHang.TrangThaiTt = "DA_THANH_TOAN";
+                        donHang.TrangThaiTt = "DA_TT";
+                        donHang.SoTienKhachDaTra = donHang.TongThanhToanCuoi;
                         bool daCoPhieuThu = await _db.PhieuThuChis.AnyAsync(p =>
                             p.MaDonHangLienKet == donHang.MaDh && p.LoaiPhieu == "THU");
 
@@ -339,7 +348,8 @@ namespace WebBanhTrungThu.Services.QuanTri
                     }
                     else if (string.IsNullOrWhiteSpace(trangThaiTt) && donHang.TrangThaiTt == "CHUA_TT")
                     {
-                        donHang.TrangThaiTt = "DA_THANH_TOAN";
+                        donHang.TrangThaiTt = "DA_TT";
+                        donHang.SoTienKhachDaTra ??= donHang.TongThanhToanCuoi;
                     }
                 }
             }
@@ -377,8 +387,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                 await DichVuHoiVien.CongDiemThuongDonHangAsync(_db, donHang);
             }
 
-            string nhanCheDo = laAdminOverride ? "[Admin Override] " : "";
-            return $"{nhanCheDo}Đã cập nhật hóa đơn #{donHang.MaTraCuuDh} -> Trạng thái đơn: {donHang.TrangThaiDh} | Thanh toán: {donHang.TrangThaiTt}!";
+            return $"Đã cập nhật đơn hàng #{donHang.MaTraCuuDh} sang trạng thái \"{donHang.TenTrangThaiDhHienThi}\" ({donHang.TenTrangThaiTtHienThi}).";
         }
 
         private async Task HoanNhapLoSanXuatAsync(int maBanh, int soLuongHoan, int? maLoUuTien = null)

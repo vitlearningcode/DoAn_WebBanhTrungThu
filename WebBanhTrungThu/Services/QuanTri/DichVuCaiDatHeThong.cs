@@ -337,7 +337,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                 await _db.SaveChangesAsync();
             });
 
-            return (true, $"Đã cập nhật cấu hình phân khu [{maCodeChuan}] trực tiếp vào bảng dbo.CauHinhLandingPage.");
+            return (true, $"Đã lưu cập nhật nội dung \"{req.TieuDeChinh.Trim()}\" trên Trang chủ thành công.");
         }
 
         public async Task<(bool ThanhCong, string ThongBao)> ChuyenTrangThaiBannerAsync(int maPhanKhu)
@@ -345,14 +345,14 @@ namespace WebBanhTrungThu.Services.QuanTri
             var phanKhu = await _db.CauHinhLandingPages.FirstOrDefaultAsync(c => c.MaPhanKhu == maPhanKhu);
             if (phanKhu == null)
             {
-                return (false, "Không tìm thấy phân khu Banner / Trang chủ cần chuyển trạng thái.");
+                return (false, "Không tìm thấy phân khu Trang chủ cần chuyển trạng thái.");
             }
 
             phanKhu.DangKichHoat = !phanKhu.DangKichHoat;
             await _db.SaveChangesAsync();
 
             string trangThaiText = phanKhu.DangKichHoat ? "Đang hiển thị" : "Tạm ẩn";
-            return (true, $"Đã chuyển trạng thái phân khu [{phanKhu.MaCodeKhuVuc}] sang \"{trangThaiText}\".");
+            return (true, $"Đã chuyển trạng thái khu vực \"{phanKhu.TieuDeChinh}\" sang \"{trangThaiText}\".");
         }
 
         private async Task<T> DocHoacTaoMacDinhAsync<T>(string khoa, string moTa, Func<T> taoMacDinh) where T : class

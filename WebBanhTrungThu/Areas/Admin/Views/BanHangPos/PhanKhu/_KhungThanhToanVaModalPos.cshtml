@@ -1,4 +1,19 @@
 @model WebBanhTrungThu.ViewModels.BanHangPosViewModel
+@{
+    var thuTuHangHop = new[] { "Kinh Đô", "Đồng Khánh", "Như Lan", "Brodard", "Givral" };
+    var danhSachThuongHieuHop = thuTuHangHop
+        .Concat(Model.DanhSachBanh
+            .Select(b => (b.ThuongHieu ?? string.Empty).Trim())
+            .Where(th => !string.IsNullOrWhiteSpace(th)))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(th =>
+        {
+            int idx = Array.FindIndex(thuTuHangHop, u => string.Equals(u, th, StringComparison.OrdinalIgnoreCase));
+            return idx >= 0 ? idx : int.MaxValue;
+        })
+        .ThenBy(th => th)
+        .ToList();
+}
 
 <div class="pos-right-col">
     <div class="pos-right-scroll">
@@ -41,8 +56,12 @@
         </div>
 
         <div class="pos-mode-switch">
-            <button type="button" class="pos-mode-btn active" id="btnModeTaiQuay" onclick="chuyenCheDoMuaPos('TAI_QUAY')">🛍️ Khách lấy ngay tại quầy</button>
-            <button type="button" class="pos-mode-btn" id="btnModeGiaoHangQr" onclick="chuyenCheDoMuaPos('GIAO_HANG_QR')">🚚 Đặt giao hàng &amp; Thiệp QR 3D</button>
+            <button type="button" class="pos-mode-btn active" id="btnModeTaiQuay" onclick="chuyenCheDoMuaPos('TAI_QUAY')">
+                <i class="bi bi-bag-check me-1"></i>Tại quầy
+            </button>
+            <button type="button" class="pos-mode-btn" id="btnModeGiaoHangQr" onclick="chuyenCheDoMuaPos('GIAO_HANG_QR')">
+                <i class="bi bi-truck me-1"></i>Giao hàng &amp; Thiệp 3D
+            </button>
         </div>
 
         <div id="boxGiaoHangQrPos" class="p-2 mb-2 rounded border bg-light" style="display: none;">
@@ -64,68 +83,92 @@
             </div>
             <div class="form-check mb-1">
                 <input type="checkbox" id="chkPosKemThiepQr" class="form-check-input" checked onchange="luuThongTinTabHienTai()" />
-                <label class="form-check-label fw-semibold" for="chkPosKemThiepQr">✨ Kèm Thiệp Chúc Mừng 3D QR Code</label>
+                <label class="form-check-label fw-semibold" for="chkPosKemThiepQr"><i class="bi bi-envelope-paper-heart text-primary me-1"></i>Kèm Thiệp Chúc Mừng 3D QR Code</label>
             </div>
             <textarea id="txtPosLoiChucThiep" rows="2" class="form-control form-control-sm" placeholder="Lời chúc hiển thị khi người nhận quét mã QR 3D..." oninput="luuThongTinTabHienTai()">Kính chúc Quý khách & Gia đình mùa Trăng Rằm Đoàn Viên, Viên Mãn & An Khang!</textarea>
         </div>
 
-        <div class="mt-1">
+        <div class="pos-summary-block">
             <div class="pos-summary-row">
-                <span>Tổng tiền hàng <span class="badge bg-secondary ms-1" id="lblPosTongSoMon">0 món</span> <span class="badge bg-info text-dark ms-1" id="lblPosTongSoHop">0 hộp</span></span>
-                <strong class="text-dark" id="lblPosTongTienHang">0</strong>
+                <span class="d-flex align-items-center gap-1 flex-wrap">
+                    <span class="fw-medium">Tổng tiền hàng</span>
+                    <span class="pos-mini-pill" id="lblPosTongSoMon">0 món</span>
+                    <span class="pos-mini-pill pos-mini-pill-box" id="lblPosTongSoHop">0 hộp</span>
+                </span>
+                <strong class="text-dark so-tien" id="lblPosTongTienHang">0</strong>
             </div>
-            <div class="pos-summary-row">
-                <div><span>Chiết khấu số lượng lớn</span><small class="text-success d-block" id="lblPosTenMocB2B">Tự động áp dụng từ 10 hộp</small></div>
-                <strong class="text-success" id="lblPosTienCkB2B">-0</strong>
+
+            <div class="pos-summary-row pos-summary-row-muted" id="rowPosCkB2B" style="display: none;">
+                <span class="text-muted">Chiết khấu số lượng lớn (<span id="lblPosTenMocB2B">Tự động từ 10 hộp</span>)</span>
+                <strong class="text-success so-tien" id="lblPosTienCkB2B">0</strong>
             </div>
-            <div class="py-1 border-bottom">
-                <label class="d-flex align-items-center justify-content-between">
-                    <span><input type="checkbox" id="chkPosYeuCauInLogo" class="form-check-input me-1" onchange="tinhToanHoaDonPos()" /> In Logo Doanh Nghiệp</span>
-                    <span class="fw-semibold text-dark" id="lblPosPhiInLogo">0</span>
+
+            <div class="pos-options-card">
+                <div class="pos-options-header">
+                    <span><i class="bi bi-sliders2 me-1"></i>Ưu đãi &amp; Tùy chọn thêm</span>
+                    <small class="text-muted">Chiết khấu sỉ tự động từ 10 hộp</small>
+                </div>
+                <div class="pos-options-row">
+                    <span class="text-secondary fw-medium">Voucher</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <select id="selPosVoucher" class="form-select form-select-sm" onchange="tinhToanHoaDonPos()">
+                            <option value="">-- Chọn mã KM --</option>
+                            @foreach (var km in Model.DanhSachKhuyenMai)
+                            {
+                                <option value="@km.CodeKm">@km.CodeKm (Đơn &ge; @(km.DonToiThieu.ToString("N0")))</option>
+                            }
+                        </select>
+                        <strong class="text-success so-tien text-end" style="min-width: 48px;" id="lblPosTienVoucher">0</strong>
+                    </div>
+                </div>
+                <label class="pos-options-row mb-0" style="cursor: pointer;">
+                    <span class="d-flex align-items-center gap-1 text-secondary fw-medium">
+                        <input type="checkbox" id="chkPosYeuCauInLogo" class="form-check-input m-0" onchange="tinhToanHoaDonPos()" />
+                        <span>In Logo Doanh Nghiệp</span>
+                    </span>
+                    <span class="fw-semibold text-dark so-tien" id="lblPosPhiInLogo">0</span>
                 </label>
             </div>
-            <div class="pos-summary-row">
-                <div class="d-flex align-items-center gap-1">
-                    <span>Voucher</span>
-                    <select id="selPosVoucher" class="form-select form-select-sm" style="width: 170px;" onchange="tinhToanHoaDonPos()">
-                        <option value="">-- Chọn mã KM --</option>
-                        @foreach (var km in Model.DanhSachKhuyenMai)
-                        {
-                            <option value="@km.CodeKm">@km.CodeKm (Đơn &ge; @(km.DonToiThieu.ToString("N0")))</option>
-                        }
-                    </select>
-                </div>
-                <strong class="text-success" id="lblPosTienVoucher">-0</strong>
-            </div>
+
             <div class="pos-summary-row" id="rowPosGiamVip" style="display: none;">
                 <span>Ưu đãi VIP (<span id="lblPosHangVipRow">Đồng - 0%</span>)</span>
-                <strong class="text-primary" id="lblPosTienGiamVip">-0</strong>
+                <strong class="text-primary so-tien" id="lblPosTienGiamVip">-0</strong>
             </div>
             <div class="pos-summary-row" id="rowPosGiamDiem" style="display: none;">
                 <span>Tiêu điểm tích lũy (<span id="lblPosSoDiemDungRow">0</span> điểm)</span>
-                <strong class="text-success" id="lblPosTienGiamDiem">-0</strong>
+                <strong class="text-success so-tien" id="lblPosTienGiamDiem">-0</strong>
             </div>
             <div class="pos-summary-row" id="rowPosPhiShip" style="display: none;">
                 <span>Phí giao hàng tận nơi</span>
-                <strong class="text-dark" id="lblPosPhiShip">30,000</strong>
+                <strong class="text-dark so-tien" id="lblPosPhiShip">30,000</strong>
             </div>
+
             <div class="pos-total-payable-box">
                 <span class="fw-bold text-dark">KHÁCH CẦN TRẢ</span>
-                <span class="fw-bold fs-5 text-primary" id="lblPosKhachCanTra">0</span>
+                <span class="fw-bold fs-5 text-primary so-tien" id="lblPosKhachCanTra">0 đ</span>
             </div>
         </div>
 
         <div class="mt-2">
-            <div class="fw-bold text-dark mb-2">Phương thức thanh toán</div>
-            <div class="d-flex gap-3 mb-2">
-                <label class="d-flex align-items-center gap-1 fw-semibold"><input type="radio" name="radPosPhuongThucTt" value="TIEN_MAT" checked onchange="doiPhuongThucTtPos(this.value)" /><span>💵 Tiền mặt</span></label>
-                <label class="d-flex align-items-center gap-1 fw-semibold"><input type="radio" name="radPosPhuongThucTt" value="CHUYEN_KHOAN_QR" onchange="doiPhuongThucTtPos(this.value)" /><span>📱 Chuyển khoản VietQR</span></label>
-                <label class="d-flex align-items-center gap-1 fw-semibold"><input type="radio" name="radPosPhuongThucTt" value="VI_DIEN_TU" onchange="doiPhuongThucTtPos(this.value)" /><span>💳 Thẻ/Ví</span></label>
+            <div class="fw-bold text-dark mb-1" style="font-size: 12.5px;">Phương thức thanh toán</div>
+            <div class="pos-pay-segmented mb-2">
+                <label class="pos-pay-seg-item">
+                    <input type="radio" name="radPosPhuongThucTt" value="TIEN_MAT" checked onchange="doiPhuongThucTtPos(this.value)" />
+                    <span class="pos-pay-seg-btn"><i class="bi bi-cash-stack"></i><span>Tiền mặt</span></span>
+                </label>
+                <label class="pos-pay-seg-item">
+                    <input type="radio" name="radPosPhuongThucTt" value="CHUYEN_KHOAN_QR" onchange="doiPhuongThucTtPos(this.value)" />
+                    <span class="pos-pay-seg-btn"><i class="bi bi-qr-code-scan"></i><span>VietQR</span></span>
+                </label>
+                <label class="pos-pay-seg-item">
+                    <input type="radio" name="radPosPhuongThucTt" value="VI_DIEN_TU" onchange="doiPhuongThucTtPos(this.value)" />
+                    <span class="pos-pay-seg-btn"><i class="bi bi-credit-card"></i><span>Thẻ/Ví</span></span>
+                </label>
             </div>
             <div id="boxPosTienMat" class="p-2 rounded border bg-light">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="fw-semibold">Tiền khách đưa:</span>
-                    <input type="number" id="inpPosTienKhachDua" class="form-control form-control-sm text-end fw-bold" style="width: 150px;" oninput="tinhTienThuaPos()" />
+                    <input type="number" id="inpPosTienKhachDua" class="form-control form-control-sm text-end fw-bold so-tien" style="width: 150px;" oninput="tinhTienThuaPos()" />
                 </div>
                 <div class="d-flex flex-wrap gap-1 mb-2">
                     <button type="button" class="pos-denom-btn" onclick="chonMenhGiaPos(0)">Chính xác</button>
@@ -136,7 +179,7 @@
                 </div>
                 <div class="d-flex justify-content-between align-items-center pt-1 border-top">
                     <span class="fw-semibold">Tiền thừa trả khách:</span>
-                    <strong class="text-danger" id="lblPosTienThua">0 đ</strong>
+                    <strong class="text-danger so-tien" id="lblPosTienThua">0 đ</strong>
                 </div>
             </div>
             @{
@@ -161,82 +204,132 @@
 
 <!-- MODAL ĐÓNG HỘP TỰ CHỌN NHANH TẠI QUẦY (F6) -->
 <div class="modal fade" id="modalDongHopPos" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header py-2 px-3 bg-primary text-white">
-                <h6 class="modal-title fw-bold mb-0"><i class="bi bi-gift-fill me-1"></i> Đóng hộp quà tự chọn nhanh cho khách tại quầy (F6)</h6>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-lg modal-dialog-centered pos-modal-dong-hop-dialog">
+        <div class="modal-content pos-modal-dong-hop-content">
+            <div class="modal-header pos-modal-dong-hop-header">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="pos-modal-header-icon"><i class="bi bi-gift"></i></span>
+                    <div>
+                        <h6 class="modal-title fw-bold mb-0">Đóng hộp quà tự chọn nhanh tại quầy</h6>
+                    </div>
+                    <span class="pos-kbd-badge">F6</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body p-3">
                 <div class="row g-3">
-                    <div class="col-md-5 border-end">
-                        <label class="form-label small fw-bold mb-1">1. Chọn loại vỏ hộp (4 bánh / 6 bánh):</label>
-                        <select id="selPosVoHopTuChon" class="form-select form-select-sm mb-2" onchange="doiVoHopTuChonPos()">
-                            @{
-                                var dsVoHopPhuHop = Model.DanhSachVoHop.Where(v => (v.SucChuaBanh == 4 || v.SucChuaBanh == 6) && v.SltonKhoVo > 0).ToList();
-                                if (!dsVoHopPhuHop.Any())
-                                {
-                                    dsVoHopPhuHop = Model.DanhSachVoHop.Where(v => v.SltonKhoVo > 0).ToList();
-                                }
-                                if (!dsVoHopPhuHop.Any())
-                                {
-                                    dsVoHopPhuHop = Model.DanhSachVoHop.ToList();
-                                }
-                            }
-                            @foreach (var vh in dsVoHopPhuHop)
-                            {
-                                <option value="@vh.MaVh" data-succhua="@vh.SucChuaBanh" data-giavo="@Math.Round(vh.GiaVoHopRieng, 0)" data-ten="@vh.TenVoHop">
-                                    @vh.TenVoHop (@vh.SucChuaBanh bánh - Vỏ: @vh.GiaVoHopRieng.ToString("N0") đ - Tồn: @vh.SltonKhoVo)
-                                </option>
-                            }
-                        </select>
-                        <div class="mb-2">
-                            <label class="form-label small fw-bold mb-1">Tên hộp quà (tùy chọn):</label>
-                            <input type="text" id="inpPosTenHopTuChon" class="form-control form-control-sm" placeholder="VD: Hộp Quà Biếu Sếp Thượng Hạng" />
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span class="small fw-bold">Các ô bánh trong hộp (<span id="lblPosDemBanhHop">0/4</span>):</span>
-                            <button type="button" class="btn btn-link btn-sm p-0 text-danger text-decoration-none" onclick="xoaHetBanhTrongHopPos()">Làm trống</button>
-                        </div>
-                        <div id="listSlotHopPos" class="d-flex flex-column gap-1 mb-2" style="max-height: 195px; overflow-y: auto;"></div>
-                        <div class="p-2 rounded bg-light border d-flex justify-content-between align-items-center">
-                            <span class="fw-bold small">Tổng giá 1 hộp:</span>
-                            <strong class="text-primary fs-6" id="lblPosTongGiaHopTuChon">0 đ</strong>
+                    <div class="col-md-5">
+                        <div class="pos-hop-left-panel">
+                            <div class="mb-2">
+                                <label class="pos-hop-section-label" for="selPosVoHopTuChon">1. Chọn loại vỏ hộp (4 bánh / 6 bánh)</label>
+                                <select id="selPosVoHopTuChon" class="form-select form-select-sm" onchange="doiVoHopTuChonPos()">
+                                    @{
+                                        var dsVoHopPhuHop = Model.DanhSachVoHop.Where(v => (v.SucChuaBanh == 4 || v.SucChuaBanh == 6) && v.SltonKhoVo > 0).ToList();
+                                        if (!dsVoHopPhuHop.Any())
+                                        {
+                                            dsVoHopPhuHop = Model.DanhSachVoHop.Where(v => v.SltonKhoVo > 0).ToList();
+                                        }
+                                        if (!dsVoHopPhuHop.Any())
+                                        {
+                                            dsVoHopPhuHop = Model.DanhSachVoHop.ToList();
+                                        }
+                                    }
+                                    @foreach (var vh in dsVoHopPhuHop)
+                                    {
+                                        <option value="@vh.MaVh" data-succhua="@vh.SucChuaBanh" data-giavo="@Math.Round(vh.GiaVoHopRieng, 0)" data-ten="@vh.TenVoHop" data-tonvo="@vh.SltonKhoVo">
+                                            @vh.TenVoHop
+                                        </option>
+                                    }
+                                </select>
+                                <div class="pos-vo-meta-bar mt-1" id="boxPosThongTinVoHopChon">
+                                    <span class="pos-vo-meta-pill"><i class="bi bi-grid-3x2-gap me-1"></i>Sức chứa: <strong id="lblPosMetaSucChuaVo">4 bánh</strong></span>
+                                    <span class="pos-vo-meta-pill"><i class="bi bi-tag me-1"></i>Vỏ: <strong class="so-tien" id="lblPosMetaGiaVo">0 đ</strong></span>
+                                    <span class="pos-vo-meta-pill"><i class="bi bi-box-seam me-1"></i>Tồn: <strong class="so-tien" id="lblPosMetaTonVo">0</strong></span>
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="pos-hop-section-label" for="inpPosTenHopTuChon">Tên hộp quà (tùy chọn)</label>
+                                <input type="text" id="inpPosTenHopTuChon" class="form-control form-control-sm pos-hop-text-input" placeholder="VD: Hộp Quà Biếu Sếp Thượng Hạng" />
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="pos-hop-section-label mb-0 d-flex align-items-center gap-1">
+                                    <span>Các ô bánh trong hộp</span>
+                                    <span class="pos-slot-count-badge so-tien" id="lblPosDemBanhHop">0/4</span>
+                                </span>
+                                <button type="button" class="pos-btn-clear-slots" onclick="xoaHetBanhTrongHopPos()">
+                                    <i class="bi bi-arrow-counterclockwise"></i> Làm trống
+                                </button>
+                            </div>
+
+                            <div id="listSlotHopPos" class="pos-hop-slot-list mb-2"></div>
+
+                            <div class="pos-hop-total-box">
+                                <span class="fw-bold text-dark">Tổng giá 1 hộp</span>
+                                <strong class="text-primary fs-5 so-tien" id="lblPosTongGiaHopTuChon">0 đ</strong>
+                            </div>
                         </div>
                     </div>
+
                     <div class="col-md-7">
-                        <label class="form-label small fw-bold mb-1">2. Chạm chọn vị bánh còn tồn kho để xếp vào ô:</label>
-                        <div class="row g-2" style="max-height: 320px; overflow-y: auto;">
-                            @{
-                                var dsBanhConTon = Model.DanhSachBanh.Where(b => b.TongTonKho > 0).ToList();
-                            }
-                            @if (dsBanhConTon.Any())
-                            {
-                                @foreach (var b in dsBanhConTon)
+                        <div class="pos-hop-right-panel">
+                            <label class="pos-hop-section-label" for="txtPosTimBanhTrongHop">2. Chạm chọn vị bánh còn tồn kho để xếp vào ô</label>
+                            <div class="pos-hop-filter-bar mb-2">
+                                <div class="pos-hop-search-wrap">
+                                    <i class="bi bi-search"></i>
+                                    <input type="text" id="txtPosTimBanhTrongHop" class="form-control form-control-sm" placeholder="Tìm nhanh vị bánh..." oninput="locBanhTrongModalHopPos()" />
+                                </div>
+                                <select id="selPosLocHangHop" class="form-select form-select-sm" onchange="locBanhTrongModalHopPos()">
+                                    <option value="ALL">Tất cả hãng</option>
+                                    @foreach (var th in danhSachThuongHieuHop)
+                                    {
+                                        <option value="@th">@th</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="row g-2 pos-hop-cake-grid" id="gridBanhTrongModalHopPos">
+                                @{
+                                    var dsBanhConTon = Model.DanhSachBanh.Where(b => b.TongTonKho > 0).ToList();
+                                }
+                                @if (dsBanhConTon.Any())
                                 {
-                                    <div class="col-6">
-                                        <div class="p-2 border rounded d-flex justify-content-between align-items-center bg-white" style="cursor:pointer;" onclick="themBanhVaoHopTuChonPos(@b.MaBanh)">
-                                            <div class="text-truncate pe-1">
-                                                <div class="fw-semibold text-dark text-truncate">@b.TenBanh</div>
-                                                <small class="text-primary fw-bold">@b.DonGiaThucTe.ToString("N0") đ</small>
-                                                <small class="text-muted">• Tồn: @b.TongTonKho</small>
+                                    @foreach (var b in dsBanhConTon)
+                                    {
+                                        string searchHopKey = $"{b.TenBanh} {b.MaSku} {b.ThuongHieu}".ToLowerInvariant();
+                                        <div class="col-6 pos-hop-cake-item" data-search="@searchHopKey" data-brand="@(b.ThuongHieu ?? "")">
+                                            <div class="pos-hop-cake-card" onclick="themBanhVaoHopTuChonPos(@b.MaBanh)">
+                                                <div class="pos-hop-cake-top">
+                                                    <span class="pos-hop-cake-brand">@b.ThuongHieu • @b.MaSku</span>
+                                                    <span class="pos-hop-cake-stock so-tien">Tồn: @b.TongTonKho</span>
+                                                </div>
+                                                <div class="pos-hop-cake-title">@b.TenBanh</div>
+                                                <div class="pos-hop-cake-bottom">
+                                                    <span class="pos-hop-cake-price so-tien">@b.DonGiaThucTe.ToString("N0") đ</span>
+                                                    <span class="pos-hop-add-btn" title="Thêm vào ô trống tiếp theo"><i class="bi bi-plus-lg"></i></span>
+                                                </div>
                                             </div>
-                                            <span class="btn btn-sm btn-outline-primary py-0 px-2">+</span>
                                         </div>
+                                    }
+                                    <div id="lblPosKhongCoBanhHop" class="col-12 text-center text-muted py-4 small" style="display: none;">
+                                        Không tìm thấy vị bánh phù hợp bộ lọc.
                                     </div>
                                 }
-                            }
-                            else
-                            {
-                                <div class="col-12 text-center text-muted py-4 small">Hiện chưa có vị bánh nào còn tồn kho.</div>
-                            }
+                                else
+                                {
+                                    <div class="col-12 text-center text-muted py-4 small">Hiện chưa có vị bánh nào còn tồn kho.</div>
+                                }
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="modal-footer py-2 px-3 bg-light">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" class="btn btn-success btn-sm fw-bold px-3" onclick="xacNhanThemHopTuChonVaoPos()"><i class="bi bi-cart-plus me-1"></i> Đưa hộp quà vào hóa đơn POS</button>
+            <div class="modal-footer pos-modal-dong-hop-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3 fw-semibold" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-success btn-sm fw-bold px-3 pos-btn-confirm-hop" onclick="xacNhanThemHopTuChonVaoPos()">
+                    <i class="bi bi-cart-plus me-1"></i> Đưa hộp quà vào hóa đơn POS
+                </button>
             </div>
         </div>
     </div>
