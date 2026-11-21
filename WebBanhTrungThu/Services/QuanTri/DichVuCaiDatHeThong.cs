@@ -48,6 +48,19 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             var (anhQrMau, noiDungMau) = TaoAnhQrMoMoMau(cauHinhQr);
 
+            var danhSachBanner = await _db.CauHinhLandingPages
+                .AsNoTracking()
+                .Include(c => c.MaAnhNenNavigation)
+                .Include(c => c.MaAnhPhuParallaxNavigation)
+                .OrderBy(c => c.ThuTuHienThi)
+                .ThenBy(c => c.MaPhanKhu)
+                .ToListAsync();
+
+            var danhSachAnhBanner = await _db.KhoHinhAnhs
+                .AsNoTracking()
+                .OrderByDescending(h => h.MaHa)
+                .ToListAsync();
+
             return new CaiDatHeThongViewModel
             {
                 MucDangChon = mucChuan,
@@ -56,7 +69,9 @@ namespace WebBanhTrungThu.Services.QuanTri
                 NoiDungCkMau = noiDungMau,
                 CauHinhCuaHang = cuaHang,
                 CauHinhVanChuyen = vanChuyen,
-                CauHinhHoiVienVip = hoiVienVip
+                CauHinhHoiVienVip = hoiVienVip,
+                DanhSachBanner = danhSachBanner,
+                DanhSachAnhBanner = danhSachAnhBanner
             };
         }
 
@@ -178,6 +193,168 @@ namespace WebBanhTrungThu.Services.QuanTri
             return (true, "Đã lưu cấu hình Hội viên VIP & Điểm tích lũy vào SQL Server.");
         }
 
+        public async Task<(bool ThanhCong, string ThongBao)> LuuCauHinhBannerAsync(LuuBannerLandingRequest req, string webRootPath)
+        {
+            if (string.IsNullOrWhiteSpace(req.TieuDeChinh))
+            {
+                return (false, "Vui lòng nhập tiêu đề chính cho phân khu Banner / Trang chủ.");
+            }
+
+            string maCodeChuan = (req.MaCodeKhuVuc ?? string.Empty).Trim().ToUpperInvariant();
+            var phanKhu = req.MaPhanKhu > 0
+                ? await _db.CauHinhLandingPages.FirstOrDefaultAsync(c => c.MaPhanKhu == req.MaPhanKhu)
+                : null;
+
+            if (phanKhu == null && !string.IsNullOrEmpty(maCodeChuan))
+            {
+                phanKhu = await _db.CauHinhLandingPages.FirstOrDefaultAsync(c => c.MaCodeKhuVuc == maCodeChuan);
+            }
+
+            if (phanKhu == null)
+            {
+                return (false, "Không tìm thấy phân khu Banner / Landing Page cần cập nhật trong CSDL.");
+            }
+
+            if (string.IsNullOrEmpty(maCodeChuan))
+            {
+                maCodeChuan = phanKhu.MaCodeKhuVuc;
+            }
+            else if (!Regex.IsMatch(maCodeChuan, @"^[A-Z0-9_]{3,50}$"))
+            {
+                return (false, "Mã định danh khu vực (MaCodeKhuVuc) không hợp lệ.");
+            }
+            else if (!string.Equals(phanKhu.MaCodeKhuVuc, maCodeChuan, StringComparison.OrdinalIgnoreCase))
+            {
+                bool trungMaCode = await _db.CauHinhLandingPages
+                    .AsNoTracking()
+                    .AnyAsync(c => c.MaPhanKhu != phanKhu.MaPhanKhu && c.MaCodeKhuVuc == maCodeChuan);
+                if (trungMaCode)
+                {
+                    return (false, $"Mã khu vực [{maCodeChuan}] đã tồn tại ở một phân khu khác.");
+                }
+            }
+
+            bool coTaiAnhMoi = req.TepAnhNenMoi != null && req.TepAnhNenMoi.Length > 0;
+            string duoiFile = string.Empty;
+            if (coTaiAnhMoi)
+            {
+                var duoiHopLe = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".webp" };
+                duoiFile = Path.GetExtension(req.TepAnhNenMoi!.FileName ?? string.Empty).ToLowerInvariant();
+                if (string.IsNullOrWhiteSpace(duoiFile) || !duoiHopLe.Contains(duoiFile))
+                {
+                    return (false, "Định dạng ảnh tải lên không hợp lệ. Chỉ chấp nhận các tệp .jpg, .jpeg, .png hoặc .webp.");
+                }
+
+                if (req.TepAnhNenMoi.Length > 5 * 1024 * 1024)
+                {
+                    return (false, "Dung lượng ảnh vượt quá giới hạn tối đa 5MB.");
+                }
+            }
+
+            await ThucThiTrongGiaoDichAsync(async () =>
+            {
+                int? maAnhNenChot = phanKhu.MaAnhNen;
+                if (req.MaAnhNen.HasValue && req.MaAnhNen.Value > 0)
+                {
+                    if (await _db.KhoHinhAnhs.AsNoTracking().AnyAsync(h => h.MaHa == req.MaAnhNen.Value))
+                    {
+                        maAnhNenChot = req.MaAnhNen.Value;
+                    }
+                }
+                else if (req.MaAnhNen.HasValue && req.MaAnhNen.Value <= 0)
+                {
+                    maAnhNenChot = null;
+                }
+
+                int? maAnhPhuChot = null;
+                if (req.MaAnhPhuParallax.HasValue && req.MaAnhPhuParallax.Value > 0)
+                {
+                    if (await _db.KhoHinhAnhs.AsNoTracking().AnyAsync(h => h.MaHa == req.MaAnhPhuParallax.Value))
+                    {
+                        maAnhPhuChot = req.MaAnhPhuParallax.Value;
+                    }
+                }
+
+                if (coTaiAnhMoi)
+                {
+                    string thuMucLanding = Path.Combine(webRootPath, "images", "landing");
+                    if (!Directory.Exists(thuMucLanding))
+                    {
+                        Directory.CreateDirectory(thuMucLanding);
+                    }
+
+                    string tenFileAnToan = $"banner_{LayThoiGianHeThong():yyyyMMdd_HHmmss}{duoiFile}";
+                    string duongDanVatLy = Path.Combine(thuMucLanding, tenFileAnToan);
+
+                    using (var stream = new FileStream(duongDanVatLy, FileMode.Create))
+                    {
+                        await req.TepAnhNenMoi!.CopyToAsync(stream);
+                    }
+
+                    string tenTepGoc = Path.GetFileName(req.TepAnhNenMoi!.FileName ?? string.Empty);
+                    if (string.IsNullOrWhiteSpace(tenTepGoc))
+                    {
+                        tenTepGoc = tenFileAnToan;
+                    }
+
+                    var hinhMoi = new KhoHinhAnh
+                    {
+                        TenTepGoc = tenTepGoc,
+                        TieuDeAlt = $"Banner {maCodeChuan} - {req.TieuDeChinh.Trim()}",
+                        LoaiLuuTru = 1,
+                        DuongDanCucBo = $"/images/landing/{tenFileAnToan}",
+                        KichThuocPixel = "1920x1080",
+                        NgayTaiLen = LayThoiGianHeThong()
+                    };
+
+                    _db.KhoHinhAnhs.Add(hinhMoi);
+                    await _db.SaveChangesAsync();
+
+                    _db.LienKetHinhAnhs.Add(new LienKetHinhAnh
+                    {
+                        MaHa = hinhMoi.MaHa,
+                        LoaiDoiTuong = "BANNER",
+                        MaDoiTuong = phanKhu.MaPhanKhu,
+                        VaiTroAnh = "ANH_NEN",
+                        ThuTuHienThi = 1
+                    });
+
+                    maAnhNenChot = hinhMoi.MaHa;
+                }
+
+                phanKhu.MaCodeKhuVuc = maCodeChuan;
+                phanKhu.TieuDeChinh = req.TieuDeChinh.Trim();
+                phanKhu.TieuDePhu = string.IsNullOrWhiteSpace(req.TieuDePhu) ? null : req.TieuDePhu.Trim();
+                phanKhu.NoiDungMoTa = string.IsNullOrWhiteSpace(req.NoiDungMoTa) ? null : req.NoiDungMoTa.Trim();
+                phanKhu.MaAnhNen = maAnhNenChot;
+                phanKhu.MaAnhPhuParallax = maAnhPhuChot;
+                phanKhu.ChuNutBamCta = string.IsNullOrWhiteSpace(req.ChuNutBamCta) ? null : req.ChuNutBamCta.Trim();
+                phanKhu.DuongDanCta = string.IsNullOrWhiteSpace(req.DuongDanCta) ? null : req.DuongDanCta.Trim();
+                phanKhu.MocThoiGianDemNguoc = req.MocThoiGianDemNguoc;
+                phanKhu.ThuTuHienThi = req.ThuTuHienThi <= 0 ? phanKhu.ThuTuHienThi : req.ThuTuHienThi;
+                phanKhu.DangKichHoat = req.DangKichHoat;
+
+                await _db.SaveChangesAsync();
+            });
+
+            return (true, $"Đã cập nhật cấu hình phân khu [{maCodeChuan}] trực tiếp vào bảng dbo.CauHinhLandingPage.");
+        }
+
+        public async Task<(bool ThanhCong, string ThongBao)> ChuyenTrangThaiBannerAsync(int maPhanKhu)
+        {
+            var phanKhu = await _db.CauHinhLandingPages.FirstOrDefaultAsync(c => c.MaPhanKhu == maPhanKhu);
+            if (phanKhu == null)
+            {
+                return (false, "Không tìm thấy phân khu Banner / Trang chủ cần chuyển trạng thái.");
+            }
+
+            phanKhu.DangKichHoat = !phanKhu.DangKichHoat;
+            await _db.SaveChangesAsync();
+
+            string trangThaiText = phanKhu.DangKichHoat ? "Đang hiển thị" : "Tạm ẩn";
+            return (true, $"Đã chuyển trạng thái phân khu [{phanKhu.MaCodeKhuVuc}] sang \"{trangThaiText}\".");
+        }
+
         private async Task<T> DocHoacTaoMacDinhAsync<T>(string khoa, string moTa, Func<T> taoMacDinh) where T : class
         {
             var banGhi = await _db.CauHinhHeThongs
@@ -241,6 +418,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                 "cuahang" => "cuahang",
                 "vanchuyen" => "vanchuyen",
                 "hoivien" => "hoivien",
+                "banner" => "banner",
                 _ => "momo"
             };
         }

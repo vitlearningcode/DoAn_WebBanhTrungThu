@@ -464,6 +464,15 @@ let boHenGioDemNguocTrungThu = null;
 
 function tinhMocTrungThuKeTiep() {
     const bayGio = Date.now();
+    const khungCd = document.getElementById("khungDemNguocHero");
+    const mocSqlIso = khungCd ? khungCd.getAttribute("data-moc-dem-nguoc") : "";
+    if (mocSqlIso) {
+        const mocSqlMs = new Date(mocSqlIso).getTime();
+        if (!isNaN(mocSqlMs) && mocSqlMs > bayGio) {
+            return mocSqlMs;
+        }
+    }
+
     const cacMocTrungThu = [
         new Date(2026, 8, 25, 20, 0, 0).getTime(), // 25/09/2026 20:00:00
         new Date(2027, 8, 15, 20, 0, 0).getTime(), // 15/09/2027 20:00:00

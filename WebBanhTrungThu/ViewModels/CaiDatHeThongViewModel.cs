@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Http;
+using WebBanhTrungThu.Models.Entities;
 using WebBanhTrungThu.Services;
 
 namespace WebBanhTrungThu.ViewModels
@@ -54,5 +56,24 @@ namespace WebBanhTrungThu.ViewModels
         public CauHinhCuaHang CauHinhCuaHang { get; set; } = new();
         public CauHinhVanChuyen CauHinhVanChuyen { get; set; } = new();
         public CauHinhHoiVienVip CauHinhHoiVienVip { get; set; } = new();
+        public List<CauHinhLandingPage> DanhSachBanner { get; set; } = new();
+        public List<KhoHinhAnh> DanhSachAnhBanner { get; set; } = new();
+    }
+
+    public class LuuBannerLandingRequest
+    {
+        public int MaPhanKhu { get; set; }
+        public string MaCodeKhuVuc { get; set; } = string.Empty;
+        public string TieuDeChinh { get; set; } = string.Empty;
+        public string? TieuDePhu { get; set; }
+        public string? NoiDungMoTa { get; set; }
+        public int? MaAnhNen { get; set; }
+        public int? MaAnhPhuParallax { get; set; }
+        public string? ChuNutBamCta { get; set; }
+        public string? DuongDanCta { get; set; }
+        public DateTime? MocThoiGianDemNguoc { get; set; }
+        public int ThuTuHienThi { get; set; } = 1;
+        public bool DangKichHoat { get; set; }
+        public IFormFile? TepAnhNenMoi { get; set; }
     }
 }

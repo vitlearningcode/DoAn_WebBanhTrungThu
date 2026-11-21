@@ -12,12 +12,15 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     public class CaiDatAdminController : ControllerQuanTriCoSo
     {
         private readonly IDichVuCaiDatHeThong _dichVuCaiDat;
+        private readonly IWebHostEnvironment _env;
 
         public CaiDatAdminController(
             CSDLBanhTrungThuContext db,
-            IDichVuCaiDatHeThong dichVuCaiDat) : base(db)
+            IDichVuCaiDatHeThong dichVuCaiDat,
+            IWebHostEnvironment env) : base(db)
         {
             _dichVuCaiDat = dichVuCaiDat;
+            _env = env;
         }
 
         [HttpGet]
@@ -61,6 +64,24 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
             var (thanhCong, thongBao) = await _dichVuCaiDat.LuuCauHinhHoiVienVipAsync(model, LayMaNhanSuHienTai());
             TempData[thanhCong ? "ThongBaoAdmin" : "LoiAdmin"] = thongBao;
             return RedirectToAction(nameof(Index), new { muc = "hoivien" });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> LuuBannerLanding(LuuBannerLandingRequest req)
+        {
+            var (thanhCong, thongBao) = await _dichVuCaiDat.LuuCauHinhBannerAsync(req, _env.WebRootPath);
+            TempData[thanhCong ? "ThongBaoAdmin" : "LoiAdmin"] = thongBao;
+            return RedirectToAction(nameof(Index), new { muc = "banner" });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChuyenTrangThaiBanner(int maPhanKhu)
+        {
+            var (thanhCong, thongBao) = await _dichVuCaiDat.ChuyenTrangThaiBannerAsync(maPhanKhu);
+            TempData[thanhCong ? "ThongBaoAdmin" : "LoiAdmin"] = thongBao;
+            return RedirectToAction(nameof(Index), new { muc = "banner" });
         }
     }
 }

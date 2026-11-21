@@ -53,12 +53,18 @@ namespace WebBanhTrungThu.Services.GiaoDien
 
             // 2. Lấy cấu hình Landing Page
             var cauHinhs = await _db.CauHinhLandingPages
+                .AsNoTracking()
                 .Include(c => c.MaAnhNenNavigation)
+                .Include(c => c.MaAnhPhuParallaxNavigation)
                 .Where(c => c.DangKichHoat)
+                .OrderBy(c => c.ThuTuHienThi)
+                .ThenBy(c => c.MaPhanKhu)
                 .ToListAsync();
 
-            vm.HeroBanner = cauHinhs.FirstOrDefault(c => c.MaCodeKhuVuc == "HERO_BANNER");
-            vm.BoxBuilderIntro = cauHinhs.FirstOrDefault(c => c.MaCodeKhuVuc == "BOX_BUILDER_INTRO");
+            vm.HeroBanner = cauHinhs.FirstOrDefault(c => c.MaCodeKhuVuc == "HERO_BANNER")
+                ?? cauHinhs.FirstOrDefault(c => c.MaCodeKhuVuc == "TANG_1_HERO");
+            vm.BoxBuilderIntro = cauHinhs.FirstOrDefault(c => c.MaCodeKhuVuc == "BOX_BUILDER_INTRO")
+                ?? cauHinhs.FirstOrDefault(c => c.MaCodeKhuVuc == "TANG_2_STUDIO");
 
             // 3. Lấy Danh mục, Bánh lẻ (kèm Thông số dinh dưỡng 1-1), Vỏ hộp & Combo mẫu
             vm.DanhMucs = await _db.DanhMucBanhs.Where(d => d.TrangThai).OrderBy(d => d.ThuTuSx).ToListAsync();

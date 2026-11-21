@@ -1,0 +1,401 @@
+@model WebBanhTrungThu.ViewModels.CaiDatHeThongViewModel
+@{
+    var dsBanner = Model.DanhSachBanner;
+    var dsAnh = Model.DanhSachAnhBanner;
+}
+
+<style>
+    .kv-banner-select {
+        width: 100%;
+        height: 34px;
+        border: 1px solid #D1D5DA;
+        border-radius: 6px;
+        padding: 0 10px;
+        font-size: 13px;
+        color: #1F2937;
+        background-color: #FFFFFF;
+        outline: none;
+    }
+
+    .kv-banner-select:focus {
+        border-color: #0070F4;
+        box-shadow: 0 0 0 2px rgba(0, 112, 244, 0.12);
+    }
+
+    .kv-banner-thumb {
+        width: 84px;
+        height: 52px;
+        border-radius: 6px;
+        border: 1px solid #E5E7EB;
+        background: #F9FAFB;
+        object-fit: cover;
+    }
+
+    .kv-banner-thumb-lg {
+        width: 100%;
+        height: 128px;
+        border-radius: 6px;
+        border: 1px solid #E5E7EB;
+        background: #F9FAFB;
+        object-fit: cover;
+    }
+
+    .kv-code-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        font-size: 11.5px;
+        font-weight: 600;
+        border-radius: 4px;
+        background: #EFF6FF;
+        color: #1D4ED8;
+        border: 1px solid #BFDBFE;
+        font-family: Consolas, monospace;
+    }
+
+    .kv-status-badge-on {
+        display: inline-block;
+        padding: 2px 8px;
+        font-size: 11.5px;
+        font-weight: 600;
+        border-radius: 4px;
+        background: #ECFDF5;
+        color: #047857;
+        border: 1px solid #A7F3D0;
+    }
+
+    .kv-status-badge-off {
+        display: inline-block;
+        padding: 2px 8px;
+        font-size: 11.5px;
+        font-weight: 600;
+        border-radius: 4px;
+        background: #F3F4F6;
+        color: #4B5563;
+        border: 1px solid #D1D5DB;
+    }
+</style>
+
+<div class="kv-card p-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom pb-3 mb-4">
+        <div>
+            <h2 class="h5 fw-bold text-dark mb-1">Quản lý Banner &amp; Các phân khu Trang chủ</h2>
+            <p class="text-muted small mb-0">
+                Đồng bộ trực tiếp với bảng <code>dbo.CauHinhLandingPage</code> và <code>dbo.KhoHinhAnh</code> trên SQL Server. Mọi chỉnh sửa hiển thị tức thì ngoài Trang chủ.
+            </p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a href="/" target="_blank" class="btn-kv-outline text-decoration-none d-inline-flex align-items-center gap-1" style="font-size: 13px;">
+                <i class="bi bi-box-arrow-up-right"></i> Xem Trang chủ
+            </a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="kv-table border">
+            <thead>
+                <tr>
+                    <th style="width: 60px;" class="text-center">Thứ tự</th>
+                    <th style="width: 100px;" class="text-center">Ảnh nền</th>
+                    <th style="width: 175px;">Mã phân khu</th>
+                    <th>Tiêu đề chính &amp; Nội dung</th>
+                    <th style="width: 125px;" class="text-center">Trạng thái</th>
+                    <th style="width: 175px;" class="text-end">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < dsBanner.Count; i++)
+                {
+                    var item = dsBanner[i];
+                    string urlAnh = item.MaAnhNenNavigation?.UrlHienThi ?? "/images/landing/hero-banner-trungthu.jpg";
+                    string idCollapse = $"formSuaBanner_{item.MaPhanKhu}";
+                    bool moMacDinh = string.Equals(item.MaCodeKhuVuc, "HERO_BANNER", StringComparison.OrdinalIgnoreCase)
+                                  || (i == 0 && !dsBanner.Any(x => x.MaCodeKhuVuc == "HERO_BANNER"));
+                    string mocDemNguocVal = item.MocThoiGianDemNguoc.HasValue
+                        ? item.MocThoiGianDemNguoc.Value.ToString("yyyy-MM-ddTHH:mm")
+                        : string.Empty;
+
+                    <tr>
+                        <td class="text-center fw-bold text-muted">#@item.ThuTuHienThi</td>
+                        <td class="text-center">
+                            <img src="@urlAnh"
+                                 alt="@item.TieuDeChinh"
+                                 class="kv-banner-thumb"
+                                 onerror="window.kvImgFallback && window.kvImgFallback(this)" />
+                        </td>
+                        <td>
+                            <span class="kv-code-badge">@item.MaCodeKhuVuc</span>
+                            <div class="small text-muted mt-1">Mã PK: #@item.MaPhanKhu</div>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">@item.TieuDeChinh</div>
+                            @if (!string.IsNullOrWhiteSpace(item.TieuDePhu))
+                            {
+                                <div class="small text-primary fw-medium">@item.TieuDePhu</div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(item.NoiDungMoTa))
+                            {
+                                <div class="small text-muted text-truncate" style="max-width: 380px;" title="@item.NoiDungMoTa">
+                                    @item.NoiDungMoTa
+                                </div>
+                            }
+                            <div class="d-flex flex-wrap gap-2 mt-1 small text-muted">
+                                @if (!string.IsNullOrWhiteSpace(item.ChuNutBamCta))
+                                {
+                                    <span><strong>CTA:</strong> @item.ChuNutBamCta (<code>@(item.DuongDanCta ?? "#")</code>)</span>
+                                }
+                                @if (item.MocThoiGianDemNguoc.HasValue)
+                                {
+                                    <span>• <strong>Đếm ngược:</strong> @item.MocThoiGianDemNguoc.Value.ToString("dd/MM/yyyy HH:mm")</span>
+                                }
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            @if (item.DangKichHoat)
+                            {
+                                <span class="kv-status-badge-on">Đang hiển thị</span>
+                            }
+                            else
+                            {
+                                <span class="kv-status-badge-off">Tạm ẩn</span>
+                            }
+                        </td>
+                        <td class="text-end" style="white-space: nowrap;">
+                            <div class="d-inline-flex align-items-center gap-1">
+                                <button type="button"
+                                        class="btn-kv-blue px-2 py-1"
+                                        style="font-size: 12.5px;"
+                                        data-bs-toggle="collapse"
+                                        data-bs-target="#@idCollapse"
+                                        aria-expanded="@(moMacDinh ? "true" : "false")">
+                                    <i class="bi bi-pencil-square me-1"></i>Sửa
+                                </button>
+
+                                <form asp-area="Admin"
+                                      asp-controller="CaiDatAdmin"
+                                      asp-action="ChuyenTrangThaiBanner"
+                                      method="post"
+                                      class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="maPhanKhu" value="@item.MaPhanKhu" />
+                                    <button type="submit"
+                                            class="btn-kv-outline px-2 py-1"
+                                            style="font-size: 12.5px;"
+                                            title="@(item.DangKichHoat ? "Tạm ẩn phân khu này" : "Kích hoạt hiển thị phân khu này")">
+                                        @(item.DangKichHoat ? "Tạm ẩn" : "Kích hoạt")
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr class="collapse @(moMacDinh ? "show" : "")" id="@idCollapse" style="background: #F8FAFC;">
+                        <td colspan="6" class="p-3 border-bottom">
+                            <form asp-area="Admin"
+                                  asp-controller="CaiDatAdmin"
+                                  asp-action="LuuBannerLanding"
+                                  method="post"
+                                  enctype="multipart/form-data">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="MaPhanKhu" value="@item.MaPhanKhu" />
+
+                                <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                                    <div class="fw-bold text-dark">
+                                        <i class="bi bi-sliders text-primary me-1"></i>
+                                        Chỉnh sửa phân khu: <span class="kv-code-badge ms-1">@item.MaCodeKhuVuc</span>
+                                    </div>
+                                    <small class="text-muted">Lưu trực tiếp vào <code>dbo.CauHinhLandingPage</code> (MaPhanKhu = @item.MaPhanKhu)</small>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-lg-8">
+                                        <div class="row g-2">
+                                            <div class="col-md-4">
+                                                <label class="kv-field-label" for="inpCode_@item.MaPhanKhu">Mã định danh phân khu</label>
+                                                <input id="inpCode_@item.MaPhanKhu"
+                                                       type="text"
+                                                       name="MaCodeKhuVuc"
+                                                       class="kv-form-control bg-light fw-bold"
+                                                       value="@item.MaCodeKhuVuc"
+                                                       readonly />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="kv-field-label" for="inpThuTu_@item.MaPhanKhu">Thứ tự hiển thị</label>
+                                                <input id="inpThuTu_@item.MaPhanKhu"
+                                                       type="number"
+                                                       min="1"
+                                                       max="20"
+                                                       name="ThuTuHienThi"
+                                                       class="kv-form-control"
+                                                       value="@item.ThuTuHienThi" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="kv-field-label" for="selTrangThai_@item.MaPhanKhu">Trạng thái hiển thị</label>
+                                                <select id="selTrangThai_@item.MaPhanKhu" name="DangKichHoat" class="kv-banner-select">
+                                                    @if (item.DangKichHoat)
+                                                    {
+                                                        <option value="true" selected>Đang hiển thị trên Trang chủ</option>
+                                                        <option value="false">Tạm ẩn phân khu</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="true">Đang hiển thị trên Trang chủ</option>
+                                                        <option value="false" selected>Tạm ẩn phân khu</option>
+                                                    }
+                                                </select>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label class="kv-field-label" for="inpTieuDeChinh_@item.MaPhanKhu">Tiêu đề chính (Headline) *</label>
+                                                <input id="inpTieuDeChinh_@item.MaPhanKhu"
+                                                       type="text"
+                                                       name="TieuDeChinh"
+                                                       class="kv-form-control fw-bold"
+                                                       value="@item.TieuDeChinh"
+                                                       required />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="kv-field-label" for="inpTieuDePhu_@item.MaPhanKhu">Tiêu đề phụ (Badge / Sub-headline)</label>
+                                                <input id="inpTieuDePhu_@item.MaPhanKhu"
+                                                       type="text"
+                                                       name="TieuDePhu"
+                                                       class="kv-form-control"
+                                                       value="@item.TieuDePhu" />
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="kv-field-label" for="inpMoTa_@item.MaPhanKhu">Nội dung mô tả chi tiết</label>
+                                                <textarea id="inpMoTa_@item.MaPhanKhu"
+                                                          name="NoiDungMoTa"
+                                                          rows="2"
+                                                          class="form-control form-control-sm">@item.NoiDungMoTa</textarea>
+                                            </div>
+
+                                            <div class="col-md-4">
+                                                <label class="kv-field-label" for="inpCtaText_@item.MaPhanKhu">Chữ nút bấm (CTA)</label>
+                                                <input id="inpCtaText_@item.MaPhanKhu"
+                                                       type="text"
+                                                       name="ChuNutBamCta"
+                                                       class="kv-form-control"
+                                                       value="@item.ChuNutBamCta"
+                                                       placeholder="VD: Tự Phối Hộp Quà Ngay" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="kv-field-label" for="inpCtaUrl_@item.MaPhanKhu">Đường dẫn nút CTA</label>
+                                                <input id="inpCtaUrl_@item.MaPhanKhu"
+                                                       type="text"
+                                                       name="DuongDanCta"
+                                                       class="kv-form-control"
+                                                       value="@item.DuongDanCta"
+                                                       placeholder="VD: #tang-tu-chon-hop" />
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="kv-field-label" for="inpDemNguoc_@item.MaPhanKhu">Mốc thời gian đếm ngược</label>
+                                                <input id="inpDemNguoc_@item.MaPhanKhu"
+                                                       type="datetime-local"
+                                                       name="MocThoiGianDemNguoc"
+                                                       class="kv-form-control"
+                                                       value="@mocDemNguocVal" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-lg-4">
+                                        <div class="mb-2">
+                                            <label class="kv-field-label">Xem trước ảnh nền hiện tại</label>
+                                            <img id="imgPreviewBanner_@item.MaPhanKhu"
+                                                 src="@urlAnh"
+                                                 alt="Xem trước Banner"
+                                                 class="kv-banner-thumb-lg"
+                                                 onerror="window.kvImgFallback && window.kvImgFallback(this)" />
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label class="kv-field-label" for="selAnhNen_@item.MaPhanKhu">Chọn ảnh nền từ Kho hình ảnh (KhoHinhAnh)</label>
+                                            <select id="selAnhNen_@item.MaPhanKhu"
+                                                    name="MaAnhNen"
+                                                    class="kv-banner-select"
+                                                    onchange="capNhatXemTruocAnhBanner(this, 'imgPreviewBanner_@item.MaPhanKhu')">
+                                                <option value="" data-url="/images/landing/hero-banner-trungthu.jpg">-- Mặc định (/images/landing/hero-banner-trungthu.jpg) --</option>
+                                                @foreach (var ha in dsAnh)
+                                                {
+                                                    bool dangChon = item.MaAnhNen == ha.MaHa;
+                                                    <option value="@ha.MaHa"
+                                                            data-url="@ha.UrlHienThi"
+                                                            selected="@(dangChon ? "selected" : null)">
+                                                        [HA@(ha.MaHa.ToString("D4"))] @(ha.TieuDeAlt ?? ha.TenTepGoc) (@ha.TenTepGoc)
+                                                    </option>
+                                                }
+                                            </select>
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <label class="kv-field-label" for="inpFileBanner_@item.MaPhanKhu">Hoặc tải ảnh nền mới từ máy tính (.jpg/.png/.webp)</label>
+                                            <input id="inpFileBanner_@item.MaPhanKhu"
+                                                   type="file"
+                                                   name="TepAnhNenMoi"
+                                                   accept=".jpg,.jpeg,.png,.webp"
+                                                   class="form-control form-control-sm"
+                                                   onchange="xemTruocTepBannerTaiLen(this, 'imgPreviewBanner_@item.MaPhanKhu')" />
+                                            <small class="text-muted d-block mt-1">Tự động lưu vào <code>wwwroot/images/landing/</code> và tạo bản ghi <code>dbo.KhoHinhAnh</code>.</small>
+                                        </div>
+
+                                        <div>
+                                            <label class="kv-field-label" for="selAnhPhu_@item.MaPhanKhu">Ảnh phụ / Parallax (tùy chọn)</label>
+                                            <select id="selAnhPhu_@item.MaPhanKhu" name="MaAnhPhuParallax" class="kv-banner-select">
+                                                <option value="">-- Không sử dụng ảnh phụ --</option>
+                                                @foreach (var ha in dsAnh)
+                                                {
+                                                    bool chonPhu = item.MaAnhPhuParallax == ha.MaHa;
+                                                    <option value="@ha.MaHa" selected="@(chonPhu ? "selected" : null)">
+                                                        [HA@(ha.MaHa.ToString("D4"))] @(ha.TieuDeAlt ?? ha.TenTepGoc)
+                                                    </option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 pt-2 border-top d-flex justify-content-end gap-2">
+                                    <button type="button"
+                                            class="btn-kv-outline px-3 py-1"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#@idCollapse">
+                                        Đóng
+                                    </button>
+                                    <button type="submit" class="btn-kv-blue px-4 py-1">
+                                        <i class="bi bi-check2-circle me-1"></i> Lưu cấu hình [@item.MaCodeKhuVuc]
+                                    </button>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function capNhatXemTruocAnhBanner(selectEl, imgId) {
+        const imgEl = document.getElementById(imgId);
+        if (!imgEl || !selectEl) return;
+        const opt = selectEl.options[selectEl.selectedIndex];
+        const url = opt ? opt.getAttribute("data-url") : "/images/landing/hero-banner-trungthu.jpg";
+        if (url) {
+            imgEl.src = url;
+        }
+    }
+
+    function xemTruocTepBannerTaiLen(inputEl, imgId) {
+        const imgEl = document.getElementById(imgId);
+        if (!imgEl || !inputEl || !inputEl.files || inputEl.files.length === 0) return;
+        const file = inputEl.files[0];
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            if (e.target && e.target.result) {
+                imgEl.src = e.target.result;
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+</script>

@@ -281,7 +281,8 @@
         document.getElementById('kv_LuongDuongGram').value = Math.round(Number(item.luongDuongGram) || 14);
         document.getElementById('kv_ChiSoDuongHuyetGi').value = item.chiSoDuongHuyetGi || 52;
         document.getElementById('kv_CanhBaoDiUng').value = item.canhBaoDiUng || 'Không';
-        document.getElementById('kv_MucDoNgot').value = item.mucDoNgot || 'BINH_THUONG';
+        const mucDoNgotChuan = (item.mucDoNgot === 'DUONG_ISOMALT') ? 'ISOMALT_TIEUDUONG' : (item.mucDoNgot || 'BINH_THUONG');
+        document.getElementById('kv_MucDoNgot').value = mucDoNgotChuan;
         document.getElementById('kv_LaBanhChay').checked = !!item.laBanhChay;
         document.getElementById('kv_LaBanhThuongHang').checked = !!item.laBanhThuongHang;
 

@@ -10,5 +10,7 @@ namespace WebBanhTrungThu.Services.Interfaces
         Task<(bool ThanhCong, string ThongBao)> LuuCauHinhCuaHangAsync(CauHinhCuaHang model, int? maNdCapNhat = null);
         Task<(bool ThanhCong, string ThongBao)> LuuCauHinhVanChuyenAsync(CauHinhVanChuyen model, int? maNdCapNhat = null);
         Task<(bool ThanhCong, string ThongBao)> LuuCauHinhHoiVienVipAsync(CauHinhHoiVienVip model, int? maNdCapNhat = null);
+        Task<(bool ThanhCong, string ThongBao)> LuuCauHinhBannerAsync(LuuBannerLandingRequest req, string webRootPath);
+        Task<(bool ThanhCong, string ThongBao)> ChuyenTrangThaiBannerAsync(int maPhanKhu);
     }
 }
