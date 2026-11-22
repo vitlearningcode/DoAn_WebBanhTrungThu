@@ -6,7 +6,7 @@ using WebBanhTrungThu.Services.Interfaces;
 
 namespace WebBanhTrungThu.Areas.Admin.Controllers
 {
-    [Authorize(Roles = "QUAN_TRI,ADMIN")]
+    [Authorize(Policy = "ChinhSachQuanTriHeThong")]
     public class SoQuyAdminController : ControllerQuanTriCoSo
     {
         private readonly IDichVuThongKeVaSoQuy _dichVuThongKeVaSoQuy;

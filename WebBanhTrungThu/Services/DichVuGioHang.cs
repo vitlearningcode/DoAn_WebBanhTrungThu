@@ -292,5 +292,93 @@ namespace WebBanhTrungThu.Services
             var gioHang = await LayHoacTaoGioHangAsync(httpContext);
             return await _dichVuKhuyenMai.KiemTraTonKhoGioHangChiTietAsync(gioHang);
         }
+
+        /// <summary>
+        /// Dọn dẹp định kỳ các phiên khách vãng lai đã quá hạn (NgayHetHan &lt; DateTime.Now)
+        /// và không còn gắn với đơn hàng hoặc hộp quà tự chọn thuộc đơn hàng,
+        /// đồng thời xóa sạch giỏ hàng mồ côi an toàn trong giao dịch.
+        /// </summary>
+        public async Task<int> DonDepPhienKhachVangLaiQuaHanAsync(CancellationToken cancellationToken = default)
+        {
+            DateTime bayGio = LayThoiGianHeThong();
+            var maPhienQuaHan = await _db.PhienKhachVangLais
+                .AsNoTracking()
+                .Where(p => p.NgayHetHan < bayGio
+                    && !p.DonHangs.Any()
+                    && !p.HopQuaTuChons.Any(h => h.ChiTietDonHangs.Any()))
+                .Select(p => p.MaPhienKvl)
+                .ToListAsync(cancellationToken);
+
+            if (maPhienQuaHan.Count == 0)
+            {
+                return 0;
+            }
+
+            using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+            try
+            {
+                var gioHangMoCoi = await _db.GioHangs
+                    .Include(g => g.ChiTietGioHangs)
+                    .Where(g => g.MaPhienKvl != null && maPhienQuaHan.Contains(g.MaPhienKvl))
+                    .ToListAsync(cancellationToken);
+
+                foreach (var gio in gioHangMoCoi)
+                {
+                    if (gio.ChiTietGioHangs.Count > 0)
+                    {
+                        _db.ChiTietGioHangs.RemoveRange(gio.ChiTietGioHangs);
+                    }
+                }
+
+                if (gioHangMoCoi.Count > 0)
+                {
+                    _db.GioHangs.RemoveRange(gioHangMoCoi);
+                    await _db.SaveChangesAsync(cancellationToken);
+                }
+
+                var hopMoCoi = await _db.HopQuaTuChons
+                    .Include(h => h.ChiTietHopTuChons)
+                    .Where(h => h.MaPhienKvl != null
+                        && maPhienQuaHan.Contains(h.MaPhienKvl)
+                        && !h.ChiTietDonHangs.Any()
+                        && !h.ChiTietGioHangs.Any())
+                    .ToListAsync(cancellationToken);
+
+                foreach (var hop in hopMoCoi)
+                {
+                    if (hop.ChiTietHopTuChons.Count > 0)
+                    {
+                        _db.ChiTietHopTuChons.RemoveRange(hop.ChiTietHopTuChons);
+                    }
+                }
+
+                if (hopMoCoi.Count > 0)
+                {
+                    _db.HopQuaTuChons.RemoveRange(hopMoCoi);
+                    await _db.SaveChangesAsync(cancellationToken);
+                }
+
+                var phienCanXoa = await _db.PhienKhachVangLais
+                    .Where(p => maPhienQuaHan.Contains(p.MaPhienKvl)
+                        && !p.DonHangs.Any()
+                        && !p.GioHangs.Any()
+                        && !p.HopQuaTuChons.Any())
+                    .ToListAsync(cancellationToken);
+
+                if (phienCanXoa.Count > 0)
+                {
+                    _db.PhienKhachVangLais.RemoveRange(phienCanXoa);
+                    await _db.SaveChangesAsync(cancellationToken);
+                }
+
+                await transaction.CommitAsync(cancellationToken);
+                return phienCanXoa.Count;
+            }
+            catch
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                throw;
+            }
+        }
     }
 }

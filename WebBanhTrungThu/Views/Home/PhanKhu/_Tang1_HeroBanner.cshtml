@@ -29,7 +29,25 @@
         _ => duongDanCtaHeroRaw
     };
     DateTime? mocDemNguocSql = Model.HeroBanner?.MocThoiGianDemNguoc;
-    string mocDemNguocIso = mocDemNguocSql?.ToString("yyyy-MM-ddTHH:mm:ss") ?? string.Empty;
+    DateTime bayGioServer = DateTime.Now;
+    DateTime[] cacMocTrungThu =
+    {
+        new DateTime(2026, 9, 25, 20, 0, 0), // 15/08 Âm lịch 2026
+        new DateTime(2027, 9, 15, 20, 0, 0), // 15/08 Âm lịch 2027
+        new DateTime(2028, 10, 3, 20, 0, 0), // 15/08 Âm lịch 2028
+        new DateTime(2029, 9, 22, 20, 0, 0)  // 15/08 Âm lịch 2029
+    };
+    bool laMocTetDuongLichHoacQuaHan = !mocDemNguocSql.HasValue
+        || mocDemNguocSql.Value <= bayGioServer
+        || (mocDemNguocSql.Value.Month == 12 && mocDemNguocSql.Value.Day == 31);
+    DateTime mocTrungThuHienThi = !laMocTetDuongLichHoacQuaHan
+        ? mocDemNguocSql!.Value
+        : cacMocTrungThu.FirstOrDefault(m => m > bayGioServer);
+    if (mocTrungThuHienThi == default)
+    {
+        mocTrungThuHienThi = new DateTime(bayGioServer.Year + 1, 9, 15, 20, 0, 0);
+    }
+    string mocDemNguocIso = mocTrungThuHienThi.ToString("yyyy-MM-ddTHH:mm:ss");
 
     var banhVip = Model.DanhSachBanh.FirstOrDefault(b => b.LaBanhThuongHang);
     string anhVip = banhVip != null
@@ -147,26 +165,29 @@
                     @moTaHero
                 </p>
 
-                <!-- Đồng hồ đếm ngược Đêm Rằm Trung Thu -->
-                <div class="mb-2">
-                    <span class="d-inline-block small fw-bold text-uppercase chu-vang-kim" style="letter-spacing: 0.85px; font-size: 0.78rem;">
-                        ⏳ ĐẾM NGƯỢC ĐẾN ĐÊM HỘI TRĂNG RẰM @(mocDemNguocSql.HasValue ? $"({mocDemNguocSql.Value:dd/MM/yyyy HH:mm})" : "(15/08 ÂM LỊCH)"):
+                <!-- Dòng tiêu đề: Thời gian hiện tại (Trái) & Mốc đếm ngược Tết Trung Thu (Phải) -->
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2 chu-vang-kim small fw-bold text-uppercase" style="letter-spacing: 0.4px; font-size: 0.74rem;">
+                    <span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill text-nowrap" style="background: rgba(212, 175, 55, 0.14); border: 1px solid rgba(212, 175, 55, 0.35);">
+                        🕒 HÔM NAY: <span id="ht-dong-ho-text" style="font-variant-numeric: tabular-nums;">@DateTime.Now.ToString("dd/MM/yyyy (HH:mm:ss)", System.Globalization.CultureInfo.InvariantCulture)</span>
+                    </span>
+                    <span class="text-nowrap" title="Đếm ngược đến Đêm Hội Trăng Rằm 15/08 Âm lịch">
+                        ⏳ ĐẾM NGƯỢC TẾT TRUNG THU (15/08 ÂL • @mocTrungThuHienThi.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture)):
                     </span>
                 </div>
                 <div id="khungDemNguocHero" class="d-flex flex-wrap gap-3 mb-4" data-moc-dem-nguoc="@mocDemNguocIso">
-                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 82px;">
                         <span id="cd-ngay" class="fs-3 fw-bold chu-vang-kim d-block">--</span>
                         <small class="chu-kem-vang opacity-75">Ngày</small>
                     </div>
-                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 82px;">
                         <span id="cd-gio" class="fs-3 fw-bold chu-vang-kim d-block">--</span>
                         <small class="chu-kem-vang opacity-75">Giờ</small>
                     </div>
-                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 82px;">
                         <span id="cd-phut" class="fs-3 fw-bold chu-vang-kim d-block">--</span>
                         <small class="chu-kem-vang opacity-75">Phút</small>
                     </div>
-                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 82px;">
                         <span id="cd-giay" class="fs-3 fw-bold chu-vang-kim d-block">--</span>
                         <small class="chu-kem-vang opacity-75">Giây</small>
                     </div>

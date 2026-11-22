@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
@@ -17,6 +18,7 @@ namespace WebBanhTrungThu.Services.QuanTri
     /// </summary>
     public class DichVuBanHangPos : DichVuCoSo, IDichVuBanHangPos
     {
+        private static readonly PasswordHasher<NguoiDung> _passwordHasher = new();
         private readonly IDichVuHinhAnh _dichVuHinhAnh;
         private readonly IDichVuCauHinhHeThong _kiotMeta;
 
@@ -230,12 +232,12 @@ namespace WebBanhTrungThu.Services.QuanTri
                 HoTen = hoTen.Trim(),
                 Sdt = sdtChuan,
                 Email = emailChuan,
-                MatKhauHash = ThongTinPhienHelper.BamMatKhauSHA256("123456"),
                 DiemTichLuy = 50,
                 HangTv = "Đồng",
                 TrangThai = true,
                 NgayTao = LayThoiGianHeThong()
             };
+            khachMoi.MatKhauHash = _passwordHasher.HashPassword(khachMoi, "123456");
 
             _db.NguoiDungs.Add(khachMoi);
             await _db.SaveChangesAsync();

@@ -5,12 +5,13 @@ namespace WebBanhTrungThu.Services.Nen
     /// <summary>
     /// Tiến trình nền chạy liên tục trong suốt vòng đời ứng dụng, định kỳ mỗi 60 giây
     /// kiểm tra và tự động hủy các đơn hàng QR MoMo quá hạn 15 phút (hoàn kho FEFO & hoàn điểm VIP)
-    /// ngay cả khi khách hàng đã đóng trình duyệt.
+    /// ngay cả khi khách hàng đã đóng trình duyệt, đồng thời mỗi 6 giờ dọn dẹp phiên khách vãng lai quá hạn.
     /// </summary>
     public class DichVuNenHuyDonQuaHan : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<DichVuNenHuyDonQuaHan> _logger;
+        private DateTime _lanDonPhienKvlCuoi = DateTime.MinValue;
 
         public DichVuNenHuyDonQuaHan(
             IServiceScopeFactory scopeFactory,
@@ -44,6 +45,21 @@ namespace WebBanhTrungThu.Services.Nen
                     if (soDonDaHuy > 0)
                     {
                         _logger.LogInformation("DichVuNenHuyDonQuaHan đã tự động hủy {SoDonDaHuy} đơn QR quá hạn 15 phút.", soDonDaHuy);
+                    }
+
+                    DateTime bayGio = DateTime.Now;
+                    if ((bayGio - _lanDonPhienKvlCuoi) >= TimeSpan.FromHours(6))
+                    {
+                        var dichVuGioHang = scope.ServiceProvider.GetRequiredService<IDichVuGioHang>();
+                        int soPhienDaDon = await dichVuGioHang.DonDepPhienKhachVangLaiQuaHanAsync(stoppingToken);
+                        _lanDonPhienKvlCuoi = bayGio;
+
+                        if (soPhienDaDon > 0)
+                        {
+                            _logger.LogInformation(
+                                "DichVuNenHuyDonQuaHan đã dọn dẹp {SoPhienDaDon} phiên khách vãng lai quá hạn.",
+                                soPhienDaDon);
+                        }
                     }
                 }
                 catch (OperationCanceledException)

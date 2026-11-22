@@ -11,7 +11,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     /// Controller quản trị Hàng hóa, Kiểm kho lô FEFO và Thiết lập bảng giá Đại lý Nguyệt Cát ERP,
     /// kế thừa từ ControllerQuanTriCoSo và ủy quyền nghiệp vụ sang DichVuQuanTriSanPham, DichVuQuanTriKhoFefo & DichVuQuanTriBangGia.
     /// </summary>
-    [Authorize(Roles = "QUAN_TRI,ADMIN")]
+    [Authorize(Policy = "ChinhSachQuanTriHeThong")]
     public class SanPhamAdminController : ControllerQuanTriCoSo
     {
         private readonly IDichVuQuanTriSanPham _dichVuSanPham;

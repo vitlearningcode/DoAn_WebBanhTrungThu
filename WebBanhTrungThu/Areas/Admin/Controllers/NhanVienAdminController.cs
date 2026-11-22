@@ -10,7 +10,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     /// <summary>
     /// Controller điều phối Quản trị Nhân viên &amp; Phân quyền 2 vai trò (Chủ cửa hàng / Nhân viên Bán hàng).
     /// </summary>
-    [Authorize(Roles = "ADMIN,QUAN_TRI")]
+    [Authorize(Policy = "ChinhSachQuanTriHeThong")]
     public class NhanVienAdminController : ControllerQuanTriCoSo
     {
         private readonly IDichVuQuanTriNhanVien _dichVuNhanVien;

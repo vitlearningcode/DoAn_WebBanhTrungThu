@@ -477,16 +477,19 @@ function tinhMocTrungThuKeTiep() {
     const khungCd = document.getElementById("khungDemNguocHero");
     const mocSqlIso = khungCd ? khungCd.getAttribute("data-moc-dem-nguoc") : "";
     if (mocSqlIso) {
-        const mocSqlMs = new Date(mocSqlIso).getTime();
-        if (!isNaN(mocSqlMs) && mocSqlMs > bayGio) {
+        const mocSqlDate = new Date(mocSqlIso);
+        const mocSqlMs = mocSqlDate.getTime();
+        const laCuoiNamDuongLich = !isNaN(mocSqlMs) && mocSqlDate.getMonth() === 11 && mocSqlDate.getDate() === 31;
+        if (!isNaN(mocSqlMs) && mocSqlMs > bayGio && !laCuoiNamDuongLich) {
             return mocSqlMs;
         }
     }
 
     const cacMocTrungThu = [
-        new Date(2026, 8, 25, 20, 0, 0).getTime(), // 25/09/2026 20:00:00
-        new Date(2027, 8, 15, 20, 0, 0).getTime(), // 15/09/2027 20:00:00
-        new Date(2028, 9, 3, 20, 0, 0).getTime()   // 03/10/2028 20:00:00
+        new Date(2026, 8, 25, 20, 0, 0).getTime(), // 25/09/2026 20:00:00 (15/08 Âm lịch)
+        new Date(2027, 8, 15, 20, 0, 0).getTime(), // 15/09/2027 20:00:00 (15/08 Âm lịch)
+        new Date(2028, 9, 3, 20, 0, 0).getTime(),  // 03/10/2028 20:00:00 (15/08 Âm lịch)
+        new Date(2029, 8, 22, 20, 0, 0).getTime()  // 22/09/2029 20:00:00 (15/08 Âm lịch)
     ];
 
     const mocSapToi = cacMocTrungThu.find(moc => moc > bayGio);
@@ -502,10 +505,23 @@ function capNhatDongHoDemNguocTrungThu() {
     const elGiay = document.getElementById("cd-giay");
     if (!elNgay || !elGio || !elPhut || !elGiay) return false;
 
-    const mocDich = tinhMocTrungThuKeTiep();
-    const khoangMs = Math.max(0, mocDich - Date.now());
-    const tongGiay = Math.floor(khoangMs / 1000);
+    const hienTai = new Date();
 
+    // Cập nhật dòng ngày & giờ hiện tại trên thanh tiêu đề
+    const elDongHoText = document.getElementById("ht-dong-ho-text");
+    if (elDongHoText) {
+        const dd = hienTai.getDate().toString().padStart(2, "0");
+        const mm = (hienTai.getMonth() + 1).toString().padStart(2, "0");
+        const yyyy = hienTai.getFullYear();
+        const hh = hienTai.getHours().toString().padStart(2, "0");
+        const mi = hienTai.getMinutes().toString().padStart(2, "0");
+        const ss = hienTai.getSeconds().toString().padStart(2, "0");
+        elDongHoText.textContent = `${dd}/${mm}/${yyyy} (${hh}:${mi}:${ss})`;
+    }
+
+    // 4 ô lớn: Ngày - Giờ - Phút - Giây đếm ngược đến Tết Trung Thu (15/08 Âm lịch)
+    const mocDich = tinhMocTrungThuKeTiep();
+    const tongGiay = Math.floor(Math.max(0, mocDich - hienTai.getTime()) / 1000);
     const soNgay = Math.floor(tongGiay / 86400);
     const soGio = Math.floor((tongGiay % 86400) / 3600);
     const soPhut = Math.floor((tongGiay % 3600) / 60);

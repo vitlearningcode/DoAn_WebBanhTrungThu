@@ -11,7 +11,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     /// Controller điều phối màn hình Bán hàng tại quầy Nguyệt Cát ERP Web POS,
     /// kế thừa từ ControllerQuanTriCoSo và ủy quyền nghiệp vụ sang DichVuBanHangPos & DichVuQuanTriKhoFefo.
     /// </summary>
-    [Authorize(Roles = "QUAN_TRI,ADMIN,NHAN_VIEN,THU_NGAN,NV_BAN_HANG")]
+    [Authorize(Policy = "ChinhSachTacNghiepBanHang")]
     public class BanHangPosController : ControllerQuanTriCoSo
     {
         private readonly IDichVuBanHangPos _dichVuPos;
@@ -71,7 +71,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "QUAN_TRI,ADMIN")]
+        [Authorize(Policy = "ChinhSachQuanTriHeThong")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> KichHoatXaKhoNhanh(int maLo, int mucGiam = 30)
         {

@@ -10,7 +10,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     /// <summary>
     /// Controller quản trị danh mục Vỏ hộp quà tặng và nhập/xuất hủy tồn kho vỏ hộp (chỉ dành cho ADMIN).
     /// </summary>
-    [Authorize(Roles = "ADMIN")]
+    [Authorize(Policy = "ChinhSachQuanTriHeThong")]
     public class VoHopAdminController : ControllerQuanTriCoSo
     {
         private readonly IDichVuQuanTriVoHop _dichVuVoHop;
