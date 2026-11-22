@@ -953,6 +953,14 @@ namespace WebBanhTrungThu.Services.QuanTri
             _db.KhoHinhAnhs.Add(khoAnh);
             await _db.SaveChangesAsync();
 
+            if (string.Equals(loaiDoiTuong, "BANH", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var lkSlot in lienKetCu.Where(l => string.Equals(l.VaiTroAnh, "TACH_NEN_SLOT", StringComparison.OrdinalIgnoreCase)))
+                {
+                    lkSlot.MaHa = khoAnh.MaHa;
+                }
+            }
+
             _db.LienKetHinhAnhs.Add(new LienKetHinhAnh
             {
                 MaHa = khoAnh.MaHa,

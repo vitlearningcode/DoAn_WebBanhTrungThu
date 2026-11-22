@@ -1,14 +1,25 @@
 @model WebBanhTrungThu.ViewModels.LandingPageViewModel
+@{
+    string tieuDePhuTang5 = !string.IsNullOrWhiteSpace(Model.ThiepQrIntro?.TieuDePhu)
+        ? Model.ThiepQrIntro.TieuDePhu
+        : "Gửi Trọn Tâm Giao Mùa Trăng Rằm";
+    string tieuDeChinhTang5 = !string.IsNullOrWhiteSpace(Model.ThiepQrIntro?.TieuDeChinh)
+        ? Model.ThiepQrIntro.TieuDeChinh
+        : "Thiệp Chúc Tết Đoàn Viên QR 3D Cho Từng Điểm Nhận";
+    string moTaTang5 = !string.IsNullOrWhiteSpace(Model.ThiepQrIntro?.NoiDungMoTa)
+        ? Model.ThiepQrIntro.NoiDungMoTa
+        : "Một đơn đặt quà có thể phân phối đến nhiều địa chỉ của Ông Bà, Đối tác và Khách quý. Mỗi lễ hộp đều đính kèm ấn phẩm QR riêng biệt mở ra cánh thiệp 3D đề tên người nhận trang trọng.";
+}
 
 <!-- =========================================================================
      TẦNG 5 (05): THIỆP CHÚC TẾT ĐOÀN VIÊN QR 3D ĐA ĐIỂM NHẬN + FOOTER THƯƠNG HIỆU
      ========================================================================= -->
 <section id="tang-thiep-qr" class="tang-phan-khu nen-le-hoi-son-mai border-top" style="border-color: rgba(212, 175, 55, 0.45) !important;">
     <div class="container py-2 my-auto text-center section-reveal">
-        <span class="text-uppercase small chu-vang-kim fw-bold" style="letter-spacing: 1.5px;">Gửi Trọn Tâm Giao Mùa Trăng Rằm</span>
-        <h2 class="font-co-phong display-6 fw-bold chu-vang-kim mb-2">Thiệp Chúc Tết Đoàn Viên QR 3D Cho Từng Điểm Nhận</h2>
+        <span class="text-uppercase small chu-vang-kim fw-bold" style="letter-spacing: 1.5px;">@tieuDePhuTang5</span>
+        <h2 class="font-co-phong display-6 fw-bold chu-vang-kim mb-2">@tieuDeChinhTang5</h2>
         <p class="chu-kem-vang opacity-90 mx-auto mb-3 small" style="max-width: 720px;">
-            Một đơn đặt quà có thể phân phối đến nhiều địa chỉ của Ông Bà, Đối tác và Khách quý. Mỗi lễ hộp đều đính kèm ấn phẩm QR riêng biệt mở ra cánh thiệp 3D đề tên người nhận trang trọng.
+            @moTaTang5
         </p>
 
         <div class="card-hoang-gia p-3 p-lg-4 mx-auto" style="max-width: 660px;">

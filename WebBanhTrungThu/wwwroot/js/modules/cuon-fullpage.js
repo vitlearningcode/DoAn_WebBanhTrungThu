@@ -50,15 +50,24 @@ function datLaiViTriCuonKhungFullpage() {
     }
 }
 
-function timChiSoTangTheoHash(hashStr) {
-    if (!hashStr || danhSachCacTang.length === 0) return -1;
-    let hashChuan = String(hashStr).trim().toLowerCase();
+function chuanHoaSelectorPhanKhu(hashStr) {
+    let hashChuan = String(hashStr || "").trim().toLowerCase();
+    if (!hashChuan) return "";
     if (!hashChuan.startsWith("#")) {
         hashChuan = "#" + hashChuan;
     }
-    if (hashChuan === "#tang-doanh-nghiep") {
-        hashChuan = "#tang-b2b";
-    }
+    const banDo = {
+        "#tang-doanh-nghiep": "#tang-b2b",
+        "#chiet-khau-so-luong": "#tang-b2b",
+        "#studio-phoi-hop": "#tang-tu-chon-hop",
+        "#bo-suu-tap-banh": "#tang-bo-suu-tap"
+    };
+    return banDo[hashChuan] || hashChuan;
+}
+
+function timChiSoTangTheoHash(hashStr) {
+    if (!hashStr || danhSachCacTang.length === 0) return -1;
+    const hashChuan = chuanHoaSelectorPhanKhu(hashStr);
     return danhSachCacTang.findIndex(el => el && el.id && ("#" + el.id.toLowerCase()) === hashChuan);
 }
 
@@ -310,7 +319,8 @@ function diChuyenDenPhanTuTang(mucTieu) {
 }
 
 function cuonDenPhanKhu(selector, e) {
-    const mucTieu = document.querySelector(selector);
+    const selectorChuan = chuanHoaSelectorPhanKhu(selector) || selector;
+    const mucTieu = selectorChuan ? document.querySelector(selectorChuan) : null;
     if (!mucTieu) {
         return true;
     }
