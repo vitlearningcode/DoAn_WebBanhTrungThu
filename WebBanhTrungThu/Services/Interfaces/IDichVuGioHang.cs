@@ -16,5 +16,6 @@ namespace WebBanhTrungThu.Services.Interfaces
         Task<object> DatLaiDonHangAsync(HttpContext httpContext, int maDonHang);
         Task<object> LayThongTinGioHangJsonAsync(HttpContext httpContext);
         Task<object> KiemTraTonKhoThucTeAsync(HttpContext httpContext);
+        Task<int> DonDepPhienKhachVangLaiQuaHanAsync(CancellationToken cancellationToken = default);
     }
 }

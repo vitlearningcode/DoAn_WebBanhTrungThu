@@ -70,6 +70,16 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true;
     });
 
+// 4.1. Đăng ký chính sách phân quyền Policy-Based Authorization (.NET 8)
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ChinhSachQuanTriHeThong", policy =>
+        policy.RequireRole("ADMIN", "QUAN_TRI"));
+
+    options.AddPolicy("ChinhSachTacNghiepBanHang", policy =>
+        policy.RequireRole("ADMIN", "QUAN_TRI", "NHAN_VIEN", "THU_NGAN", "NV_BAN_HANG", "GIAO_HANG"));
+});
+
 // 5. Đăng ký Session & HttpContextAccessor
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSession(options =>

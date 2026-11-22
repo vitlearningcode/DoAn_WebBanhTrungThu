@@ -53,12 +53,25 @@ namespace WebBanhTrungThu.Services.GiaoDien
 
             // 2. Lấy cấu hình Landing Page
             var cauHinhs = await _db.CauHinhLandingPages
+                .AsNoTracking()
                 .Include(c => c.MaAnhNenNavigation)
+                .Include(c => c.MaAnhPhuParallaxNavigation)
                 .Where(c => c.DangKichHoat)
+                .OrderBy(c => c.ThuTuHienThi)
+                .ThenBy(c => c.MaPhanKhu)
                 .ToListAsync();
 
-            vm.HeroBanner = cauHinhs.FirstOrDefault(c => c.MaCodeKhuVuc == "HERO_BANNER");
-            vm.BoxBuilderIntro = cauHinhs.FirstOrDefault(c => c.MaCodeKhuVuc == "BOX_BUILDER_INTRO");
+            vm.DanhSachBanner = cauHinhs;
+            vm.HeroBanner = cauHinhs.FirstOrDefault(c => c.MaCodeKhuVuc == "HERO_BANNER" || c.MaCodeKhuVuc == "TANG_1_HERO")
+                ?? cauHinhs.FirstOrDefault(c => c.ThuTuHienThi == 1);
+            vm.BoxBuilderIntro = cauHinhs.FirstOrDefault(c => c.MaCodeKhuVuc == "BOX_BUILDER_INTRO" || c.MaCodeKhuVuc == "TANG_2_STUDIO")
+                ?? cauHinhs.FirstOrDefault(c => c.ThuTuHienThi == 2);
+            vm.BoSuuTapIntro = cauHinhs.FirstOrDefault(c => c.MaCodeKhuVuc == "TANG_3_BOSUUTAP")
+                ?? cauHinhs.FirstOrDefault(c => c.ThuTuHienThi == 3);
+            vm.ChietKhauB2BIntro = cauHinhs.FirstOrDefault(c => c.MaCodeKhuVuc == "TANG_4_CHIETKHAU")
+                ?? cauHinhs.FirstOrDefault(c => c.ThuTuHienThi == 4);
+            vm.ThiepQrIntro = cauHinhs.FirstOrDefault(c => c.MaCodeKhuVuc == "TANG_5_THIEPQR")
+                ?? cauHinhs.FirstOrDefault(c => c.ThuTuHienThi == 5);
 
             // 3. Lấy Danh mục, Bánh lẻ (kèm Thông số dinh dưỡng 1-1), Vỏ hộp & Combo mẫu
             vm.DanhMucs = await _db.DanhMucBanhs.Where(d => d.TrangThai).OrderBy(d => d.ThuTuSx).ToListAsync();
@@ -246,7 +259,7 @@ namespace WebBanhTrungThu.Services.GiaoDien
                         DonGia = b.DonGiaThucTe,
                         Calo = b.ThongSoDinhDuong?.NangLuongCalo ?? 400,
                         ChiSoGI = gi,
-                        AnhBanh = DichVuHinhAnh.LayUrl(tuDienAnh, "BANH", b.MaBanh, "TACH_NEN_SLOT"),
+                        AnhBanh = DichVuHinhAnh.LayUrl(tuDienAnh, "BANH", b.MaBanh, "ANH_CHINH"),
                         DoPhuHop = Math.Min(99, Math.Round(tongDiem)),
                         LyDo = string.Join(" • ", lyDoPhuHop)
                     });

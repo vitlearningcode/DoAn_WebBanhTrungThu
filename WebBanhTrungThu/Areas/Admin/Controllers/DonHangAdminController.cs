@@ -10,7 +10,7 @@ namespace WebBanhTrungThu.Areas.Admin.Controllers
     /// Controller mỏng nhẹ (< 6KB) điều phối Quản trị Đơn hàng Đại lý Nguyệt Cát ERP.
     /// Kế thừa từ ControllerQuanTriCoSo và ủy quyền toàn bộ nghiệp vụ sang DichVuQuanTriDonHang.
     /// </summary>
-    [Authorize(Roles = "QUAN_TRI,ADMIN,NHAN_VIEN,THU_NGAN,NV_BAN_HANG,GIAO_HANG")]
+    [Authorize(Policy = "ChinhSachTacNghiepBanHang")]
     public class DonHangAdminController : ControllerQuanTriCoSo
     {
         private readonly IDichVuQuanTriDonHang _dichVuQuanTriDonHang;

@@ -33,6 +33,16 @@ namespace WebBanhTrungThu.Data
                 await ChuanHoaTenMocChietKhauAsync(db);
                 await ChuanHoaEmailAdminVaDongBoDonHuyAsync(db);
                 await SeedHoSoNhanVienVaDongBoVaiTroAsync(db);
+                await ChuanHoaMaCodeLandingPageAsync(db);
+                await db.Database.ExecuteSqlRawAsync(@"
+                    IF OBJECT_ID('dbo.SanPhamBanh', 'U') IS NOT NULL
+                    BEGIN
+                        UPDATE dbo.SanPhamBanh
+                        SET MucDoNgot = 'ISOMALT_TIEUDUONG'
+                        WHERE (MucDoNgot = 'DUONG_ISOMALT' OR TenBanh LIKE N'%Isomalt%' OR TenBanh LIKE N'%Ăn Kiêng%')
+                          AND MucDoNgot <> 'ISOMALT_TIEUDUONG';
+                    END;
+                ");
             }
             catch (Exception ex)
             {
@@ -1618,6 +1628,43 @@ namespace WebBanhTrungThu.Data
             {
                 await db.SaveChangesAsync();
             }
+        }
+
+        private static async Task ChuanHoaMaCodeLandingPageAsync(CSDLBanhTrungThuContext db)
+        {
+            await db.Database.ExecuteSqlRawAsync(@"
+                IF OBJECT_ID('dbo.CauHinhLandingPage', 'U') IS NOT NULL
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM dbo.CauHinhLandingPage WHERE MaCodeKhuVuc = 'TANG_1_HERO')
+                       AND NOT EXISTS (SELECT 1 FROM dbo.CauHinhLandingPage WHERE MaCodeKhuVuc = 'HERO_BANNER')
+                    BEGIN
+                        UPDATE dbo.CauHinhLandingPage
+                        SET MaCodeKhuVuc = 'HERO_BANNER'
+                        WHERE MaCodeKhuVuc = 'TANG_1_HERO';
+                    END;
+
+                    IF EXISTS (SELECT 1 FROM dbo.CauHinhLandingPage WHERE MaCodeKhuVuc = 'TANG_2_STUDIO')
+                       AND NOT EXISTS (SELECT 1 FROM dbo.CauHinhLandingPage WHERE MaCodeKhuVuc = 'BOX_BUILDER_INTRO')
+                    BEGIN
+                        UPDATE dbo.CauHinhLandingPage
+                        SET MaCodeKhuVuc = 'BOX_BUILDER_INTRO'
+                        WHERE MaCodeKhuVuc = 'TANG_2_STUDIO';
+                    END;
+
+                    -- Chuẩn hóa mốc đếm ngược HERO_BANNER về đúng Tết Trung Thu (15/08 Âm lịch), thay cho mốc 31/12 cũ
+                    UPDATE dbo.CauHinhLandingPage
+                    SET MocThoiGianDemNguoc = CASE
+                        WHEN GETDATE() < '2026-09-25T20:00:00' THEN '2026-09-25T20:00:00'
+                        WHEN GETDATE() < '2027-09-15T20:00:00' THEN '2027-09-15T20:00:00'
+                        WHEN GETDATE() < '2028-10-03T20:00:00' THEN '2028-10-03T20:00:00'
+                        ELSE '2029-09-22T20:00:00'
+                    END
+                    WHERE MaCodeKhuVuc = 'HERO_BANNER'
+                      AND (MocThoiGianDemNguoc IS NULL
+                           OR MocThoiGianDemNguoc <= GETDATE()
+                           OR (MONTH(MocThoiGianDemNguoc) = 12 AND DAY(MocThoiGianDemNguoc) = 31));
+                END;
+            ");
         }
     }
 }

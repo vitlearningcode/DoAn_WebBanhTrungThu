@@ -30,6 +30,10 @@
                 <i class="bi bi-award"></i>
                 <span>Hội viên VIP &amp; Điểm tích lũy</span>
             </a>
+            <a href="/Admin/CaiDatAdmin/Index?muc=banner" class="kv-settings-nav-item @(muc == "banner" ? "active" : "")">
+                <i class="bi bi-images"></i>
+                <span>Banner &amp; Trang chủ</span>
+            </a>
         </nav>
     </aside>
 
@@ -44,6 +48,9 @@
                 break;
             case "hoivien":
                 @await Html.PartialAsync("~/Areas/Admin/Views/CaiDatAdmin/PhanKhu/_CaiDatHoiVienVip.cshtml", Model)
+                break;
+            case "banner":
+                @await Html.PartialAsync("~/Areas/Admin/Views/CaiDatAdmin/PhanKhu/_CaiDatBannerTrangChu.cshtml", Model)
                 break;
             default:
                 @await Html.PartialAsync("~/Areas/Admin/Views/CaiDatAdmin/PhanKhu/_CaiDatThanhToanMoMo.cshtml", Model)

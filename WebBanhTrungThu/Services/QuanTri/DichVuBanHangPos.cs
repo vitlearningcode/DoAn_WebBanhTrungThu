@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
@@ -17,6 +18,7 @@ namespace WebBanhTrungThu.Services.QuanTri
     /// </summary>
     public class DichVuBanHangPos : DichVuCoSo, IDichVuBanHangPos
     {
+        private static readonly PasswordHasher<NguoiDung> _passwordHasher = new();
         private readonly IDichVuHinhAnh _dichVuHinhAnh;
         private readonly IDichVuCauHinhHeThong _kiotMeta;
 
@@ -74,7 +76,8 @@ namespace WebBanhTrungThu.Services.QuanTri
                 DanhSachKhuyenMai = await _db.MaKhuyenMais.AsNoTracking().Where(k => k.TrangThaiKichHoat && k.NgayKetThuc >= DateTime.Now && k.SldaDung < k.SltoiDa).OrderBy(k => k.CodeKm).ToListAsync(),
                 TuDienAnh = tuDienAnh,
                 TenThuNgan = tenThuNgan,
-                VaiTroThuNgan = vaiTro
+                VaiTroThuNgan = vaiTro,
+                CauHinhQr = _kiotMeta.LayCauHinhQr()
             };
         }
 
@@ -229,12 +232,12 @@ namespace WebBanhTrungThu.Services.QuanTri
                 HoTen = hoTen.Trim(),
                 Sdt = sdtChuan,
                 Email = emailChuan,
-                MatKhauHash = ThongTinPhienHelper.BamMatKhauSHA256("123456"),
                 DiemTichLuy = 50,
                 HangTv = "Đồng",
                 TrangThai = true,
                 NgayTao = LayThoiGianHeThong()
             };
+            khachMoi.MatKhauHash = _passwordHasher.HashPassword(khachMoi, "123456");
 
             _db.NguoiDungs.Add(khachMoi);
             await _db.SaveChangesAsync();
@@ -372,14 +375,14 @@ namespace WebBanhTrungThu.Services.QuanTri
 
                 decimal phanTramCkB2B = mocB2B?.PhanTramChietKhau ?? 0m;
                 int? maMocCkApDung = mocB2B?.MaMocCk;
-                decimal tienChietKhauB2B = phanTramCkB2B > 0 ? Math.Round(tongTienHang * (phanTramCkB2B / 100m), 0) : 0m;
+                decimal tienChietKhauB2B = (tongTienHang > 0m && phanTramCkB2B > 0m) ? Math.Round(tongTienHang * (phanTramCkB2B / 100m), 0) : 0m;
                 bool mienPhiInLogo = mocB2B?.MienPhiInLogo ?? false;
                 decimal phiKhuonMacDinh = mocB2B?.PhiKhuonInLogo ?? (bangB2B.FirstOrDefault()?.PhiKhuonInLogo ?? 500000m);
-                decimal phiInLogo = (req.YeuCauInLogo && !mienPhiInLogo) ? phiKhuonMacDinh : 0m;
+                decimal phiInLogo = (tongTienHang > 0m && req.YeuCauInLogo && !mienPhiInLogo) ? phiKhuonMacDinh : 0m;
 
                 decimal tienGiamVoucher = 0m;
                 int? maKmApDung = null;
-                if (!string.IsNullOrWhiteSpace(req.CodeKm))
+                if (tongTienHang > 0m && !string.IsNullOrWhiteSpace(req.CodeKm))
                 {
                     string code = req.CodeKm.Trim().ToUpperInvariant();
                     var km = await _db.MaKhuyenMais.FirstOrDefaultAsync(k =>
@@ -518,7 +521,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                         NgayHenGiao = ngayGiao,
                         KhungGioGiao = ChuanHoaChuoi(req.KhungGioGiao, "Sáng (08:00 - 11:30)"),
                         PhiShipDotNay = phiVanChuyen,
-                        TrangThaiGiao = "CHO_DONG_GOI",
+                        TrangThaiGiao = "CHO_LAY_HANG",
                         CoKemThiepQr = req.CoKemThiepQr,
                         MaTokenThiepQr = maTokenQr,
                         LoiChucThiep = req.CoKemThiepQr

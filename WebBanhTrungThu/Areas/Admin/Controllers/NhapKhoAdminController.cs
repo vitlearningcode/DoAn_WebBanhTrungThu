@@ -7,7 +7,7 @@ using WebBanhTrungThu.ViewModels;
 
 namespace WebBanhTrungThu.Areas.Admin.Controllers
 {
-    [Authorize(Roles = "QUAN_TRI,ADMIN")]
+    [Authorize(Policy = "ChinhSachQuanTriHeThong")]
     public class NhapKhoAdminController : ControllerQuanTriCoSo
     {
         private readonly IDichVuNhapKho _dichVuNhapKho;

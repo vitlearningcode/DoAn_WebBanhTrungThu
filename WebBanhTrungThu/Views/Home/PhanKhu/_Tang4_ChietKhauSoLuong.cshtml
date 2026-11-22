@@ -14,6 +14,15 @@
     }), jsonOptB2B);
     var comboMacDinh = Model.DanhSachCombo.FirstOrDefault();
     decimal giaMacDinhHop = comboMacDinh?.GiaUuDaiCombo ?? 600000m;
+    string tieuDePhuTang4 = !string.IsNullOrWhiteSpace(Model.ChietKhauB2BIntro?.TieuDePhu)
+        ? Model.ChietKhauB2BIntro.TieuDePhu
+        : "Giải Pháp Quà Biếu Doanh Nghiệp Đẳng Cấp";
+    string tieuDeChinhTang4 = !string.IsNullOrWhiteSpace(Model.ChietKhauB2BIntro?.TieuDeChinh)
+        ? Model.ChietKhauB2BIntro.TieuDeChinh
+        : "Chiết Khấu Số Lượng Lớn & Ép Kim Logo Thương Hiệu";
+    string moTaTang4 = !string.IsNullOrWhiteSpace(Model.ChietKhauB2BIntro?.NoiDungMoTa)
+        ? Model.ChietKhauB2BIntro.NoiDungMoTa
+        : "Nhập hoặc kéo thanh trượt số lượng lễ hộp dự kiến để ước tính chiết khấu số lượng lớn, chính sách miễn phí khuôn ép kim Logo từ 20 hộp và đặt đơn doanh nghiệp ngay.";
 }
 
 <!-- =========================================================================
@@ -23,10 +32,10 @@
     <div class="container py-3 section-reveal">
         <div class="row align-items-center g-4">
             <div class="col-lg-6">
-                <span class="text-uppercase small chu-do-son-mai fw-bold" style="letter-spacing: 1.5px;">Giải Pháp Quà Biếu Doanh Nghiệp Đẳng Cấp</span>
-                <h2 class="font-co-phong tieu-de-tang-b2b fw-bold chu-nau-tram mb-2">Chiết Khấu Số Lượng Lớn &amp; Ép Kim Logo Thương Hiệu</h2>
+                <span class="text-uppercase small chu-do-son-mai fw-bold" style="letter-spacing: 1.5px;">@tieuDePhuTang4</span>
+                <h2 class="font-co-phong tieu-de-tang-b2b fw-bold chu-nau-tram mb-2">@tieuDeChinhTang4</h2>
                 <p class="chu-nau-phu mb-3">
-                    Nhập hoặc kéo thanh trượt số lượng lễ hộp dự kiến để ước tính chiết khấu số lượng lớn, chính sách miễn phí khuôn ép kim Logo từ 20 hộp và đặt đơn doanh nghiệp ngay.
+                    @moTaTang4
                 </p>
 
                 <div class="card-hoang-gia p-3 p-xl-4">

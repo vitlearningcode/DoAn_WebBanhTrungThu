@@ -35,6 +35,34 @@
 
         return (tenGoc, emailVat, epKim);
     }
+
+    static string TenPhuongThucTtHienThi(string? pt)
+    {
+        return (pt ?? string.Empty).Trim().ToUpperInvariant() switch
+        {
+            "TIEN_MAT" => "Tiền mặt tại quầy",
+            "COD" => "Thanh toán khi nhận hàng (COD)",
+            "MOMO_QR" or "MOMO" => "Ví MoMo QR",
+            "CHUYEN_KHOAN" or "CHUYEN_KHOAN_QR" or "VIETQR" => "Chuyển khoản VietQR",
+            "VNPAY" => "Ví VNPay",
+            "VI_DIEN_TU" or "THE_NGAN_HANG" => "Thẻ / Ví điện tử",
+            _ => "Thanh toán đơn hàng"
+        };
+    }
+
+    static string TenTrangThaiDotGiaoHienThi(string? stGiao)
+    {
+        return (stGiao ?? string.Empty).Trim().ToUpperInvariant() switch
+        {
+            "CHO_DONG_GOI" => "Đang đóng gói",
+            "CHO_LAY_HANG" or "DA_XAC_NHAN" or "DANG_DONG_GOI_HOP" => "Chờ lấy hàng",
+            "DANG_GIAO" => "Đang giao hàng",
+            "HOAN_TAT" or "DA_GIAO" => "Đã giao hoàn tất",
+            "DA_HUY" => "Đã hủy",
+            "HOAN_TIEN_TRA_HANG" => "Hoàn tiền / Trả hàng",
+            _ => "Chờ xử lý"
+        };
+    }
 }
 
 <div class="kv-main-table-area">
@@ -87,7 +115,7 @@
                         string searchKey = $"{dh.MaTraCuuDh} {dh.HoTenNguoiMua} {dh.SdtnguoiMua} {dh.TenCongTy}".ToLowerInvariant();
                         bool laHomNay = dh.NgayDat.Date == DateTime.Today;
                         bool laThangNay = dh.NgayDat.Year == DateTime.Now.Year && dh.NgayDat.Month == DateTime.Now.Month;
-                        string trangThaiChuan = dh.TrangThaiDh == "DANG_DONG_GOI_HOP" ? "CHO_LAY_HANG" : dh.TrangThaiDh;
+                        string trangThaiChuan = (dh.TrangThaiDh == "DANG_DONG_GOI_HOP" || dh.TrangThaiDh == "DA_XAC_NHAN") ? "CHO_LAY_HANG" : dh.TrangThaiDh;
                         int soThiepQr = dh.DotGiaoHangDaDiems.Count(g => g.CoKemThiepQr && !string.IsNullOrEmpty(g.MaTokenThiepQr));
                         int tongSoMon = dh.ChiTietDonHangs.Sum(c => c.SoLuong);
                         var thongTinB2B = TachThongTinB2B(dh);
@@ -120,11 +148,11 @@
                                     <span class="fw-medium text-dark">@dh.HoTenNguoiMua</span>
                                     @if (dh.MaNd.HasValue)
                                     {
-                                        <span class="kv-tag-mini member">Member</span>
+                                        <span class="kv-tag-mini member">Hội viên</span>
                                     }
                                     else
                                     {
-                                        <span class="kv-tag-mini">Guest</span>
+                                        <span class="kv-tag-mini">Khách lẻ</span>
                                     }
                                 </div>
                                 <small class="text-muted">@dh.SdtnguoiMua</small>
@@ -203,7 +231,7 @@
                                             <div class="col-md-4">
                                                 <div class="py-1 border-bottom d-flex justify-content-between">
                                                     <span class="text-muted">Phương thức thanh toán:</span>
-                                                    <strong>@dh.PhuongThucTt (@dh.TenTrangThaiTtHienThi)</strong>
+                                                    <strong>@TenPhuongThucTtHienThi(dh.PhuongThucTt) (@dh.TenTrangThaiTtHienThi)</strong>
                                                 </div>
                                                 <div class="py-1 border-bottom d-flex justify-content-between">
                                                     <span class="text-muted">Khách cần trả:</span>
@@ -308,8 +336,8 @@
                                                 <div class="col-md-6">
                                                     <div class="p-3 rounded border bg-light" style="font-size: 13px;">
                                                         <div class="d-flex justify-content-between align-items-start mb-1">
-                                                            <strong class="text-dark">📍 Người nhận: @dot.TenNguoiNhan (@dot.SdtnguoiNhan)</strong>
-                                                            <span class="kv-tag-mini member">@dot.TrangThaiGiao</span>
+                                                            <strong class="text-dark"><i class="bi bi-geo-alt-fill text-primary me-1"></i>Người nhận: @dot.TenNguoiNhan (@dot.SdtnguoiNhan)</strong>
+                                                            <span class="kv-tag-mini member">@TenTrangThaiDotGiaoHienThi(dot.TrangThaiGiao)</span>
                                                         </div>
                                                         <div class="text-muted mb-1">Địa chỉ: @dot.DiaChiGiaoChiTiet</div>
                                                         <div class="text-muted mb-1">Hẹn giao: @dot.NgayHenGiao.ToString("dd/MM/yyyy") (@dot.KhungGioGiao)</div>
@@ -318,11 +346,11 @@
                                                         {
                                                             <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center">
                                                                 <div>
-                                                                    <div class="small text-dark">💌 Lời chúc: <em>"@(dot.LoiChucThiep ?? "Chúc mùa trăng tròn viên mãn")"</em></div>
-                                                                    <div class="small text-primary">Token QR: <strong>@dot.MaTokenThiepQr</strong> • Đã mở xem: <strong>@dot.SoLanMoThiep.ToString("N0") lần</strong></div>
+                                                                    <div class="small text-dark"><i class="bi bi-chat-heart text-danger me-1"></i>Lời chúc: <em>"@(dot.LoiChucThiep ?? "Chúc mùa trăng tròn viên mãn")"</em></div>
+                                                                    <div class="small text-primary">Mã thiệp QR: <strong>@dot.MaTokenThiepQr</strong> • Đã mở xem: <strong>@dot.SoLanMoThiep.ToString("N0") lần</strong></div>
                                                                 </div>
                                                                 <a href="/Thiep3D/Xem/@dot.MaTokenThiepQr" target="_blank" class="btn-kv-outline text-decoration-none py-1 px-2 text-nowrap ms-2">
-                                                                    🌕 Xem thử Thiệp 3D
+                                                                    <i class="bi bi-envelope-paper-heart me-1"></i>Xem thử Thiệp 3D
                                                                 </a>
                                                             </div>
                                                         }
@@ -359,7 +387,7 @@
 
                                             <button type="button" class="btn-kv-blue d-inline-flex align-items-center gap-1"
                                                     onclick="window.open('/Admin/DonHangAdmin/InHoaDon/@dh.MaDh', 'InHoaDonKiot', 'width=460,height=780');">
-                                                🖨️ In Hóa Đơn K80
+                                                <i class="bi bi-printer-fill"></i> In Hóa Đơn K80
                                             </button>
                                         </div>
                                     </div>

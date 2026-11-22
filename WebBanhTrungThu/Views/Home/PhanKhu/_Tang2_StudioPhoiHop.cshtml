@@ -3,6 +3,15 @@
 @{
     var voHopMacDinh = Model.DanhSachVoHop.FirstOrDefault(v => v.MaVh == 1) ?? Model.DanhSachVoHop.FirstOrDefault();
     decimal giaVoMacDinh = voHopMacDinh?.GiaVoHopRieng ?? 85000m;
+    string tieuDePhuTang2 = !string.IsNullOrWhiteSpace(Model.BoxBuilderIntro?.TieuDePhu)
+        ? Model.BoxBuilderIntro.TieuDePhu
+        : "Nghệ Thuật Quà Biếu Thủ Công";
+    string tieuDeChinhTang2 = !string.IsNullOrWhiteSpace(Model.BoxBuilderIntro?.TieuDeChinh)
+        ? Model.BoxBuilderIntro.TieuDeChinh
+        : "Không Gian Tự Tay Phối Hộp Quà Đoàn Viên";
+    string moTaTang2 = !string.IsNullOrWhiteSpace(Model.BoxBuilderIntro?.NoiDungMoTa)
+        ? Model.BoxBuilderIntro.NoiDungMoTa
+        : "Lựa chọn mẫu tráp sơn mài hoặc hộp lụa hoàng gia, chạm để xếp từng chiếc bánh từ các thương hiệu trứ danh vào khay và theo dõi thông số dinh dưỡng trực tiếp.";
 }
 
 <!-- =========================================================================
@@ -11,10 +20,10 @@
 <section id="tang-tu-chon-hop" class="tang-phan-khu nen-ngoc-trai-am border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
     <div class="container py-0 section-reveal">
         <div class="text-center mb-2">
-            <span class="text-uppercase small chu-do-son-mai fw-bold" style="letter-spacing: 1.5px; font-size: 0.7rem;">Nghệ Thuật Quà Biếu Thủ Công</span>
-            <h2 class="font-co-phong fw-bold chu-nau-tram mb-1" style="font-size: 1.5rem;">Không Gian Tự Tay Phối Hộp Quà Đoàn Viên</h2>
+            <span class="text-uppercase small chu-do-son-mai fw-bold" style="letter-spacing: 1.5px; font-size: 0.7rem;">@tieuDePhuTang2</span>
+            <h2 class="font-co-phong fw-bold chu-nau-tram mb-1" style="font-size: 1.5rem;">@tieuDeChinhTang2</h2>
             <p class="small chu-nau-phu mx-auto mb-0" style="max-width: 760px; font-size: 0.8rem;">
-                Lựa chọn mẫu tráp sơn mài hoặc hộp lụa hoàng gia, chạm để xếp từng chiếc bánh từ các thương hiệu trứ danh vào khay và theo dõi thông số dinh dưỡng trực tiếp.
+                @moTaTang2
             </p>
         </div>
 
@@ -81,7 +90,7 @@
                             </li>
                             <li class="py-0">
                                 <span class="chu-nau-phu d-block">Lưu ý dị ứng:</span>
-                                <span id="lblCanhBaoDiUng" class="chu-do-son-mai fst-italic text-truncate d-block">Chưa chọn bánh</span>
+                                <span id="lblCanhBaoDiUng" class="chu-do-son-mai text-truncate d-block">Chưa chọn bánh</span>
                             </li>
                         </ul>
                     </div>
@@ -136,7 +145,7 @@
                     <div class="overflow-auto luoi-san-pham-cuon pe-1 flex-grow-1">
                         @foreach (var b in Model.DanhSachBanh)
                         {
-                            string anhSlot = DichVuHinhAnh.LayUrl(Model.TuDienAnh, "BANH", b.MaBanh, "TACH_NEN_SLOT");
+                            string anhSlot = DichVuHinhAnh.LayUrl(Model.TuDienAnh, "BANH", b.MaBanh, "ANH_CHINH");
                             int calo = b.ThongSoDinhDuong?.NangLuongCalo ?? 400;
                             int gi = b.ThongSoDinhDuong?.ChiSoDuongHuyetGi ?? 55;
                             string diUng = b.ThongSoDinhDuong?.CanhBaoDiUng ?? "Không";

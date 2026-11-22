@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&display=swap');
-
 :root {
     --mau-nen-giay-do: #FDF8EE;
     --mau-nen-ngoc-trai: #F6EFE2;
@@ -13,8 +11,8 @@
     --mau-vang-anh-kim: #D4AF37;
     --mau-vien-vang-dong: #E6D5B8;
     --mau-xanh-thuc-duong: #2E7D32;
-    --font-tieu-de: 'Cormorant Garamond', serif;
-    --font-noi-dung: 'Be Vietnam Pro', sans-serif;
+    --font-tieu-de: 'Lora', Georgia, 'Times New Roman', serif;
+    --font-noi-dung: 'Inter', 'Segoe UI', Roboto, Arial, sans-serif;
 }
 
 /* Tắt cuộn mặc định của trình duyệt để site.js điều khiển trượt tầng mượt 60fps qua requestAnimationFrame */
@@ -25,15 +23,31 @@ body {
     scroll-behavior: auto !important;
 }
 
+html,
+body,
+button,
+input,
+select,
+textarea,
+.btn,
+.badge,
+.nav-link,
+.dropdown-item,
+.form-control,
+.modal {
+    font-family: var(--font-noi-dung);
+}
+
 body {
     background-color: var(--mau-nen-giay-do);
     color: var(--mau-chu-nau-tram);
-    font-family: var(--font-noi-dung);
 }
 
 .font-co-phong {
     font-family: var(--font-tieu-de);
-    letter-spacing: 0.5px;
+    font-variant-numeric: lining-nums tabular-nums;
+    line-height: 1.25;
+    letter-spacing: 0.2px;
 }
 
 .chu-vang-kim {

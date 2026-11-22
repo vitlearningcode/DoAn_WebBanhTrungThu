@@ -168,16 +168,29 @@ namespace WebBanhTrungThu.Services
             var danhSachLK = await _db.LienKetHinhAnhs
                 .Include(lk => lk.MaHaNavigation)
                 .OrderBy(lk => lk.ThuTuHienThi)
+                .ThenByDescending(lk => lk.MaLk)
                 .ToListAsync();
 
             var ketQua = new Dictionary<string, string>();
 
             foreach (var lk in danhSachLK)
             {
-                string key = $"{lk.LoaiDoiTuong}_{lk.MaDoiTuong}_{lk.VaiTroAnh}";
-                if (!ketQua.ContainsKey(key) && lk.MaHaNavigation != null)
+                if (lk.MaHaNavigation == null || string.IsNullOrWhiteSpace(lk.MaHaNavigation.UrlHienThi))
                 {
-                    ketQua[key] = lk.MaHaNavigation.UrlHienThi;
+                    continue;
+                }
+
+                string url = lk.MaHaNavigation.UrlHienThi;
+                string key = $"{lk.LoaiDoiTuong}_{lk.MaDoiTuong}_{lk.VaiTroAnh}";
+                if (!ketQua.ContainsKey(key))
+                {
+                    ketQua[key] = url;
+                }
+
+                string keyMoiNhat = $"{lk.LoaiDoiTuong}_{lk.MaDoiTuong}_MOI_NHAT";
+                if (!ketQua.ContainsKey(keyMoiNhat))
+                {
+                    ketQua[keyMoiNhat] = url;
                 }
             }
 
@@ -191,20 +204,39 @@ namespace WebBanhTrungThu.Services
         {
             if (tuDien != null)
             {
+                if (string.Equals(loaiDoiTuong, "BANH", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(loaiDoiTuong, "COMBO", StringComparison.OrdinalIgnoreCase))
+                {
+                    string anhChinhKey = $"{loaiDoiTuong}_{maDoiTuong}_ANH_CHINH";
+                    if (tuDien.TryGetValue(anhChinhKey, out string? anhChinhUrl) && !string.IsNullOrEmpty(anhChinhUrl))
+                    {
+                        return anhChinhUrl;
+                    }
+                }
+
                 string key = $"{loaiDoiTuong}_{maDoiTuong}_{vaiTroAnh}";
                 if (tuDien.TryGetValue(key, out string? url) && !string.IsNullOrEmpty(url))
                 {
                     return url;
                 }
 
-                string fallbackKey = $"{loaiDoiTuong}_{maDoiTuong}_TACH_NEN_SLOT";
-                if (tuDien.TryGetValue(fallbackKey, out string? fallbackUrl))
+                string moiNhatKey = $"{loaiDoiTuong}_{maDoiTuong}_MOI_NHAT";
+                if (tuDien.TryGetValue(moiNhatKey, out string? moiNhatUrl) && !string.IsNullOrEmpty(moiNhatUrl))
+                {
+                    return moiNhatUrl;
+                }
+
+                string fallbackRole = string.Equals(loaiDoiTuong, "VOHOP", StringComparison.OrdinalIgnoreCase)
+                    ? "KHAY_HOP_RONG"
+                    : "TACH_NEN_SLOT";
+                string fallbackKey = $"{loaiDoiTuong}_{maDoiTuong}_{fallbackRole}";
+                if (tuDien.TryGetValue(fallbackKey, out string? fallbackUrl) && !string.IsNullOrEmpty(fallbackUrl))
                 {
                     return fallbackUrl;
                 }
             }
 
-            return loaiDoiTuong == "VOHOP"
+            return string.Equals(loaiDoiTuong, "VOHOP", StringComparison.OrdinalIgnoreCase)
                 ? "/images/default/vohop-mac-dinh.png"
                 : "/images/default/banh-mac-dinh.png";
         }

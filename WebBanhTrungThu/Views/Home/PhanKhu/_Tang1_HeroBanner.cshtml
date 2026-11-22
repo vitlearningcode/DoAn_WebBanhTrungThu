@@ -2,24 +2,69 @@
 @using WebBanhTrungThu.Services
 @using System.Text.Json
 @{
-    string anhHero = Model.HeroBanner?.MaAnhNenNavigation?.UrlHienThi ?? "/images/landing/hero-banner-trungthu.jpg";
+    string anhHero = !string.IsNullOrWhiteSpace(Model.HeroBanner?.MaAnhNenNavigation?.UrlHienThi)
+        ? Model.HeroBanner.MaAnhNenNavigation.UrlHienThi
+        : "/images/landing/hero-banner-trungthu.jpg";
+
+    string tieuDePhuHero = !string.IsNullOrWhiteSpace(Model.HeroBanner?.TieuDePhu)
+        ? Model.HeroBanner.TieuDePhu
+        : "BỘ SƯU TẬP LỄ HỘP TRUNG THU CỔ TRUYỀN 2026";
+    string tieuDeChinhHero = !string.IsNullOrWhiteSpace(Model.HeroBanner?.TieuDeChinh)
+        ? Model.HeroBanner.TieuDeChinh
+        : "Tuyệt Tác Trăng Rằm – Tự Tay Kiến Tạo Lễ Hộp Độc Bản";
+    string moTaHero = !string.IsNullOrWhiteSpace(Model.HeroBanner?.NoiDungMoTa)
+        ? Model.HeroBanner.NoiDungMoTa
+        : "Hội tụ tinh hoa bánh nướng, bánh dẻo cổ truyền từ Kinh Đô, Đồng Khánh, Như Lan, Brodard cùng dòng bánh thực dưỡng đường Isomalt thanh tao cho mùa Trăng Đoàn Viên trọn vẹn.";
+    string chuNutCtaHero = !string.IsNullOrWhiteSpace(Model.HeroBanner?.ChuNutBamCta)
+        ? Model.HeroBanner.ChuNutBamCta
+        : "Tự Phối Hộp Quà Ngay";
+    string duongDanCtaHeroRaw = !string.IsNullOrWhiteSpace(Model.HeroBanner?.DuongDanCta)
+        ? Model.HeroBanner.DuongDanCta.Trim()
+        : "#tang-tu-chon-hop";
+    string duongDanCtaHero = duongDanCtaHeroRaw switch
+    {
+        "#studio-phoi-hop" => "#tang-tu-chon-hop",
+        "#bo-suu-tap-banh" => "#tang-bo-suu-tap",
+        "#chiet-khau-so-luong" => "#tang-b2b",
+        _ => duongDanCtaHeroRaw
+    };
+    DateTime? mocDemNguocSql = Model.HeroBanner?.MocThoiGianDemNguoc;
+    DateTime bayGioServer = DateTime.Now;
+    DateTime[] cacMocTrungThu =
+    {
+        new DateTime(2026, 9, 25, 20, 0, 0), // 15/08 Âm lịch 2026
+        new DateTime(2027, 9, 15, 20, 0, 0), // 15/08 Âm lịch 2027
+        new DateTime(2028, 10, 3, 20, 0, 0), // 15/08 Âm lịch 2028
+        new DateTime(2029, 9, 22, 20, 0, 0)  // 15/08 Âm lịch 2029
+    };
+    bool laMocTetDuongLichHoacQuaHan = !mocDemNguocSql.HasValue
+        || mocDemNguocSql.Value <= bayGioServer
+        || (mocDemNguocSql.Value.Month == 12 && mocDemNguocSql.Value.Day == 31);
+    DateTime mocTrungThuHienThi = !laMocTetDuongLichHoacQuaHan
+        ? mocDemNguocSql!.Value
+        : cacMocTrungThu.FirstOrDefault(m => m > bayGioServer);
+    if (mocTrungThuHienThi == default)
+    {
+        mocTrungThuHienThi = new DateTime(bayGioServer.Year + 1, 9, 15, 20, 0, 0);
+    }
+    string mocDemNguocIso = mocTrungThuHienThi.ToString("yyyy-MM-ddTHH:mm:ss");
 
     var banhVip = Model.DanhSachBanh.FirstOrDefault(b => b.LaBanhThuongHang);
     string anhVip = banhVip != null
-        ? DichVuHinhAnh.LayUrl(Model.TuDienAnh, "BANH", banhVip.MaBanh, "TACH_NEN_SLOT")
+        ? DichVuHinhAnh.LayUrl(Model.TuDienAnh, "BANH", banhVip.MaBanh, "ANH_CHINH")
         : "/images/banh/slot-bao-ngu.png";
     if (string.IsNullOrWhiteSpace(anhVip) || anhVip == anhHero)
     {
         anhVip = "/images/banh/slot-bao-ngu.png";
     }
 
-    var banhIsomalt = Model.DanhSachBanh.FirstOrDefault(b => b.MucDoNgot == "ISOMALT_TIEUDUONG");
+    var banhIsomalt = Model.DanhSachBanh.FirstOrDefault(b => b.MucDoNgot == "ISOMALT_TIEUDUONG" || b.MucDoNgot == "DUONG_ISOMALT");
     string anhIsomalt = banhIsomalt != null
-        ? DichVuHinhAnh.LayUrl(Model.TuDienAnh, "BANH", banhIsomalt.MaBanh, "TACH_NEN_SLOT")
-        : "/images/banh/banh-hat-sen-hue.jpg";
-    if (string.IsNullOrWhiteSpace(anhIsomalt) || anhIsomalt == anhVip)
+        ? DichVuHinhAnh.LayUrl(Model.TuDienAnh, "BANH", banhIsomalt.MaBanh, "ANH_CHINH")
+        : "/images/banh/slot-sua-dua-chay.png";
+    if (string.IsNullOrWhiteSpace(anhIsomalt) || anhIsomalt == anhVip || anhIsomalt.Contains("banh-mac-dinh", StringComparison.OrdinalIgnoreCase))
     {
-        anhIsomalt = "/images/banh/banh-hat-sen-hue.jpg";
+        anhIsomalt = "/images/banh/slot-sua-dua-chay.png";
     }
 
     string anhB2B = DichVuHinhAnh.LayUrl(Model.TuDienAnh, "VOHOP", 2, "KHAY_HOP_RONG");
@@ -28,42 +73,76 @@
         anhB2B = "/images/vohop/khay-6-o-rong.png";
     }
 
-    var danhSachSlideHero = new[]
-    {
-        new
+    var danhSachSlideBanner = (Model.DanhSachBanner ?? new List<WebBanhTrungThu.Models.Entities.CauHinhLandingPage>())
+        .Where(b => b.DangKichHoat)
+        .OrderBy(b => b.ThuTuHienThi)
+        .ThenBy(b => b.MaPhanKhu)
+        .Select(b =>
         {
-            tieuDe = "Lễ Hộp Sơn Mài Tứ Quý Đoàn Viên",
-            moTa = "Tự do phối 4 hoặc 6 vị bánh danh tiếng • Cân đối năng lượng & độ ngọt thanh",
-            nhan = "Ưu đãi đặt sớm -10% (Mã: TRANGTRON2026)",
-            anh = anhHero,
-            fit = anhHero.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "contain" : "cover"
-        },
-        new
-        {
-            tieuDe = "Lễ Hộp Hoàng Gia Ngự Phẩm 6 Bánh",
-            moTa = "Tráp sơn mài 6 ô tuyển chọn nhân thượng hạng • Quà biếu đối tác trọng thị",
-            nhan = "Phiên bản Ngự Phẩm 6 Ô",
-            anh = anhVip,
-            fit = anhVip.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "contain" : "cover"
-        },
-        new
-        {
-            tieuDe = "Bộ Sưu Tập Bánh Đường Ăn Kiêng Isomalt",
-            moTa = "Chỉ số đường huyết GI thấp • Vị ngọt thanh tao cho người lớn tuổi & thực dưỡng",
-            nhan = "Thực dưỡng Đường Isomalt",
-            anh = anhIsomalt,
-            fit = anhIsomalt.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "contain" : "cover"
-        },
-        new
-        {
-            tieuDe = "Quà Biếu Doanh Nghiệp Ép Kim Logo",
-            moTa = "Chiết khấu số lượng lớn đến 22% • Miễn phí khuôn ép kim Logo từ 20 hộp",
-            nhan = "Ưu đãi Chiết khấu Số Lượng Lớn",
-            anh = anhB2B,
-            fit = anhB2B.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "contain" : "cover"
-        }
-    };
+            string anhSlide = !string.IsNullOrWhiteSpace(b.MaAnhNenNavigation?.UrlHienThi)
+                ? b.MaAnhNenNavigation.UrlHienThi
+                : anhHero;
+            string tieuDeSlide = !string.IsNullOrWhiteSpace(b.TieuDeChinh)
+                ? b.TieuDeChinh
+                : tieuDeChinhHero;
+            string moTaSlide = !string.IsNullOrWhiteSpace(b.NoiDungMoTa)
+                ? b.NoiDungMoTa
+                : (!string.IsNullOrWhiteSpace(b.TieuDePhu) ? b.TieuDePhu : moTaHero);
+            string nhanSlide = !string.IsNullOrWhiteSpace(b.TieuDePhu)
+                ? b.TieuDePhu
+                : (!string.IsNullOrWhiteSpace(b.ChuNutBamCta) ? b.ChuNutBamCta : $"Phân khu {b.ThuTuHienThi:D2}");
 
+            return new
+            {
+                tieuDe = tieuDeSlide,
+                moTa = moTaSlide,
+                nhan = nhanSlide,
+                anh = anhSlide,
+                fit = "cover"
+            };
+        })
+        .ToArray();
+
+    var danhSachSlideHero = danhSachSlideBanner.Length > 0
+        ? danhSachSlideBanner
+        : new[]
+        {
+            new
+            {
+                tieuDe = tieuDeChinhHero,
+                moTa = moTaHero,
+                nhan = tieuDePhuHero,
+                anh = anhHero,
+                fit = anhHero.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "contain" : "cover"
+            },
+            new
+            {
+                tieuDe = "Lễ Hộp Hoàng Gia Ngự Phẩm 6 Bánh",
+                moTa = "Tráp sơn mài 6 ô tuyển chọn nhân thượng hạng • Quà biếu đối tác trọng thị",
+                nhan = "Phiên bản Ngự Phẩm 6 Ô",
+                anh = anhVip,
+                fit = anhVip.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "contain" : "cover"
+            },
+            new
+            {
+                tieuDe = "Bộ Sưu Tập Bánh Đường Ăn Kiêng Isomalt",
+                moTa = "Chỉ số đường huyết GI thấp • Vị ngọt thanh tao cho người lớn tuổi & thực dưỡng",
+                nhan = "Thực dưỡng Đường Isomalt",
+                anh = anhIsomalt,
+                fit = anhIsomalt.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "contain" : "cover"
+            },
+            new
+            {
+                tieuDe = "Quà Biếu Doanh Nghiệp Ép Kim Logo",
+                moTa = "Chiết khấu số lượng lớn đến 22% • Miễn phí khuôn ép kim Logo từ 20 hộp",
+                nhan = "Ưu đãi Chiết khấu Số Lượng Lớn",
+                anh = anhB2B,
+                fit = anhB2B.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "contain" : "cover"
+            }
+        };
+
+    var slideDauTien = danhSachSlideHero[0];
+    int tongSlide = danhSachSlideHero.Length;
     string slidesJson = JsonSerializer.Serialize(danhSachSlideHero);
 }
 
@@ -75,45 +154,50 @@
         <div class="row align-items-center g-4">
             <div class="col-lg-7">
                 <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background: rgba(212, 175, 55, 0.16); border: 1px solid var(--mau-vang-anh-kim);">
-                    <span class="chu-vang-kim small fw-semibold">🏮 @(Model.HeroBanner?.TieuDePhu ?? "BỘ SƯU TẬP LỄ HỘP TRUNG THU CỔ TRUYỀN 2026")</span>
+                    <span class="chu-vang-kim small fw-semibold">🏮 @tieuDePhuHero</span>
                 </div>
 
                 <h1 class="font-co-phong display-4 fw-bold chu-vang-kim mb-3">
-                    @(Model.HeroBanner?.TieuDeChinh ?? "Tuyệt Tác Trăng Rằm – Tự Tay Kiến Tạo Lễ Hộp Độc Bản")
+                    @tieuDeChinhHero
                 </h1>
 
                 <p class="lead chu-kem-vang opacity-90 mb-4">
-                    @(Model.HeroBanner?.NoiDungMoTa ?? "Hội tụ tinh hoa bánh nướng, bánh dẻo cổ truyền từ Kinh Đô, Đồng Khánh, Như Lan, Brodard cùng dòng bánh thực dưỡng đường Isomalt thanh tao cho mùa Trăng Đoàn Viên trọn vẹn.")
+                    @moTaHero
                 </p>
 
-                <!-- Đồng hồ đếm ngược Đêm Rằm Trung Thu -->
-                <div class="mb-2">
-                    <span class="d-inline-block small fw-bold text-uppercase chu-vang-kim" style="letter-spacing: 0.85px; font-size: 0.78rem;">
-                        ⏳ ĐẾM NGƯỢC ĐẾN ĐÊM HỘI TRĂNG RẰM (15/08 ÂM LỊCH):
+                <!-- Dòng tiêu đề: Thời gian hiện tại (Trái) & Mốc đếm ngược Tết Trung Thu (Phải) -->
+                <div class="d-flex flex-wrap align-items-center gap-2 mb-2 chu-vang-kim small fw-bold text-uppercase" style="letter-spacing: 0.4px; font-size: 0.74rem;">
+                    <span class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill text-nowrap" style="background: rgba(212, 175, 55, 0.14); border: 1px solid rgba(212, 175, 55, 0.35);">
+                        🕒 HÔM NAY: <span id="ht-dong-ho-text" style="font-variant-numeric: tabular-nums;">@DateTime.Now.ToString("dd/MM/yyyy (HH:mm:ss)", System.Globalization.CultureInfo.InvariantCulture)</span>
+                    </span>
+                    <span class="text-nowrap" title="Đếm ngược đến Đêm Hội Trăng Rằm 15/08 Âm lịch">
+                        ⏳ ĐẾM NGƯỢC TẾT TRUNG THU (15/08 ÂL • @mocTrungThuHienThi.ToString("dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture)):
                     </span>
                 </div>
-                <div class="d-flex flex-wrap gap-3 mb-4">
-                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
+                <div id="khungDemNguocHero" class="d-flex flex-wrap gap-3 mb-4" data-moc-dem-nguoc="@mocDemNguocIso">
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 82px;">
                         <span id="cd-ngay" class="fs-3 fw-bold chu-vang-kim d-block">--</span>
                         <small class="chu-kem-vang opacity-75">Ngày</small>
                     </div>
-                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 82px;">
                         <span id="cd-gio" class="fs-3 fw-bold chu-vang-kim d-block">--</span>
                         <small class="chu-kem-vang opacity-75">Giờ</small>
                     </div>
-                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 82px;">
                         <span id="cd-phut" class="fs-3 fw-bold chu-vang-kim d-block">--</span>
                         <small class="chu-kem-vang opacity-75">Phút</small>
                     </div>
-                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 78px;">
+                    <div class="card-son-mai-noi px-3 py-2 text-center" style="min-width: 82px;">
                         <span id="cd-giay" class="fs-3 fw-bold chu-vang-kim d-block">--</span>
                         <small class="chu-kem-vang opacity-75">Giây</small>
                     </div>
                 </div>
 
                 <div class="d-flex flex-wrap gap-3">
-                    <a href="#tang-tu-chon-hop" onclick="return cuonDenPhanKhu('#tang-tu-chon-hop', event)" class="btn btn-vang-kim btn-lg rounded-pill px-4">
-                        <i class="bi bi-box2-heart-fill me-2"></i>Tự Phối Hộp Quà Ngay
+                    <a href="@duongDanCtaHero"
+                       @if (duongDanCtaHero.StartsWith("#")) { <text>onclick="return cuonDenPhanKhu('@duongDanCtaHero', event)"</text> }
+                       class="btn btn-vang-kim btn-lg rounded-pill px-4">
+                        <i class="bi bi-box2-heart-fill me-2"></i>@chuNutCtaHero
                     </a>
                     <button class="btn btn-vien-vang btn-lg rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#modalTroLyChonBanh">
                         ✨ Tư Vấn Chọn Hộp Quà Hợp Ý
@@ -127,34 +211,34 @@
                     <div id="heroBannerSlider258" class="u258" data-slides="@slidesJson">
                         <div class="d-flex justify-content-center align-items-center mb-2">
                             <span id="heroSlideBadge258" class="badge badge-thuong-hang px-3 py-2 rounded-pill text-truncate" style="max-width: 100%;">
-                                Ưu đãi đặt sớm -10% (Mã: TRANGTRON2026)
+                                @slideDauTien.nhan
                             </span>
                         </div>
 
                         <div class="u258-stage">
                             <div id="u258Progress" class="u258-pg" aria-hidden="true"></div>
                             <img id="u258Image"
-                                 src="@anhHero"
+                                 src="@slideDauTien.anh"
                                  class="u258-img"
-                                 data-fit="@(anhHero.EndsWith(".png", StringComparison.OrdinalIgnoreCase) ? "contain" : "cover")"
-                                 alt="Lễ Hộp Sơn Mài Tứ Quý Đoàn Viên" />
+                                 data-fit="@slideDauTien.fit"
+                                 alt="@slideDauTien.tieuDe" />
                             <div id="u258Caption" class="u258-cp">
-                                <span id="u258CaptionIndex" class="u258-cp-index">01 / 04</span>
-                                <h4 id="u258CaptionTitle" class="font-co-phong u258-cp-title mb-0">Lễ Hộp Sơn Mài Tứ Quý Đoàn Viên</h4>
+                                <span id="u258CaptionIndex" class="u258-cp-index">01 / @tongSlide.ToString("D2")</span>
+                                <h4 id="u258CaptionTitle" class="font-co-phong u258-cp-title mb-0">@slideDauTien.tieuDe</h4>
                             </div>
                             <button type="button" id="btnPrevSlide258" class="u258-arrow u258-arrow-prev" aria-label="Banner trước">‹</button>
                             <button type="button" id="btnNextSlide258" class="u258-arrow u258-arrow-next" aria-label="Banner tiếp theo">›</button>
                         </div>
 
                         <p id="u258SlideDesc" class="small chu-nau-phu mt-2 mb-2 px-1" style="min-height: 2.6em; line-height: 1.35;">
-                            Tự do phối 4 hoặc 6 vị bánh danh tiếng • Cân đối năng lượng &amp; độ ngọt thanh
+                            @slideDauTien.moTa
                         </p>
 
                         <div id="u258Dots" class="u258-dots" role="tablist" aria-label="Chọn bộ sưu tập lễ hộp">
-                            <button type="button" class="u258-dot active" data-index="0" aria-label="Slide 1"></button>
-                            <button type="button" class="u258-dot" data-index="1" aria-label="Slide 2"></button>
-                            <button type="button" class="u258-dot" data-index="2" aria-label="Slide 3"></button>
-                            <button type="button" class="u258-dot" data-index="3" aria-label="Slide 4"></button>
+                            @for (int i = 0; i < tongSlide; i++)
+                            {
+                                <button type="button" class="u258-dot @(i == 0 ? "active" : "")" data-index="@i" aria-label="Slide @(i + 1)"></button>
+                            }
                         </div>
                     </div>
                 </div>

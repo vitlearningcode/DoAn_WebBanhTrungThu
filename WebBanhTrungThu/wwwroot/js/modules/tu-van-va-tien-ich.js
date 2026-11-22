@@ -586,13 +586,40 @@ function khoiChayDongHoDemNguoc() {
     if (!elNgay || !elGio || !elPhut || !elGiay) return;
 
     const capNhat = () => {
-        const bayGio = Date.now();
-        const cacMoc = [
-            new Date(2026, 8, 25, 20, 0, 0).getTime(),
-            new Date(2027, 8, 15, 20, 0, 0).getTime(),
-            new Date(2028, 9, 3, 20, 0, 0).getTime()
-        ];
-        const mocDich = cacMoc.find(m => m > bayGio) || new Date(new Date().getFullYear() + 1, 8, 15, 20, 0, 0).getTime();
+        const hienTai = new Date();
+
+        const elDongHoText = document.getElementById("ht-dong-ho-text");
+        if (elDongHoText) {
+            const dd = hienTai.getDate().toString().padStart(2, "0");
+            const mm = (hienTai.getMonth() + 1).toString().padStart(2, "0");
+            const yyyy = hienTai.getFullYear();
+            const hh = hienTai.getHours().toString().padStart(2, "0");
+            const mi = hienTai.getMinutes().toString().padStart(2, "0");
+            const ss = hienTai.getSeconds().toString().padStart(2, "0");
+            elDongHoText.textContent = `${dd}/${mm}/${yyyy} (${hh}:${mi}:${ss})`;
+        }
+
+        const bayGio = hienTai.getTime();
+        const khungCd = document.getElementById("khungDemNguocHero");
+        const mocSqlIso = khungCd ? khungCd.getAttribute("data-moc-dem-nguoc") : "";
+        let mocDich = NaN;
+        if (mocSqlIso) {
+            const mocSqlDate = new Date(mocSqlIso);
+            const mocSqlMs = mocSqlDate.getTime();
+            const laCuoiNamDuongLich = !isNaN(mocSqlMs) && mocSqlDate.getMonth() === 11 && mocSqlDate.getDate() === 31;
+            if (!isNaN(mocSqlMs) && mocSqlMs > bayGio && !laCuoiNamDuongLich) {
+                mocDich = mocSqlMs;
+            }
+        }
+        if (isNaN(mocDich)) {
+            const cacMoc = [
+                new Date(2026, 8, 25, 20, 0, 0).getTime(),
+                new Date(2027, 8, 15, 20, 0, 0).getTime(),
+                new Date(2028, 9, 3, 20, 0, 0).getTime(),
+                new Date(2029, 8, 22, 20, 0, 0).getTime()
+            ];
+            mocDich = cacMoc.find(m => m > bayGio) || new Date(hienTai.getFullYear() + 1, 8, 15, 20, 0, 0).getTime();
+        }
         const tongGiay = Math.floor(Math.max(0, mocDich - bayGio) / 1000);
         elNgay.textContent = Math.floor(tongGiay / 86400).toString().padStart(2, "0");
         elGio.textContent = Math.floor((tongGiay % 86400) / 3600).toString().padStart(2, "0");

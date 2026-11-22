@@ -96,7 +96,7 @@
         <span class="text-muted d-none d-sm-inline">|</span>
         <div>
             <span class="chu-nau-phu">Hình thức:</span>
-            <strong class="chu-nau-tram">@(laDonQrMoMo ? "Ví MoMo / Chuyển khoản QR" : "Thanh toán khi nhận (COD)")</strong>
+            <strong class="chu-nau-tram">@(dh.PhuongThucTt == "TIEN_MAT" ? "Tiền mặt tại quầy" : laDonQrMoMo || dh.PhuongThucTt == "CHUYEN_KHOAN" || dh.PhuongThucTt == "CHUYEN_KHOAN_QR" ? "Ví MoMo / Chuyển khoản QR" : dh.PhuongThucTt == "VI_DIEN_TU" || dh.PhuongThucTt == "THE_NGAN_HANG" ? "Thẻ / Ví điện tử" : "Thanh toán khi nhận (COD)")</strong>
         </div>
     </div>
 

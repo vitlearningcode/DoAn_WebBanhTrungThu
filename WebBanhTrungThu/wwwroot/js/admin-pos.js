@@ -7,6 +7,7 @@
     const DS_COMBO_POS = Array.isArray(cfg.dsComboPos) ? cfg.dsComboPos : [];
     const BANG_B2B_POS = Array.isArray(cfg.bangB2B) ? cfg.bangB2B : [];
     const DS_VOUCHER_POS = Array.isArray(cfg.dsVoucher) ? cfg.dsVoucher : [];
+    const CAU_HINH_QR_POS = cfg.cauHinhQr || {};
     const NGAY_HEN_MAC_DINH_POS = cfg.ngayHenMacDinh || '';
 
     let boLocPillHienTai = 'ALL';
@@ -120,7 +121,7 @@
             const soMon = t.items.reduce((s, i) => s + i.soLuong, 0);
             btn.onclick = () => chuyenTabHoaDon(t.id);
             btn.innerHTML = `
-                <span>🧾 ${t.tenTab}${soMon > 0 ? ` (${soMon})` : ''}</span>
+                <span><i class="bi bi-receipt me-1"></i>${t.tenTab}${soMon > 0 ? ` (${soMon})` : ''}</span>
                 <span class="pos-tab-close" title="Đóng hóa đơn này" onclick="event.stopPropagation(); dongTabHoaDon(${t.id});">×</span>
             `;
             bar.appendChild(btn);
@@ -247,7 +248,7 @@
                     const thCanTim = boLocPillHienTai.substring(3);
                     if ((b.thuongHieu || '') !== thCanTim) return;
                 } else if (boLocPillHienTai === 'ISOMALT') {
-                    if (b.mucDoNgot !== 'ISOMALT_TIEUDUONG' && !b.laBanhChay) return;
+                    if (b.mucDoNgot !== 'ISOMALT_TIEUDUONG' && b.mucDoNgot !== 'DUONG_ISOMALT') return;
                 }
 
                 if (kw !== '') {
@@ -491,30 +492,36 @@
             }
         });
 
+        const coMonTrongGio = tab.items.length > 0 && tongSoMon > 0;
+
         let mocB2B = BANG_B2B_POS.find(b => tongSoHop >= b.tuHop && tongSoHop <= b.denHop);
         if (!mocB2B && tongSoHop > 0 && BANG_B2B_POS.length > 0 && tongSoHop > BANG_B2B_POS[BANG_B2B_POS.length - 1].denHop) {
             mocB2B = BANG_B2B_POS[BANG_B2B_POS.length - 1];
         }
 
-        const phanTramCk = mocB2B ? mocB2B.phanTramCk : 0;
-        const tienCkB2B = phanTramCk > 0 ? Math.round(tongTienHang * (phanTramCk / 100)) : 0;
+        const phanTramCk = (coMonTrongGio && mocB2B) ? mocB2B.phanTramCk : 0;
+        const tienCkB2B = (coMonTrongGio && phanTramCk > 0) ? Math.round(tongTienHang * (phanTramCk / 100)) : 0;
         const mienPhiLogo = mocB2B ? mocB2B.mienPhiInLogo : false;
         const phiKhuonMacDinh = mocB2B ? mocB2B.phiKhuon : 500000;
 
         const yeuCauInLogo = document.getElementById('chkPosYeuCauInLogo')?.checked || false;
-        const phiInLogo = (yeuCauInLogo && !mienPhiLogo) ? phiKhuonMacDinh : 0;
+        const phiInLogo = (coMonTrongGio && yeuCauInLogo && !mienPhiLogo) ? phiKhuonMacDinh : 0;
 
+        const rowCkB2B = document.getElementById('rowPosCkB2B');
+        if (rowCkB2B) {
+            rowCkB2B.style.display = tienCkB2B > 0 ? 'flex' : 'none';
+        }
         document.getElementById('lblPosTenMocB2B').innerText = mocB2B
             ? `${mocB2B.tenMoc} (-${phanTramCk}%)`
             : 'Tự động áp dụng từ 10 hộp';
         document.getElementById('lblPosTienCkB2B').innerText = tienCkB2B > 0 ? `-${dinhDangN0(tienCkB2B)}` : '0';
-        document.getElementById('lblPosPhiInLogo').innerText = yeuCauInLogo
+        document.getElementById('lblPosPhiInLogo').innerText = (coMonTrongGio && yeuCauInLogo)
             ? (mienPhiLogo ? 'Miễn phí 100%' : `+${dinhDangN0(phiInLogo)}`)
             : '0';
 
         const codeKm = document.getElementById('selPosVoucher')?.value || '';
         let tienVoucher = 0;
-        if (codeKm) {
+        if (coMonTrongGio && codeKm) {
             const km = DS_VOUCHER_POS.find(k => k.codeKm === codeKm);
             if (km && tongTienHang >= km.donToiThieu) {
                 if (km.loaiGiam === 'PHAN_TRAM') {
@@ -528,15 +535,15 @@
         }
         document.getElementById('lblPosTienVoucher').innerText = tienVoucher > 0 ? `-${dinhDangN0(tienVoucher)}` : '0';
 
-        const phiShip = (tab.cheDoMua === 'GIAO_HANG_QR' && tab.items.length > 0) ? 30000 : 0;
-        document.getElementById('rowPosPhiShip').style.display = (tab.cheDoMua === 'GIAO_HANG_QR') ? 'flex' : 'none';
+        const phiShip = (coMonTrongGio && tab.cheDoMua === 'GIAO_HANG_QR') ? 30000 : 0;
+        document.getElementById('rowPosPhiShip').style.display = (tab.cheDoMua === 'GIAO_HANG_QR' && coMonTrongGio) ? 'flex' : 'none';
         document.getElementById('lblPosPhiShip').innerText = dinhDangN0(phiShip);
 
-        const tienSauCkVaVoucher = Math.max(0, tongTienHang - tienCkB2B - tienVoucher);
+        const tienSauCkVaVoucher = coMonTrongGio ? Math.max(0, tongTienHang - tienCkB2B - tienVoucher) : 0;
         const khach = tab.khachHang || null;
         const hangTv = khach ? (khach.hangThanhVien || khach.hangTv || 'Đồng') : 'Đồng';
         const phanTramVip = khach ? Number(khach.phanTramUuDaiVip || layPhanTramVipTuHang(hangTv)) : 0;
-        const tienGiamVip = phanTramVip > 0 ? Math.round(tienSauCkVaVoucher * (phanTramVip / 100)) : 0;
+        const tienGiamVip = (coMonTrongGio && phanTramVip > 0) ? Math.round(tienSauCkVaVoucher * (phanTramVip / 100)) : 0;
 
         const rowVip = document.getElementById('rowPosGiamVip');
         if (rowVip) {
@@ -545,10 +552,10 @@
             document.getElementById('lblPosTienGiamVip').innerText = `-${dinhDangN0(tienGiamVip)}`;
         }
 
-        const tienSauVip = Math.max(0, tienSauCkVaVoucher - tienGiamVip);
+        const tienSauVip = coMonTrongGio ? Math.max(0, tienSauCkVaVoucher - tienGiamVip) : 0;
         const diemHienCo = khach ? Math.max(0, Math.floor(Number(khach.diemTichLuy || 0))) : 0;
         const chkDungDiem = document.getElementById('chkPosDungDiemTichLuy');
-        const dangDungDiem = Boolean(khach && diemHienCo > 0 && chkDungDiem && chkDungDiem.checked);
+        const dangDungDiem = Boolean(coMonTrongGio && khach && diemHienCo > 0 && chkDungDiem && chkDungDiem.checked);
         const diemToiDa = Math.floor(tienSauVip / 1000);
         const diemDaDung = dangDungDiem ? Math.min(diemHienCo, diemToiDa) : 0;
         const tienGiamDiem = diemDaDung * 1000;
@@ -560,7 +567,9 @@
             document.getElementById('lblPosTienGiamDiem').innerText = `-${dinhDangN0(tienGiamDiem)}`;
         }
 
-        khachCanTraHienTai = Math.max(0, tienSauVip - tienGiamDiem + phiInLogo + phiShip);
+        khachCanTraHienTai = coMonTrongGio
+            ? Math.max(0, tienSauVip - tienGiamDiem + phiInLogo + phiShip)
+            : 0;
 
         document.getElementById('lblPosTongSoMon').innerText = `${tongSoMon} món`;
         document.getElementById('lblPosTongSoHop').innerText = `${tongSoHop} hộp`;
@@ -568,7 +577,7 @@
         document.getElementById('lblPosKhachCanTra').innerText = dinhDangN0(khachCanTraHienTai) + ' đ';
 
         const inpDua = document.getElementById('inpPosTienKhachDua');
-        if (inpDua && (!inpDua.dataset.userEdited || Number(inpDua.value) === 0)) {
+        if (inpDua && (!coMonTrongGio || !inpDua.dataset.userEdited || Number(inpDua.value) === 0)) {
             inpDua.value = khachCanTraHienTai;
         }
         tinhTienThuaPos();
@@ -603,8 +612,16 @@
         const img = document.getElementById('imgPosVietQrLive');
         if (!img) return;
         const amount = Math.max(0, Math.round(khachCanTraHienTai));
+        const maBin = (CAU_HINH_QR_POS.maBin || '970422').trim();
+        const stk = (CAU_HINH_QR_POS.soTaiKhoan || '').trim();
+        const tenNh = (CAU_HINH_QR_POS.tenNganHang || 'VietQR').trim();
+        const chuTk = (CAU_HINH_QR_POS.tenChuTaiKhoan || 'NGUYET CAT').trim();
+        const lblCaption = document.getElementById('lblPosVietQrCaption');
+        if (lblCaption && stk) {
+            lblCaption.innerText = `Quét mã VietQR (${tenNh} - ${stk} - ${chuTk})`;
+        }
         delete img.dataset.fallbackApplied;
-        img.src = `https://img.vietqr.io/image/MB-0814585526-compact2.png?amount=${amount}&addInfo=${encodeURIComponent('POS NGUYET CAT')}`;
+        img.src = `https://img.vietqr.io/image/${encodeURIComponent(maBin)}-${encodeURIComponent(stk)}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent('POS NGUYET CAT')}&accountName=${encodeURIComponent(chuTk)}`;
     }
 
     window.chuyenCheDoMuaPos = function (cheDo, boQuaLuu) {
@@ -775,6 +792,28 @@
         }
     });
 
+    window.locBanhTrongModalHopPos = function () {
+        const kw = (document.getElementById('txtPosTimBanhTrongHop')?.value || '').trim().toLowerCase();
+        const hang = document.getElementById('selPosLocHangHop')?.value || 'ALL';
+        const cards = document.querySelectorAll('#modalDongHopPos .pos-hop-cake-item');
+        let demHienThi = 0;
+
+        cards.forEach(el => {
+            const strSearch = (el.getAttribute('data-search') || '').toLowerCase();
+            const strBrand = (el.getAttribute('data-brand') || '').trim();
+            const khopTuKhoa = !kw || strSearch.includes(kw);
+            const khopHang = (hang === 'ALL') || (strBrand.toLowerCase() === hang.toLowerCase());
+            const hien = khopTuKhoa && khopHang;
+            el.style.display = hien ? '' : 'none';
+            if (hien) demHienThi++;
+        });
+
+        const lblTrong = document.getElementById('lblPosKhongCoBanhHop');
+        if (lblTrong) {
+            lblTrong.style.display = (cards.length > 0 && demHienThi === 0) ? 'block' : 'none';
+        }
+    };
+
     window.themMonHopTuChonVaoTabPos = function (itemHop) {
         const tab = layTabHienTai();
         tab.items.push(itemHop);
@@ -803,6 +842,13 @@
         if (typeof moGoc === 'function') {
             window.moModalDongHopTuChonPos = function () {
                 demBanhTrongSlot.length = 0;
+                const inpTimHop = document.getElementById('txtPosTimBanhTrongHop');
+                if (inpTimHop) inpTimHop.value = '';
+                const selHangHop = document.getElementById('selPosLocHangHop');
+                if (selHangHop) selHangHop.value = 'ALL';
+                if (typeof window.locBanhTrongModalHopPos === 'function') {
+                    window.locBanhTrongModalHopPos();
+                }
                 return moGoc.apply(this, arguments);
             };
         }

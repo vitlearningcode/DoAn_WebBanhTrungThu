@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Models.Entities;
@@ -14,6 +15,7 @@ namespace WebBanhTrungThu.Services.QuanTri
     /// </summary>
     public class DichVuQuanTriNhanVien : DichVuCoSo, IDichVuQuanTriNhanVien
     {
+        private static readonly PasswordHasher<NguoiDung> _passwordHasher = new();
         private static readonly string[] _chiNhanhMacDinh =
         {
             "TP. Long Xuyên",
@@ -337,12 +339,12 @@ namespace WebBanhTrungThu.Services.QuanTri
                     HoTen = hoTen.Length > 150 ? hoTen[..150] : hoTen,
                     Sdt = sdt,
                     Email = email,
-                    MatKhauHash = ThongTinPhienHelper.BamMatKhauSHA256(mkKhoiTao),
                     DiemTichLuy = 0,
                     HangTv = maVtChuan == "ADMIN" ? "Kim Cương" : "Đồng",
                     TrangThai = trangThaiNd,
                     NgayTao = LayThoiGianHeThong()
                 };
+                ndMoi.MatKhauHash = _passwordHasher.HashPassword(ndMoi, mkKhoiTao);
 
                 _db.NguoiDungs.Add(ndMoi);
                 await _db.SaveChangesAsync();
@@ -394,7 +396,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                 return (false, "Không tìm thấy hồ sơ nhân viên cần đặt lại mật khẩu!");
             }
 
-            hs.MaNdNavigation.MatKhauHash = ThongTinPhienHelper.BamMatKhauSHA256(mkMoi);
+            hs.MaNdNavigation.MatKhauHash = _passwordHasher.HashPassword(hs.MaNdNavigation, mkMoi);
             await _db.SaveChangesAsync();
 
             return (true, $"Đã đặt lại mật khẩu cho nhân viên [{hs.MaCodeNv}] {hs.MaNdNavigation.HoTen} thành công.");

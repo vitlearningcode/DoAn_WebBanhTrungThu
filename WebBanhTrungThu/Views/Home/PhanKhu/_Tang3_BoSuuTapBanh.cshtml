@@ -1,5 +1,13 @@
 @model WebBanhTrungThu.ViewModels.LandingPageViewModel
 @using WebBanhTrungThu.Services
+@{
+    string tieuDePhuTang3 = !string.IsNullOrWhiteSpace(Model.BoSuuTapIntro?.TieuDePhu)
+        ? Model.BoSuuTapIntro.TieuDePhu
+        : "Tinh Hoa Hội Tụ Từ Bốn Thương Hiệu Danh Tiếng";
+    string tieuDeChinhTang3 = !string.IsNullOrWhiteSpace(Model.BoSuuTapIntro?.TieuDeChinh)
+        ? Model.BoSuuTapIntro.TieuDeChinh
+        : "Tuyệt Phẩm Bánh Trung Thu & Thưởng Trà";
+}
 
 <!-- =========================================================================
      TẦNG 3 (03): BỘ SƯU TẬP TUYỆT PHẨM BÁNH & TRÀ TRUNG THU (NỀN KEM GIẤY DÓ SÁNG)
@@ -7,8 +15,8 @@
 <section id="tang-bo-suu-tap" class="tang-phan-khu nen-giay-do-sang border-top" style="border-color: var(--mau-vien-vang-dong) !important;">
     <div class="container py-1 section-reveal">
         <div class="text-center mb-2">
-            <span class="text-uppercase small chu-do-son-mai fw-bold" style="letter-spacing: 1.5px; font-size: 0.72rem;">Tinh Hoa Hội Tụ Từ Bốn Thương Hiệu Danh Tiếng</span>
-            <h2 class="font-co-phong fw-bold chu-nau-tram mb-1" style="font-size: 1.6rem;">Tuyệt Phẩm Bánh Trung Thu &amp; Thưởng Trà</h2>
+            <span class="text-uppercase small chu-do-son-mai fw-bold" style="letter-spacing: 1.5px; font-size: 0.72rem;">@tieuDePhuTang3</span>
+            <h2 class="font-co-phong fw-bold chu-nau-tram mb-1" style="font-size: 1.6rem;">@tieuDeChinhTang3</h2>
         </div>
 
         <!-- Thanh nút lọc nhanh theo Hương Vị & Dinh Dưỡng -->
@@ -43,7 +51,7 @@
             <div class="dai-truot-san-pham-bst" id="luoiSanPhamBanh">
                 @foreach (var b in Model.DanhSachBanh)
                 {
-                    string anhBanh = DichVuHinhAnh.LayUrl(Model.TuDienAnh, "BANH", b.MaBanh, "TACH_NEN_SLOT");
+                    string anhBanh = DichVuHinhAnh.LayUrl(Model.TuDienAnh, "BANH", b.MaBanh, "ANH_CHINH");
                     int calo = b.ThongSoDinhDuong?.NangLuongCalo ?? 400;
                     int gi = b.ThongSoDinhDuong?.ChiSoDuongHuyetGi ?? 55;
                     decimal duong = b.ThongSoDinhDuong?.LuongDuongGram ?? 15;

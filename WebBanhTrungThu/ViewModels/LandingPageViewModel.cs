@@ -5,8 +5,12 @@ namespace WebBanhTrungThu.ViewModels
     public class LandingPageViewModel
     {
         // 1. Cấu hình các phân khu trên Landing Page
+        public List<CauHinhLandingPage> DanhSachBanner { get; set; } = new();
         public CauHinhLandingPage? HeroBanner { get; set; }
         public CauHinhLandingPage? BoxBuilderIntro { get; set; }
+        public CauHinhLandingPage? BoSuuTapIntro { get; set; }
+        public CauHinhLandingPage? ChietKhauB2BIntro { get; set; }
+        public CauHinhLandingPage? ThiepQrIntro { get; set; }
 
         // 2. Dữ liệu Sản phẩm, Danh mục, Thương hiệu & Dinh dưỡng (Tầng 3 & Tầng 4)
         public List<DanhMucBanh> DanhMucs { get; set; } = new();

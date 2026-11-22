@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using WebBanhTrungThu.Data;
 using WebBanhTrungThu.Middlewares;
@@ -15,6 +16,7 @@ namespace WebBanhTrungThu.Services.TaiKhoan
     /// </summary>
     public class DichVuHoiVien : DichVuCoSo, IDichVuHoiVien
     {
+        private static readonly PasswordHasher<NguoiDung> _passwordHasher = new();
         private readonly IDichVuCongThanhToanMoMo _dichVuCongMoMo;
         private readonly IDichVuTonKhoFefo _dichVuTonKho;
         private readonly IDichVuCauHinhHeThong _cauHinhHeThong;
@@ -88,23 +90,50 @@ namespace WebBanhTrungThu.Services.TaiKhoan
                 return (false, thongBaoKhoa, null);
             }
 
-            string maBamSha256 = ThongTinPhienHelper.BamMatKhauSHA256(mkNhap);
+            string hashHienTai = (nd.MatKhauHash ?? string.Empty).Trim();
             bool hopLe = false;
+            bool canNangCapPbkdf2 = false;
 
-            if (string.Equals(nd.MatKhauHash, maBamSha256, StringComparison.OrdinalIgnoreCase))
+            try
             {
-                hopLe = true;
+                if (!string.IsNullOrWhiteSpace(hashHienTai))
+                {
+                    var ketQuaPbkdf2 = _passwordHasher.VerifyHashedPassword(nd, hashHienTai, mkNhap);
+                    if (ketQuaPbkdf2 == PasswordVerificationResult.Success)
+                    {
+                        hopLe = true;
+                    }
+                    else if (ketQuaPbkdf2 == PasswordVerificationResult.SuccessRehashNeeded)
+                    {
+                        hopLe = true;
+                        canNangCapPbkdf2 = true;
+                    }
+                }
             }
-            else if (nd.MatKhauHash.StartsWith("AQAAAA", StringComparison.OrdinalIgnoreCase) && mkNhap == "123456")
+            catch (FormatException)
             {
-                nd.MatKhauHash = maBamSha256;
-                await _db.SaveChangesAsync();
-                hopLe = true;
+                hopLe = false;
+            }
+
+            if (!hopLe)
+            {
+                string maBamSha256 = ThongTinPhienHelper.BamMatKhauSHA256(mkNhap);
+                if (string.Equals(hashHienTai, maBamSha256, StringComparison.OrdinalIgnoreCase))
+                {
+                    hopLe = true;
+                    canNangCapPbkdf2 = true;
+                }
             }
 
             if (!hopLe)
             {
                 return (false, "Mật khẩu không chính xác. Vui lòng kiểm tra lại!", null);
+            }
+
+            if (canNangCapPbkdf2)
+            {
+                nd.MatKhauHash = _passwordHasher.HashPassword(nd, mkNhap);
+                await _db.SaveChangesAsync();
             }
 
             return (true, $"Đăng nhập thành công ({nd.HoTen} - Vai trò: {nd.MaVt})!", nd);
@@ -158,12 +187,12 @@ namespace WebBanhTrungThu.Services.TaiKhoan
                 HoTen = ten,
                 Sdt = soDt,
                 Email = thuDienTu,
-                MatKhauHash = ThongTinPhienHelper.BamMatKhauSHA256(mk),
                 DiemTichLuy = 50,
                 HangTv = "Đồng",
                 TrangThai = true,
                 NgayTao = LayThoiGianHeThong()
             };
+            ndMoi.MatKhauHash = _passwordHasher.HashPassword(ndMoi, mk);
 
             _db.NguoiDungs.Add(ndMoi);
             await _db.SaveChangesAsync();
@@ -710,8 +739,6 @@ namespace WebBanhTrungThu.Services.TaiKhoan
                 await _db.SaveChangesAsync();
             }
 
-            string mkSha = ThongTinPhienHelper.BamMatKhauSHA256("123456");
-
             var taiKhoanMau = new (string Sdt, string Email, string HoTen, string MaVt, string HangTv)[]
             {
                 ("0908111222", "thungan@nguyetcat.vn", "Trần Thu Ngân (Nhân viên Bán hàng)", "NHAN_VIEN", "Vàng"),
@@ -724,18 +751,19 @@ namespace WebBanhTrungThu.Services.TaiKhoan
             {
                 if (!await _db.NguoiDungs.AnyAsync(u => u.Sdt == tk.Sdt || u.Email == tk.Email))
                 {
-                    _db.NguoiDungs.Add(new NguoiDung
+                    var ndMau = new NguoiDung
                     {
                         MaVt = tk.MaVt,
                         HoTen = tk.HoTen,
                         Sdt = tk.Sdt,
                         Email = tk.Email,
-                        MatKhauHash = mkSha,
                         DiemTichLuy = 500,
                         HangTv = tk.HangTv,
                         TrangThai = true,
                         NgayTao = LayThoiGianHeThong()
-                    });
+                    };
+                    ndMau.MatKhauHash = _passwordHasher.HashPassword(ndMau, "123456");
+                    _db.NguoiDungs.Add(ndMau);
                     coThayDoiNd = true;
                 }
             }

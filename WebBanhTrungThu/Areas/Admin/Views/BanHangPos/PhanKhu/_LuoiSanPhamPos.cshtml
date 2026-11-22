@@ -22,14 +22,20 @@
         tonKho = c.MaVhNavigation != null ? Math.Min(c.TongTonKho, c.MaVhNavigation.SltonKhoVo) : c.TongTonKho,
         tenVoHop = c.MaVhNavigation?.TenVoHop ?? "Hộp tiêu chuẩn",
         chiTietBanh = string.Join(", ", c.ChiTietComboMaus.OrderBy(x => x.ViTriO).Select(x => $"Ô {x.ViTriO}: {x.MaBanhNavigation?.TenBanh}")),
-        anh = Model.TuDienAnh.ContainsKey($"COMBO_{c.MaCb}_ANH_CHINH") ? Model.TuDienAnh[$"COMBO_{c.MaCb}_ANH_CHINH"] : DichVuHinhAnh.LayUrl(Model.TuDienAnh, "VO_HOP", c.MaVh, "ANH_CHINH")
+        anh = Model.TuDienAnh.ContainsKey($"COMBO_{c.MaCb}_ANH_CHINH")
+            ? Model.TuDienAnh[$"COMBO_{c.MaCb}_ANH_CHINH"]
+            : (Model.TuDienAnh.ContainsKey($"VOHOP_{c.MaVh}_ANH_CHINH")
+                ? Model.TuDienAnh[$"VOHOP_{c.MaVh}_ANH_CHINH"]
+                : DichVuHinhAnh.LayUrl(Model.TuDienAnh, "VOHOP", c.MaVh, "KHAY_HOP_RONG"))
     }), jsonOptions);
 
     var dsVoHopPosJson = JsonSerializer.Serialize(Model.DanhSachVoHop.Select(v => new
     {
         maVh = v.MaVh, maCodeVh = v.MaCodeVh, tenVoHop = v.TenVoHop, sucChua = v.SucChuaBanh,
         giaVoHop = Math.Round(v.GiaVoHopRieng, 0), tonKhoVo = v.SltonKhoVo, slVipToiThieu = v.SlbanhThuongHangToiThieu,
-        anh = DichVuHinhAnh.LayUrl(Model.TuDienAnh, "VO_HOP", v.MaVh, "ANH_CHINH")
+        anh = Model.TuDienAnh.ContainsKey($"VOHOP_{v.MaVh}_ANH_CHINH")
+            ? Model.TuDienAnh[$"VOHOP_{v.MaVh}_ANH_CHINH"]
+            : DichVuHinhAnh.LayUrl(Model.TuDienAnh, "VOHOP", v.MaVh, "KHAY_HOP_RONG")
     }), jsonOptions);
 
     var bangB2BJson = JsonSerializer.Serialize(Model.BangChietKhauSiB2B.Select(b => new
@@ -44,52 +50,46 @@
         giaTriGiam = Math.Round(k.GiaTriGiam, 0), giamToiDa = Math.Round(k.GiamToiDa, 0), donToiThieu = Math.Round(k.DonToiThieu, 0)
     }), jsonOptions);
 
-    var homNayPos = DateOnly.FromDateTime(DateTime.Today);
-    var mocCanhBaoPos = DateOnly.FromDateTime(DateTime.Today.AddDays(10));
-    var tatCaLoPos = Model.DanhSachBanh.SelectMany(b => b.LoSanXuatBanhs.Select(l => { l.MaBanhNavigation = b; return l; })).Where(l => l.SlconLai > 0).OrderBy(l => l.HanSuDung).ToList();
-    var danhSachLoCanhBaoPos = tatCaLoPos.Where(l => l.HanSuDung <= mocCanhBaoPos || l.PhanTramGiamCanDate > 0 || l.TrangThaiLo == "XA_CAN_DATE").Take(3).ToList();
-    if (!danhSachLoCanhBaoPos.Any()) { danhSachLoCanhBaoPos = tatCaLoPos.Take(2).ToList(); }
+    var qrCfg = Model.CauHinhQr ?? new CauHinhThanhToanQr();
+    var stkQr = !string.IsNullOrWhiteSpace(qrCfg.SoTaiKhoanNganHang) ? qrCfg.SoTaiKhoanNganHang.Trim() : (qrCfg.SoTaiKhoanMoMo ?? string.Empty).Trim();
+    var maBinQr = !string.IsNullOrWhiteSpace(qrCfg.MaBinNganHang) ? qrCfg.MaBinNganHang.Trim() : "970422";
+    var tenNhQr = !string.IsNullOrWhiteSpace(qrCfg.TenNganHangVietQr) ? qrCfg.TenNganHangVietQr.Trim() : (!string.IsNullOrWhiteSpace(qrCfg.TenNganHangVi) ? qrCfg.TenNganHangVi.Trim() : "VietQR");
+    var chuTkQr = !string.IsNullOrWhiteSpace(qrCfg.TenChuTaiKhoan) ? qrCfg.TenChuTaiKhoan.Trim() : "NGUYET CAT";
+    var cuPhapQr = !string.IsNullOrWhiteSpace(qrCfg.CuPhapChuyenKhoan) ? qrCfg.CuPhapChuyenKhoan.Trim() : "POS NGUYET CAT";
+    var cauHinhQrJson = JsonSerializer.Serialize(new
+    {
+        maBin = maBinQr,
+        soTaiKhoan = stkQr,
+        soHienThi = !string.IsNullOrWhiteSpace(qrCfg.SoDienThoaiHienThi) ? qrCfg.SoDienThoaiHienThi.Trim() : stkQr,
+        tenNganHang = tenNhQr,
+        tenChuTaiKhoan = chuTkQr,
+        cuPhap = cuPhapQr
+    }, jsonOptions);
+
+    var thuTuThuongHieuUuTien = new[] { "Kinh Đô", "Đồng Khánh", "Như Lan", "Brodard", "Givral" };
+    var danhSachThuongHieuPos = thuTuThuongHieuUuTien
+        .Concat(Model.DanhSachBanh
+            .Select(b => (b.ThuongHieu ?? string.Empty).Trim())
+            .Where(th => !string.IsNullOrWhiteSpace(th)))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(th =>
+        {
+            int idx = Array.FindIndex(thuTuThuongHieuUuTien, u => string.Equals(u, th, StringComparison.OrdinalIgnoreCase));
+            return idx >= 0 ? idx : int.MaxValue;
+        })
+        .ThenBy(th => th)
+        .ToList();
 }
 
 <div class="pos-catalog-panel">
-    @if (danhSachLoCanhBaoPos.Any())
-    {
-        <div class="banner-canh-bao-fefo-pos" id="bannerCanhBaoFefoPos">
-            @foreach (var loPos in danhSachLoCanhBaoPos)
-            {
-                int soNgayConPos = Math.Max(0, loPos.HanSuDung.DayNumber - homNayPos.DayNumber);
-                bool daApGiaPos = loPos.PhanTramGiamCanDate >= 30;
-                <div class="dong-fefo-pos">
-                    <div>
-                        <i class="bi bi-exclamation-triangle-fill me-1 text-warning"></i>
-                        <strong>@loPos.MaLoCode</strong> •
-                        <span class="fw-semibold">@(loPos.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu")</span> •
-                        <span class="ton-kho">Tồn kho: <strong>@loPos.SlconLai.ToString("N0")</strong> bánh</span> •
-                        <span class="ton-kho">Còn <strong>@soNgayConPos</strong> ngày sử dụng</span>
-                    </div>
-                    <div>
-                        @if (daApGiaPos)
-                        {
-                            <button type="button" class="nut-xa-kho-pos da-ap-gia-xa" disabled>✓ Đã áp giá xả kho -@(loPos.PhanTramGiamCanDate.ToString("N0"))%</button>
-                        }
-                        else
-                        {
-                            <button type="button" class="nut-xa-kho-pos" onclick="kichHoatXaKhoNhanhPos(@loPos.MaLo, @loPos.MaBanh, this)">⚡ Kích hoạt xả kho -30%</button>
-                        }
-                    </div>
-                </div>
-            }
-        </div>
-    }
-
     <div class="pos-pill-bar" id="barLocPillPos">
         <button type="button" class="pos-filter-pill active" onclick="chonPillLocPos(this, 'ALL')">Tất cả</button>
-        <button type="button" class="pos-filter-pill" onclick="chonPillLocPos(this, 'TH_Kinh Đô')">Kinh Đô</button>
-        <button type="button" class="pos-filter-pill" onclick="chonPillLocPos(this, 'TH_Đồng Khánh')">Đồng Khánh</button>
-        <button type="button" class="pos-filter-pill" onclick="chonPillLocPos(this, 'TH_Như Lan')">Như Lan</button>
-        <button type="button" class="pos-filter-pill" onclick="chonPillLocPos(this, 'TH_Brodard')">Brodard</button>
-        <button type="button" class="pos-filter-pill" onclick="chonPillLocPos(this, 'ISOMALT')">🌿 Đường Isomalt</button>
-        <button type="button" class="pos-filter-pill" onclick="chonPillLocPos(this, 'COMBO')">🎁 Hộp Combo</button>
+        @foreach (var thPos in danhSachThuongHieuPos)
+        {
+            <button type="button" class="pos-filter-pill" onclick="chonPillLocPos(this, 'TH_@Html.Raw(thPos)')">@Html.Raw(thPos)</button>
+        }
+        <button type="button" class="pos-filter-pill" onclick="chonPillLocPos(this, 'ISOMALT')"><i class="bi bi-heart-pulse me-1"></i>Đường Isomalt</button>
+        <button type="button" class="pos-filter-pill" onclick="chonPillLocPos(this, 'COMBO')"><i class="bi bi-gift me-1"></i>Hộp Combo</button>
     </div>
 
     <div class="pos-product-grid" id="gridPosProducts"></div>
@@ -102,6 +102,7 @@ window.POS_CATALOG = {
     dsVoHopPos: @Html.Raw(dsVoHopPosJson),
     bangB2B: @Html.Raw(bangB2BJson),
     dsVoucher: @Html.Raw(dsVoucherJson),
+    cauHinhQr: @Html.Raw(cauHinhQrJson),
     ngayHenMacDinh: '@DateTime.Today.AddDays(1).ToString("yyyy-MM-dd")'
 };
 </script>
