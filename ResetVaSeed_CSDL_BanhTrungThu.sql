@@ -1,94 +1,1149 @@
 ﻿-- =============================================================================
 -- HỆ THỐNG MINI-ERP PHÂN PHỐI BÁNH TRUNG THU NGUYỆT CÁT (SQL-FIRST 37 BẢNG)
--- BẢN V4 FULL-FK (37/37 BẢNG LIÊN THÔNG 100%, 0 BẢNG MỒ CÔI + QUẢN LÝ KHO VỎ HỘP)
+-- BẢN FULL SCHEMA + SEED ĐA MÁY (TỰ TẠO DB + 37 BẢNG + 71 KHÓA NGOẠI + DỮ LIỆU MẪU)
+-- Chạy trực tiếp trên cả máy mới (chưa có DB) hoặc máy cũ (cần Reset dữ liệu sạch).
 -- Quy mô: 6 Thương hiệu (5 hãng × 12 bánh = 60 SP), 6 NCC, 4 Tài khoản (MK: 123456),
 --         3 Mẫu Vỏ hộp + 4 Phiếu kho Vỏ hộp, 6 Phiếu nhập (67 Lô FEFO), 10 Đơn hàng,
 --         3 Phiếu xuất, 1 Phiếu kiểm kho cân bằng, 17 Chứng từ Sổ quỹ khớp 0 đ sai số.
 -- =============================================================================
+USE [master];
+GO
+IF DB_ID(N'CSDL_BanhTrungThu') IS NULL
+BEGIN
+    CREATE DATABASE [CSDL_BanhTrungThu];
+END;
+GO
 USE [CSDL_BanhTrungThu];
 GO
 SET NOCOUNT ON;
 SET XACT_ABORT ON;
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+SET ANSI_PADDING ON;
+SET ANSI_WARNINGS ON;
+SET CONCAT_NULL_YIELDS_NULL ON;
+SET ARITHABORT ON;
 GO
 
 -- =============================================================================
--- PHẦN 1: CHUẨN HÓA ĐỦ 37 BẢNG & TOÀN BỘ KHÓA NGOẠI (LIÊN THÔNG 37/37 BẢNG)
+-- PHẦN 1: KHỞI TẠO ĐẦY ĐỦ 37 BẢNG VẬT LÝ, RÀNG BUỘC MẶC ĐỊNH & CHỈ MỤC
 -- =============================================================================
-IF OBJECT_ID('dbo.ThuongHieu', 'U') IS NULL
+IF OBJECT_ID(N'[dbo].[BangChietKhauSiB2B]', N'U') IS NULL
 BEGIN
-    CREATE TABLE dbo.ThuongHieu (
-        MaThuongHieu INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-        MaCodeThuongHieu VARCHAR(30) NOT NULL UNIQUE,
-        TenThuongHieu NVARCHAR(120) NOT NULL UNIQUE,
-        XuatXu NVARCHAR(150) NULL,
-        MoTa NVARCHAR(500) NULL,
-        DangHoatDong BIT NOT NULL DEFAULT(1)
-    );
+CREATE TABLE [dbo].[BangChietKhauSiB2B](
+	[MaMocCK] [int] IDENTITY(1,1) NOT NULL,
+	[TenMocB2B] [nvarchar](100) NOT NULL,
+	[SLHopToiThieu] [int] NOT NULL,
+	[SLHopToiDa] [int] NOT NULL,
+	[PhanTramChietKhau] [decimal](5, 2) NOT NULL,
+	[MienPhiInLogo] [bit] NOT NULL,
+	[PhiKhuonInLogo] [decimal](18, 2) NOT NULL,
+	[SoNgaySanXuatCongThem] [int] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaMocCK] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
 END;
-
-IF OBJECT_ID('dbo.NhatKyTruKhoDonHang', 'U') IS NULL
+GO
+IF OBJECT_ID(N'[dbo].[CauHinhHeThong]', N'U') IS NULL
 BEGIN
-    CREATE TABLE dbo.NhatKyTruKhoDonHang (
-        MaNk INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-        MaDH INT NOT NULL,
-        LoaiDoiTuong VARCHAR(20) NOT NULL,
-        MaLo INT NULL,
-        MaBanh INT NULL,
-        MaVH INT NULL,
-        SoLuongDaTru INT NOT NULL,
-        DaHoanKho BIT NOT NULL DEFAULT(0),
-        NgayGhi DATETIME NOT NULL DEFAULT(GETDATE()),
-        CONSTRAINT FK_NKTK_DonHang FOREIGN KEY (MaDH) REFERENCES dbo.DonHang(MaDH) ON DELETE CASCADE,
-        CONSTRAINT FK_NKTK_LoSanXuat FOREIGN KEY (MaLo) REFERENCES dbo.LoSanXuatBanh(MaLo),
-        CONSTRAINT FK_NKTK_SanPhamBanh FOREIGN KEY (MaBanh) REFERENCES dbo.SanPhamBanh(MaBanh),
-        CONSTRAINT FK_NKTK_MauVoHop FOREIGN KEY (MaVH) REFERENCES dbo.MauVoHop(MaVH)
-    );
+CREATE TABLE [dbo].[CauHinhHeThong](
+	[KhoaCauHinh] [nvarchar](100) NOT NULL,
+	[GiaTriJson] [nvarchar](max) NOT NULL,
+	[MoTa] [nvarchar](255) NULL,
+	[NgayCapNhat] [datetime] NOT NULL,
+	[MaNdCapNhat] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[KhoaCauHinh] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY];
 END;
-
-IF OBJECT_ID('dbo.PhieuKhoVoHop', 'U') IS NULL
+GO
+IF OBJECT_ID(N'[dbo].[CauHinhLandingPage]', N'U') IS NULL
 BEGIN
-    CREATE TABLE dbo.PhieuKhoVoHop (
-        MaPvh INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-        SoPhieu NVARCHAR(50) NOT NULL UNIQUE,
-        MaVH INT NOT NULL,
-        LoaiGiaoDich VARCHAR(30) NOT NULL,
-        SoLuong INT NOT NULL,
-        DonGiaNhap DECIMAL(18,2) NOT NULL DEFAULT(0),
-        ThanhTien DECIMAL(18,2) NOT NULL DEFAULT(0),
-        MaNcc INT NULL,
-        MaPhieuChi INT NULL,
-        MaNdLap INT NULL,
-        NguoiLap NVARCHAR(150) NOT NULL,
-        GhiChu NVARCHAR(500) NULL,
-        NgayGiaoDich DATETIME NOT NULL DEFAULT(GETDATE()),
-        CONSTRAINT FK_PKVH_MauVoHop FOREIGN KEY (MaVH) REFERENCES dbo.MauVoHop(MaVH),
-        CONSTRAINT FK_PKVH_NhaCungCap FOREIGN KEY (MaNcc) REFERENCES dbo.NhaCungCap(MaNcc),
-        CONSTRAINT FK_PKVH_PhieuThuChi FOREIGN KEY (MaPhieuChi) REFERENCES dbo.PhieuThuChi(MaPhieu),
-        CONSTRAINT FK_PKVH_NguoiDung FOREIGN KEY (MaNdLap) REFERENCES dbo.NguoiDung(MaND)
-    );
+CREATE TABLE [dbo].[CauHinhLandingPage](
+	[MaPhanKhu] [int] IDENTITY(1,1) NOT NULL,
+	[MaCodeKhuVuc] [varchar](50) NOT NULL,
+	[TieuDeChinh] [nvarchar](250) NOT NULL,
+	[TieuDePhu] [nvarchar](500) NULL,
+	[NoiDungMoTa] [nvarchar](max) NULL,
+	[MaAnhNen] [int] NULL,
+	[MaAnhPhu_Parallax] [int] NULL,
+	[ChuNutBamCTA] [nvarchar](100) NULL,
+	[DuongDanCTA] [varchar](250) NULL,
+	[MocThoiGianDemNguoc] [datetime] NULL,
+	[ThuTuHienThi] [int] NOT NULL,
+	[DangKichHoat] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaPhanKhu] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[MaCodeKhuVuc] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY];
 END;
+GO
+IF OBJECT_ID(N'[dbo].[ChiTietComboMau]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[ChiTietComboMau](
+	[MaCTCB] [int] IDENTITY(1,1) NOT NULL,
+	[MaCB] [int] NOT NULL,
+	[MaBanh] [int] NOT NULL,
+	[ViTriO] [int] NOT NULL,
+	[SoLuong] [int] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaCTCB] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[ChiTietDonHang]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[ChiTietDonHang](
+	[MaCTDH] [int] IDENTITY(1,1) NOT NULL,
+	[MaDH] [int] NOT NULL,
+	[MaDotGH] [int] NULL,
+	[LoaiSanPham] [int] NOT NULL,
+	[MaBanh] [int] NULL,
+	[MaCB] [int] NULL,
+	[MaHopTC] [int] NULL,
+	[TenSanPham_LuuCung] [nvarchar](250) NOT NULL,
+	[CauHinhHop_JSON] [nvarchar](max) NULL,
+	[SoLuong] [int] NOT NULL,
+	[DonGiaLucMua] [decimal](18, 2) NOT NULL,
+	[ThanhTien] [decimal](18, 2) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaCTDH] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[ChiTietGioHang]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[ChiTietGioHang](
+	[MaCTGH] [int] IDENTITY(1,1) NOT NULL,
+	[MaGH] [int] NOT NULL,
+	[LoaiSanPham] [int] NOT NULL,
+	[MaBanh] [int] NULL,
+	[MaCB] [int] NULL,
+	[MaHopTC] [int] NULL,
+	[SoLuong] [int] NOT NULL,
+	[DonGiaTamTinh] [decimal](18, 2) NOT NULL,
+	[NgayThem] [datetime] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaCTGH] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[ChiTietHopTuChon]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[ChiTietHopTuChon](
+	[MaCTHopTC] [int] IDENTITY(1,1) NOT NULL,
+	[MaHopTC] [int] NOT NULL,
+	[MaBanh] [int] NOT NULL,
+	[ViTriOTrongHop] [int] NOT NULL,
+	[DonGiaBanhLucChon] [decimal](18, 2) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaCTHopTC] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[ChiTietKiemKho]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[ChiTietKiemKho](
+	[MaCtkk] [int] IDENTITY(1,1) NOT NULL,
+	[MaPkk] [int] NOT NULL,
+	[MaSp] [int] NOT NULL,
+	[TonHeThong] [int] NOT NULL,
+	[TonThucTe] [int] NOT NULL,
+	[SoLuongLech] [int] NOT NULL,
+	[GiaTriLech] [decimal](18, 2) NOT NULL,
+	[LyDoLech] [nvarchar](300) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaCtkk] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[ChiTietPhieuNhap]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[ChiTietPhieuNhap](
+	[MaCtpn] [int] IDENTITY(1,1) NOT NULL,
+	[MaPn] [int] NOT NULL,
+	[MaSp] [int] NOT NULL,
+	[MaLo] [int] NULL,
+	[SoLuong] [int] NOT NULL,
+	[DonGiaNhap] [decimal](18, 2) NOT NULL,
+	[ThanhTien] [decimal](18, 2) NOT NULL,
+	[NgaySanXuat] [date] NOT NULL,
+	[HanSuDung] [date] NOT NULL,
+	[PhanTramChietKhau] [decimal](5, 2) NOT NULL,
+	[GiaNiemYet] [decimal](18, 0) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaCtpn] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[ChiTietPhieuXuat]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[ChiTietPhieuXuat](
+	[MaCtpx] [int] IDENTITY(1,1) NOT NULL,
+	[MaPx] [int] NOT NULL,
+	[MaSp] [int] NOT NULL,
+	[MaLo] [int] NULL,
+	[SoLuongXuat] [int] NOT NULL,
+	[GiaVonLucXuat] [decimal](18, 2) NOT NULL,
+	[ThanhTienVon] [decimal](18, 2) NOT NULL,
+	[GhiChuDong] [nvarchar](300) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaCtpx] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[ComboMauCoSan]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[ComboMauCoSan](
+	[MaCB] [int] IDENTITY(1,1) NOT NULL,
+	[MaCodeCB] [varchar](30) NOT NULL,
+	[TenCombo] [nvarchar](200) NOT NULL,
+	[MaVH] [int] NOT NULL,
+	[GiaNiemYet] [decimal](18, 2) NOT NULL,
+	[GiaUuDaiCombo] [decimal](18, 2) NOT NULL,
+	[ThongDiepYNgia] [nvarchar](500) NULL,
+	[TheDoiTuongPhuHop] [varchar](200) NULL,
+	[TrangThai] [bit] NOT NULL,
+	[MaThuongHieu] [int] NULL,
+	[MaDM] [int] NULL,
+	[MaVach] [varchar](50) NULL,
+	[ViTriKho] [nvarchar](100) NOT NULL,
+	[DonViTinh] [nvarchar](50) NOT NULL,
+	[BanTrucTiep] [bit] NOT NULL,
+	[TongTonKho] [int] NOT NULL,
+	[TrongLuongGram] [int] NOT NULL,
+	[MaAnhChinh] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaCB] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[MaCodeCB] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[DanhMucBanh]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[DanhMucBanh](
+	[MaDM] [int] IDENTITY(1,1) NOT NULL,
+	[MaDMCha] [int] NULL,
+	[TenDM] [nvarchar](150) NOT NULL,
+	[DuongDanSlug] [varchar](150) NOT NULL,
+	[MoTa] [nvarchar](500) NULL,
+	[ThuTuSX] [int] NOT NULL,
+	[TrangThai] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaDM] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[DuongDanSlug] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[DonHang]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[DonHang](
+	[MaDH] [int] IDENTITY(1,1) NOT NULL,
+	[MaTraCuuDH] [varchar](25) NOT NULL,
+	[MaND] [int] NULL,
+	[MaPhienKVL] [varchar](64) NULL,
+	[HoTenNguoiMua] [nvarchar](150) NOT NULL,
+	[SDTNguoiMua] [varchar](15) NOT NULL,
+	[EmailNguoiMua] [varchar](150) NULL,
+	[LaDonDoanhNghiepB2B] [bit] NOT NULL,
+	[TenCongTy] [nvarchar](250) NULL,
+	[MaSoThue] [varchar](50) NULL,
+	[MaAnhLogoCongTy] [int] NULL,
+	[TongTienHang] [decimal](18, 2) NOT NULL,
+	[PhanTramCK_B2B] [decimal](5, 2) NOT NULL,
+	[TienChietKhauB2B] [decimal](18, 2) NOT NULL,
+	[TienGiamVoucher] [decimal](18, 2) NOT NULL,
+	[PhiInLogo] [decimal](18, 2) NOT NULL,
+	[TongPhiVanChuyen] [decimal](18, 2) NOT NULL,
+	[TongThanhToanCuoi] [decimal](18, 2) NOT NULL,
+	[PhuongThucTT] [varchar](30) NOT NULL,
+	[TrangThaiTT] [varchar](30) NOT NULL,
+	[TrangThaiDH] [varchar](30) NOT NULL,
+	[NgayDat] [datetime] NOT NULL,
+	[TienGiamHangVip] [decimal](18, 0) NOT NULL,
+	[PhanTramGiamVip] [int] NOT NULL,
+	[SoDiemDaDung] [int] NOT NULL,
+	[TienGiamDiemVip] [decimal](18, 0) NOT NULL,
+	[HanThanhToanQr] [datetime] NULL,
+	[DaCongDiemThuong] [bit] NOT NULL,
+	[DaHoanDiemKhiHuy] [bit] NOT NULL,
+	[LyDoHuy] [nvarchar](500) NULL,
+	[MaNdLap] [int] NULL,
+	[KenhBan] [varchar](30) NOT NULL,
+	[SoTienKhachDaTra] [decimal](18, 2) NULL,
+	[MaNganHangHoan] [varchar](50) NULL,
+	[SoTaiKhoanHoan] [varchar](50) NULL,
+	[TenChuTkHoan] [nvarchar](150) NULL,
+	[GhiChuDieuChinhAdmin] [nvarchar](500) NULL,
+	[ThoiGianCapNhatCuoi] [datetime] NULL,
+	[NguoiCapNhatCuoi] [nvarchar](150) NULL,
+	[DaRollbackKho] [bit] NOT NULL,
+	[MaKM] [int] NULL,
+	[MaMocCK] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaDH] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[MaTraCuuDH] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[DotGiaoHang_DaDiem]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[DotGiaoHang_DaDiem](
+	[MaDotGH] [int] IDENTITY(1,1) NOT NULL,
+	[MaDH] [int] NOT NULL,
+	[TenNguoiNhan] [nvarchar](150) NOT NULL,
+	[SDTNguoiNhan] [varchar](15) NOT NULL,
+	[DiaChiGiaoChiTiet] [nvarchar](500) NOT NULL,
+	[NgayHenGiao] [date] NOT NULL,
+	[KhungGioGiao] [nvarchar](50) NOT NULL,
+	[PhiShipDotNay] [decimal](18, 2) NOT NULL,
+	[TrangThaiGiao] [varchar](30) NOT NULL,
+	[CoKemThiepQR] [bit] NOT NULL,
+	[MaTokenThiepQR] [varchar](50) NULL,
+	[LoiChucThiep] [nvarchar](1000) NULL,
+	[MauGiaoDienThiep] [varchar](50) NULL,
+	[SoLanMoThiep] [int] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaDotGH] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[GioHang]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[GioHang](
+	[MaGH] [int] IDENTITY(1,1) NOT NULL,
+	[MaND] [int] NULL,
+	[MaPhienKVL] [varchar](64) NULL,
+	[CodeKMDangApDung] [varchar](30) NULL,
+	[LaCheDoMuaSiB2B] [bit] NOT NULL,
+	[YeuCauInLogoB2B] [bit] NOT NULL,
+	[NgayCapNhat] [datetime] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaGH] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[HopQuaTuChon]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[HopQuaTuChon](
+	[MaHopTC] [int] IDENTITY(1,1) NOT NULL,
+	[MaVH] [int] NOT NULL,
+	[MaND] [int] NULL,
+	[MaPhienKVL] [varchar](64) NULL,
+	[TenHopKhachDat] [nvarchar](150) NOT NULL,
+	[MaBamCauHinh] [varchar](150) NOT NULL,
+	[TongCaloHop] [int] NOT NULL,
+	[TongGiaMotHop] [decimal](18, 2) NOT NULL,
+	[DaLuuMauYeuThich] [bit] NOT NULL,
+	[NgayTao] [datetime] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaHopTC] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[HoSoNhanVien]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[HoSoNhanVien](
+	[MaNv] [int] IDENTITY(1,1) NOT NULL,
+	[MaNd] [int] NOT NULL,
+	[MaCodeNv] [nvarchar](20) NOT NULL,
+	[ChucVu] [nvarchar](100) NOT NULL,
+	[ChiNhanh] [nvarchar](150) NOT NULL,
+	[CaLamViec] [nvarchar](100) NOT NULL,
+	[NgayVaoLam] [date] NOT NULL,
+	[TrangThaiLamViec] [nvarchar](30) NOT NULL,
+	[GhiChu] [nvarchar](500) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaNv] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[MaCodeNv] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[MaNd] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[KhoHinhAnh]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[KhoHinhAnh](
+	[MaHA] [int] IDENTITY(1,1) NOT NULL,
+	[TenTepGoc] [nvarchar](200) NOT NULL,
+	[TieuDeAlt] [nvarchar](250) NULL,
+	[LoaiLuuTru] [int] NOT NULL,
+	[DuongDanCucBo] [nvarchar](500) NULL,
+	[DuongDanDamMay] [nvarchar](500) NULL,
+	[MaFileDrive] [varchar](100) NULL,
+	[KichThuocPixel] [varchar](50) NULL,
+	[NgayTaiLen] [datetime] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaHA] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[LienKetHinhAnh]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[LienKetHinhAnh](
+	[MaLK] [int] IDENTITY(1,1) NOT NULL,
+	[MaHA] [int] NOT NULL,
+	[LoaiDoiTuong] [varchar](30) NOT NULL,
+	[MaDoiTuong] [int] NOT NULL,
+	[VaiTroAnh] [varchar](30) NOT NULL,
+	[ThuTuHienThi] [int] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaLK] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[LoSanXuatBanh]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[LoSanXuatBanh](
+	[MaLo] [int] IDENTITY(1,1) NOT NULL,
+	[MaBanh] [int] NOT NULL,
+	[MaLoCode] [varchar](50) NOT NULL,
+	[NgaySanXuat] [date] NOT NULL,
+	[HanSuDung] [date] NOT NULL,
+	[SLNhapBanDau] [int] NOT NULL,
+	[SLConLai] [int] NOT NULL,
+	[PhanTramGiamCanDate] [decimal](5, 2) NOT NULL,
+	[TrangThaiLo] [varchar](30) NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaLo] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[MaLoCode] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[MaKhuyenMai]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[MaKhuyenMai](
+	[MaKM] [int] IDENTITY(1,1) NOT NULL,
+	[CodeKM] [varchar](30) NOT NULL,
+	[TenChuongTrinh] [nvarchar](200) NOT NULL,
+	[LoaiGiam] [varchar](20) NOT NULL,
+	[GiaTriGiam] [decimal](18, 2) NOT NULL,
+	[GiamToiDa] [decimal](18, 2) NOT NULL,
+	[DonToiThieu] [decimal](18, 2) NOT NULL,
+	[SLToiDa] [int] NOT NULL,
+	[SLDaDung] [int] NOT NULL,
+	[ChoPhepKhachVangLai] [bit] NOT NULL,
+	[NgayBatDau] [datetime] NOT NULL,
+	[NgayKetThuc] [datetime] NOT NULL,
+	[TrangThaiKichHoat] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaKM] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[CodeKM] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[MauVoHop]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[MauVoHop](
+	[MaVH] [int] IDENTITY(1,1) NOT NULL,
+	[MaCodeVH] [varchar](30) NOT NULL,
+	[TenVoHop] [nvarchar](200) NOT NULL,
+	[SucChuaBanh] [int] NOT NULL,
+	[GiaVoHopRieng] [decimal](18, 2) NOT NULL,
+	[SLBanhThuongHangToiThieu] [int] NOT NULL,
+	[KieuBoCucLuoi] [varchar](50) NOT NULL,
+	[KemTraOLong] [bit] NOT NULL,
+	[SLTonKhoVo] [int] NOT NULL,
+	[MoTaChatLieu] [nvarchar](500) NULL,
+	[TrangThai] [bit] NOT NULL,
+	[MaAnhChinh] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaVH] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[MaCodeVH] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[NguoiDung]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[NguoiDung](
+	[MaND] [int] IDENTITY(1,1) NOT NULL,
+	[MaVT] [varchar](20) NOT NULL,
+	[HoTen] [nvarchar](150) NOT NULL,
+	[SDT] [varchar](15) NOT NULL,
+	[Email] [varchar](150) NOT NULL,
+	[MatKhauHash] [varchar](500) NOT NULL,
+	[DiemTichLuy] [int] NOT NULL,
+	[HangTV] [nvarchar](30) NOT NULL,
+	[TrangThai] [bit] NOT NULL,
+	[NgayTao] [datetime] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaND] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[Email] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[SDT] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[NhaCungCap]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[NhaCungCap](
+	[MaNcc] [int] IDENTITY(1,1) NOT NULL,
+	[MaCodeNcc] [nvarchar](30) NOT NULL,
+	[TenNcc] [nvarchar](200) NOT NULL,
+	[LoaiNcc] [nvarchar](50) NOT NULL,
+	[ThuongHieuCungCap] [nvarchar](100) NOT NULL,
+	[PhanTramChietKhauMacDinh] [decimal](5, 2) NOT NULL,
+	[SoDienThoai] [nvarchar](20) NULL,
+	[Email] [nvarchar](150) NULL,
+	[DiaChi] [nvarchar](300) NULL,
+	[GhiChu] [nvarchar](500) NULL,
+	[DangHoatDong] [bit] NOT NULL,
+	[NgayTao] [datetime] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaNcc] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[MaCodeNcc] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[NhatKyTruKhoDonHang]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[NhatKyTruKhoDonHang](
+	[MaNk] [int] IDENTITY(1,1) NOT NULL,
+	[MaDH] [int] NOT NULL,
+	[LoaiDoiTuong] [varchar](20) NOT NULL,
+	[MaLo] [int] NULL,
+	[MaBanh] [int] NULL,
+	[MaVH] [int] NULL,
+	[SoLuongDaTru] [int] NOT NULL,
+	[DaHoanKho] [bit] NOT NULL,
+	[NgayGhi] [datetime] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaNk] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[PhienKhachVangLai]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[PhienKhachVangLai](
+	[MaPhienKVL] [varchar](64) NOT NULL,
+	[DiaChiIP] [varchar](50) NULL,
+	[ThongTinTrinhDuyet] [nvarchar](250) NULL,
+	[MaND_DaGop] [int] NULL,
+	[DaGopGioHang] [bit] NOT NULL,
+	[NgayTao] [datetime] NOT NULL,
+	[NgayHetHan] [datetime] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaPhienKVL] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[PhieuKhoVoHop]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[PhieuKhoVoHop](
+	[MaPvh] [int] IDENTITY(1,1) NOT NULL,
+	[SoPhieu] [nvarchar](50) NOT NULL,
+	[MaVH] [int] NOT NULL,
+	[LoaiGiaoDich] [varchar](30) NOT NULL,
+	[SoLuong] [int] NOT NULL,
+	[DonGiaNhap] [decimal](18, 2) NOT NULL,
+	[ThanhTien] [decimal](18, 2) NOT NULL,
+	[MaNcc] [int] NULL,
+	[MaPhieuChi] [int] NULL,
+	[MaNdLap] [int] NULL,
+	[NguoiLap] [nvarchar](150) NOT NULL,
+	[GhiChu] [nvarchar](500) NULL,
+	[NgayGiaoDich] [datetime] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaPvh] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[SoPhieu] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[PhieuKiemKho]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[PhieuKiemKho](
+	[MaPkk] [int] IDENTITY(1,1) NOT NULL,
+	[SoPhieuKiem] [nvarchar](50) NOT NULL,
+	[NgayKiem] [datetime] NOT NULL,
+	[NguoiKiem] [nvarchar](150) NOT NULL,
+	[TrangThai] [varchar](30) NOT NULL,
+	[TongLechTang] [int] NOT NULL,
+	[TongLechGiam] [int] NOT NULL,
+	[TongGiaTriLech] [decimal](18, 2) NOT NULL,
+	[GhiChu] [nvarchar](500) NULL,
+	[MaPxLienKet] [int] NULL,
+	[MaNdKiem] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaPkk] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[SoPhieuKiem] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[PhieuNhapKho]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[PhieuNhapKho](
+	[MaPn] [int] IDENTITY(1,1) NOT NULL,
+	[SoPhieuNhap] [nvarchar](50) NOT NULL,
+	[NhaCungCap] [nvarchar](200) NOT NULL,
+	[NgayNhap] [datetime] NOT NULL,
+	[TongTienHang] [decimal](18, 2) NOT NULL,
+	[GiamGia] [decimal](18, 2) NOT NULL,
+	[TongPhaiTra] [decimal](18, 2) NOT NULL,
+	[DaThanhToan] [decimal](18, 2) NOT NULL,
+	[TrangThai] [varchar](30) NOT NULL,
+	[TrangThaiThanhToan] [varchar](30) NOT NULL,
+	[GhiChu] [nvarchar](500) NULL,
+	[NguoiLap] [nvarchar](150) NOT NULL,
+	[MaNdLap] [int] NULL,
+	[MaNcc] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaPn] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[SoPhieuNhap] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[PhieuThuChi]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[PhieuThuChi](
+	[MaPhieu] [int] IDENTITY(1,1) NOT NULL,
+	[MaPhieuHienThi] [nvarchar](50) NOT NULL,
+	[LoaiPhieu] [nvarchar](20) NOT NULL,
+	[HangMuc] [nvarchar](100) NOT NULL,
+	[SoTien] [decimal](18, 2) NOT NULL,
+	[PhuongThuc] [nvarchar](30) NOT NULL,
+	[MaDonHangLienKet] [int] NULL,
+	[NguoiNopNhan] [nvarchar](150) NOT NULL,
+	[GhiChu] [nvarchar](500) NULL,
+	[NgayLap] [datetime] NOT NULL,
+	[MaPhieuNhapLienKet] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaPhieu] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[PhieuXuatKho]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[PhieuXuatKho](
+	[MaPx] [int] IDENTITY(1,1) NOT NULL,
+	[SoPhieuXuat] [nvarchar](50) NOT NULL,
+	[LoaiXuat] [varchar](40) NOT NULL,
+	[DoiTuongLienQuan] [nvarchar](250) NOT NULL,
+	[NgayXuat] [datetime] NOT NULL,
+	[TongGiaTriVon] [decimal](18, 2) NOT NULL,
+	[TrangThai] [varchar](30) NOT NULL,
+	[GhiChu] [nvarchar](500) NULL,
+	[NguoiLap] [nvarchar](150) NOT NULL,
+	[MaNdLap] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaPx] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[SoPhieuXuat] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[SanPhamBanh]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[SanPhamBanh](
+	[MaBanh] [int] IDENTITY(1,1) NOT NULL,
+	[MaDM] [int] NOT NULL,
+	[MaSKU] [varchar](30) NOT NULL,
+	[TenBanh] [nvarchar](200) NOT NULL,
+	[DonGiaLe] [decimal](18, 2) NOT NULL,
+	[GiaVon] [decimal](18, 2) NOT NULL,
+	[TrongLuongGram] [int] NOT NULL,
+	[SoTrungMuoi] [int] NOT NULL,
+	[MucDoNgot] [varchar](30) NOT NULL,
+	[LaBanhChay] [bit] NOT NULL,
+	[LaBanhThuongHang] [bit] NOT NULL,
+	[NhomHuongVi] [varchar](30) NOT NULL,
+	[TheDoiTuongPhuHop] [varchar](200) NULL,
+	[MoTaNgan] [nvarchar](500) NULL,
+	[CauChuyenBanh] [nvarchar](max) NULL,
+	[TongTonKho] [int] NOT NULL,
+	[TrangThaiBan] [bit] NOT NULL,
+	[MaThuongHieu] [int] NULL,
+	[MaNccMacDinh] [int] NULL,
+	[MaVach] [varchar](50) NULL,
+	[ViTriKho] [nvarchar](100) NOT NULL,
+	[DonViTinh] [nvarchar](50) NOT NULL,
+	[BanTrucTiep] [bit] NOT NULL,
+	[MaAnhChinh] [int] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaBanh] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[MaSKU] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[SoDiaChi]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[SoDiaChi](
+	[MaDC] [int] IDENTITY(1,1) NOT NULL,
+	[MaND] [int] NOT NULL,
+	[TenNguoiNhan] [nvarchar](150) NOT NULL,
+	[SDTNguoiNhan] [varchar](15) NOT NULL,
+	[TinhThanh] [nvarchar](100) NOT NULL,
+	[QuanHuyen] [nvarchar](100) NOT NULL,
+	[PhuongXa] [nvarchar](100) NOT NULL,
+	[DiaChiCuThe] [nvarchar](250) NOT NULL,
+	[NhanDiaChi] [nvarchar](50) NULL,
+	[LaMacDinh] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaDC] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[ThiepChucMung3D]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[ThiepChucMung3D](
+	[MaThiep] [int] IDENTITY(1,1) NOT NULL,
+	[MaTokenQr] [nvarchar](60) NOT NULL,
+	[MaDonHang] [int] NOT NULL,
+	[MaDotGiao] [int] NULL,
+	[TenNguoiGui] [nvarchar](150) NOT NULL,
+	[TenNguoiNhan] [nvarchar](150) NOT NULL,
+	[LoiChuc] [nvarchar](1000) NOT NULL,
+	[MauGiaoDien] [nvarchar](100) NOT NULL,
+	[SoLanMoThiep] [int] NOT NULL,
+	[NgayTao] [datetime] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaThiep] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[MaTokenQr] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[ThongSoDinhDuong]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[ThongSoDinhDuong](
+	[MaDD] [int] IDENTITY(1,1) NOT NULL,
+	[MaBanh] [int] NOT NULL,
+	[NangLuongCalo] [int] NOT NULL,
+	[LuongDuongGram] [decimal](6, 2) NOT NULL,
+	[ChatDamGram] [decimal](6, 2) NOT NULL,
+	[ChatBeoGram] [decimal](6, 2) NOT NULL,
+	[ChiSoDuongHuyet_GI] [int] NOT NULL,
+	[CanhBaoDiUng] [nvarchar](300) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaDD] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[MaBanh] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[ThuongHieu]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[ThuongHieu](
+	[MaThuongHieu] [int] IDENTITY(1,1) NOT NULL,
+	[MaCodeThuongHieu] [varchar](30) NOT NULL,
+	[TenThuongHieu] [nvarchar](120) NOT NULL,
+	[XuatXu] [nvarchar](150) NULL,
+	[MoTa] [nvarchar](500) NULL,
+	[DangHoatDong] [bit] NOT NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaThuongHieu] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[MaCodeThuongHieu] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+UNIQUE NONCLUSTERED 
+(
+	[TenThuongHieu] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
+IF OBJECT_ID(N'[dbo].[VaiTro]', N'U') IS NULL
+BEGIN
+CREATE TABLE [dbo].[VaiTro](
+	[MaVT] [varchar](20) NOT NULL,
+	[TenVT] [nvarchar](100) NOT NULL,
+	[MoTa] [nvarchar](250) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaVT] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+END;
+GO
 
--- Bổ sung cột thật còn thiếu để nối kín 100% ERD
-IF COL_LENGTH('dbo.SanPhamBanh', 'MaAnhChinh') IS NULL
-    ALTER TABLE dbo.SanPhamBanh ADD MaAnhChinh INT NULL CONSTRAINT FK_SPBanh_AnhChinh FOREIGN KEY REFERENCES dbo.KhoHinhAnh(MaHA);
-IF COL_LENGTH('dbo.MauVoHop', 'MaAnhChinh') IS NULL
-    ALTER TABLE dbo.MauVoHop ADD MaAnhChinh INT NULL CONSTRAINT FK_MauVoHop_AnhChinh FOREIGN KEY REFERENCES dbo.KhoHinhAnh(MaHA);
-IF COL_LENGTH('dbo.ComboMauCoSan', 'MaAnhChinh') IS NULL
-    ALTER TABLE dbo.ComboMauCoSan ADD MaAnhChinh INT NULL CONSTRAINT FK_Combo_AnhChinh FOREIGN KEY REFERENCES dbo.KhoHinhAnh(MaHA);
+-- Bổ sung cột mở rộng an toàn nếu nâng cấp từ phiên bản CSDL cũ
+IF COL_LENGTH('dbo.SanPhamBanh', 'MaAnhChinh') IS NULL ALTER TABLE dbo.SanPhamBanh ADD MaAnhChinh INT NULL;
+IF COL_LENGTH('dbo.MauVoHop', 'MaAnhChinh') IS NULL ALTER TABLE dbo.MauVoHop ADD MaAnhChinh INT NULL;
+IF COL_LENGTH('dbo.ComboMauCoSan', 'MaAnhChinh') IS NULL ALTER TABLE dbo.ComboMauCoSan ADD MaAnhChinh INT NULL;
+IF COL_LENGTH('dbo.DonHang', 'MaKM') IS NULL ALTER TABLE dbo.DonHang ADD MaKM INT NULL;
+IF COL_LENGTH('dbo.DonHang', 'MaMocCK') IS NULL ALTER TABLE dbo.DonHang ADD MaMocCK INT NULL;
+IF COL_LENGTH('dbo.PhieuKiemKho', 'MaNdKiem') IS NULL ALTER TABLE dbo.PhieuKiemKho ADD MaNdKiem INT NULL;
+IF COL_LENGTH('dbo.CauHinhHeThong', 'MaNdCapNhat') IS NULL ALTER TABLE dbo.CauHinhHeThong ADD MaNdCapNhat INT NULL;
+GO
 
-IF COL_LENGTH('dbo.DonHang', 'MaKM') IS NULL
-    ALTER TABLE dbo.DonHang ADD MaKM INT NULL CONSTRAINT FK_DonHang_MaKhuyenMai FOREIGN KEY REFERENCES dbo.MaKhuyenMai(MaKM);
-IF COL_LENGTH('dbo.DonHang', 'MaMocCK') IS NULL
-    ALTER TABLE dbo.DonHang ADD MaMocCK INT NULL CONSTRAINT FK_DonHang_BangChietKhau FOREIGN KEY REFERENCES dbo.BangChietKhauSiB2B(MaMocCK);
+-- Gắn đầy đủ Default Constraints an toàn (Idempotent)
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[BangChietKhauSiB2B]') AND c.name = N'MienPhiInLogo')
+    ALTER TABLE [dbo].[BangChietKhauSiB2B] ADD DEFAULT ((0)) FOR [MienPhiInLogo];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[BangChietKhauSiB2B]') AND c.name = N'PhiKhuonInLogo')
+    ALTER TABLE [dbo].[BangChietKhauSiB2B] ADD DEFAULT ((500000)) FOR [PhiKhuonInLogo];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[BangChietKhauSiB2B]') AND c.name = N'SoNgaySanXuatCongThem')
+    ALTER TABLE [dbo].[BangChietKhauSiB2B] ADD DEFAULT ((2)) FOR [SoNgaySanXuatCongThem];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[CauHinhHeThong]') AND c.name = N'NgayCapNhat')
+    ALTER TABLE [dbo].[CauHinhHeThong] ADD DEFAULT (getdate()) FOR [NgayCapNhat];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[CauHinhLandingPage]') AND c.name = N'ThuTuHienThi')
+    ALTER TABLE [dbo].[CauHinhLandingPage] ADD DEFAULT ((1)) FOR [ThuTuHienThi];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[CauHinhLandingPage]') AND c.name = N'DangKichHoat')
+    ALTER TABLE [dbo].[CauHinhLandingPage] ADD DEFAULT ((1)) FOR [DangKichHoat];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ChiTietComboMau]') AND c.name = N'SoLuong')
+    ALTER TABLE [dbo].[ChiTietComboMau] ADD DEFAULT ((1)) FOR [SoLuong];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ChiTietGioHang]') AND c.name = N'SoLuong')
+    ALTER TABLE [dbo].[ChiTietGioHang] ADD DEFAULT ((1)) FOR [SoLuong];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ChiTietGioHang]') AND c.name = N'NgayThem')
+    ALTER TABLE [dbo].[ChiTietGioHang] ADD DEFAULT (getdate()) FOR [NgayThem];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ChiTietPhieuNhap]') AND c.name = N'PhanTramChietKhau')
+    ALTER TABLE [dbo].[ChiTietPhieuNhap] ADD DEFAULT ((0)) FOR [PhanTramChietKhau];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ChiTietPhieuNhap]') AND c.name = N'GiaNiemYet')
+    ALTER TABLE [dbo].[ChiTietPhieuNhap] ADD DEFAULT ((0)) FOR [GiaNiemYet];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ComboMauCoSan]') AND c.name = N'TrangThai')
+    ALTER TABLE [dbo].[ComboMauCoSan] ADD DEFAULT ((1)) FOR [TrangThai];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ComboMauCoSan]') AND c.name = N'ViTriKho')
+    ALTER TABLE [dbo].[ComboMauCoSan] ADD DEFAULT (N'Kệ B1') FOR [ViTriKho];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ComboMauCoSan]') AND c.name = N'DonViTinh')
+    ALTER TABLE [dbo].[ComboMauCoSan] ADD DEFAULT (N'Hộp') FOR [DonViTinh];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ComboMauCoSan]') AND c.name = N'BanTrucTiep')
+    ALTER TABLE [dbo].[ComboMauCoSan] ADD DEFAULT ((1)) FOR [BanTrucTiep];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ComboMauCoSan]') AND c.name = N'TongTonKho')
+    ALTER TABLE [dbo].[ComboMauCoSan] ADD DEFAULT ((40)) FOR [TongTonKho];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ComboMauCoSan]') AND c.name = N'TrongLuongGram')
+    ALTER TABLE [dbo].[ComboMauCoSan] ADD DEFAULT ((600)) FOR [TrongLuongGram];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DanhMucBanh]') AND c.name = N'ThuTuSX')
+    ALTER TABLE [dbo].[DanhMucBanh] ADD DEFAULT ((1)) FOR [ThuTuSX];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DanhMucBanh]') AND c.name = N'TrangThai')
+    ALTER TABLE [dbo].[DanhMucBanh] ADD DEFAULT ((1)) FOR [TrangThai];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'LaDonDoanhNghiepB2B')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ((0)) FOR [LaDonDoanhNghiepB2B];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'PhanTramCK_B2B')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ((0)) FOR [PhanTramCK_B2B];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'TienChietKhauB2B')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ((0)) FOR [TienChietKhauB2B];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'TienGiamVoucher')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ((0)) FOR [TienGiamVoucher];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'PhiInLogo')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ((0)) FOR [PhiInLogo];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'TongPhiVanChuyen')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ((0)) FOR [TongPhiVanChuyen];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'PhuongThucTT')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ('COD') FOR [PhuongThucTT];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'TrangThaiTT')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ('CHUA_TT') FOR [TrangThaiTT];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'TrangThaiDH')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ('CHO_XAC_NHAN') FOR [TrangThaiDH];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'NgayDat')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT (getdate()) FOR [NgayDat];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'TienGiamHangVip')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ((0)) FOR [TienGiamHangVip];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'PhanTramGiamVip')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ((0)) FOR [PhanTramGiamVip];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'SoDiemDaDung')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ((0)) FOR [SoDiemDaDung];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'TienGiamDiemVip')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ((0)) FOR [TienGiamDiemVip];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'DaCongDiemThuong')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ((0)) FOR [DaCongDiemThuong];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'DaHoanDiemKhiHuy')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ((0)) FOR [DaHoanDiemKhiHuy];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'KenhBan')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ('WEB_ONLINE') FOR [KenhBan];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DonHang]') AND c.name = N'DaRollbackKho')
+    ALTER TABLE [dbo].[DonHang] ADD DEFAULT ((0)) FOR [DaRollbackKho];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DotGiaoHang_DaDiem]') AND c.name = N'KhungGioGiao')
+    ALTER TABLE [dbo].[DotGiaoHang_DaDiem] ADD DEFAULT (N'Sáng (08:00 - 11:30)') FOR [KhungGioGiao];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DotGiaoHang_DaDiem]') AND c.name = N'PhiShipDotNay')
+    ALTER TABLE [dbo].[DotGiaoHang_DaDiem] ADD DEFAULT ((30000)) FOR [PhiShipDotNay];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DotGiaoHang_DaDiem]') AND c.name = N'TrangThaiGiao')
+    ALTER TABLE [dbo].[DotGiaoHang_DaDiem] ADD DEFAULT ('CHO_DONG_GOI') FOR [TrangThaiGiao];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DotGiaoHang_DaDiem]') AND c.name = N'CoKemThiepQR')
+    ALTER TABLE [dbo].[DotGiaoHang_DaDiem] ADD DEFAULT ((1)) FOR [CoKemThiepQR];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DotGiaoHang_DaDiem]') AND c.name = N'MauGiaoDienThiep')
+    ALTER TABLE [dbo].[DotGiaoHang_DaDiem] ADD DEFAULT ('CO_PHONG_HOANG_GIA') FOR [MauGiaoDienThiep];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[DotGiaoHang_DaDiem]') AND c.name = N'SoLanMoThiep')
+    ALTER TABLE [dbo].[DotGiaoHang_DaDiem] ADD DEFAULT ((0)) FOR [SoLanMoThiep];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[GioHang]') AND c.name = N'LaCheDoMuaSiB2B')
+    ALTER TABLE [dbo].[GioHang] ADD DEFAULT ((0)) FOR [LaCheDoMuaSiB2B];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[GioHang]') AND c.name = N'YeuCauInLogoB2B')
+    ALTER TABLE [dbo].[GioHang] ADD DEFAULT ((0)) FOR [YeuCauInLogoB2B];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[GioHang]') AND c.name = N'NgayCapNhat')
+    ALTER TABLE [dbo].[GioHang] ADD DEFAULT (getdate()) FOR [NgayCapNhat];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[HopQuaTuChon]') AND c.name = N'TenHopKhachDat')
+    ALTER TABLE [dbo].[HopQuaTuChon] ADD DEFAULT (N'Hộp Quà Tự Chọn') FOR [TenHopKhachDat];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[HopQuaTuChon]') AND c.name = N'TongCaloHop')
+    ALTER TABLE [dbo].[HopQuaTuChon] ADD DEFAULT ((0)) FOR [TongCaloHop];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[HopQuaTuChon]') AND c.name = N'DaLuuMauYeuThich')
+    ALTER TABLE [dbo].[HopQuaTuChon] ADD DEFAULT ((0)) FOR [DaLuuMauYeuThich];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[HopQuaTuChon]') AND c.name = N'NgayTao')
+    ALTER TABLE [dbo].[HopQuaTuChon] ADD DEFAULT (getdate()) FOR [NgayTao];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[HoSoNhanVien]') AND c.name = N'ChiNhanh')
+    ALTER TABLE [dbo].[HoSoNhanVien] ADD DEFAULT (N'TP. Long Xuyên') FOR [ChiNhanh];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[HoSoNhanVien]') AND c.name = N'CaLamViec')
+    ALTER TABLE [dbo].[HoSoNhanVien] ADD DEFAULT (N'Toàn thời gian') FOR [CaLamViec];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[HoSoNhanVien]') AND c.name = N'NgayVaoLam')
+    ALTER TABLE [dbo].[HoSoNhanVien] ADD DEFAULT (CONVERT([date],getdate())) FOR [NgayVaoLam];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[HoSoNhanVien]') AND c.name = N'TrangThaiLamViec')
+    ALTER TABLE [dbo].[HoSoNhanVien] ADD DEFAULT ('DANG_LAM_VIEC') FOR [TrangThaiLamViec];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[KhoHinhAnh]') AND c.name = N'LoaiLuuTru')
+    ALTER TABLE [dbo].[KhoHinhAnh] ADD DEFAULT ((1)) FOR [LoaiLuuTru];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[KhoHinhAnh]') AND c.name = N'NgayTaiLen')
+    ALTER TABLE [dbo].[KhoHinhAnh] ADD DEFAULT (getdate()) FOR [NgayTaiLen];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[LienKetHinhAnh]') AND c.name = N'ThuTuHienThi')
+    ALTER TABLE [dbo].[LienKetHinhAnh] ADD DEFAULT ((1)) FOR [ThuTuHienThi];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[LoSanXuatBanh]') AND c.name = N'PhanTramGiamCanDate')
+    ALTER TABLE [dbo].[LoSanXuatBanh] ADD DEFAULT ((0)) FOR [PhanTramGiamCanDate];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[LoSanXuatBanh]') AND c.name = N'TrangThaiLo')
+    ALTER TABLE [dbo].[LoSanXuatBanh] ADD DEFAULT ('DANG_BAN') FOR [TrangThaiLo];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[MaKhuyenMai]') AND c.name = N'LoaiGiam')
+    ALTER TABLE [dbo].[MaKhuyenMai] ADD DEFAULT ('PHAN_TRAM') FOR [LoaiGiam];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[MaKhuyenMai]') AND c.name = N'GiamToiDa')
+    ALTER TABLE [dbo].[MaKhuyenMai] ADD DEFAULT ((0)) FOR [GiamToiDa];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[MaKhuyenMai]') AND c.name = N'DonToiThieu')
+    ALTER TABLE [dbo].[MaKhuyenMai] ADD DEFAULT ((0)) FOR [DonToiThieu];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[MaKhuyenMai]') AND c.name = N'SLToiDa')
+    ALTER TABLE [dbo].[MaKhuyenMai] ADD DEFAULT ((100)) FOR [SLToiDa];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[MaKhuyenMai]') AND c.name = N'SLDaDung')
+    ALTER TABLE [dbo].[MaKhuyenMai] ADD DEFAULT ((0)) FOR [SLDaDung];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[MaKhuyenMai]') AND c.name = N'ChoPhepKhachVangLai')
+    ALTER TABLE [dbo].[MaKhuyenMai] ADD DEFAULT ((1)) FOR [ChoPhepKhachVangLai];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[MaKhuyenMai]') AND c.name = N'TrangThaiKichHoat')
+    ALTER TABLE [dbo].[MaKhuyenMai] ADD DEFAULT ((1)) FOR [TrangThaiKichHoat];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[MauVoHop]') AND c.name = N'SLBanhThuongHangToiThieu')
+    ALTER TABLE [dbo].[MauVoHop] ADD DEFAULT ((0)) FOR [SLBanhThuongHangToiThieu];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[MauVoHop]') AND c.name = N'KieuBoCucLuoi')
+    ALTER TABLE [dbo].[MauVoHop] ADD DEFAULT ('grid-2x2') FOR [KieuBoCucLuoi];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[MauVoHop]') AND c.name = N'KemTraOLong')
+    ALTER TABLE [dbo].[MauVoHop] ADD DEFAULT ((0)) FOR [KemTraOLong];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[MauVoHop]') AND c.name = N'SLTonKhoVo')
+    ALTER TABLE [dbo].[MauVoHop] ADD DEFAULT ((50)) FOR [SLTonKhoVo];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[MauVoHop]') AND c.name = N'TrangThai')
+    ALTER TABLE [dbo].[MauVoHop] ADD DEFAULT ((1)) FOR [TrangThai];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[NguoiDung]') AND c.name = N'MaVT')
+    ALTER TABLE [dbo].[NguoiDung] ADD DEFAULT ('KHACH_TV') FOR [MaVT];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[NguoiDung]') AND c.name = N'DiemTichLuy')
+    ALTER TABLE [dbo].[NguoiDung] ADD DEFAULT ((0)) FOR [DiemTichLuy];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[NguoiDung]') AND c.name = N'HangTV')
+    ALTER TABLE [dbo].[NguoiDung] ADD DEFAULT (N'Đồng') FOR [HangTV];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[NguoiDung]') AND c.name = N'TrangThai')
+    ALTER TABLE [dbo].[NguoiDung] ADD DEFAULT ((1)) FOR [TrangThai];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[NguoiDung]') AND c.name = N'NgayTao')
+    ALTER TABLE [dbo].[NguoiDung] ADD DEFAULT (getdate()) FOR [NgayTao];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[NhaCungCap]') AND c.name = N'LoaiNcc')
+    ALTER TABLE [dbo].[NhaCungCap] ADD DEFAULT (N'HANG_CHINH_HANG') FOR [LoaiNcc];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[NhaCungCap]') AND c.name = N'ThuongHieuCungCap')
+    ALTER TABLE [dbo].[NhaCungCap] ADD DEFAULT (N'Đa thương hiệu') FOR [ThuongHieuCungCap];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[NhaCungCap]') AND c.name = N'PhanTramChietKhauMacDinh')
+    ALTER TABLE [dbo].[NhaCungCap] ADD DEFAULT ((0)) FOR [PhanTramChietKhauMacDinh];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[NhaCungCap]') AND c.name = N'DangHoatDong')
+    ALTER TABLE [dbo].[NhaCungCap] ADD DEFAULT ((1)) FOR [DangHoatDong];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[NhaCungCap]') AND c.name = N'NgayTao')
+    ALTER TABLE [dbo].[NhaCungCap] ADD DEFAULT (getdate()) FOR [NgayTao];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[NhatKyTruKhoDonHang]') AND c.name = N'DaHoanKho')
+    ALTER TABLE [dbo].[NhatKyTruKhoDonHang] ADD DEFAULT ((0)) FOR [DaHoanKho];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[NhatKyTruKhoDonHang]') AND c.name = N'NgayGhi')
+    ALTER TABLE [dbo].[NhatKyTruKhoDonHang] ADD DEFAULT (getdate()) FOR [NgayGhi];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhienKhachVangLai]') AND c.name = N'DaGopGioHang')
+    ALTER TABLE [dbo].[PhienKhachVangLai] ADD DEFAULT ((0)) FOR [DaGopGioHang];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhienKhachVangLai]') AND c.name = N'NgayTao')
+    ALTER TABLE [dbo].[PhienKhachVangLai] ADD DEFAULT (getdate()) FOR [NgayTao];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhienKhachVangLai]') AND c.name = N'NgayHetHan')
+    ALTER TABLE [dbo].[PhienKhachVangLai] ADD DEFAULT (dateadd(day,(14),getdate())) FOR [NgayHetHan];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuKhoVoHop]') AND c.name = N'DonGiaNhap')
+    ALTER TABLE [dbo].[PhieuKhoVoHop] ADD DEFAULT ((0)) FOR [DonGiaNhap];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuKhoVoHop]') AND c.name = N'ThanhTien')
+    ALTER TABLE [dbo].[PhieuKhoVoHop] ADD DEFAULT ((0)) FOR [ThanhTien];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuKhoVoHop]') AND c.name = N'NgayGiaoDich')
+    ALTER TABLE [dbo].[PhieuKhoVoHop] ADD DEFAULT (getdate()) FOR [NgayGiaoDich];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuKiemKho]') AND c.name = N'NgayKiem')
+    ALTER TABLE [dbo].[PhieuKiemKho] ADD DEFAULT (getdate()) FOR [NgayKiem];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuKiemKho]') AND c.name = N'TrangThai')
+    ALTER TABLE [dbo].[PhieuKiemKho] ADD DEFAULT ('PHIEU_TAM') FOR [TrangThai];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuKiemKho]') AND c.name = N'TongLechTang')
+    ALTER TABLE [dbo].[PhieuKiemKho] ADD DEFAULT ((0)) FOR [TongLechTang];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuKiemKho]') AND c.name = N'TongLechGiam')
+    ALTER TABLE [dbo].[PhieuKiemKho] ADD DEFAULT ((0)) FOR [TongLechGiam];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuKiemKho]') AND c.name = N'TongGiaTriLech')
+    ALTER TABLE [dbo].[PhieuKiemKho] ADD DEFAULT ((0)) FOR [TongGiaTriLech];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuNhapKho]') AND c.name = N'NgayNhap')
+    ALTER TABLE [dbo].[PhieuNhapKho] ADD DEFAULT (getdate()) FOR [NgayNhap];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuNhapKho]') AND c.name = N'TongTienHang')
+    ALTER TABLE [dbo].[PhieuNhapKho] ADD DEFAULT ((0)) FOR [TongTienHang];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuNhapKho]') AND c.name = N'GiamGia')
+    ALTER TABLE [dbo].[PhieuNhapKho] ADD DEFAULT ((0)) FOR [GiamGia];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuNhapKho]') AND c.name = N'TongPhaiTra')
+    ALTER TABLE [dbo].[PhieuNhapKho] ADD DEFAULT ((0)) FOR [TongPhaiTra];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuNhapKho]') AND c.name = N'DaThanhToan')
+    ALTER TABLE [dbo].[PhieuNhapKho] ADD DEFAULT ((0)) FOR [DaThanhToan];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuNhapKho]') AND c.name = N'TrangThai')
+    ALTER TABLE [dbo].[PhieuNhapKho] ADD DEFAULT ('PHIEU_TAM') FOR [TrangThai];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuNhapKho]') AND c.name = N'TrangThaiThanhToan')
+    ALTER TABLE [dbo].[PhieuNhapKho] ADD DEFAULT ('CHUA_THANH_TOAN') FOR [TrangThaiThanhToan];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuThuChi]') AND c.name = N'NgayLap')
+    ALTER TABLE [dbo].[PhieuThuChi] ADD DEFAULT (getdate()) FOR [NgayLap];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuXuatKho]') AND c.name = N'NgayXuat')
+    ALTER TABLE [dbo].[PhieuXuatKho] ADD DEFAULT (getdate()) FOR [NgayXuat];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuXuatKho]') AND c.name = N'TongGiaTriVon')
+    ALTER TABLE [dbo].[PhieuXuatKho] ADD DEFAULT ((0)) FOR [TongGiaTriVon];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[PhieuXuatKho]') AND c.name = N'TrangThai')
+    ALTER TABLE [dbo].[PhieuXuatKho] ADD DEFAULT ('HOAN_THANH') FOR [TrangThai];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[SanPhamBanh]') AND c.name = N'GiaVon')
+    ALTER TABLE [dbo].[SanPhamBanh] ADD DEFAULT ((0)) FOR [GiaVon];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[SanPhamBanh]') AND c.name = N'TrongLuongGram')
+    ALTER TABLE [dbo].[SanPhamBanh] ADD DEFAULT ((150)) FOR [TrongLuongGram];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[SanPhamBanh]') AND c.name = N'SoTrungMuoi')
+    ALTER TABLE [dbo].[SanPhamBanh] ADD DEFAULT ((1)) FOR [SoTrungMuoi];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[SanPhamBanh]') AND c.name = N'MucDoNgot')
+    ALTER TABLE [dbo].[SanPhamBanh] ADD DEFAULT ('BINH_THUONG') FOR [MucDoNgot];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[SanPhamBanh]') AND c.name = N'LaBanhChay')
+    ALTER TABLE [dbo].[SanPhamBanh] ADD DEFAULT ((0)) FOR [LaBanhChay];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[SanPhamBanh]') AND c.name = N'LaBanhThuongHang')
+    ALTER TABLE [dbo].[SanPhamBanh] ADD DEFAULT ((0)) FOR [LaBanhThuongHang];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[SanPhamBanh]') AND c.name = N'NhomHuongVi')
+    ALTER TABLE [dbo].[SanPhamBanh] ADD DEFAULT ('MAN_TRUYENTHONG') FOR [NhomHuongVi];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[SanPhamBanh]') AND c.name = N'TongTonKho')
+    ALTER TABLE [dbo].[SanPhamBanh] ADD DEFAULT ((0)) FOR [TongTonKho];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[SanPhamBanh]') AND c.name = N'TrangThaiBan')
+    ALTER TABLE [dbo].[SanPhamBanh] ADD DEFAULT ((1)) FOR [TrangThaiBan];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[SanPhamBanh]') AND c.name = N'ViTriKho')
+    ALTER TABLE [dbo].[SanPhamBanh] ADD DEFAULT (N'Kệ A1') FOR [ViTriKho];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[SanPhamBanh]') AND c.name = N'DonViTinh')
+    ALTER TABLE [dbo].[SanPhamBanh] ADD DEFAULT (N'Cái') FOR [DonViTinh];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[SanPhamBanh]') AND c.name = N'BanTrucTiep')
+    ALTER TABLE [dbo].[SanPhamBanh] ADD DEFAULT ((1)) FOR [BanTrucTiep];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[SoDiaChi]') AND c.name = N'LaMacDinh')
+    ALTER TABLE [dbo].[SoDiaChi] ADD DEFAULT ((0)) FOR [LaMacDinh];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ThiepChucMung3D]') AND c.name = N'SoLanMoThiep')
+    ALTER TABLE [dbo].[ThiepChucMung3D] ADD DEFAULT ((0)) FOR [SoLanMoThiep];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ThiepChucMung3D]') AND c.name = N'NgayTao')
+    ALTER TABLE [dbo].[ThiepChucMung3D] ADD DEFAULT (getdate()) FOR [NgayTao];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ThongSoDinhDuong]') AND c.name = N'ChiSoDuongHuyet_GI')
+    ALTER TABLE [dbo].[ThongSoDinhDuong] ADD DEFAULT ((55)) FOR [ChiSoDuongHuyet_GI];
+IF NOT EXISTS (SELECT 1 FROM sys.default_constraints dc JOIN sys.columns c ON dc.parent_object_id = c.object_id AND dc.parent_column_id = c.column_id WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[ThuongHieu]') AND c.name = N'DangHoatDong')
+    ALTER TABLE [dbo].[ThuongHieu] ADD DEFAULT ((1)) FOR [DangHoatDong];
+GO
 
-IF COL_LENGTH('dbo.PhieuKiemKho', 'MaNdKiem') IS NULL
-    ALTER TABLE dbo.PhieuKiemKho ADD MaNdKiem INT NULL CONSTRAINT FK_PhieuKiemKho_NguoiDung FOREIGN KEY REFERENCES dbo.NguoiDung(MaND);
-IF COL_LENGTH('dbo.CauHinhHeThong', 'MaNdCapNhat') IS NULL
-    ALTER TABLE dbo.CauHinhHeThong ADD MaNdCapNhat INT NULL CONSTRAINT FK_CauHinhHeThong_NguoiDung FOREIGN KEY REFERENCES dbo.NguoiDung(MaND);
+-- Khởi tạo Filtered Unique Index cho Token Thiệp 3D QR
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_DotGiaoHang_MaTokenThiepQR_Filtered' AND object_id = OBJECT_ID(N'[dbo].[DotGiaoHang_DaDiem]'))
+    CREATE UNIQUE NONCLUSTERED INDEX [IX_DotGiaoHang_MaTokenThiepQR_Filtered] ON [dbo].[DotGiaoHang_DaDiem] ([MaTokenThiepQR] ASC) WHERE ([MaTokenThiepQR] IS NOT NULL);
 GO
 
 -- =============================================================================
--- PHẦN 2: RESET SẠCH TOÀN BỘ 37 BẢNG & RESEED IDENTITY AN TOÀN
+-- PHẦN 2: RESET SẠCH TOÀN BỘ 37 BẢNG, RESEED IDENTITY & NỐI ĐỦ 71 KHÓA NGOẠI
 -- =============================================================================
 BEGIN TRANSACTION;
 
@@ -166,25 +1221,363 @@ IF EXISTS (SELECT 1 FROM sys.identity_columns WHERE object_id = OBJECT_ID(N'[dbo
 IF EXISTS (SELECT 1 FROM sys.identity_columns WHERE object_id = OBJECT_ID(N'[dbo].[HoSoNhanVien]') AND last_value IS NOT NULL) DBCC CHECKIDENT (N'[dbo].[HoSoNhanVien]', RESEED, 0);
 IF EXISTS (SELECT 1 FROM sys.identity_columns WHERE object_id = OBJECT_ID(N'[dbo].[NguoiDung]') AND last_value IS NOT NULL) DBCC CHECKIDENT (N'[dbo].[NguoiDung]', RESEED, 0);
 
--- Gắn đủ 9 khóa ngoại từng bị thiếu (trên bảng đã sạch dữ liệu, đảm bảo 0 lỗi xung đột)
-IF OBJECT_ID('dbo.FK_Thiep3D_DonHang', 'F') IS NULL
-    ALTER TABLE dbo.ThiepChucMung3D WITH CHECK ADD CONSTRAINT FK_Thiep3D_DonHang FOREIGN KEY (MaDonHang) REFERENCES dbo.DonHang(MaDH);
-IF OBJECT_ID('dbo.FK_Thiep3D_DotGiaoHang', 'F') IS NULL
-    ALTER TABLE dbo.ThiepChucMung3D WITH CHECK ADD CONSTRAINT FK_Thiep3D_DotGiaoHang FOREIGN KEY (MaDotGiao) REFERENCES dbo.DotGiaoHang_DaDiem(MaDotGH);
-IF OBJECT_ID('dbo.FK_PhieuThuChi_DonHang', 'F') IS NULL
-    ALTER TABLE dbo.PhieuThuChi WITH CHECK ADD CONSTRAINT FK_PhieuThuChi_DonHang FOREIGN KEY (MaDonHangLienKet) REFERENCES dbo.DonHang(MaDH);
-IF OBJECT_ID('dbo.FK_DonHang_AnhLogoCongTy', 'F') IS NULL
-    ALTER TABLE dbo.DonHang WITH CHECK ADD CONSTRAINT FK_DonHang_AnhLogoCongTy FOREIGN KEY (MaAnhLogoCongTy) REFERENCES dbo.KhoHinhAnh(MaHA);
-IF OBJECT_ID('dbo.FK_GioHang_MaKhuyenMai', 'F') IS NULL
-    ALTER TABLE dbo.GioHang WITH CHECK ADD CONSTRAINT FK_GioHang_MaKhuyenMai FOREIGN KEY (CodeKMDangApDung) REFERENCES dbo.MaKhuyenMai(CodeKM);
-IF OBJECT_ID('dbo.FK_CTDH_SanPhamBanh', 'F') IS NULL
-    ALTER TABLE dbo.ChiTietDonHang WITH CHECK ADD CONSTRAINT FK_CTDH_SanPhamBanh FOREIGN KEY (MaBanh) REFERENCES dbo.SanPhamBanh(MaBanh);
-IF OBJECT_ID('dbo.FK_CTDH_ComboMau', 'F') IS NULL
-    ALTER TABLE dbo.ChiTietDonHang WITH CHECK ADD CONSTRAINT FK_CTDH_ComboMau FOREIGN KEY (MaCB) REFERENCES dbo.ComboMauCoSan(MaCB);
-IF OBJECT_ID('dbo.FK_CTDH_HopTuChon', 'F') IS NULL
-    ALTER TABLE dbo.ChiTietDonHang WITH CHECK ADD CONSTRAINT FK_CTDH_HopTuChon FOREIGN KEY (MaHopTC) REFERENCES dbo.HopQuaTuChon(MaHopTC);
-IF OBJECT_ID('dbo.FK_Landing_AnhPhu', 'F') IS NULL
-    ALTER TABLE dbo.CauHinhLandingPage WITH CHECK ADD CONSTRAINT FK_Landing_AnhPhu FOREIGN KEY (MaAnhPhu_Parallax) REFERENCES dbo.KhoHinhAnh(MaHA);
+
+-- Gắn đầy đủ 71 Khóa Ngoại liên thông 37/37 bảng (Idempotent)
+IF OBJECT_ID(N'[dbo].[FK_CauHinhHeThong_NguoiDung]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[CauHinhHeThong]  WITH CHECK ADD  CONSTRAINT [FK_CauHinhHeThong_NguoiDung] FOREIGN KEY([MaNdCapNhat]) REFERENCES [dbo].[NguoiDung] ([MaND]);
+    ALTER TABLE [dbo].[CauHinhHeThong] CHECK CONSTRAINT [FK_CauHinhHeThong_NguoiDung];
+END;
+IF OBJECT_ID(N'[dbo].[FK_Landing_AnhNen]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[CauHinhLandingPage]  WITH CHECK ADD  CONSTRAINT [FK_Landing_AnhNen] FOREIGN KEY([MaAnhNen]) REFERENCES [dbo].[KhoHinhAnh] ([MaHA]);
+    ALTER TABLE [dbo].[CauHinhLandingPage] CHECK CONSTRAINT [FK_Landing_AnhNen];
+END;
+IF OBJECT_ID(N'[dbo].[FK_Landing_AnhPhu]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[CauHinhLandingPage]  WITH CHECK ADD  CONSTRAINT [FK_Landing_AnhPhu] FOREIGN KEY([MaAnhPhu_Parallax]) REFERENCES [dbo].[KhoHinhAnh] ([MaHA]);
+    ALTER TABLE [dbo].[CauHinhLandingPage] CHECK CONSTRAINT [FK_Landing_AnhPhu];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTCB_Banh]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietComboMau]  WITH CHECK ADD  CONSTRAINT [FK_CTCB_Banh] FOREIGN KEY([MaBanh]) REFERENCES [dbo].[SanPhamBanh] ([MaBanh]);
+    ALTER TABLE [dbo].[ChiTietComboMau] CHECK CONSTRAINT [FK_CTCB_Banh];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTCB_Combo]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietComboMau]  WITH CHECK ADD  CONSTRAINT [FK_CTCB_Combo] FOREIGN KEY([MaCB]) REFERENCES [dbo].[ComboMauCoSan] ([MaCB]) ON DELETE CASCADE;
+    ALTER TABLE [dbo].[ChiTietComboMau] CHECK CONSTRAINT [FK_CTCB_Combo];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTDH_ComboMau]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietDonHang]  WITH CHECK ADD  CONSTRAINT [FK_CTDH_ComboMau] FOREIGN KEY([MaCB]) REFERENCES [dbo].[ComboMauCoSan] ([MaCB]);
+    ALTER TABLE [dbo].[ChiTietDonHang] CHECK CONSTRAINT [FK_CTDH_ComboMau];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTDH_DonHang]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietDonHang]  WITH CHECK ADD  CONSTRAINT [FK_CTDH_DonHang] FOREIGN KEY([MaDH]) REFERENCES [dbo].[DonHang] ([MaDH]) ON DELETE CASCADE;
+    ALTER TABLE [dbo].[ChiTietDonHang] CHECK CONSTRAINT [FK_CTDH_DonHang];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTDH_DotGH]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietDonHang]  WITH CHECK ADD  CONSTRAINT [FK_CTDH_DotGH] FOREIGN KEY([MaDotGH]) REFERENCES [dbo].[DotGiaoHang_DaDiem] ([MaDotGH]);
+    ALTER TABLE [dbo].[ChiTietDonHang] CHECK CONSTRAINT [FK_CTDH_DotGH];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTDH_HopTuChon]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietDonHang]  WITH CHECK ADD  CONSTRAINT [FK_CTDH_HopTuChon] FOREIGN KEY([MaHopTC]) REFERENCES [dbo].[HopQuaTuChon] ([MaHopTC]);
+    ALTER TABLE [dbo].[ChiTietDonHang] CHECK CONSTRAINT [FK_CTDH_HopTuChon];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTDH_SanPhamBanh]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietDonHang]  WITH CHECK ADD  CONSTRAINT [FK_CTDH_SanPhamBanh] FOREIGN KEY([MaBanh]) REFERENCES [dbo].[SanPhamBanh] ([MaBanh]);
+    ALTER TABLE [dbo].[ChiTietDonHang] CHECK CONSTRAINT [FK_CTDH_SanPhamBanh];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTGH_Banh]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietGioHang]  WITH CHECK ADD  CONSTRAINT [FK_CTGH_Banh] FOREIGN KEY([MaBanh]) REFERENCES [dbo].[SanPhamBanh] ([MaBanh]);
+    ALTER TABLE [dbo].[ChiTietGioHang] CHECK CONSTRAINT [FK_CTGH_Banh];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTGH_Combo]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietGioHang]  WITH CHECK ADD  CONSTRAINT [FK_CTGH_Combo] FOREIGN KEY([MaCB]) REFERENCES [dbo].[ComboMauCoSan] ([MaCB]);
+    ALTER TABLE [dbo].[ChiTietGioHang] CHECK CONSTRAINT [FK_CTGH_Combo];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTGH_GioHang]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietGioHang]  WITH CHECK ADD  CONSTRAINT [FK_CTGH_GioHang] FOREIGN KEY([MaGH]) REFERENCES [dbo].[GioHang] ([MaGH]) ON DELETE CASCADE;
+    ALTER TABLE [dbo].[ChiTietGioHang] CHECK CONSTRAINT [FK_CTGH_GioHang];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTGH_HopTC]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietGioHang]  WITH CHECK ADD  CONSTRAINT [FK_CTGH_HopTC] FOREIGN KEY([MaHopTC]) REFERENCES [dbo].[HopQuaTuChon] ([MaHopTC]);
+    ALTER TABLE [dbo].[ChiTietGioHang] CHECK CONSTRAINT [FK_CTGH_HopTC];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTHopTC_Banh]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietHopTuChon]  WITH CHECK ADD  CONSTRAINT [FK_CTHopTC_Banh] FOREIGN KEY([MaBanh]) REFERENCES [dbo].[SanPhamBanh] ([MaBanh]);
+    ALTER TABLE [dbo].[ChiTietHopTuChon] CHECK CONSTRAINT [FK_CTHopTC_Banh];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTHopTC_HopTC]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietHopTuChon]  WITH CHECK ADD  CONSTRAINT [FK_CTHopTC_HopTC] FOREIGN KEY([MaHopTC]) REFERENCES [dbo].[HopQuaTuChon] ([MaHopTC]) ON DELETE CASCADE;
+    ALTER TABLE [dbo].[ChiTietHopTuChon] CHECK CONSTRAINT [FK_CTHopTC_HopTC];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTKK_PhieuKiemKho]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietKiemKho]  WITH CHECK ADD  CONSTRAINT [FK_CTKK_PhieuKiemKho] FOREIGN KEY([MaPkk]) REFERENCES [dbo].[PhieuKiemKho] ([MaPkk]) ON DELETE CASCADE;
+    ALTER TABLE [dbo].[ChiTietKiemKho] CHECK CONSTRAINT [FK_CTKK_PhieuKiemKho];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTKK_SanPham]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietKiemKho]  WITH CHECK ADD  CONSTRAINT [FK_CTKK_SanPham] FOREIGN KEY([MaSp]) REFERENCES [dbo].[SanPhamBanh] ([MaBanh]);
+    ALTER TABLE [dbo].[ChiTietKiemKho] CHECK CONSTRAINT [FK_CTKK_SanPham];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTPN_LoSanXuat]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietPhieuNhap]  WITH CHECK ADD  CONSTRAINT [FK_CTPN_LoSanXuat] FOREIGN KEY([MaLo]) REFERENCES [dbo].[LoSanXuatBanh] ([MaLo]);
+    ALTER TABLE [dbo].[ChiTietPhieuNhap] CHECK CONSTRAINT [FK_CTPN_LoSanXuat];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTPN_PhieuNhap]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietPhieuNhap]  WITH CHECK ADD  CONSTRAINT [FK_CTPN_PhieuNhap] FOREIGN KEY([MaPn]) REFERENCES [dbo].[PhieuNhapKho] ([MaPn]) ON DELETE CASCADE;
+    ALTER TABLE [dbo].[ChiTietPhieuNhap] CHECK CONSTRAINT [FK_CTPN_PhieuNhap];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTPN_SanPham]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietPhieuNhap]  WITH CHECK ADD  CONSTRAINT [FK_CTPN_SanPham] FOREIGN KEY([MaSp]) REFERENCES [dbo].[SanPhamBanh] ([MaBanh]);
+    ALTER TABLE [dbo].[ChiTietPhieuNhap] CHECK CONSTRAINT [FK_CTPN_SanPham];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTPX_LoSanXuat]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietPhieuXuat]  WITH CHECK ADD  CONSTRAINT [FK_CTPX_LoSanXuat] FOREIGN KEY([MaLo]) REFERENCES [dbo].[LoSanXuatBanh] ([MaLo]);
+    ALTER TABLE [dbo].[ChiTietPhieuXuat] CHECK CONSTRAINT [FK_CTPX_LoSanXuat];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTPX_PhieuXuat]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietPhieuXuat]  WITH CHECK ADD  CONSTRAINT [FK_CTPX_PhieuXuat] FOREIGN KEY([MaPx]) REFERENCES [dbo].[PhieuXuatKho] ([MaPx]) ON DELETE CASCADE;
+    ALTER TABLE [dbo].[ChiTietPhieuXuat] CHECK CONSTRAINT [FK_CTPX_PhieuXuat];
+END;
+IF OBJECT_ID(N'[dbo].[FK_CTPX_SanPham]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ChiTietPhieuXuat]  WITH CHECK ADD  CONSTRAINT [FK_CTPX_SanPham] FOREIGN KEY([MaSp]) REFERENCES [dbo].[SanPhamBanh] ([MaBanh]);
+    ALTER TABLE [dbo].[ChiTietPhieuXuat] CHECK CONSTRAINT [FK_CTPX_SanPham];
+END;
+IF OBJECT_ID(N'[dbo].[FK_Combo_AnhChinh]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ComboMauCoSan]  WITH CHECK ADD  CONSTRAINT [FK_Combo_AnhChinh] FOREIGN KEY([MaAnhChinh]) REFERENCES [dbo].[KhoHinhAnh] ([MaHA]);
+    ALTER TABLE [dbo].[ComboMauCoSan] CHECK CONSTRAINT [FK_Combo_AnhChinh];
+END;
+IF OBJECT_ID(N'[dbo].[FK_Combo_DanhMuc]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ComboMauCoSan]  WITH CHECK ADD  CONSTRAINT [FK_Combo_DanhMuc] FOREIGN KEY([MaDM]) REFERENCES [dbo].[DanhMucBanh] ([MaDM]);
+    ALTER TABLE [dbo].[ComboMauCoSan] CHECK CONSTRAINT [FK_Combo_DanhMuc];
+END;
+IF OBJECT_ID(N'[dbo].[FK_Combo_MauVoHop]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ComboMauCoSan]  WITH CHECK ADD  CONSTRAINT [FK_Combo_MauVoHop] FOREIGN KEY([MaVH]) REFERENCES [dbo].[MauVoHop] ([MaVH]);
+    ALTER TABLE [dbo].[ComboMauCoSan] CHECK CONSTRAINT [FK_Combo_MauVoHop];
+END;
+IF OBJECT_ID(N'[dbo].[FK_Combo_ThuongHieu]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ComboMauCoSan]  WITH CHECK ADD  CONSTRAINT [FK_Combo_ThuongHieu] FOREIGN KEY([MaThuongHieu]) REFERENCES [dbo].[ThuongHieu] ([MaThuongHieu]);
+    ALTER TABLE [dbo].[ComboMauCoSan] CHECK CONSTRAINT [FK_Combo_ThuongHieu];
+END;
+IF OBJECT_ID(N'[dbo].[FK_DMBanh_Cha]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[DanhMucBanh]  WITH CHECK ADD  CONSTRAINT [FK_DMBanh_Cha] FOREIGN KEY([MaDMCha]) REFERENCES [dbo].[DanhMucBanh] ([MaDM]);
+    ALTER TABLE [dbo].[DanhMucBanh] CHECK CONSTRAINT [FK_DMBanh_Cha];
+END;
+IF OBJECT_ID(N'[dbo].[FK_DH_NguoiDung]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[DonHang]  WITH CHECK ADD  CONSTRAINT [FK_DH_NguoiDung] FOREIGN KEY([MaND]) REFERENCES [dbo].[NguoiDung] ([MaND]);
+    ALTER TABLE [dbo].[DonHang] CHECK CONSTRAINT [FK_DH_NguoiDung];
+END;
+IF OBJECT_ID(N'[dbo].[FK_DH_PhienKVL]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[DonHang]  WITH CHECK ADD  CONSTRAINT [FK_DH_PhienKVL] FOREIGN KEY([MaPhienKVL]) REFERENCES [dbo].[PhienKhachVangLai] ([MaPhienKVL]);
+    ALTER TABLE [dbo].[DonHang] CHECK CONSTRAINT [FK_DH_PhienKVL];
+END;
+IF OBJECT_ID(N'[dbo].[FK_DonHang_AnhLogoCongTy]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[DonHang]  WITH CHECK ADD  CONSTRAINT [FK_DonHang_AnhLogoCongTy] FOREIGN KEY([MaAnhLogoCongTy]) REFERENCES [dbo].[KhoHinhAnh] ([MaHA]);
+    ALTER TABLE [dbo].[DonHang] CHECK CONSTRAINT [FK_DonHang_AnhLogoCongTy];
+END;
+IF OBJECT_ID(N'[dbo].[FK_DonHang_BangChietKhau]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[DonHang]  WITH CHECK ADD  CONSTRAINT [FK_DonHang_BangChietKhau] FOREIGN KEY([MaMocCK]) REFERENCES [dbo].[BangChietKhauSiB2B] ([MaMocCK]);
+    ALTER TABLE [dbo].[DonHang] CHECK CONSTRAINT [FK_DonHang_BangChietKhau];
+END;
+IF OBJECT_ID(N'[dbo].[FK_DonHang_MaKhuyenMai]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[DonHang]  WITH CHECK ADD  CONSTRAINT [FK_DonHang_MaKhuyenMai] FOREIGN KEY([MaKM]) REFERENCES [dbo].[MaKhuyenMai] ([MaKM]);
+    ALTER TABLE [dbo].[DonHang] CHECK CONSTRAINT [FK_DonHang_MaKhuyenMai];
+END;
+IF OBJECT_ID(N'[dbo].[FK_DonHang_NguoiLap]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[DonHang]  WITH CHECK ADD  CONSTRAINT [FK_DonHang_NguoiLap] FOREIGN KEY([MaNdLap]) REFERENCES [dbo].[NguoiDung] ([MaND]);
+    ALTER TABLE [dbo].[DonHang] CHECK CONSTRAINT [FK_DonHang_NguoiLap];
+END;
+IF OBJECT_ID(N'[dbo].[FK_DotGH_DonHang]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[DotGiaoHang_DaDiem]  WITH CHECK ADD  CONSTRAINT [FK_DotGH_DonHang] FOREIGN KEY([MaDH]) REFERENCES [dbo].[DonHang] ([MaDH]) ON DELETE CASCADE;
+    ALTER TABLE [dbo].[DotGiaoHang_DaDiem] CHECK CONSTRAINT [FK_DotGH_DonHang];
+END;
+IF OBJECT_ID(N'[dbo].[FK_GH_NguoiDung]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[GioHang]  WITH CHECK ADD  CONSTRAINT [FK_GH_NguoiDung] FOREIGN KEY([MaND]) REFERENCES [dbo].[NguoiDung] ([MaND]);
+    ALTER TABLE [dbo].[GioHang] CHECK CONSTRAINT [FK_GH_NguoiDung];
+END;
+IF OBJECT_ID(N'[dbo].[FK_GH_PhienKVL]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[GioHang]  WITH CHECK ADD  CONSTRAINT [FK_GH_PhienKVL] FOREIGN KEY([MaPhienKVL]) REFERENCES [dbo].[PhienKhachVangLai] ([MaPhienKVL]);
+    ALTER TABLE [dbo].[GioHang] CHECK CONSTRAINT [FK_GH_PhienKVL];
+END;
+IF OBJECT_ID(N'[dbo].[FK_GioHang_MaKhuyenMai]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[GioHang]  WITH CHECK ADD  CONSTRAINT [FK_GioHang_MaKhuyenMai] FOREIGN KEY([CodeKMDangApDung]) REFERENCES [dbo].[MaKhuyenMai] ([CodeKM]);
+    ALTER TABLE [dbo].[GioHang] CHECK CONSTRAINT [FK_GioHang_MaKhuyenMai];
+END;
+IF OBJECT_ID(N'[dbo].[FK_HopTC_MauVoHop]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[HopQuaTuChon]  WITH CHECK ADD  CONSTRAINT [FK_HopTC_MauVoHop] FOREIGN KEY([MaVH]) REFERENCES [dbo].[MauVoHop] ([MaVH]);
+    ALTER TABLE [dbo].[HopQuaTuChon] CHECK CONSTRAINT [FK_HopTC_MauVoHop];
+END;
+IF OBJECT_ID(N'[dbo].[FK_HopTC_NguoiDung]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[HopQuaTuChon]  WITH CHECK ADD  CONSTRAINT [FK_HopTC_NguoiDung] FOREIGN KEY([MaND]) REFERENCES [dbo].[NguoiDung] ([MaND]);
+    ALTER TABLE [dbo].[HopQuaTuChon] CHECK CONSTRAINT [FK_HopTC_NguoiDung];
+END;
+IF OBJECT_ID(N'[dbo].[FK_HopTC_PhienKVL]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[HopQuaTuChon]  WITH CHECK ADD  CONSTRAINT [FK_HopTC_PhienKVL] FOREIGN KEY([MaPhienKVL]) REFERENCES [dbo].[PhienKhachVangLai] ([MaPhienKVL]);
+    ALTER TABLE [dbo].[HopQuaTuChon] CHECK CONSTRAINT [FK_HopTC_PhienKVL];
+END;
+IF OBJECT_ID(N'[dbo].[FK_HoSoNhanVien_NguoiDung]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[HoSoNhanVien]  WITH CHECK ADD  CONSTRAINT [FK_HoSoNhanVien_NguoiDung] FOREIGN KEY([MaNd]) REFERENCES [dbo].[NguoiDung] ([MaND]);
+    ALTER TABLE [dbo].[HoSoNhanVien] CHECK CONSTRAINT [FK_HoSoNhanVien_NguoiDung];
+END;
+IF OBJECT_ID(N'[dbo].[FK_LKHA_KhoHA]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[LienKetHinhAnh]  WITH CHECK ADD  CONSTRAINT [FK_LKHA_KhoHA] FOREIGN KEY([MaHA]) REFERENCES [dbo].[KhoHinhAnh] ([MaHA]) ON DELETE CASCADE;
+    ALTER TABLE [dbo].[LienKetHinhAnh] CHECK CONSTRAINT [FK_LKHA_KhoHA];
+END;
+IF OBJECT_ID(N'[dbo].[FK_LoSX_Banh]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[LoSanXuatBanh]  WITH CHECK ADD  CONSTRAINT [FK_LoSX_Banh] FOREIGN KEY([MaBanh]) REFERENCES [dbo].[SanPhamBanh] ([MaBanh]) ON DELETE CASCADE;
+    ALTER TABLE [dbo].[LoSanXuatBanh] CHECK CONSTRAINT [FK_LoSX_Banh];
+END;
+IF OBJECT_ID(N'[dbo].[FK_MauVoHop_AnhChinh]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[MauVoHop]  WITH CHECK ADD  CONSTRAINT [FK_MauVoHop_AnhChinh] FOREIGN KEY([MaAnhChinh]) REFERENCES [dbo].[KhoHinhAnh] ([MaHA]);
+    ALTER TABLE [dbo].[MauVoHop] CHECK CONSTRAINT [FK_MauVoHop_AnhChinh];
+END;
+IF OBJECT_ID(N'[dbo].[FK_ND_VaiTro]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[NguoiDung]  WITH CHECK ADD  CONSTRAINT [FK_ND_VaiTro] FOREIGN KEY([MaVT]) REFERENCES [dbo].[VaiTro] ([MaVT]);
+    ALTER TABLE [dbo].[NguoiDung] CHECK CONSTRAINT [FK_ND_VaiTro];
+END;
+IF OBJECT_ID(N'[dbo].[FK_NKTK_DonHang]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[NhatKyTruKhoDonHang]  WITH CHECK ADD  CONSTRAINT [FK_NKTK_DonHang] FOREIGN KEY([MaDH]) REFERENCES [dbo].[DonHang] ([MaDH]) ON DELETE CASCADE;
+    ALTER TABLE [dbo].[NhatKyTruKhoDonHang] CHECK CONSTRAINT [FK_NKTK_DonHang];
+END;
+IF OBJECT_ID(N'[dbo].[FK_NKTK_LoSanXuat]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[NhatKyTruKhoDonHang]  WITH CHECK ADD  CONSTRAINT [FK_NKTK_LoSanXuat] FOREIGN KEY([MaLo]) REFERENCES [dbo].[LoSanXuatBanh] ([MaLo]);
+    ALTER TABLE [dbo].[NhatKyTruKhoDonHang] CHECK CONSTRAINT [FK_NKTK_LoSanXuat];
+END;
+IF OBJECT_ID(N'[dbo].[FK_NKTK_MauVoHop]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[NhatKyTruKhoDonHang]  WITH CHECK ADD  CONSTRAINT [FK_NKTK_MauVoHop] FOREIGN KEY([MaVH]) REFERENCES [dbo].[MauVoHop] ([MaVH]);
+    ALTER TABLE [dbo].[NhatKyTruKhoDonHang] CHECK CONSTRAINT [FK_NKTK_MauVoHop];
+END;
+IF OBJECT_ID(N'[dbo].[FK_NKTK_SanPhamBanh]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[NhatKyTruKhoDonHang]  WITH CHECK ADD  CONSTRAINT [FK_NKTK_SanPhamBanh] FOREIGN KEY([MaBanh]) REFERENCES [dbo].[SanPhamBanh] ([MaBanh]);
+    ALTER TABLE [dbo].[NhatKyTruKhoDonHang] CHECK CONSTRAINT [FK_NKTK_SanPhamBanh];
+END;
+IF OBJECT_ID(N'[dbo].[FK_PhienKVL_NguoiDung]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[PhienKhachVangLai]  WITH CHECK ADD  CONSTRAINT [FK_PhienKVL_NguoiDung] FOREIGN KEY([MaND_DaGop]) REFERENCES [dbo].[NguoiDung] ([MaND]);
+    ALTER TABLE [dbo].[PhienKhachVangLai] CHECK CONSTRAINT [FK_PhienKVL_NguoiDung];
+END;
+IF OBJECT_ID(N'[dbo].[FK_PKVH_MauVoHop]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[PhieuKhoVoHop]  WITH CHECK ADD  CONSTRAINT [FK_PKVH_MauVoHop] FOREIGN KEY([MaVH]) REFERENCES [dbo].[MauVoHop] ([MaVH]);
+    ALTER TABLE [dbo].[PhieuKhoVoHop] CHECK CONSTRAINT [FK_PKVH_MauVoHop];
+END;
+IF OBJECT_ID(N'[dbo].[FK_PKVH_NguoiDung]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[PhieuKhoVoHop]  WITH CHECK ADD  CONSTRAINT [FK_PKVH_NguoiDung] FOREIGN KEY([MaNdLap]) REFERENCES [dbo].[NguoiDung] ([MaND]);
+    ALTER TABLE [dbo].[PhieuKhoVoHop] CHECK CONSTRAINT [FK_PKVH_NguoiDung];
+END;
+IF OBJECT_ID(N'[dbo].[FK_PKVH_NhaCungCap]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[PhieuKhoVoHop]  WITH CHECK ADD  CONSTRAINT [FK_PKVH_NhaCungCap] FOREIGN KEY([MaNcc]) REFERENCES [dbo].[NhaCungCap] ([MaNcc]);
+    ALTER TABLE [dbo].[PhieuKhoVoHop] CHECK CONSTRAINT [FK_PKVH_NhaCungCap];
+END;
+IF OBJECT_ID(N'[dbo].[FK_PKVH_PhieuThuChi]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[PhieuKhoVoHop]  WITH CHECK ADD  CONSTRAINT [FK_PKVH_PhieuThuChi] FOREIGN KEY([MaPhieuChi]) REFERENCES [dbo].[PhieuThuChi] ([MaPhieu]);
+    ALTER TABLE [dbo].[PhieuKhoVoHop] CHECK CONSTRAINT [FK_PKVH_PhieuThuChi];
+END;
+IF OBJECT_ID(N'[dbo].[FK_PhieuKiemKho_NguoiDung]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[PhieuKiemKho]  WITH CHECK ADD  CONSTRAINT [FK_PhieuKiemKho_NguoiDung] FOREIGN KEY([MaNdKiem]) REFERENCES [dbo].[NguoiDung] ([MaND]);
+    ALTER TABLE [dbo].[PhieuKiemKho] CHECK CONSTRAINT [FK_PhieuKiemKho_NguoiDung];
+END;
+IF OBJECT_ID(N'[dbo].[FK_PhieuKiemKho_PhieuXuat]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[PhieuKiemKho]  WITH CHECK ADD  CONSTRAINT [FK_PhieuKiemKho_PhieuXuat] FOREIGN KEY([MaPxLienKet]) REFERENCES [dbo].[PhieuXuatKho] ([MaPx]);
+    ALTER TABLE [dbo].[PhieuKiemKho] CHECK CONSTRAINT [FK_PhieuKiemKho_PhieuXuat];
+END;
+IF OBJECT_ID(N'[dbo].[FK_PhieuNhapKho_NguoiDung]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[PhieuNhapKho]  WITH CHECK ADD  CONSTRAINT [FK_PhieuNhapKho_NguoiDung] FOREIGN KEY([MaNdLap]) REFERENCES [dbo].[NguoiDung] ([MaND]);
+    ALTER TABLE [dbo].[PhieuNhapKho] CHECK CONSTRAINT [FK_PhieuNhapKho_NguoiDung];
+END;
+IF OBJECT_ID(N'[dbo].[FK_PhieuNhapKho_NhaCungCap]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[PhieuNhapKho]  WITH CHECK ADD  CONSTRAINT [FK_PhieuNhapKho_NhaCungCap] FOREIGN KEY([MaNcc]) REFERENCES [dbo].[NhaCungCap] ([MaNcc]);
+    ALTER TABLE [dbo].[PhieuNhapKho] CHECK CONSTRAINT [FK_PhieuNhapKho_NhaCungCap];
+END;
+IF OBJECT_ID(N'[dbo].[FK_PhieuThuChi_DonHang]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[PhieuThuChi]  WITH CHECK ADD  CONSTRAINT [FK_PhieuThuChi_DonHang] FOREIGN KEY([MaDonHangLienKet]) REFERENCES [dbo].[DonHang] ([MaDH]);
+    ALTER TABLE [dbo].[PhieuThuChi] CHECK CONSTRAINT [FK_PhieuThuChi_DonHang];
+END;
+IF OBJECT_ID(N'[dbo].[FK_PhieuThuChi_PhieuNhapKho]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[PhieuThuChi]  WITH CHECK ADD  CONSTRAINT [FK_PhieuThuChi_PhieuNhapKho] FOREIGN KEY([MaPhieuNhapLienKet]) REFERENCES [dbo].[PhieuNhapKho] ([MaPn]);
+    ALTER TABLE [dbo].[PhieuThuChi] CHECK CONSTRAINT [FK_PhieuThuChi_PhieuNhapKho];
+END;
+IF OBJECT_ID(N'[dbo].[FK_PhieuXuatKho_NguoiDung]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[PhieuXuatKho]  WITH CHECK ADD  CONSTRAINT [FK_PhieuXuatKho_NguoiDung] FOREIGN KEY([MaNdLap]) REFERENCES [dbo].[NguoiDung] ([MaND]);
+    ALTER TABLE [dbo].[PhieuXuatKho] CHECK CONSTRAINT [FK_PhieuXuatKho_NguoiDung];
+END;
+IF OBJECT_ID(N'[dbo].[FK_SPBanh_AnhChinh]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[SanPhamBanh]  WITH CHECK ADD  CONSTRAINT [FK_SPBanh_AnhChinh] FOREIGN KEY([MaAnhChinh]) REFERENCES [dbo].[KhoHinhAnh] ([MaHA]);
+    ALTER TABLE [dbo].[SanPhamBanh] CHECK CONSTRAINT [FK_SPBanh_AnhChinh];
+END;
+IF OBJECT_ID(N'[dbo].[FK_SPBanh_DanhMuc]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[SanPhamBanh]  WITH CHECK ADD  CONSTRAINT [FK_SPBanh_DanhMuc] FOREIGN KEY([MaDM]) REFERENCES [dbo].[DanhMucBanh] ([MaDM]);
+    ALTER TABLE [dbo].[SanPhamBanh] CHECK CONSTRAINT [FK_SPBanh_DanhMuc];
+END;
+IF OBJECT_ID(N'[dbo].[FK_SPBanh_NhaCungCap]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[SanPhamBanh]  WITH CHECK ADD  CONSTRAINT [FK_SPBanh_NhaCungCap] FOREIGN KEY([MaNccMacDinh]) REFERENCES [dbo].[NhaCungCap] ([MaNcc]);
+    ALTER TABLE [dbo].[SanPhamBanh] CHECK CONSTRAINT [FK_SPBanh_NhaCungCap];
+END;
+IF OBJECT_ID(N'[dbo].[FK_SPBanh_ThuongHieu]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[SanPhamBanh]  WITH CHECK ADD  CONSTRAINT [FK_SPBanh_ThuongHieu] FOREIGN KEY([MaThuongHieu]) REFERENCES [dbo].[ThuongHieu] ([MaThuongHieu]);
+    ALTER TABLE [dbo].[SanPhamBanh] CHECK CONSTRAINT [FK_SPBanh_ThuongHieu];
+END;
+IF OBJECT_ID(N'[dbo].[FK_SoDC_NguoiDung]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[SoDiaChi]  WITH CHECK ADD  CONSTRAINT [FK_SoDC_NguoiDung] FOREIGN KEY([MaND]) REFERENCES [dbo].[NguoiDung] ([MaND]) ON DELETE CASCADE;
+    ALTER TABLE [dbo].[SoDiaChi] CHECK CONSTRAINT [FK_SoDC_NguoiDung];
+END;
+IF OBJECT_ID(N'[dbo].[FK_Thiep3D_DonHang]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ThiepChucMung3D]  WITH CHECK ADD  CONSTRAINT [FK_Thiep3D_DonHang] FOREIGN KEY([MaDonHang]) REFERENCES [dbo].[DonHang] ([MaDH]);
+    ALTER TABLE [dbo].[ThiepChucMung3D] CHECK CONSTRAINT [FK_Thiep3D_DonHang];
+END;
+IF OBJECT_ID(N'[dbo].[FK_Thiep3D_DotGiaoHang]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ThiepChucMung3D]  WITH CHECK ADD  CONSTRAINT [FK_Thiep3D_DotGiaoHang] FOREIGN KEY([MaDotGiao]) REFERENCES [dbo].[DotGiaoHang_DaDiem] ([MaDotGH]);
+    ALTER TABLE [dbo].[ThiepChucMung3D] CHECK CONSTRAINT [FK_Thiep3D_DotGiaoHang];
+END;
+IF OBJECT_ID(N'[dbo].[FK_TSDD_SPBanh]', N'F') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[ThongSoDinhDuong]  WITH CHECK ADD  CONSTRAINT [FK_TSDD_SPBanh] FOREIGN KEY([MaBanh]) REFERENCES [dbo].[SanPhamBanh] ([MaBanh]) ON DELETE CASCADE;
+    ALTER TABLE [dbo].[ThongSoDinhDuong] CHECK CONSTRAINT [FK_TSDD_SPBanh];
+END;
 
 -- =============================================================================
 -- PHẦN 3: VAI TRÒ, 4 TÀI KHOẢN MẪU (MK: 123456), HỒ SƠ NHÂN VIÊN & SỔ ĐỊA CHỈ
