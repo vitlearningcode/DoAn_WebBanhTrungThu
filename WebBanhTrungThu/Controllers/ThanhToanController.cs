@@ -111,7 +111,7 @@ namespace WebBanhTrungThu.Controllers
         public async Task<IActionResult> XacThucCaptchaVaKiemTraKho([FromBody] XacThucCaptchaMoRongRequest? req, string? maCaptchaNhap = null)
         {
             string maKhachNhap = LayMaCaptchaTuRequest(maCaptchaNhap, req?.MaCaptchaNhap, req?.MaCaptcha);
-            if (!_dichVuCaptcha.KiemTraCaptcha(HttpContext.Session, maKhachNhap))
+            if (!string.IsNullOrWhiteSpace(maKhachNhap) && !_dichVuCaptcha.KiemTraCaptcha(HttpContext.Session, maKhachNhap))
             {
                 return Json(new
                 {
@@ -139,7 +139,7 @@ namespace WebBanhTrungThu.Controllers
             }
 
             HttpContext.Session.SetString("DaXacThucCaptcha", "true");
-            return Json(new { thanhCong = true, thongBao = "✓ Đã xác thực & kiểm tra còn hàng" });
+            return Json(new { thanhCong = true, thongBao = "✓ Đã kiểm tra còn hàng trong kho" });
         }
 
         [HttpPost, ValidateAntiForgeryToken]
@@ -149,17 +149,8 @@ namespace WebBanhTrungThu.Controllers
             var gioHang = await _dichVuThanhToan.LayGioHangDayDuAsync(maNd, maPhienKvlCookie);
             if (gioHang == null || !gioHang.ChiTietGioHangs.Any()) return RedirectToAction("Index", "Home");
 
-            string maNhap = LayMaCaptchaTuRequest(maCaptchaNhap, MaCaptcha, req.MaCaptcha);
-            if (!_dichVuCaptcha.KiemTraCaptcha(HttpContext.Session, maNhap))
-            {
-                _dichVuCaptcha.CapMoiCaptchaVaoSession(HttpContext.Session);
-                TempData["LoiThanhToan"] = "Mã xác thực Captcha không chính xác hoặc chưa được nhập. Vui lòng nhập lại mã hiển thị trong hình!";
-                return RedirectToAction(nameof(Index));
-            }
-
             if (string.IsNullOrWhiteSpace(req.HoTenNguoiMua) || string.IsNullOrWhiteSpace(req.SdtNguoiMua))
             {
-                _dichVuCaptcha.CapMoiCaptchaVaoSession(HttpContext.Session);
                 TempData["LoiThanhToan"] = "Vui lòng nhập đầy đủ Họ tên và Số điện thoại người mua!";
                 return RedirectToAction(nameof(Index));
             }

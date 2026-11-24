@@ -1,0 +1,137 @@
+<!-- Lucian UX/UI Prompt #063, #264, #404 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#063 -->
+<div class="ux u063" data-u063>
+    <div class="u063-bar" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="u063-chips" aria-label="Thông tin đã nhập"></div>
+
+    <form class="u063-stage" id="formDangKyU063" novalidate>
+        <!-- Bước 1: Họ và tên -->
+        <div class="u063-q" data-step="0">
+            <small>BƯỚC 1 / 4</small>
+            <label for="txtDangKyHoTen">Quý khách tên là gì?</label>
+            <div class="u063-in">
+                <input type="text" id="txtDangKyHoTen" autocomplete="name" placeholder="VD: Phùng Thị Mỹ Linh" data-k="name" />
+            </div>
+            <div class="u063-msg" id="u063Msg0" aria-live="polite" data-hint="Tên hội viên hiển thị trên thiệp chúc và sổ địa chỉ">Tên hội viên hiển thị trên thiệp chúc và sổ địa chỉ</div>
+        </div>
+
+        <!-- Bước 2: Số điện thoại -->
+        <div class="u063-q wait" data-step="1">
+            <small>BƯỚC 2 / 4</small>
+            <label for="txtDangKySdt">Số điện thoại nhận ưu đãi?</label>
+            <div class="u063-in">
+                <input type="tel" id="txtDangKySdt" autocomplete="tel" placeholder="VD: 0909123456" data-k="phone" />
+            </div>
+            <div class="u063-msg" id="u063Msg1" aria-live="polite" data-hint="Dùng để nhận +50 điểm thưởng và tra cứu đơn quà">Dùng để nhận +50 điểm thưởng và tra cứu đơn quà</div>
+        </div>
+
+        <!-- Bước 3: Email (#264 Email input that catches typos) -->
+        <div class="u063-q wait" data-step="2">
+            <small>BƯỚC 3 / 4</small>
+            <label for="txtDangKyEmail">Email đăng nhập của bạn?</label>
+            <!-- Lucian UX/UI Prompt #264 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#264 -->
+            <div class="u264 u264-step" data-u264>
+                <div class="u264-fd u264-in-wrap">
+                    <input type="email" id="txtDangKyEmail" class="u264-in" autocomplete="email" spellcheck="false" placeholder="ten@@gmail.com" data-k="mail" />
+                    <svg class="u264-ck" viewBox="0 0 20 20" aria-hidden="true">
+                        <circle cx="10" cy="10" r="10" />
+                        <path class="u264-ck-path" d="M6 10.3l2.6 2.6L14 7.5" />
+                    </svg>
+                </div>
+                <div class="u264-dms" role="group" aria-label="Gợi ý tên miền email đăng ký"></div>
+                <button type="button" class="u264-fx" tabindex="-1">
+                    <svg viewBox="0 0 16 16" aria-hidden="true">
+                        <path d="M8 1.5L15 14H1z" fill="currentColor" />
+                        <path d="M8 6v3.5M8 11.6v.4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" />
+                    </svg>
+                    <span>Ý bạn là <b class="u264-sg"></b>?</span>
+                </button>
+            </div>
+            <!-- <div class="u063-msg" id="u063Msg2" aria-live="polite" data-hint="Gõ @@ để chọn nhanh đuôi email phổ biến">Gõ @@ để chọn nhanh đuôi email phổ biến</div>-->
+        </div>
+
+        <!-- Bước 4: Mật khẩu (#404 Sign-up password) + Captcha chống robot -->
+        <div class="u063-q wait" data-step="3">
+            <small>BƯỚC 4 / 4</small>
+            <div class="u063-q-title">Thiết lập mật khẩu &amp; Xác thực</div>
+
+            <!-- Lucian UX/UI Prompt #404 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#404 -->
+            <div class="u404" data-u404>
+                <div class="u404-w">
+                    <div class="u404-f">
+                        <input class="u404-in" type="password" id="txtDangKyMatKhau" autocomplete="new-password" data-k="pw" />
+                        <label for="txtDangKyMatKhau">Mật khẩu khởi tạo</label>
+                        <button type="button" class="u404-eye" aria-label="Hiện mật khẩu" aria-pressed="false">
+                            <svg viewBox="0 0 20 20" aria-hidden="true">
+                                <g class="lid">
+                                    <path d="M2 10s3-5.2 8-5.2S18 10 18 10s-3 5.2-8 5.2S2 10 2 10z" />
+                                    <circle cx="10" cy="10" r="2.4" />
+                                </g>
+                                <g class="lash">
+                                    <path d="M3 10.4c2 2.4 4.4 3.4 7 3.4s5-1 7-3.4M6 13l-1 1.6M10 14v1.8M14 13l1 1.6" />
+                                </g>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="u404-st">
+                        <div class="u404-bars" role="meter" aria-label="Độ mạnh mật khẩu" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0">
+                            <i></i><i></i><i></i><i></i>
+                        </div>
+                        <em></em>
+                    </div>
+
+                    <ul class="u404-rules">
+                        <li id="u404RuleLen">
+                            <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" /><path d="M5.6 9.3l2.3 2.3 4.6-4.8" /></svg>
+                            <span>Từ 8 ký tự trở lên</span>
+                        </li>
+                        <li id="u404RuleNum">
+                            <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" /><path d="M5.6 9.3l2.3 2.3 4.6-4.8" /></svg>
+                            <span>Có ít nhất 1 chữ số</span>
+                        </li>
+                        <li id="u404RuleSym">
+                            <svg viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="8" /><path d="M5.6 9.3l2.3 2.3 4.6-4.8" /></svg>
+                            <span>Có ký tự đặc biệt (!@@#$...)</span>
+                        </li>
+                    </ul>
+
+                    <div class="u063-captcha mt-3">
+                        <label class="u063-captcha-label" for="txtMaCaptchaDangKy">Xác thực</label>
+                        <div class="d-flex align-items-center gap-2 flex-nowrap">
+                            <img id="imgCaptchaDangKy"
+                                 src="/TaiKhoan/AnhCaptcha?v=@DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()"
+                                 alt="Mã Captcha chống robot"
+                                 width="125" height="42"
+                                 class="u063-captcha-img" />
+                            <button type="button" class="u063-captcha-refresh" title="Đổi mã Captcha mới" aria-label="Đổi mã Captcha mới" onclick="taiMaCaptchaDangKyMoi(true)">↻</button>
+                            <input type="text" id="txtMaCaptchaDangKy" class="u063-captcha-in text-uppercase fw-bold" placeholder="Nhập 5 ký tự *" maxlength="5" autocomplete="off" oninput="xuLyGoMaCaptchaDangKy(this)" />
+                        </div>
+                        <small id="lblTrangThaiCaptchaDangKy" class="u063-captcha-status" aria-live="polite">Nhập đủ 5 ký tự trong hình để xác thực chống robot.</small>
+                    </div>
+
+                    <div id="thongBaoLoiDangKy" class="alert alert-danger py-2 small mt-2 mb-0 d-none" role="alert"></div>
+
+                    <button type="button" id="btnSubmitDangKy" class="u404-go" aria-disabled="true" onclick="thucHienDangKyAjax()">
+                        <span><i class="bi bi-person-plus-fill me-1"></i>Đăng Ký Hội Viên (+50 Điểm)</span>
+                        <svg viewBox="0 0 22 22" aria-hidden="true"><path d="M5.5 11.5l4 4L17 7.5" /></svg>
+                    </button>
+                </div>
+                <p class="u404-live" role="status"></p>
+            </div>
+        </div>
+
+        <!-- Màn hình hoàn tất đăng ký -->
+        <div class="u063-done" aria-hidden="true">
+            <span><svg viewBox="0 0 36 36"><path d="M9 18.5l6 6L27 12" /></svg></span>
+            <b>Đăng ký thành công!</b>
+            <p class="u063-who"></p>
+        </div>
+
+        <button class="u063-sub" type="submit" hidden></button>
+    </form>
+
+    <button class="u063-next" id="btnU063Next" type="button">
+        <span>Tiếp tục</span>
+        <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M4 9h10M10 5l4 4-4 4" /></svg>
+    </button>
+</div>

@@ -12,7 +12,7 @@
     const PHI_LOGO_MAC_DINH = Number(cfg.phiLogoMacDinh || 500000);
     const MOC_FREESHIP_TIEU_CHUAN = 500000;
 
-    let daXacThucCaptchaHopLe = false;
+    let daXacThucCaptchaHopLe = true;
     let dangGuiDonHang = false;
 
     document.addEventListener("DOMContentLoaded", function () {
@@ -42,9 +42,12 @@
         capNhatTrangThaiNutVoucher(cfg.codeKmDangDung || "");
         capNhatBangTinhThanhToan();
 
+        const inputCaptcha = document.getElementById("txtMaCaptchaNhap");
+        daXacThucCaptchaHopLe = !inputCaptcha;
+
         const imgCaptcha = document.getElementById("imgCaptchaThanhToan");
         const srcHienTai = imgCaptcha ? (imgCaptcha.getAttribute("src") || "").trim() : "";
-        if (!srcHienTai) {
+        if (imgCaptcha && !srcHienTai) {
             taiMaCaptchaMoi(false);
         }
 
@@ -757,18 +760,26 @@
             }
         }
 
-        if (maCaptcha.length < 5) {
-            const lbl = document.getElementById("lblTrangThaiCaptchaKho");
-            if (lbl) {
-                lbl.style.color = "#DC2626";
-                lbl.className = "d-block mt-1 fw-medium";
-                lbl.textContent = "Mã xác thực Captcha không chính xác. Vui lòng nhập lại mã hiển thị trong hình!";
+        const inputCaptchaEl = document.getElementById("txtMaCaptchaNhap");
+        if (inputCaptchaEl) {
+            if (maCaptcha.length < 5) {
+                const lbl = document.getElementById("lblTrangThaiCaptchaKho");
+                if (lbl) {
+                    lbl.style.color = "#DC2626";
+                    lbl.className = "d-block mt-1 fw-medium";
+                    lbl.textContent = "Mã xác thực Captcha không chính xác. Vui lòng nhập lại mã hiển thị trong hình!";
+                }
+                inputCaptchaEl.focus();
+                return false;
             }
-            document.getElementById("txtMaCaptchaNhap")?.focus();
-            return false;
-        }
 
-        if (!daXacThucCaptchaHopLe) {
+            if (!daXacThucCaptchaHopLe) {
+                const hopLeKho = await goiApiXacThucCaptchaVaKho();
+                if (!hopLeKho) {
+                    return false;
+                }
+            }
+        } else {
             const hopLeKho = await goiApiXacThucCaptchaVaKho();
             if (!hopLeKho) {
                 return false;

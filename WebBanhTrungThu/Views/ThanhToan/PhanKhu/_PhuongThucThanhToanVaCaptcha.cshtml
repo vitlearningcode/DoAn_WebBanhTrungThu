@@ -14,16 +14,7 @@
     </div>
 </div>
 
-<div class="khung-captcha-ngang-bitis mb-3">
-    <div class="d-flex align-items-center gap-2 flex-nowrap">
-        <img id="imgCaptchaThanhToan" src="/ThanhToan/AnhCaptcha?v=@DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()" alt="Mã Captcha" width="135" height="44" style="width: 135px; height: 44px; border-radius: 6px; border: 1px solid #E6D5B8; background: #FAF6EE; flex-shrink: 0; display: block;" />
-        <button type="button" class="btn-doi-captcha-bitis" title="Đổi mã Captcha mới" onclick="taiMaCaptchaMoi(true)">↻</button>
-        <input type="text" id="txtMaCaptchaNhap" name="maCaptchaNhap" class="input-phang-bitis text-uppercase fw-bold" placeholder="Nhập mã xác thực *" maxlength="5" required autocomplete="off" style="letter-spacing: 2px; flex: 1; min-width: 0;" oninput="xuLyGoMaCaptchaTuDong(this)" />
-    </div>
-    <small id="lblTrangThaiCaptchaKho" class="d-block mt-1 text-secondary">Nhập đủ 5 ký tự trong hình để hệ thống tự động xác thực &amp; kiểm tra tồn kho.</small>
-</div>
-
 <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 pt-2">
     <a href="javascript:void(0)" onclick="moNganKeoGioHang()" class="lien-ket-quay-lai-gio-bitis">← Quay lại giỏ hàng</a>
-    <button type="submit" id="btnHoanTatDatHang" class="btn-hoan-tat-dat-hang-bitis" disabled>HOÀN TẤT ĐẶT HÀNG</button>
+    <button type="submit" id="btnHoanTatDatHang" class="btn-hoan-tat-dat-hang-bitis">HOÀN TẤT ĐẶT HÀNG</button>
 </div>

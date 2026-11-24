@@ -103,7 +103,7 @@ namespace WebBanhTrungThu.Services.QuanTri
                     BieuTuong = "🧾",
                     MauSac = "primary",
                     TieuDe = $"{dh.HoTenNguoiMua} vừa đặt đơn #{dh.MaTraCuuDh}",
-                    MoTaChiTiet = $"Giá trị: {dh.TongThanhToanCuoi:N0} đ • {(dh.MaNd.HasValue ? "Member" : "Guest KVL")} • {dh.DotGiaoHangDaDiems.Count} điểm giao",
+                    MoTaChiTiet = $"Giá trị: {dh.TongThanhToanCuoi:N0} đ • {(dh.MaNd.HasValue ? "Member" : "Guest KVL")}",
                     ThoiGian = dh.NgayDat.ToString("dd/MM/yyyy HH:mm")
                 });
             }

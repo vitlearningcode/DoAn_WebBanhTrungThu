@@ -32,6 +32,17 @@ namespace WebBanhTrungThu.Services.TaiKhoan
             _cauHinhHeThong = cauHinhHeThong;
         }
 
+        public static string LayTenVaiTroHienThi(string? maVt)
+        {
+            return (maVt ?? string.Empty).Trim().ToUpperInvariant() switch
+            {
+                "QUAN_TRI" or "ADMIN" => "Quản lý cửa hàng",
+                "THU_NGAN" or "NHAN_VIEN" or "NV_BAN_HANG" => "Chuyên viên quầy lễ",
+                "GIAO_HANG" => "Phụ trách giao quà",
+                _ => "Hội viên"
+            };
+        }
+
         public string XacDinhDuongDanSauDangNhap(string? maVt)
         {
             string vaiTro = (maVt ?? string.Empty).Trim().ToUpperInvariant();
@@ -136,7 +147,7 @@ namespace WebBanhTrungThu.Services.TaiKhoan
                 await _db.SaveChangesAsync();
             }
 
-            return (true, $"Đăng nhập thành công ({nd.HoTen} - Vai trò: {nd.MaVt})!", nd);
+            return (true, $"Đăng nhập thành công ({nd.HoTen} - {LayTenVaiTroHienThi(nd.MaVt)})!", nd);
         }
 
         public async Task<NguoiDung?> LayTaiKhoanChuyenVaiTroDemoAsync(string maVt)

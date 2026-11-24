@@ -298,7 +298,7 @@ namespace WebBanhTrungThu.Services.GiaoDien
                 nguoiMua = donHang.HoTenNguoiMua,
                 ngayDat = donHang.NgayDat.ToString("dd/MM/yyyy HH:mm"),
                 tongTien = donHang.TongThanhToanCuoi.ToString("N0") + " đ",
-                trangThai = donHang.TrangThaiDh,
+                trangThai = donHang.TenTrangThaiDhHienThi,
                 soDiemGiao = donHang.DotGiaoHangDaDiems.Count
             };
         }

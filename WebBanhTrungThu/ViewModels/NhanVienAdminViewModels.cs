@@ -12,6 +12,7 @@ namespace WebBanhTrungThu.ViewModels
         public string TrangThaiDh { get; set; } = string.Empty;
         public string TrangThaiTt { get; set; } = string.Empty;
         public string TenTrangThaiDhHienThi { get; set; } = string.Empty;
+        public string TenPhuongThucTtHienThi => Models.Entities.DonHang.AnhXaPhuongThucTtHienThi(PhuongThucTt);
     }
 
     public class NhanVienItemViewModel

@@ -27,7 +27,7 @@ namespace WebBanhTrungThu.ViewModels
         public decimal PhiGiaoHoaToc6h { get; set; } = 60000m;
         public decimal PhiHoaTocSauFreeship { get; set; } = 30000m;
         public string KhuVucHoTroHoaToc { get; set; } = "TP. Hồ Chí Minh, TP. Long Xuyên (An Giang)";
-        public string GhiChuGiaoHang { get; set; } = "Miễn phí giao hàng tiêu chuẩn toàn quốc với đơn hàng từ 500.000đ trở lên. Hỗ trợ giao quà đa điểm kèm thiệp QR 3D.";
+        public string GhiChuGiaoHang { get; set; } = "Miễn phí giao hàng tiêu chuẩn toàn quốc với đơn hàng từ 500.000đ trở lên. Hỗ trợ giao quà biếu tặng kèm thiệp QR 3D.";
     }
 
     public class CauHinhHoiVienVip

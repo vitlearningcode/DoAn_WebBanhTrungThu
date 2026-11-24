@@ -217,7 +217,7 @@
                                             <button type="button" class="kv-detail-tab"
                                                     id="btnTabKh2_@nd.MaNd"
                                                     onclick="chuyenTabKhachHang(@nd.MaNd, 2)">
-                                                Sổ địa chỉ đa điểm nhận (@nd.SoDiaChis.Count địa chỉ)
+                                                Sổ địa chỉ nhận quà (@nd.SoDiaChis.Count địa chỉ)
                                             </button>
                                         </div>
 
@@ -248,9 +248,9 @@
                                                                     </td>
                                                                     <td>@dh.NgayDat.ToString("dd/MM/yyyy HH:mm")</td>
                                                                     <td>@(dh.LaDonDoanhNghiepB2b ? "Đơn sỉ / Doanh nghiệp" : "Khách lẻ")</td>
-                                                                    <td>@dh.PhuongThucTt</td>
+                                                                    <td>@dh.TenPhuongThucTtHienThi</td>
                                                                     <td class="text-end fw-semibold">@dh.TongThanhToanCuoi.ToString("N0")</td>
-                                                                    <td>@dh.TrangThaiDh</td>
+                                                                    <td>@dh.TenTrangThaiDhHienThi</td>
                                                                 </tr>
                                                             }
                                                         </tbody>
@@ -281,7 +281,7 @@
                                             }
                                             else
                                             {
-                                                <div class="text-muted small py-2">Khách hàng chưa lưu sổ địa chỉ đa điểm nhận.</div>
+                                                <div class="text-muted small py-2">Khách hàng chưa lưu sổ địa chỉ nhận quà.</div>
                                             }
                                         </div>
                                     </div>
