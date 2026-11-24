@@ -100,7 +100,7 @@ namespace WebBanhTrungThu.Controllers
             }
 
             HttpContext.Session.SetString("DaXacThucCaptcha", "true");
-            return Json(new { thanhCong = true, thongBao = "✓ Đã xác thực chống robot" });
+            return Json(new { thanhCong = true, thongBao = "✓ Đã xác thực" });
         }
 
         [HttpPost]
@@ -119,7 +119,7 @@ namespace WebBanhTrungThu.Controllers
                 {
                     thanhCong = false,
                     loaiLoi = "CAPTCHA",
-                    thongBao = "Mã xác thực Captcha chống robot không chính xác hoặc chưa nhập!",
+                    thongBao = "Mã xác thực Captcha không chính xác hoặc chưa nhập!",
                     anhCaptchaSvg = _dichVuCaptcha.CapMoiCaptchaVaoSession(HttpContext.Session)
                 });
             }
