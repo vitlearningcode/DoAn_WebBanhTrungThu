@@ -206,6 +206,7 @@ flowchart LR
 ```text
 DoAn_WebBanhTrungThu/
 ├── DoAn_WebBanhTrungThu.slnx               # Solution .NET 8.0
+├── ResetVaSeed_CSDL_BanhTrungThu.sql       # Script Full CSDL (Tự tạo DB + 37 bảng + Seed dữ liệu mẫu)
 ├── don-dep-dong-goi.ps1                    # Script dọn rác biên dịch & đóng gói bản nộp sạch
 ├── README.md                               # Tài liệu hệ thống
 └── WebBanhTrungThu/
@@ -332,7 +333,7 @@ DoAn_WebBanhTrungThu/
    *(Cập nhật tên `Server=` theo SQL Server Instance trên máy của bạn và đảm bảo `ThuMucODiaMay` có quyền ghi).*
 
 3. **Khởi tạo Cơ sở dữ liệu & Dữ liệu mẫu:**
-   - Tạo database tên `CSDL_BanhTrungThu` trên SQL Server và thực thi script dữ liệu mẫu chuẩn thực tế `ResetVaSeed_CSDL_BanhTrungThu_60SP_v3_Final.sql` trong SSMS.
+   - Mở tệp `ResetVaSeed_CSDL_BanhTrungThu.sql` trong SSMS và nhấn `F5` (script sẽ tự động tạo database `CSDL_BanhTrungThu` nếu chưa có, khởi tạo đầy đủ 37 bảng + 71 khóa ngoại và nạp trọn bộ dữ liệu mẫu 60 sản phẩm).
    - Khi khởi chạy ứng dụng, `WebBanhTrungThu/Data/KhoiTaoCsdl.cs` sẽ tự động kiểm tra và chuẩn hóa cấu trúc/dữ liệu nền nếu cần.
 
 4. **Khôi phục gói NuGet, biên dịch và khởi chạy ứng dụng:**

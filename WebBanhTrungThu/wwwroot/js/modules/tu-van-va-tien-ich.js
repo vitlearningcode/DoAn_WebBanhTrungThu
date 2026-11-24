@@ -403,6 +403,24 @@ function chonDonVuaDatNhanh(maTraCuu, sdtNguoiMua) {
     traCuuDonHangGuest();
 }
 
+function tenTrangThaiDonDep(st) {
+    const ma = String(st || "").trim().toUpperCase();
+    const map = {
+        CHO_XAC_NHAN: "Chờ xác nhận",
+        CHO_DUYET: "Chờ xác nhận",
+        DA_XAC_NHAN: "Đã xác nhận",
+        CHO_DONG_GOI: "Đã xác nhận",
+        CHO_LAY_HANG: "Chờ lấy hàng (Đã đóng gói)",
+        DANG_DONG_GOI_HOP: "Chờ lấy hàng (Đã đóng gói)",
+        DANG_GIAO: "Đang giao hàng",
+        DA_GIAO: "Hoàn tất",
+        HOAN_TAT: "Hoàn tất",
+        DA_HUY: "Đã hủy",
+        HOAN_TIEN_TRA_HANG: "Hoàn tiền / Trả hàng"
+    };
+    return map[ma] || (st ? String(st) : "Đang xử lý");
+}
+
 async function traCuuDonHangGuest() {
     const ma = document.getElementById("txtMaTraCuu").value;
     const sdt = document.getElementById("txtSdtTraCuu").value;
@@ -415,11 +433,12 @@ async function traCuuDonHangGuest() {
     if (!data.thanhCong) {
         box.innerHTML = `<span class="text-danger fw-medium"><i class="bi bi-exclamation-triangle me-1"></i>${data.thongBao}</span>`;
     } else {
+        const trangThaiHienThi = tenTrangThaiDonDep(data.trangThai);
         box.innerHTML = `
             <div class="small chu-nau-tram">
-                <strong class="chu-do-son-mai d-block mb-1">Đơn hàng: ${data.maDon} (${data.trangThai})</strong>
+                <strong class="chu-do-son-mai d-block mb-1">Đơn hàng: ${data.maDon} (${trangThaiHienThi})</strong>
                 <div>Người đặt: ${data.nguoiMua} • Ngày đặt: ${data.ngayDat}</div>
-                <div>Tổng thanh toán: <strong class="chu-do-son-mai">${data.tongTien}</strong> (${data.soDiemGiao} điểm giao)</div>
+                <div>Tổng thanh toán: <strong class="chu-do-son-mai">${data.tongTien}</strong></div>
                 <a href="/ThanhToan/ThanhCong?maDon=${encodeURIComponent(data.maDon)}" class="btn btn-sm btn-do-son-mai rounded-pill mt-2 w-100">
                     <i class="bi bi-qr-code-scan me-1"></i>Xem Chi Tiết Đơn &amp; Mã QR Thiệp 3D
                 </a>
@@ -434,6 +453,9 @@ function dienNhanhTaiKhoanDemo(taiKhoan, matKhau) {
     const txtMk = document.getElementById("txtDangNhapMatKhau");
     if (txtTk) txtTk.value = taiKhoan;
     if (txtMk) txtMk.value = matKhau;
+    if (typeof window.dongBoTrangThaiU403 === "function") {
+        window.dongBoTrangThaiU403();
+    }
     thucHienDangNhapAjax();
 }
 
@@ -442,9 +464,29 @@ async function thucHienDangNhapAjax() {
     const matKhau = document.getElementById("txtDangNhapMatKhau")?.value.trim() || "";
     const boxLoi = document.getElementById("thongBaoLoiDangNhap");
     const btn = document.getElementById("btnSubmitDangNhap");
+    const rm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    if (boxLoi) boxLoi.classList.add("d-none");
-    if (btn) btn.disabled = true;
+    if (btn && (btn.classList.contains("is-busy") || btn.classList.contains("is-ok"))) return;
+
+    if (!taiKhoan || !matKhau) {
+        const chiSoLoi = !taiKhoan ? 0 : 1;
+        const thongBaoThieu = !taiKhoan
+            ? "Vui lòng nhập Số điện thoại hoặc Email!"
+            : "Vui lòng nhập mật khẩu!";
+        if (typeof window.datKetQuaDangNhapU403 === "function") {
+            window.datKetQuaDangNhapU403("err", thongBaoThieu, chiSoLoi);
+        } else if (boxLoi) {
+            boxLoi.innerText = thongBaoThieu;
+            boxLoi.classList.add("is-on");
+        }
+        return;
+    }
+
+    if (typeof window.datKetQuaDangNhapU403 === "function") {
+        window.datKetQuaDangNhapU403("busy", "Đang kiểm tra thông tin...");
+    } else if (btn) {
+        btn.disabled = true;
+    }
 
     try {
         const res = await fetch("/TaiKhoan/DangNhapAjax", {
@@ -458,6 +500,9 @@ async function thucHienDangNhapAjax() {
 
         const data = await res.json();
         if (data.thanhCong) {
+            if (typeof window.datKetQuaDangNhapU403 === "function") {
+                window.datKetQuaDangNhapU403("ok", "Đăng nhập thành công");
+            }
             hienThiThongBaoGioHang(`${data.thongBao} Kính chào ${data.hoTen} (Hạng ${data.hangTv} • ${data.diem} điểm)!`, true);
             setTimeout(() => {
                 if (data.redirectUrl && String(data.redirectUrl).trim() !== "") {
@@ -465,20 +510,30 @@ async function thucHienDangNhapAjax() {
                 } else {
                     window.location.reload();
                 }
-            }, 650);
+            }, rm ? 350 : 850);
         } else {
-            if (boxLoi) {
-                boxLoi.innerText = data.thongBao || "Đăng nhập không thành công!";
-                boxLoi.classList.remove("d-none");
+            const thongBaoLoi = data.thongBao || "Đăng nhập không thành công!";
+            const laLoiTaiKhoan = /tài khoản|không tồn tại|khóa/i.test(thongBaoLoi) && !/mật khẩu không chính xác/i.test(thongBaoLoi);
+            const chiSoLoi = laLoiTaiKhoan ? 0 : 1;
+            if (typeof window.datKetQuaDangNhapU403 === "function") {
+                window.datKetQuaDangNhapU403("err", thongBaoLoi, chiSoLoi);
+            } else if (boxLoi) {
+                boxLoi.innerText = thongBaoLoi;
+                boxLoi.classList.add("is-on");
             }
         }
     } catch (err) {
-        if (boxLoi) {
-            boxLoi.innerText = "Lỗi kết nối máy chủ khi đăng nhập!";
-            boxLoi.classList.remove("d-none");
+        const thongBaoMang = "Lỗi kết nối máy chủ khi đăng nhập!";
+        if (typeof window.datKetQuaDangNhapU403 === "function") {
+            window.datKetQuaDangNhapU403("err", thongBaoMang, 1);
+        } else if (boxLoi) {
+            boxLoi.innerText = thongBaoMang;
+            boxLoi.classList.add("is-on");
         }
     } finally {
-        if (btn) btn.disabled = false;
+        if (btn && !btn.classList.contains("is-ok")) {
+            btn.disabled = false;
+        }
     }
 }
 
@@ -487,10 +542,52 @@ async function thucHienDangKyAjax() {
     const sdt = document.getElementById("txtDangKySdt")?.value.trim() || "";
     const email = document.getElementById("txtDangKyEmail")?.value.trim() || "";
     const matKhau = document.getElementById("txtDangKyMatKhau")?.value.trim() || "";
+    const inputCaptcha = document.getElementById("txtMaCaptchaDangKy");
+    const maCaptcha = inputCaptcha?.value.trim() || "";
     const boxLoi = document.getElementById("thongBaoLoiDangKy");
     const btn = document.getElementById("btnSubmitDangKy");
+    const rm = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    if (boxLoi) boxLoi.classList.add("d-none");
+    if (btn && btn.classList.contains("is-ok")) return;
+
+    if (boxLoi) {
+        boxLoi.classList.add("d-none");
+        boxLoi.textContent = "";
+    }
+
+    const duDoDai = matKhau.length >= 8;
+    const coSo = /\d/.test(matKhau);
+    const coKyTuDacBiet = /[^A-Za-z0-9\s]/.test(matKhau);
+    if (!duDoDai || !coSo || !coKyTuDacBiet) {
+        if (btn && btn.getAttribute("aria-disabled") === "true") {
+            document.getElementById("txtDangKyMatKhau")?.focus({ preventScroll: true });
+            return;
+        }
+        if (boxLoi) {
+            boxLoi.textContent = "Mật khẩu cần tối thiểu 8 ký tự, gồm ít nhất 1 chữ số và 1 ký tự đặc biệt!";
+            boxLoi.classList.remove("d-none");
+        }
+        document.getElementById("txtDangKyMatKhau")?.focus();
+        if (typeof window.capNhatChieuCaoDangKyU063 === "function") window.capNhatChieuCaoDangKyU063();
+        return;
+    }
+
+    if (maCaptcha.length < 5) {
+        const lblCap = document.getElementById("lblTrangThaiCaptchaDangKy");
+        if (lblCap) {
+            lblCap.className = "u063-captcha-status is-err";
+            lblCap.textContent = "Vui lòng nhập đủ 5 ký tự Captcha chống robot!";
+        }
+        if (inputCaptcha) {
+            inputCaptcha.classList.remove("is-shake");
+            void inputCaptcha.offsetWidth;
+            inputCaptcha.classList.add("is-shake");
+            inputCaptcha.focus({ preventScroll: true });
+        }
+        if (typeof window.capNhatChieuCaoDangKyU063 === "function") window.capNhatChieuCaoDangKyU063();
+        return;
+    }
+
     if (btn) btn.disabled = true;
 
     try {
@@ -501,29 +598,56 @@ async function thucHienDangKyAjax() {
                 hoTen: hoTen,
                 sdt: sdt,
                 email: email,
-                matKhau: matKhau
+                matKhau: matKhau,
+                maCaptcha: maCaptcha
             })
         });
 
         const data = await res.json();
         if (data.thanhCong) {
+            if (typeof window.hoanTatDangKyU063 === "function") {
+                window.hoanTatDangKyU063(hoTen, email);
+            }
             hienThiThongBaoGioHang(data.thongBao, true);
             setTimeout(() => {
                 window.location.reload();
-            }, 900);
+            }, rm ? 700 : 1600);
         } else {
-            if (boxLoi) {
+            if (data.loaiLoi === "CAPTCHA") {
+                const lblCap = document.getElementById("lblTrangThaiCaptchaDangKy");
+                if (lblCap) {
+                    lblCap.className = "u063-captcha-status is-err";
+                    lblCap.textContent = data.thongBao || "Mã xác thực Captcha không chính xác!";
+                }
+                if (data.anhCaptchaSvg) {
+                    const imgCap = document.getElementById("imgCaptchaDangKy");
+                    if (imgCap) imgCap.src = data.anhCaptchaSvg;
+                } else if (typeof window.taiMaCaptchaDangKyMoi === "function") {
+                    window.taiMaCaptchaDangKyMoi(false);
+                }
+                if (inputCaptcha) {
+                    inputCaptcha.value = "";
+                    inputCaptcha.classList.remove("is-shake");
+                    void inputCaptcha.offsetWidth;
+                    inputCaptcha.classList.add("is-shake");
+                    inputCaptcha.focus({ preventScroll: true });
+                }
+            } else if (boxLoi) {
                 boxLoi.innerText = data.thongBao || "Đăng ký không thành công!";
                 boxLoi.classList.remove("d-none");
             }
+            if (typeof window.capNhatChieuCaoDangKyU063 === "function") window.capNhatChieuCaoDangKyU063();
         }
     } catch (err) {
         if (boxLoi) {
             boxLoi.innerText = "Lỗi kết nối máy chủ khi đăng ký tài khoản!";
             boxLoi.classList.remove("d-none");
         }
+        if (typeof window.capNhatChieuCaoDangKyU063 === "function") window.capNhatChieuCaoDangKyU063();
     } finally {
-        if (btn) btn.disabled = false;
+        if (btn && !btn.classList.contains("is-ok")) {
+            btn.disabled = false;
+        }
     }
 }
 

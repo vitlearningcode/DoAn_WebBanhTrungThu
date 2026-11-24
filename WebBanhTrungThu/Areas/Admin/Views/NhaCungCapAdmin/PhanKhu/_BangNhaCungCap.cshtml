@@ -145,7 +145,7 @@
                                                         <td class="text-end fw-semibold so-tien">@pn.TongPhaiTra.ToString("N0") đ</td>
                                                         <td class="text-end text-success so-tien">@pn.DaThanhToan.ToString("N0") đ</td>
                                                         <td class="text-center">@(pn.TrangThai == "DA_NHAP_KHO" ? "Đã nhập kho" : "Phiếu tạm")</td>
-                                                        <td class="text-center">@pn.TrangThaiThanhToan</td>
+                                                        <td class="text-center">@(pn.TrangThaiThanhToan is "DA_THANH_TOAN" or "DA_TT" ? "Đã thanh toán" : pn.TrangThaiThanhToan == "THANH_TOAN_1_PHAN" ? "Thanh toán 1 phần" : "Chưa thanh toán")</td>
                                                     </tr>
                                                 }
                                             </tbody>

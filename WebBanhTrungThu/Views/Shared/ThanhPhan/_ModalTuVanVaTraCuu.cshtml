@@ -2,14 +2,19 @@
 <div class="modal fade" id="modalTaiKhoan" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content card-hoang-gia p-2">
-            <div class="modal-header border-bottom pb-2" style="border-color: var(--mau-vien-vang-dong) !important;">
+            <div class="modal-header border-bottom pb-2 align-items-start gap-2" style="border-color: var(--mau-vien-vang-dong) !important;">
                 <div>
                     <h5 class="modal-title font-co-phong chu-do-son-mai fw-bold mb-0" style="font-size: 1.45rem; line-height: 1.25;">
                         <i class="bi bi-shield-lock-fill chu-vang-dong me-2"></i>Hội Viên Nguyệt Cát
                     </h5>
                     <small class="chu-nau-phu">Các hộp bánh bạn đã chọn sẽ tự động lưu vào tài khoản thành viên</small>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="d-flex align-items-center ms-auto flex-shrink-0">
+                    <button type="button" id="btnToggleThemeTaiKhoan" class="btn btn-sm btn-vien-vang rounded-pill px-2 py-1 me-2" onclick="chuyenDoiThemeModalTaiKhoan()" title="Đổi giao diện Sáng / Tối" aria-label="Đổi giao diện Sáng / Tối" aria-pressed="false">
+                        <i class="bi bi-moon-stars-fill" aria-hidden="true"></i>
+                    </button>
+                    <button type="button" class="btn-close m-0" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
             </div>
             <div class="modal-body">
                 <ul class="nav nav-pills nav-fill mb-3 p-1 rounded" style="background: var(--mau-nen-ngoc-trai); border: 1px solid var(--mau-vien-vang-dong);" id="tabTaiKhoan" role="tablist">
@@ -20,7 +25,7 @@
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link rounded-pill fw-semibold chu-nau-tram" id="btn-tab-dangky"
+                        <button class="nav-link rounded-pill fw-semibold" id="btn-tab-dangky"
                                 data-bs-toggle="pill" data-bs-target="#pane-dangky" type="button" role="tab">
                             Đăng Ký Hội Viên Mới (+50 Điểm)
                         </button>
@@ -52,57 +57,12 @@
                             </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold chu-nau-tram">Số điện thoại hoặc Email</label>
-                            <input type="text" id="txtDangNhapTaiKhoan" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="Nhập SĐT hoặc Email..." />
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold chu-nau-tram">Mật khẩu</label>
-                            <input type="password" id="txtDangNhapMatKhau" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="Nhập mật khẩu..." />
-                        </div>
-                        <div id="thongBaoLoiDangNhap" class="alert alert-danger py-2 small d-none"></div>
-                        <button type="button" id="btnSubmitDangNhap" class="btn btn-do-son-mai w-100 py-2 rounded-pill" onclick="thucHienDangNhapAjax()">
-                            <i class="bi bi-box-arrow-in-right me-1"></i>Đăng Nhập &amp; Đồng Bộ Giỏ Quà
-                        </button>
+                        @await Html.PartialAsync("~/Views/Shared/ThanhPhan/_FormDangNhap.cshtml")
                     </div>
 
                     <!-- TAB 2: ĐĂNG KÝ THÀNH VIÊN MỚI -->
                     <div class="tab-pane fade" id="pane-dangky" role="tabpanel">
-                        <div class="mb-2">
-                            <label class="form-label small fw-semibold chu-nau-tram">Họ và tên</label>
-                            <input type="text" id="txtDangKyHoTen" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="VD: Nguyễn Ngọc Ánh" />
-                        </div>
-                        <div class="row g-2 mb-2">
-                            <div class="col-md-6">
-                                <label class="form-label small fw-semibold chu-nau-tram">Số điện thoại</label>
-                                <input type="text" id="txtDangKySdt" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="09xx..." />
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-semibold chu-nau-tram">Email</label>
-                                <!-- Lucian UX/UI Prompt #264 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#264 -->
-                                <div class="u264" data-u264>
-                                    <div class="u264-in-wrap">
-                                        <input type="email" id="txtDangKyEmail" class="form-control u264-in" style="border-color: var(--mau-vien-vang-dong);" placeholder="email@domain.com" autocomplete="email" />
-                                        <span class="u264-ck" aria-hidden="true">
-                                            <svg viewBox="0 0 18 18" width="16" height="16" fill="none">
-                                                <circle cx="9" cy="9" r="8" stroke="currentColor" stroke-width="1.5" opacity="0.22" />
-                                                <path class="u264-ck-path" d="M5.2 9.3l2.4 2.4 5.2-5.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                            </svg>
-                                        </span>
-                                    </div>
-                                    <div class="u264-chips" role="listbox" aria-label="Gợi ý tên miền email đăng ký"></div>
-                                    <div class="u264-hint-slot" aria-live="polite"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold chu-nau-tram">Mật khẩu khởi tạo</label>
-                            <input type="password" id="txtDangKyMatKhau" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="Tối thiểu 6 ký tự..." />
-                        </div>
-                        <div id="thongBaoLoiDangKy" class="alert alert-danger py-2 small d-none"></div>
-                        <button type="button" id="btnSubmitDangKy" class="btn btn-do-son-mai w-100 py-2 rounded-pill" onclick="thucHienDangKyAjax()">
-                            <i class="bi bi-person-plus-fill me-1"></i>Đăng Ký Hội Viên (+50 Điểm Thưởng)
-                        </button>
+                        @await Html.PartialAsync("~/Views/Shared/ThanhPhan/_FormDangKy.cshtml")
                     </div>
                 </div>
             </div>
@@ -121,7 +81,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="small chu-nau-phu mb-3">Nhập mã đơn hàng và số điện thoại người đặt mua để theo dõi tiến độ giao quà đa điểm và mở thiệp chúc mừng QR 3D.</p>
+                <p class="small chu-nau-phu mb-3">Nhập mã đơn hàng và số điện thoại người đặt mua để theo dõi tiến độ giao quà và mở thiệp chúc mừng QR 3D.</p>
                 <div class="mb-3">
                     <label class="form-label small fw-semibold chu-nau-tram">Mã tra cứu đơn hàng (VD: TT2026-8891)</label>
                     <input type="text" id="txtMaTraCuu" class="form-control" style="border-color: var(--mau-vien-vang-dong);" placeholder="Nhập mã đơn..." />

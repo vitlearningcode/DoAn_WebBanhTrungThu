@@ -33,15 +33,12 @@ namespace WebBanhTrungThu.Services.GiaoDien
     public class DichVuTrangChu : DichVuCoSo, IDichVuTrangChu
     {
         private readonly IDichVuHinhAnh _dichVuHinhAnh;
-        private readonly IDichVuCauHinhHeThong _kiotMeta;
 
         public DichVuTrangChu(
             CSDLBanhTrungThuContext db,
-            IDichVuHinhAnh dichVuHinhAnh,
-            IDichVuCauHinhHeThong kiotMeta) : base(db)
+            IDichVuHinhAnh dichVuHinhAnh) : base(db)
         {
             _dichVuHinhAnh = dichVuHinhAnh;
-            _kiotMeta = kiotMeta;
         }
 
         public async Task<LandingPageViewModel> XayDungDuLieuTrangChuAsync(int? maND, string? maPhienKVL)
@@ -298,7 +295,7 @@ namespace WebBanhTrungThu.Services.GiaoDien
                 nguoiMua = donHang.HoTenNguoiMua,
                 ngayDat = donHang.NgayDat.ToString("dd/MM/yyyy HH:mm"),
                 tongTien = donHang.TongThanhToanCuoi.ToString("N0") + " đ",
-                trangThai = donHang.TrangThaiDh,
+                trangThai = donHang.TenTrangThaiDhHienThi,
                 soDiemGiao = donHang.DotGiaoHangDaDiems.Count
             };
         }

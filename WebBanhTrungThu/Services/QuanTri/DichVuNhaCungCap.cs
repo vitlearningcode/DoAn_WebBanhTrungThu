@@ -13,11 +13,8 @@ namespace WebBanhTrungThu.Services.QuanTri
     /// </summary>
     public class DichVuNhaCungCap : DichVuCoSo, IDichVuNhaCungCap
     {
-        private readonly IDichVuCauHinhHeThong _cauHinhHeThong;
-
-        public DichVuNhaCungCap(CSDLBanhTrungThuContext db, IDichVuCauHinhHeThong cauHinhHeThong) : base(db)
+        public DichVuNhaCungCap(CSDLBanhTrungThuContext db) : base(db)
         {
-            _cauHinhHeThong = cauHinhHeThong;
         }
 
         public async Task<NhaCungCapAdminViewModel> XayDungTrangNhaCungCapAsync(

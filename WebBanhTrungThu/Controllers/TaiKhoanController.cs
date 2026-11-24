@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -16,11 +17,17 @@ namespace WebBanhTrungThu.Controllers
     {
         private readonly IDichVuHoiVien _hv;
         private readonly IDichVuGioHang _gh;
+        private readonly IDichVuBaoMatCaptcha _dichVuCaptcha;
 
-        public TaiKhoanController(CSDLBanhTrungThuContext db, IDichVuHoiVien hv, IDichVuGioHang gh) : base(db)
+        public TaiKhoanController(
+            CSDLBanhTrungThuContext db,
+            IDichVuHoiVien hv,
+            IDichVuGioHang gh,
+            IDichVuBaoMatCaptcha dichVuCaptcha) : base(db)
         {
             _hv = hv;
             _gh = gh;
+            _dichVuCaptcha = dichVuCaptcha;
         }
 
         [HttpPost]
@@ -47,15 +54,83 @@ namespace WebBanhTrungThu.Controllers
         public async Task<IActionResult> ChuyenNhanhVaiTroDemo(string maVt, string? returnUrl)
         {
             var nd = await _hv.LayTaiKhoanChuyenVaiTroDemoAsync(maVt);
-            if (nd != null) { await DangNhapVaGopGioAsync(nd); TempData["ThongBaoAdmin"] = $"Đã chuyển nhanh sang phiên làm việc: {nd.HoTen} (Quyền: {nd.MaVt})!"; }
+            if (nd != null) { await DangNhapVaGopGioAsync(nd); TempData["ThongBaoAdmin"] = $"Đã chuyển nhanh sang phiên làm việc: {nd.HoTen} ({Services.TaiKhoan.DichVuHoiVien.LayTenVaiTroHienThi(nd.MaVt)})!"; }
             return !string.IsNullOrWhiteSpace(returnUrl) ? Redirect(returnUrl) : Redirect("/Admin/DonHangAdmin/Index");
         }
 
-        [HttpPost]
-        public async Task<IActionResult> DangKyAjax([FromBody] DangKyAjaxRequest? req, [FromQuery] string? hoTen, [FromQuery] string? sdt, [FromQuery] string? email, [FromQuery] string? matKhau)
+        [HttpGet, AllowAnonymous]
+        public IActionResult AnhCaptcha()
         {
+            string svg = _dichVuCaptcha.TaoChuoiSvgCaptchaThuan(out string maCaptcha);
+            HttpContext.Session.SetString("CaptchaThanhToan", maCaptcha);
+            HttpContext.Session.SetString("MaCaptchaThanhToan", maCaptcha);
+            HttpContext.Session.SetString("DaXacThucCaptcha", "false");
+
+            Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
+            Response.Headers.Pragma = "no-cache";
+            Response.Headers.Expires = "0";
+            return File(Encoding.UTF8.GetBytes(svg), "image/svg+xml; charset=utf-8");
+        }
+
+        [HttpGet, AllowAnonymous]
+        public IActionResult LayMaCaptchaMoi()
+        {
+            string anhSvgBase64 = _dichVuCaptcha.CapMoiCaptchaVaoSession(HttpContext.Session);
+            return Json(new { thanhCong = true, anhCaptchaSvg = anhSvgBase64, thoiGianSinh = DateTime.Now.ToString("HH:mm:ss") });
+        }
+
+        [HttpPost, AllowAnonymous]
+        public IActionResult XacThucCaptchaDangKy([FromBody] XacThucCaptchaMoRongRequest? req, string? maCaptchaNhap = null)
+        {
+            string maKhachNhap = (!string.IsNullOrWhiteSpace(maCaptchaNhap)
+                ? maCaptchaNhap
+                : !string.IsNullOrWhiteSpace(req?.MaCaptchaNhap)
+                    ? req.MaCaptchaNhap
+                    : req?.MaCaptcha ?? string.Empty).Trim();
+
+            if (!_dichVuCaptcha.KiemTraCaptcha(HttpContext.Session, maKhachNhap))
+            {
+                return Json(new
+                {
+                    thanhCong = false,
+                    loaiLoi = "CAPTCHA",
+                    thongBao = "Mã xác thực Captcha không chính xác. Vui lòng nhập lại 5 ký tự trong hình!",
+                    anhCaptchaSvg = _dichVuCaptcha.CapMoiCaptchaVaoSession(HttpContext.Session)
+                });
+            }
+
+            HttpContext.Session.SetString("DaXacThucCaptcha", "true");
+            return Json(new { thanhCong = true, thongBao = "✓ Đã xác thực" });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DangKyAjax(
+            [FromBody] DangKyAjaxRequest? req,
+            [FromQuery] string? hoTen,
+            [FromQuery] string? sdt,
+            [FromQuery] string? email,
+            [FromQuery] string? matKhau,
+            [FromQuery] string? maCaptcha)
+        {
+            string maCaptchaNhap = (req?.MaCaptcha ?? maCaptcha ?? string.Empty).Trim();
+            if (!_dichVuCaptcha.KiemTraCaptcha(HttpContext.Session, maCaptchaNhap))
+            {
+                return Json(new
+                {
+                    thanhCong = false,
+                    loaiLoi = "CAPTCHA",
+                    thongBao = "Mã xác thực Captcha không chính xác hoặc chưa nhập!",
+                    anhCaptchaSvg = _dichVuCaptcha.CapMoiCaptchaVaoSession(HttpContext.Session)
+                });
+            }
+
             var (ok, msg, nd) = await _hv.DangKyHoiVienMoiAsync(req?.HoTen ?? hoTen, req?.Sdt ?? sdt, req?.Email ?? email, req?.MatKhau ?? matKhau);
             if (!ok || nd == null) return Json(new { thanhCong = false, thongBao = msg });
+
+            HttpContext.Session.Remove("CaptchaThanhToan");
+            HttpContext.Session.Remove("MaCaptchaThanhToan");
+            HttpContext.Session.Remove("DaXacThucCaptcha");
+
             await DangNhapVaGopGioAsync(nd);
             return JsonAuth(nd, msg);
         }

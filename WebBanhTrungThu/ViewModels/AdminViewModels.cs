@@ -325,6 +325,7 @@ namespace WebBanhTrungThu.ViewModels
         public decimal TongThanhToanCuoi { get; set; }
         public string PhuongThucTt { get; set; } = "COD";
         public DateTime NgayDat { get; set; }
+        public string TenPhuongThucTtHienThi => Models.Entities.DonHang.AnhXaPhuongThucTtHienThi(PhuongThucTt);
     }
 
     public class ThongBaoLoCanDateItem

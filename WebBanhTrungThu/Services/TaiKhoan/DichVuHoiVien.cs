@@ -19,17 +19,25 @@ namespace WebBanhTrungThu.Services.TaiKhoan
         private static readonly PasswordHasher<NguoiDung> _passwordHasher = new();
         private readonly IDichVuCongThanhToanMoMo _dichVuCongMoMo;
         private readonly IDichVuTonKhoFefo _dichVuTonKho;
-        private readonly IDichVuCauHinhHeThong _cauHinhHeThong;
 
         public DichVuHoiVien(
             CSDLBanhTrungThuContext db,
             IDichVuCongThanhToanMoMo dichVuCongMoMo,
-            IDichVuTonKhoFefo dichVuTonKho,
-            IDichVuCauHinhHeThong cauHinhHeThong) : base(db)
+            IDichVuTonKhoFefo dichVuTonKho) : base(db)
         {
             _dichVuCongMoMo = dichVuCongMoMo;
             _dichVuTonKho = dichVuTonKho;
-            _cauHinhHeThong = cauHinhHeThong;
+        }
+
+        public static string LayTenVaiTroHienThi(string? maVt)
+        {
+            return (maVt ?? string.Empty).Trim().ToUpperInvariant() switch
+            {
+                "QUAN_TRI" or "ADMIN" => "Quản lý cửa hàng",
+                "THU_NGAN" or "NHAN_VIEN" or "NV_BAN_HANG" => "Chuyên viên quầy lễ",
+                "GIAO_HANG" => "Phụ trách giao quà",
+                _ => "Hội viên"
+            };
         }
 
         public string XacDinhDuongDanSauDangNhap(string? maVt)
@@ -136,7 +144,7 @@ namespace WebBanhTrungThu.Services.TaiKhoan
                 await _db.SaveChangesAsync();
             }
 
-            return (true, $"Đăng nhập thành công ({nd.HoTen} - Vai trò: {nd.MaVt})!", nd);
+            return (true, $"Đăng nhập thành công ({nd.HoTen} - {LayTenVaiTroHienThi(nd.MaVt)})!", nd);
         }
 
         public async Task<NguoiDung?> LayTaiKhoanChuyenVaiTroDemoAsync(string maVt)

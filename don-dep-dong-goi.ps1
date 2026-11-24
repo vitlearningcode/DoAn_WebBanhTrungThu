@@ -42,7 +42,7 @@ if (Test-Path $duongDanFileZip) {
 }
 
 $danhSachThanhPhanCanNen = @()
-foreach ($muc in @("WebBanhTrungThu", "DoAn_WebBanhTrungThu.slnx", ".gitignore", "README.md")) {
+foreach ($muc in @("WebBanhTrungThu", "DoAn_WebBanhTrungThu.slnx", "ResetVaSeed_CSDL_BanhTrungThu.sql", ".gitignore", "README.md")) {
     $duongDanDayDu = Join-Path $thuMucGoc $muc
     if (Test-Path $duongDanDayDu) {
         $danhSachThanhPhanCanNen += $duongDanDayDu

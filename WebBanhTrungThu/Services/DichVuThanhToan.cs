@@ -276,6 +276,22 @@ namespace WebBanhTrungThu.Services
                         tenLuuCung = ctGio.MaCbNavigation.TenCombo;
                         if (ctGio.MaCbNavigation.MaVhNavigation != null)
                             await _dichVuTonKho.TruTonKhoVoHopAsync(ctGio.MaCbNavigation.MaVhNavigation.MaVh, ctGio.SoLuong, danhSachVoHopDaTru);
+
+                        var dsBanhCombo = ctGio.MaCbNavigation.ChiTietComboMaus
+                            .OrderBy(c => c.ViTriO)
+                            .Select(c => new
+                            {
+                                ViTriOTrongHop = c.ViTriO,
+                                MaBanh = c.MaBanh,
+                                TenBanh = c.MaBanhNavigation?.TenBanh ?? "Bánh Trung Thu",
+                                DonGia = Math.Round(c.MaBanhNavigation?.DonGiaLe ?? 0m, 0)
+                            })
+                            .ToList();
+                        if (dsBanhCombo.Count > 0)
+                        {
+                            cauHinhJson = JsonSerializer.Serialize(dsBanhCombo, jsonOpt);
+                        }
+
                         foreach (var ctCombo in ctGio.MaCbNavigation.ChiTietComboMaus.Where(c => c.MaBanhNavigation != null))
                             await _dichVuTonKho.TruTonKhoFefoAsync(ctCombo.MaBanhNavigation!.MaBanh, ctCombo.SoLuong * ctGio.SoLuong, danhSachLoDaTru);
                     }

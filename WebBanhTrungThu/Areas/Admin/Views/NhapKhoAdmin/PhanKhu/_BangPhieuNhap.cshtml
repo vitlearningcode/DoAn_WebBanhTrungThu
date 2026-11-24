@@ -162,8 +162,14 @@
                                         <div class="fw-semibold small text-dark mb-1"><i class="bi bi-receipt me-1 text-success"></i> Lịch sử phiếu chi thanh toán Sổ quỹ:</div>
                                         @foreach (var pc in p.PhieuThuChis.OrderByDescending(x => x.NgayLap))
                                         {
+                                            string tenPtChi = (pc.PhuongThuc ?? string.Empty).Trim().ToUpperInvariant() switch
+                                            {
+                                                "CHUYEN_KHOAN" or "CHUYEN_KHOAN_QR" or "VIETQR" => "Chuyển khoản",
+                                                "TIEN_MAT" => "Tiền mặt",
+                                                _ => "Thanh toán khác"
+                                            };
                                             <div class="d-flex justify-content-between small py-1 border-top">
-                                                <span><strong class="text-danger">@pc.MaPhieuHienThi</strong> • @pc.NgayLap.ToString("dd/MM/yyyy HH:mm") • @pc.PhuongThuc • @pc.GhiChu</span>
+                                                <span><strong class="text-danger">@pc.MaPhieuHienThi</strong> • @pc.NgayLap.ToString("dd/MM/yyyy HH:mm") • @tenPtChi • @pc.GhiChu</span>
                                                 <strong class="text-danger so-tien">-@pc.SoTien.ToString("N0") đ</strong>
                                             </div>
                                         }

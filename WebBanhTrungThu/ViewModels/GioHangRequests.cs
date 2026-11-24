@@ -41,6 +41,7 @@ namespace WebBanhTrungThu.ViewModels
         public string Sdt { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string MatKhau { get; set; } = string.Empty;
+        public string? MaCaptcha { get; set; }
     }
 }
 

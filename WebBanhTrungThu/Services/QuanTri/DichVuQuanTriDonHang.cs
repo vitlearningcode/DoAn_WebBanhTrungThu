@@ -659,10 +659,10 @@ namespace WebBanhTrungThu.Services.QuanTri
 
             if (canHoanTien)
             {
-                return $"💸 Đã xử lý {trangThaiDich} đơn #{donHang.MaTraCuuDh}, {moTaKho}, thu hồi/hoàn điểm VIP và ghi nhận Phiếu Chi 'Chi hoàn tiền trả hàng' {donHang.TongThanhToanCuoi:N0} đ tới {maNganHangHoan} - STK: {soTaiKhoanHoan} ({tenChuTkHoan}) vào Sổ Quỹ!";
+                return $"💸 Đã xử lý {donHang.TenTrangThaiDhHienThi} đơn #{donHang.MaTraCuuDh}, {moTaKho}, thu hồi/hoàn điểm VIP và ghi nhận Phiếu Chi 'Chi hoàn tiền trả hàng' {donHang.TongThanhToanCuoi:N0} đ tới {maNganHangHoan} - STK: {soTaiKhoanHoan} ({tenChuTkHoan}) vào Sổ Quỹ!";
             }
 
-            return $"🗑️ Đã chuyển đơn #{donHang.MaTraCuuDh} sang {trangThaiDich} ({donHang.DotGiaoHangDaDiems.Count} phiếu giao, {moTaKho}) và hoàn lại điểm VIP (nếu có) thành công!";
+            return $"🗑️ Đã chuyển đơn #{donHang.MaTraCuuDh} sang {donHang.TenTrangThaiDhHienThi} ({donHang.DotGiaoHangDaDiems.Count} phiếu giao, {moTaKho}) và hoàn lại điểm VIP (nếu có) thành công!";
         }
     }
 }
