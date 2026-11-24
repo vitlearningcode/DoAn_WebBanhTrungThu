@@ -8,8 +8,9 @@
         return (maTtGiao ?? "").Trim().ToUpperInvariant() switch
         {
             "CHO_DONG_GOI" => "Đang đóng gói",
-            "DANG_GIAO" => "Đang giao",
-            "DA_GIAO" or "HOAN_TAT" => "Đã giao hoàn tất",
+            "CHO_LAY_HANG" or "DA_XAC_NHAN" or "DANG_DONG_GOI_HOP" => "Chờ lấy hàng",
+            "DANG_GIAO" or "DANG_VAN_CHUYEN" => "Đang giao",
+            "DA_GIAO" or "DA_GIAO_THANH_CONG" or "HOAN_TAT" => "Đã giao hoàn tất",
             "DA_HUY" => "Đã hủy",
             _ => "Chờ xác nhận"
         };

@@ -116,8 +116,10 @@ namespace WebBanhTrungThu.ViewModels
                 case "CHO_LAY_HANG":
                     return ("Chờ bàn giao vận chuyển", "huy-hieu-cho-ban-giao");
                 case "DANG_GIAO":
+                case "DANG_VAN_CHUYEN":
                     return ("Đang giao quà", "huy-hieu-dang-giao");
                 case "DA_GIAO":
+                case "DA_GIAO_THANH_CONG":
                 case "HOAN_TAT":
                     return ("Giao thành công", "huy-hieu-giao-thanh-cong");
                 case "DA_HUY":

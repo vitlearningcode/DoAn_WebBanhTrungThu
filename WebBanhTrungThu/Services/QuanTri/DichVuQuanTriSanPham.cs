@@ -20,17 +20,14 @@ namespace WebBanhTrungThu.Services.QuanTri
     public class DichVuQuanTriSanPham : DichVuCoSo, IDichVuQuanTriSanPham
     {
         private readonly IDichVuHinhAnh _dichVuHinhAnh;
-        private readonly IDichVuCauHinhHeThong _cauHinhHeThong;
         private readonly IWebHostEnvironment _env;
 
         public DichVuQuanTriSanPham(
             CSDLBanhTrungThuContext db,
             IDichVuHinhAnh dichVuHinhAnh,
-            IDichVuCauHinhHeThong cauHinhHeThong,
             IWebHostEnvironment env) : base(db)
         {
             _dichVuHinhAnh = dichVuHinhAnh;
-            _cauHinhHeThong = cauHinhHeThong;
             _env = env;
         }
 

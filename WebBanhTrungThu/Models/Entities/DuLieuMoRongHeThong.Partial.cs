@@ -1,57 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
-using WebBanhTrungThu.Services;
 
 namespace WebBanhTrungThu.Models.Entities
 {
-    /// <summary>
-    /// Cấu trúc gốc lưu trữ dữ liệu mở rộng của Đại lý Phân phối Nguyệt Cát ERP
-    /// (Thương hiệu, Nhà cung cấp, Vị trí kho, Đơn vị tính, Nhật ký lô FEFO và Cấu hình QR MoMo).
-    /// </summary>
-    public class DuLieuMoRongHeThongRoot
-    {
-        public List<string> DanhSachThuongHieu { get; set; } = new()
-        {
-            "Đồng Khánh",
-            "Kinh Đô",
-            "Như Lan",
-            "Givral",
-            "Brodard",
-            "Nguyệt Cát"
-        };
-
-        public List<string> DanhSachNhaCungCap { get; set; } = new()
-        {
-            "Lò Bánh Đồng Khánh Chính Gốc",
-            "NPP Bánh Kinh Đô Miền Nam",
-            "NPP Như Lan Sài Gòn",
-            "Bánh Trung Thu Givral Chính Hãng",
-            "NPP Brodard Sài Gòn",
-            "Đại Lý Phân Phối Nguyệt Cát"
-        };
-
-        public List<string> DanhSachViTriKho { get; set; } = new()
-        {
-            "Kệ A1",
-            "Kệ A2",
-            "Kệ B1",
-            "Kệ B2",
-            "Tủ Mát C1"
-        };
-
-        public List<string> DanhSachDonViTinh { get; set; } = new()
-        {
-            "Cái",
-            "Hộp",
-            "Lốc 4 cái",
-            "Thùng 20 hộp"
-        };
-
-        public Dictionary<string, CauHinhHangHoaMoRong> Items { get; set; } = new();
-        public Dictionary<int, ThongTinDonHangMoRong> DonHangs { get; set; } = new();
-        public CauHinhThanhToanQr CauHinhQr { get; set; } = new();
-        public List<PhieuThuChiMoRong> DanhSachPhieuThuChi { get; set; } = new();
-    }
-
     public partial class SanPhamBanh
     {
         private string? _thuongHieu;

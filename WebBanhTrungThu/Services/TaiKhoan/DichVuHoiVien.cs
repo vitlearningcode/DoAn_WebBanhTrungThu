@@ -19,17 +19,14 @@ namespace WebBanhTrungThu.Services.TaiKhoan
         private static readonly PasswordHasher<NguoiDung> _passwordHasher = new();
         private readonly IDichVuCongThanhToanMoMo _dichVuCongMoMo;
         private readonly IDichVuTonKhoFefo _dichVuTonKho;
-        private readonly IDichVuCauHinhHeThong _cauHinhHeThong;
 
         public DichVuHoiVien(
             CSDLBanhTrungThuContext db,
             IDichVuCongThanhToanMoMo dichVuCongMoMo,
-            IDichVuTonKhoFefo dichVuTonKho,
-            IDichVuCauHinhHeThong cauHinhHeThong) : base(db)
+            IDichVuTonKhoFefo dichVuTonKho) : base(db)
         {
             _dichVuCongMoMo = dichVuCongMoMo;
             _dichVuTonKho = dichVuTonKho;
-            _cauHinhHeThong = cauHinhHeThong;
         }
 
         public static string LayTenVaiTroHienThi(string? maVt)

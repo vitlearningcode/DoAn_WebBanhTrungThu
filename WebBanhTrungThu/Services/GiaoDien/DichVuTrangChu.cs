@@ -33,15 +33,12 @@ namespace WebBanhTrungThu.Services.GiaoDien
     public class DichVuTrangChu : DichVuCoSo, IDichVuTrangChu
     {
         private readonly IDichVuHinhAnh _dichVuHinhAnh;
-        private readonly IDichVuCauHinhHeThong _kiotMeta;
 
         public DichVuTrangChu(
             CSDLBanhTrungThuContext db,
-            IDichVuHinhAnh dichVuHinhAnh,
-            IDichVuCauHinhHeThong kiotMeta) : base(db)
+            IDichVuHinhAnh dichVuHinhAnh) : base(db)
         {
             _dichVuHinhAnh = dichVuHinhAnh;
-            _kiotMeta = kiotMeta;
         }
 
         public async Task<LandingPageViewModel> XayDungDuLieuTrangChuAsync(int? maND, string? maPhienKVL)

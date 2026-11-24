@@ -14,15 +14,13 @@ namespace WebBanhTrungThu.Services.QuanTri
     /// </summary>
     public class DichVuNhapKho : DichVuCoSo, IDichVuNhapKho
     {
-        private readonly IDichVuCauHinhHeThong _cauHinhHeThong;
         private static readonly JsonSerializerOptions _jsonOpts = new()
         {
             PropertyNameCaseInsensitive = true
         };
 
-        public DichVuNhapKho(CSDLBanhTrungThuContext db, IDichVuCauHinhHeThong cauHinhHeThong) : base(db)
+        public DichVuNhapKho(CSDLBanhTrungThuContext db) : base(db)
         {
-            _cauHinhHeThong = cauHinhHeThong;
         }
 
         public async Task<NhapKhoAdminViewModel> XayDungTrangNhapKhoAsync(

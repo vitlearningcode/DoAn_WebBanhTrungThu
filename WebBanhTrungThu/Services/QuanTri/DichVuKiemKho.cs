@@ -15,7 +15,6 @@ namespace WebBanhTrungThu.Services.QuanTri
     /// </summary>
     public class DichVuKiemKho : DichVuCoSo, IDichVuKiemKho
     {
-        private readonly IDichVuCauHinhHeThong _cauHinhHeThong;
         private static readonly JsonSerializerOptions _jsonOpts = new()
         {
             PropertyNameCaseInsensitive = true
@@ -25,9 +24,8 @@ namespace WebBanhTrungThu.Services.QuanTri
             "Mã SP", "Tên bánh", "Giá vốn", "Tồn hệ thống", "Tồn thực tế", "Lý do lệch"
         };
 
-        public DichVuKiemKho(CSDLBanhTrungThuContext db, IDichVuCauHinhHeThong cauHinhHeThong) : base(db)
+        public DichVuKiemKho(CSDLBanhTrungThuContext db) : base(db)
         {
-            _cauHinhHeThong = cauHinhHeThong;
         }
 
         public async Task<KiemKhoAdminViewModel> XayDungTrangKiemKhoAsync(

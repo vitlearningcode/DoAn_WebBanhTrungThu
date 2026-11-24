@@ -14,11 +14,8 @@ namespace WebBanhTrungThu.Services.ThanhToan
     /// </summary>
     public class DichVuTonKhoFefo : DichVuCoSo, IDichVuTonKhoFefo
     {
-        private readonly IDichVuCauHinhHeThong _kiotMeta;
-
-        public DichVuTonKhoFefo(CSDLBanhTrungThuContext context, IDichVuCauHinhHeThong kiotMeta) : base(context)
+        public DichVuTonKhoFefo(CSDLBanhTrungThuContext context) : base(context)
         {
-            _kiotMeta = kiotMeta;
         }
 
         /// <summary>

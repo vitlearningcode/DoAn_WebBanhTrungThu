@@ -14,15 +14,12 @@ namespace WebBanhTrungThu.Services.GiaoDien
     public class DichVuChiTietSanPham : DichVuCoSo, IDichVuChiTietSanPham
     {
         private readonly IDichVuHinhAnh _dichVuHinhAnh;
-        private readonly IDichVuCauHinhHeThong _cauHinhHeThong;
 
         public DichVuChiTietSanPham(
             CSDLBanhTrungThuContext context,
-            IDichVuHinhAnh dichVuHinhAnh,
-            IDichVuCauHinhHeThong cauHinhHeThong) : base(context)
+            IDichVuHinhAnh dichVuHinhAnh) : base(context)
         {
             _dichVuHinhAnh = dichVuHinhAnh;
-            _cauHinhHeThong = cauHinhHeThong;
         }
 
         public async Task<ChiTietSanPhamViewModel?> LayChiTietSanPhamAsync(int maBanh)
